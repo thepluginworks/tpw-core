@@ -1,0 +1,97 @@
+<?php
+
+class TPW_Course_Choices_Admin {
+
+    public static function init() {
+        add_action('admin_menu', [__CLASS__, 'register_submenu_page']);
+    }
+
+    public static function register_submenu_page() {
+        add_submenu_page(
+            'flexievent',
+            'Course Choices',
+            'Course Choices',
+            'manage_options',
+            'tpw-course-choices',
+            [__CLASS__, 'render_page']
+        );
+    }
+
+    public static function render_page() {
+        if (isset($_POST['rename_course']) && check_admin_referer('rename_course_action')) {
+            $menu_id = intval($_POST['menu_id']);
+            $course_number = intval($_POST['course_number']);
+            $new_name = sanitize_text_field($_POST['course_name']);
+            TPW_Menu_Courses_Manager::set_course_name($menu_id, $course_number, $new_name);
+            echo '<div class="updated"><p>Course name updated.</p></div>';
+        }
+
+        if (isset($_GET['delete_choice']) && isset($_GET['_wpnonce'])) {
+            $delete_id = intval($_GET['delete_choice']);
+            if (wp_verify_nonce($_GET['_wpnonce'], 'delete_choice_' . $delete_id)) {
+                TPW_Course_Choices_Manager::delete_choice($delete_id);
+                echo '<div class="updated"><p>Choice deleted.</p></div>';
+            } else {
+                echo '<div class="error"><p>Security check failed.</p></div>';
+            }
+        }
+
+        echo '<div class="wrap">';
+        echo '<h1>Manage Course Choices</h1>';
+
+        $menu_id = isset($_GET['menu_id']) ? intval($_GET['menu_id']) : 0;
+
+        if ($menu_id) {
+            echo '<p>Editing course choices for menu ID: ' . esc_html($menu_id) . '</p>';
+
+            $menu = TPW_Menus_Manager::get_menu_by_id($menu_id);
+            if (!$menu) {
+                echo '<div class="error"><p>Menu not found.</p></div>';
+                echo '</div>';
+                return;
+            }
+
+            for ($i = 1; $i <= intval($menu->number_of_courses); $i++) {
+                $course_name = TPW_Menu_Courses_Manager::get_course_name($menu_id, $i);
+                $heading = $course_name ? esc_html($course_name) : 'Course ' . $i;
+                echo '<h2>' . $heading . '</h2>';
+                echo '<form method="post" style="margin-bottom: 1em;">';
+                wp_nonce_field('rename_course_action');
+                echo '<input type="hidden" name="menu_id" value="' . esc_attr($menu_id) . '">';
+                echo '<input type="hidden" name="course_number" value="' . esc_attr($i) . '">';
+                echo '<label>Rename Course: <input type="text" name="course_name" value="' . esc_attr($heading) . '" />';
+                echo '<input type="submit" name="rename_course" class="button" value="Rename"></label>';
+                echo '</form>';
+                $add_url = admin_url('admin.php?page=tpw-course-choice-form&menu_id=' . intval($menu_id) . '&course_number=' . $i);
+                echo '<p><a href="' . esc_url($add_url) . '" class="button">Add New Choice</a></p>';
+                $choices = TPW_Course_Choices_Manager::get_choices_for_course($menu_id, $i);
+                if ($choices) {
+                    echo '<ul>';
+                    foreach ($choices as $choice) {
+                        $edit_url = admin_url('admin.php?page=tpw-course-choice-form&choice_id=' . intval($choice->id));
+                        $delete_url = wp_nonce_url(
+                            admin_url('admin.php?page=tpw-course-choices&menu_id=' . intval($menu_id) . '&delete_choice=' . intval($choice->id)),
+                            'delete_choice_' . $choice->id
+                        );
+                        echo '<li><strong>' . esc_html( wp_unslash( $choice->label ) ) . '</strong> ';
+                        echo '<a href="' . esc_url($edit_url) . '">Edit</a> | ';
+                        echo '<a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Are you sure you want to delete this choice?\')">Delete</a>';
+                        if ($choice->description) {
+                            echo '<br/><em>' . esc_html( wp_unslash( $choice->description ) ) . '</em>';
+                        }
+                        echo '</li>';
+                    }
+                    echo '</ul>';
+                } else {
+                    echo '<p>No choices added yet for this course.</p>';
+                }
+            }
+        } else {
+            echo '<p>Please select a menu to manage its course choices.</p>';
+        }
+
+        echo '</div>';
+    }
+}
+
+TPW_Course_Choices_Admin::init();
