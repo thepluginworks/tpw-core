@@ -10,16 +10,22 @@ class TPW_Menus_Saver {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menu_courses';
 
-        // First delete existing assignments
+        // Remove existing courses for this menu
         $wpdb->delete($table_name, ['menu_id' => $menu_id], ['%d']);
 
-        // Insert new assignments
+        // Insert courses with incremental course numbers
+        $course_number = 1;
         foreach ($courses as $course) {
-            $wpdb->insert($table_name, [
-                'menu_id'    => $menu_id,
-                'course_name'=> sanitize_text_field($course),
-                'sort_order' => 0
-            ]);
+            $wpdb->insert(
+                $table_name,
+                [
+                    'menu_id'       => $menu_id,
+                    'course_number' => $course_number++,
+                    'course_name'   => sanitize_text_field($course),
+                    'created_at'    => current_time('mysql'),
+                ],
+                [ '%d', '%d', '%s', '%s' ]
+            );
         }
     }
 
