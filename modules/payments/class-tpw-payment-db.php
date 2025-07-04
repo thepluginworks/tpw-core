@@ -29,7 +29,7 @@ class TPW_Payment_DB {
             ['name' => 'BACS', 'slug' => 'bacs'],
             ['name' => 'Cash / Cheque', 'slug' => 'cash_cheque'],
             ['name' => 'SumUp', 'slug' => 'sumup'],
-            ['name' => 'SquareUp', 'slug' => 'squareup'],
+            ['name' => 'Square', 'slug' => 'square'],
         ];
 
         foreach ($default_methods as $method) {
