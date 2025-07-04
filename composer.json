@@ -1,0 +1,7 @@
+{
+    "require": {
+        "paypal/paypal-checkout-sdk": "^1.0",
+        "square/square": "^43.0",
+        "guzzlehttp/guzzle": "^7.9"
+    }
+}
