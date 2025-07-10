@@ -6,6 +6,28 @@
  * Version: 1.0
  */
 
+/**
+ * Freemius SDK integration
+ */
+if ( ! function_exists( 'tpw_core_fs' ) ) {
+    // Create a helper function for easy SDK access.
+    function tpw_core_fs() {
+        global $tpw_core_fs;
+
+        if ( ! isset( $tpw_core_fs ) ) {
+            // Include Freemius SDK.
+            require_once dirname( __FILE__ ) . '/freemius/freemius-init.php';
+        }
+
+        return $tpw_core_fs;
+    }
+
+    // Init Freemius.
+    tpw_core_fs();
+    // Signal that SDK was initiated.
+    do_action( 'tpw_core_fs_loaded' );
+}
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
