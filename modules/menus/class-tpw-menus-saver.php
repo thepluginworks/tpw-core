@@ -14,13 +14,18 @@ class TPW_Menus_Saver {
         $wpdb->delete($table_name, ['menu_id' => $menu_id], ['%d']);
 
         // Insert courses with incremental course numbers
-        foreach ($courses as $index => $course) {
-            $wpdb->insert($table_name, [
-                'menu_id'       => $menu_id,
-                'course_number' => $index + 1,
-                'course_name'   => sanitize_text_field($course),
-                'created_at'    => current_time('mysql'),
-            ]);
+        $course_number = 1;
+        foreach ($courses as $course) {
+            $wpdb->insert(
+                $table_name,
+                [
+                    'menu_id'       => $menu_id,
+                    'course_number' => $course_number++,
+                    'course_name'   => sanitize_text_field($course),
+                    'created_at'    => current_time('mysql'),
+                ],
+                [ '%d', '%d', '%s', '%s' ]
+            );
         }
     }
 
