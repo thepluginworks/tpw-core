@@ -1,0 +1,35 @@
+
+
+name: Deploy to Freemius
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout plugin code
+        uses: actions/checkout@v3
+
+      - name: Set version from tag
+        id: vars
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Zip plugin
+        run: |
+          zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store"
+
+      - name: Upload to Freemius
+        env:
+          FREEMIUS_ID: "19783"
+          FREEMIUS_PUBLIC_KEY: "pk_230160ce6b3f69b3aac273acd5aaf"
+          FREEMIUS_SECRET_KEY: ${{ secrets.TPW_CORE_SECRET_KEY }}
+        run: |
+          curl -X POST https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json \
+            -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
+            -F "plugin_file=@tpw-core.zip" \
+            -F "version=$VERSION"
