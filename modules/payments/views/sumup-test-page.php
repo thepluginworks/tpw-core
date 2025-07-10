@@ -21,8 +21,14 @@ if (empty($access_token)) {
     if (is_wp_error($response)) {
         echo '<div class="notice notice-error"><p>Error: ' . $response->get_error_message() . '</p></div>';
     } else {
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body        = wp_remote_retrieve_body($response);
+
+        if (200 !== $status_code) {
+            echo '<div class="notice notice-error"><p>Error: HTTP ' . esc_html($status_code) . '</p></div>';
+            echo '<pre>' . esc_html($body) . '</pre>';
+        } else {
+            $data = json_decode($body, true);
 
         if (isset($data['account'])) {
             echo '<div class="notice notice-success"><p>✅ Connection Successful!</p></div>';
@@ -44,6 +50,7 @@ if (empty($access_token)) {
             echo '<div class="notice notice-error"><p>❌ Invalid response from SumUp API.</p></div>';
             echo '<pre>' . esc_html($body) . '</pre>';
         }
+    }
     }
 }
 
