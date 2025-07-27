@@ -26,8 +26,8 @@ class TPW_Costs_Save {
         ));
 
         $data = [
-            'meeting_cost' => isset($meeting_cost) ? (float) $meeting_cost : 0.00,
-            'dining_cost'  => is_null($dining_cost) ? 0.00 : (float) $dining_cost,
+            'meeting_cost' => isset($meeting_cost) ? (float) $meeting_cost : null,
+            'dining_cost'  => is_null($dining_cost) ? null : (float) $dining_cost,
             'updated_at'   => current_time('mysql'),
         ];
 
