@@ -38,6 +38,7 @@ require_once TPW_CORE_PATH . 'modules/menus/class-tpw-event-menu-rel.php';
 //require_once TPW_CORE_PATH . 'modules/api/endpoints/class-tpw-api-choices.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payment-logger.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payment-logs-admin.php';
+require_once TPW_CORE_PATH . 'modules/payments/class-tpw-core-payments.php';
 TPW_Payment_Logs_Admin::init();
 require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-sumup-gateway.php';
 require_once TPW_CORE_PATH . 'modules/payments/gateways/sumup-oauth-callback.php';
@@ -45,6 +46,7 @@ require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payments-settings.php';
 TPW_Payments_Settings::init();
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-bacs-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cheque-settings.php';
+require_once TPW_CORE_PATH . 'modules/payments/views/thank-you-shortcode.php';
 
 add_action('init', 'tpw_core_load_optional_modules', 20);
 
@@ -71,3 +73,19 @@ function tpw_core_load_optional_modules() {
         TPW_Core_Create_Menu::init();
     }
 }
+// Register thank-you page endpoint
+add_action('init', function() {
+    add_rewrite_rule('^rsvp-thank-you/?$', 'index.php?tpw_thank_you=1', 'top');
+});
+
+add_filter('query_vars', function($vars) {
+    $vars[] = 'tpw_thank_you';
+    return $vars;
+});
+
+add_action('template_redirect', function() {
+    if (get_query_var('tpw_thank_you')) {
+        include TPW_CORE_PATH . 'modules/payments/views/thank-you.php';
+        exit;
+    }
+});

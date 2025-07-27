@@ -16,8 +16,8 @@ class TPW_Costs_DB {
         $sql = "CREATE TABLE IF NOT EXISTS $table_name (
             cost_id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id BIGINT(20) UNSIGNED NOT NULL,
-            meeting_cost DECIMAL(10,2) DEFAULT 0.00,
-            dining_cost DECIMAL(10,2) DEFAULT 0.00,
+            meeting_cost DECIMAL(10,2) DEFAULT NULL,
+            dining_cost DECIMAL(10,2) DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (cost_id),
