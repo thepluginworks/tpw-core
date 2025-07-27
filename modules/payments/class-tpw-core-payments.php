@@ -118,9 +118,10 @@ class TPW_Core_Payments {
                 'checkout_url'      => $data['checkout_url'],
                 'paid_by'           => $data['paid_by'],
                 'notes'             => $data['notes'],
+                'amount_breakdown'  => $data['amount_breakdown'],
                 'created_at'        => current_time('mysql'),
             ],
-            ['%d','%d','%f','%s','%s','%s','%s','%s','%s']
+            ['%d','%d','%f','%s','%s','%s','%s','%s','%s','%s']
         );
 
         if ($result === false) {
