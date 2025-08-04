@@ -32,7 +32,8 @@ jobs:
         run: echo "Uploading version: $VERSION"
 
       - name: Debug final Freemius URL
-        run: echo "POST URL: https://api.freemius.com/v1/dev/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json"
+        run: |
+          echo "POST URL: https://api.freemius.com/v1/dev/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json"
 
       - name: Upload to Freemius
         run: |
