@@ -19,7 +19,7 @@ jobs:
         id: vars
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-        - name: Install PHP dependencies
+      - name: Install PHP dependencies
         run: composer install --no-dev --prefer-dist
 
       - name: Zip plugin
