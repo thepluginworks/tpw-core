@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload to Freemius
         run: |
-          echo "Uploading to https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json with version $VERSION"
+          echo "Uploading to https://api.freemius.com/v1/dev/plugins/19783/versions.json with version $VERSION"
           curl -X POST "https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json" \
             -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
             -F "plugin_file=@tpw-core.zip" \
