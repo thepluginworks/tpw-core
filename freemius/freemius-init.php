@@ -11,7 +11,7 @@ if ( ! function_exists( 'tpw_core_fs' ) ) {
             }
 
             // Include Freemius SDK core.
-            require_once dirname( __FILE__ ) . '/../vendor/freemius/start.php';
+            require_once dirname( __FILE__ ) . '/start.php';
 
             $tpw_core_fs = fs_dynamic_init( array(
                 'id'                  => '19783',

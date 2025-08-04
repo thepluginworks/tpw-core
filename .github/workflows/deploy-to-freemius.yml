@@ -58,3 +58,10 @@ jobs:
             -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
             -F "plugin_file=@tpw-core.zip" \
             -F "version=$VERSION"
+
+
+
+            curl -X POST "https://api.freemius.com/v1/dev/plugins/19783/versions.json" \
+  -u "pk_230160ce6b3f69b3aac273acd5aaf:sk_5b4-qk=Au4QGj_RBg!DR)$yf-H^&m" \
+  -F "plugin_file=@tpw-core.zip" \
+  -F "version=1.0.999"
