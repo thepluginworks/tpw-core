@@ -3,65 +3,32 @@ name: Deploy to Freemius
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      FREEMIUS_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
-      FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_TPW_CORE_PUBLIC_KEY }}
-      FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}
 
     steps:
       - name: Checkout plugin code
         uses: actions/checkout@v3
 
       - name: Set version from tag
-        id: vars
-        run: |
-          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Install PHP dependencies
         run: composer install --no-dev --prefer-dist
 
       - name: Zip plugin
         run: |
-          zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store"
-
-      - name: Confirm secret is working
-        run: |
-          echo "Plugin ID: $FREEMIUS_ID"
-
-      - name: Test if secret resolves
-        run: |
-          echo "Secret: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}"
-
-      - name: Test value inline
-        run: |
-          echo "Inline test: $FREEMIUS_ID"
-        env:
-          FREEMIUS_ID: "19783"
-
-      - name: Debug version string
-        run: |
-          echo "Uploading version: $VERSION"
-
-      - name: Debug final Freemius URL
-        run: |
-          echo "POST URL: https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json"
+          zip -r tpw-flexievent.zip . -x "*.git*" -x "*.DS_Store" -x ".git*" -x ".github*"
 
       - name: Upload to Freemius
         run: |
-          echo "Uploading to https://api.freemius.com/v1/dev/plugins/19783/versions.json with version $VERSION"
-          curl -X POST "https://api.freemius.com/v1/dev/plugins/19783/versions.json" \
-            -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
-            -F "plugin_file=@tpw-core.zip" \
-            -F "version=$VERSION"
-
-
-
-            curl -X POST "https://api.freemius.com/v1/dev/plugins/19783/versions.json" \
-  -u "pk_230160ce6b3f69b3aac273acd5aaf:sk_5b4-qk=Au4QGj_RBg!DR)$yf-H^&m" \
-  -F "plugin_file=@tpw-core.zip" \
-  -F "version=1.0.999"
+          curl -X POST https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json \
+            -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}' | base64)" \
+            -F "slug=${{ secrets.FLEXIEVENT_SLUG }}" \
+            -F "version=$VERSION" \
+            -F "changelog=Automated release from GitHub tag $VERSION" \
+            -F "zip_file=@tpw-flexievent.zip"
