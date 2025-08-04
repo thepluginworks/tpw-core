@@ -29,11 +29,12 @@ jobs:
           echo "Plugin ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}"
 
       - name: Debug version string
-        run: echo "Uploading version: $VERSION"
+        run: | 
+          echo "Uploading version: $VERSION"
 
       - name: Debug final Freemius URL
         run: |
-          echo "POST URL: https://api.freemius.com/v1/dev/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json"
+          echo POST URL: https://api.freemius.com/v1/dev/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json
 
       - name: Upload to Freemius
         run: |
