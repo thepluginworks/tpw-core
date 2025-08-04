@@ -8,6 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      FREEMIUS_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
+      FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_TPW_CORE_PUBLIC_KEY }}
+      FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}
 
     steps:
       - name: Checkout plugin code
@@ -25,27 +29,18 @@ jobs:
           zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store"
 
       - name: Confirm secret is working
-        run: |
-          echo "Plugin ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}"
+        run: echo "Plugin ID: $FREEMIUS_ID"
 
       - name: Debug version string
-        run: | 
-          echo "Uploading version: $VERSION"
+        run: echo "Uploading version: $VERSION"
 
       - name: Debug final Freemius URL
-        env:
-          FREEMIUS_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
-        run: |
-          echo "POST URL: https://api.freemius.com/v1/dev/plugins/${FREEMIUS_ID}/versions.json"
+        run: echo "POST URL: https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json"
 
       - name: Upload to Freemius
-        env:
-          FREEMIUS_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
-          FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_TPW_CORE_PUBLIC_KEY }}
-          FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}
         run: |
-          echo "Uploading to https://api.freemius.com/v1/dev/plugins/${FREEMIUS_ID}/versions.json with version ${VERSION}"
-          curl -X POST "https://api.freemius.com/v1/dev/plugins/${FREEMIUS_ID}/versions.json" \
-            -u "${FREEMIUS_PUBLIC_KEY}:${FREEMIUS_SECRET_KEY}" \
+          echo "Uploading to https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json with version $VERSION"
+          curl -X POST "https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json" \
+            -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
             -F "plugin_file=@tpw-core.zip" \
-            -F "version=${VERSION}"
+            -F "version=$VERSION"
