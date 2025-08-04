@@ -28,9 +28,9 @@ jobs:
 
       - name: Upload to Freemius
         env:
-          FREEMIUS_ID: "19783"
-          FREEMIUS_PUBLIC_KEY: "pk_230160ce6b3f69b3aac273acd5aaf"
-          FREEMIUS_SECRET_KEY: ${{ secrets.TPW_CORE_SECRET_KEY }}
+          FREEMIUS_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
+          FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_TPW_CORE_PUBLIC_KEY }}
+          FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}
         run: |
           curl -X POST https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json \
             -u "$FREEMIUS_PUBLIC_KEY:$FREEMIUS_SECRET_KEY" \
