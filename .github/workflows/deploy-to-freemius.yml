@@ -33,6 +33,16 @@ jobs:
         run: |
           echo "Plugin ID: $FREEMIUS_ID"
 
+      - name: Test if secret resolves
+        run: |
+          echo "Secret: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}"
+
+      - name: Test value inline
+        run: |
+          echo "Inline test: $FREEMIUS_ID"
+        env:
+          FREEMIUS_ID: "19783"
+
       - name: Debug version string
         run: |
           echo "Uploading version: $VERSION"
