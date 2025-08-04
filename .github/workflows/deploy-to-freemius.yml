@@ -25,7 +25,8 @@ jobs:
           zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store"
 
       - name: Confirm secret is working
-        run: echo 'Plugin ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}'
+        run: |
+          echo "Plugin ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}"
 
       - name: Upload to Freemius
         run: |
