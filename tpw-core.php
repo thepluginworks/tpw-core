@@ -3,7 +3,7 @@
  * Plugin Name: TPW Core
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
  * Author: ThePluginWorks Ltd
- * Version: 1.0.2
+ * Version: 1.0.3
  */
 
 /**
@@ -65,3 +65,14 @@ if ( ! function_exists( 'tpw_core_loaded_marker' ) ) {
         return true;
     }
 }
+
+// Declare HPOS compatibility with WooCommerce
+add_action( 'before_woocommerce_init', function() {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+            'custom_order_tables',
+            __FILE__,
+            true
+        );
+    }
+} );

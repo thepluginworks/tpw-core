@@ -47,14 +47,22 @@ class TPW_Payments_Admin {
                                 } elseif ($method->slug === 'cheque' && !get_option('tpw_cheque_payable_to')) {
                                     $row_class = 'style="background-color: #ffe6e6;"';
                                 }
+
+                                $disabled_attr = '';
+                                $note = '';
+                                if ($method->slug === 'woocommerce' && !class_exists('WooCommerce')) {
+                                    $disabled_attr = 'disabled';
+                                    $note = '<p style="color: gray; margin-top: 4px;">Requires WooCommerce to be installed and activated.</p>';
+                                }
                             ?>
                             <tr <?php echo $row_class; ?>>
                                 <th scope="row"><?php echo esc_html($method->name); ?></th>
                                 <td>
                                     <label>
-                                        <input type="checkbox" name="payment_methods[]" value="<?php echo esc_attr($method->slug); ?>" <?php checked($method->active, 1); ?> />
+                                        <input type="checkbox" name="payment_methods[]" value="<?php echo esc_attr($method->slug); ?>" <?php checked($method->active, 1); ?> <?php echo $disabled_attr; ?> />
                                         Enable
                                     </label>
+                                    <?php echo $note; ?>
                                     <?php if ($method->slug === 'sumup'): ?>
                                         <br/>
                                         <?php
