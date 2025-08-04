@@ -1,5 +1,3 @@
-
-
 name: Deploy to Freemius
 
 on:
@@ -32,8 +30,8 @@ jobs:
           FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_TPW_CORE_PUBLIC_KEY }}
           FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}
         run: |
-          echo "Uploading to https://api.freemius.com/v1/dev/plugins/${FREEMIUS_ID}/versions.json with version ${VERSION}"
-          echo "FREEMIUS_ID resolved to: ${FREEMIUS_ID}"
+          echo "Uploading to https://api.freemius.com/v1/dev/plugins/$FREEMIUS_ID/versions.json with version ${VERSION}"
+          echo "FREEMIUS_ID resolved to: $FREEMIUS_ID"
           curl -X POST "https://api.freemius.com/v1/dev/plugins/${FREEMIUS_ID}/versions.json" \
             -u "${FREEMIUS_PUBLIC_KEY}:${FREEMIUS_SECRET_KEY}" \
             -F "plugin_file=@tpw-core.zip" \
