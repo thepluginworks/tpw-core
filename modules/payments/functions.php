@@ -34,7 +34,7 @@ function tpw_core_create_payment($args = []) {
             );
 
         case 'square':
-            require_once plugin_dir_path(__FILE__) . 'gateways/square.php';
+            require_once plugin_dir_path(__FILE__) . 'gateways/class-tpw-square-gateway.php';
             return tpw_square_create_checkout(
                 $args['reference'] ?? '',
                 $args['amount'] ?? 0,

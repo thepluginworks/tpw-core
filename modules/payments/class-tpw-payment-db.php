@@ -30,6 +30,7 @@ class TPW_Payment_DB {
             ['name' => 'Cash / Cheque', 'slug' => 'cash_cheque'],
             ['name' => 'SumUp', 'slug' => 'sumup'],
             ['name' => 'Square', 'slug' => 'square'],
+            ['name' => 'WooCommerce', 'slug' => 'woocommerce'],
         ];
 
         foreach ($default_methods as $method) {

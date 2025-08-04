@@ -25,16 +25,32 @@ class TPW_Payments_Settings {
                 include plugin_dir_path(__FILE__) . '/views/sumup-test-page.php';
             }
         );
+        add_submenu_page(
+            'tpw_core',
+            'Square Settings',
+            'Square Settings',
+            'manage_options',
+            'tpw-square-settings',
+            [__CLASS__, 'render_square_page']
+        );
     }
 
     public static function register_settings() {
         register_setting('tpw_payment_settings', 'tpw_sumup_client_id');
         register_setting('tpw_payment_settings', 'tpw_sumup_client_secret');
         register_setting('tpw_payment_settings', 'tpw_sumup_access_token');
+        register_setting('tpw_payment_settings', 'tpw_square_app_id');
+        register_setting('tpw_payment_settings', 'tpw_square_access_token');
+        register_setting('tpw_payment_settings', 'tpw_square_location_id');
+        register_setting('tpw_payment_settings', 'tpw_square_sandbox_mode');
     }
 
     public static function render_page() {
         include plugin_dir_path(__FILE__) . '/views/payment-settings-page.php';
+    }
+
+    public static function render_square_page() {
+        include plugin_dir_path(__FILE__) . '/views/square-settings-page.php';
     }
 }
 

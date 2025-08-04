@@ -41,7 +41,12 @@ require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payment-logs-admin.php'
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-core-payments.php';
 TPW_Payment_Logs_Admin::init();
 require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-sumup-gateway.php';
+// Load WooCommerce display overrides only when Lodge Meetings plugin is active
+
+    require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-woocommerce-display.php';
+
 require_once TPW_CORE_PATH . 'modules/payments/gateways/sumup-oauth-callback.php';
+require_once TPW_CORE_PATH . 'modules/payments/class-tpw-core-woocommerce-hooks.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payments-settings.php';
 TPW_Payments_Settings::init();
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-bacs-settings.php';
