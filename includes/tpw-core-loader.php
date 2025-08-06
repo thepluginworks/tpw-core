@@ -27,6 +27,9 @@ require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-manager.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-saver.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-event-menu-rel.php';
+//member modules
+require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-fields.php';
+new TPW_Member_Fields();
 
 //require_once TPW_CORE_PATH . 'modules/choices/class-tpw-choices-handler.php';
 //require_once TPW_CORE_PATH . 'modules/choices/class-tpw-choices-utils.php';

@@ -35,6 +35,11 @@ class TPW_Payments_Admin {
                     <tbody>
                         <?php foreach ($methods as $method): ?>
                             <?php
+                                if (in_array($method->slug, ['woocommerce', 'sumup'])) {
+                                    continue; // Temporarily hide these payment methods
+                                }
+                            ?>
+                            <?php
                                 $row_class = '';
                                 if ($method->slug === 'sumup' && !get_option('tpw_sumup_access_token')) {
                                     $row_class = 'style="background-color: #ffe6e6;"';

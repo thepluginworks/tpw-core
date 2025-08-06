@@ -22,13 +22,13 @@ jobs:
 
       - name: Zip plugin
         run: |
-          zip -r tpw-flexievent.zip . -x "*.git*" -x "*.DS_Store" -x ".git*" -x ".github*"
+          zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store" -x ".git*" -x ".github*"
 
       - name: Upload to Freemius
         run: |
           curl -X POST https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json \
             -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_TPW_CORE_SECRET_KEY }}' | base64)" \
-            -F "slug=${{ secrets.FLEXIEVENT_SLUG }}" \
+            -F "slug=${{ secrets.TPW_CORE_SLUG }}" \
             -F "version=$VERSION" \
             -F "changelog=Automated release from GitHub tag $VERSION" \
-            -F "zip_file=@tpw-flexievent.zip"
+            -F "zip_file=@tpw-core.zip"

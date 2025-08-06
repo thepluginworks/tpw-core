@@ -28,6 +28,9 @@ class TPW_Core_Activator {
         require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs-db.php';
         TPW_Costs_DB::create_table();
 
+        require_once TPW_CORE_PATH . 'modules/members/class-tpw-members-db.php';
+        TPW_Members_DB::create_table();
+
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
     }
 }
