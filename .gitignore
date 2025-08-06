@@ -25,3 +25,5 @@ composer-setup.php
 
 # === macOS metadata ===
 __MACOSX/
+
+RELEASE.md

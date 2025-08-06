@@ -54,6 +54,7 @@ require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payments-settings.php';
 TPW_Payments_Settings::init();
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-bacs-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cheque-settings.php';
+require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cash-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/views/thank-you-shortcode.php';
 
 add_action('init', 'tpw_core_load_optional_modules', 20);

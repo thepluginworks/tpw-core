@@ -27,9 +27,10 @@ class TPW_Payment_DB {
         // Insert default methods if not already present
         $default_methods = [
             ['name' => 'BACS', 'slug' => 'bacs'],
-            ['name' => 'Cash / Cheque', 'slug' => 'cash_cheque'],
-            ['name' => 'SumUp', 'slug' => 'sumup'],
-            ['name' => 'Square', 'slug' => 'square'],
+            ['name' => 'Cheque', 'slug' => 'cheque'],
+            ['name' => 'Cash', 'slug' => 'cash'],
+            ['name' => 'Pay by Card (via SumUp)', 'slug' => 'sumup'],
+            ['name' => 'Pay by Card (via Square)', 'slug' => 'square'],
             ['name' => 'WooCommerce', 'slug' => 'woocommerce'],
         ];
 

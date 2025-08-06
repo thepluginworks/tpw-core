@@ -26,6 +26,25 @@ class TPW_Payments_Admin {
         $table = $wpdb->prefix . 'tpw_payment_methods';
         $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY name ASC");
 
+        foreach ($methods as $index => $method) {
+            if ($method->slug === 'cheque-cash') {
+                // Remove the combined method
+                unset($methods[$index]);
+
+                // Add separate methods
+                $methods[] = (object) [
+                    'slug' => 'cheque',
+                    'name' => 'Cheque',
+                    'active' => get_option('tpw_cheque_enabled') ? 1 : 0
+                ];
+                $methods[] = (object) [
+                    'slug' => 'cash',
+                    'name' => 'Cash',
+                    'active' => get_option('tpw_cash_enabled') ? 1 : 0
+                ];
+            }
+        }
+
         ?>
         <div class="wrap">
             <h1>Manage Payment Methods</h1>
@@ -37,6 +56,10 @@ class TPW_Payments_Admin {
                             <?php
                                 if (in_array($method->slug, ['woocommerce', 'sumup'])) {
                                     continue; // Temporarily hide these payment methods
+                                }
+
+                                if ($method->slug === 'cheque-cash') {
+                                    continue; // This combined slug is no longer used
                                 }
                             ?>
                             <?php
@@ -105,6 +128,9 @@ class TPW_Payments_Admin {
                                         <?php if (!get_option('tpw_cheque_payable_to')): ?>
                                             <p style="color: red; margin-top: 4px;">⚠️ Cheque payable name is missing</p>
                                         <?php endif; ?>
+                                    <?php elseif ($method->slug === 'cash'): ?>
+                                        <br/>
+                                        <a href="admin.php?page=tpw-cash-settings" class="button">Configure Cash</a>
                                     <?php endif; ?>
                                     <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-' . esc_attr($method->slug) . '-settings')); ?>" class="button">Edit</a>
                                 </td>
