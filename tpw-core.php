@@ -3,34 +3,16 @@
  * Plugin Name: TPW Core
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
  * Author: ThePluginWorks Ltd
- * Version: 1.2.0
+ * Version: 1.2.1
  */
-
-/**
- * Freemius SDK integration
- */
-if ( ! function_exists( 'tpw_core_fs' ) ) {
-    // Create a helper function for easy SDK access.
-    function tpw_core_fs() {
-        global $tpw_core_fs;
-
-        if ( ! isset( $tpw_core_fs ) ) {
-            // Include Freemius SDK.
-            require_once dirname( __FILE__ ) . '/freemius/freemius-init.php';
-        }
-
-        return $tpw_core_fs;
-    }
-
-    // Init Freemius.
-    tpw_core_fs();
-    // Signal that SDK was initiated.
-    do_action( 'tpw_core_fs_loaded' );
-}
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
+
+// Freemius SDK integration
+require_once dirname( __FILE__ ) . '/freemius/freemius-init.php';
+tpw_core_fs(); // Explicitly initialize the Freemius SDK
 
 // Define paths
 define( 'TPW_CORE_PATH', plugin_dir_path( __FILE__ ) );

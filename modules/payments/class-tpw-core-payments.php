@@ -128,9 +128,11 @@ class TPW_Core_Payments {
                 'paid_by'           => $data['paid_by'],
                 'notes'             => $data['notes'],
                 'amount_breakdown'  => $data['amount_breakdown'],
+                'confirmed_amount'  => isset($data['confirmed_amount']) ? $data['confirmed_amount'] : null,
+                'paid_at'           => isset($data['paid_at']) ? $data['paid_at'] : null,
                 'created_at'        => current_time('mysql'),
             ],
-            ['%d','%d','%f','%s','%s','%s','%s','%s','%s','%s']
+            ['%d','%d','%f','%s','%s','%s','%s','%s','%s','%f','%s','%s']
         );
 
         if ($result === false) {

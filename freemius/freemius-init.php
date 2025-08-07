@@ -32,9 +32,4 @@ if ( ! function_exists( 'tpw_core_fs' ) ) {
 
         return $tpw_core_fs;
     }
-
-    // Init Freemius.
-    tpw_core_fs();
-    // Signal that SDK was initiated.
-    do_action( 'tpw_core_fs_loaded' );
 }

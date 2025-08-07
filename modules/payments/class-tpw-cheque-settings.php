@@ -25,6 +25,7 @@ class TPW_Cheque_Settings {
         register_setting('tpw_cheque_settings', 'tpw_cheque_town');
         register_setting('tpw_cheque_settings', 'tpw_cheque_county');
         register_setting('tpw_cheque_settings', 'tpw_cheque_postcode');
+        register_setting('tpw_cheque_settings', 'tpw_cheque_post_name');
     }
 
     public static function render_page() {
@@ -42,6 +43,10 @@ class TPW_Cheque_Settings {
                         <td><input type="text" name="tpw_cheque_payable_to" id="tpw_cheque_payable_to" value="<?php echo esc_attr(get_option('tpw_cheque_payable_to')); ?>" class="regular-text" /></td>
                     </tr>
                     <tr><th colspan="2"><strong>If sending by post:</strong></th></tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_cheque_post_name">Recipient Name</label></th>
+                        <td><input type="text" name="tpw_cheque_post_name" id="tpw_cheque_post_name" value="<?php echo esc_attr(get_option('tpw_cheque_post_name')); ?>" class="regular-text" /></td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="tpw_cheque_address1">Address Line 1</label></th>
                         <td><input type="text" name="tpw_cheque_address1" id="tpw_cheque_address1" value="<?php echo esc_attr(get_option('tpw_cheque_address1')); ?>" class="regular-text" /></td>
