@@ -9,7 +9,7 @@ class TPW_Course_Choice_Form_Admin {
 
     public static function register_submenu_page() {
         add_submenu_page(
-            'tools.php', // hidden from menu but safe
+            '', // hidden from menu but safe
             'Course Choice Form',
             'Course Choice Form',
             'manage_options',
@@ -17,6 +17,7 @@ class TPW_Course_Choice_Form_Admin {
             [__CLASS__, 'render_page']
         );
     }
+    
 
     public static function handle_form_submit() {
         if (!isset($_POST['submit_course_choice'])) {
@@ -40,7 +41,24 @@ class TPW_Course_Choice_Form_Admin {
     }
 
     public static function render_page() {
-        echo '<div class="wrap"><h1>Course Choice</h1>';
+        $header_title = __( 'Course Options', 'tpw-core' );
+        $header_desc  = __( 'Add or update an individual dish option for your menu.', 'tpw-core' );
+
+        if ( function_exists( 'tpw_admin_output_header' ) ) {
+            tpw_admin_output_header( $header_title, $header_desc );
+            echo '<div class="wrap">';
+        } elseif ( function_exists( 'flexievent_output_header' ) ) {
+            flexievent_output_header( $header_title, $header_desc );
+            echo '<div class="wrap">';
+        } else {
+            echo '<div class="wrap"><h1>' . esc_html( $header_title ) . '</h1>';
+        }
+
+        $menu_id_param = isset($_GET['menu_id']) ? intval($_GET['menu_id']) : 0;
+        if ($menu_id_param) {
+            $back_url = admin_url('admin.php?page=tpw-course-choices&menu_id=' . $menu_id_param);
+            echo '<p><a href="' . esc_url($back_url) . '" class="button button-secondary">&larr; Back to Course Options</a></p>';
+        }
 
         $choice_id = isset($_GET['choice_id']) ? intval($_GET['choice_id']) : 0;
         $menu_id = isset($_GET['menu_id']) ? intval($_GET['menu_id']) : 0;
@@ -53,8 +71,8 @@ class TPW_Course_Choice_Form_Admin {
 
         echo '<form method="post">';
         echo '<table class="form-table">';
-        echo '<tr><th><label for="label">Label</label></th><td><input name="label" id="label" type="text" value="' . $label_value . '" required /></td></tr>';
-        echo '<tr><th><label for="description">Description</label></th><td><textarea name="description" id="description">' . $desc_value . '</textarea></td></tr>';
+        echo '<tr><th><label for="label">Dish Name</label></th><td><input name="label" id="label" type="text" value="' . $label_value . '" required /></td></tr>';
+        echo '<tr><th><label for="description">Dish Description</label></th><td><textarea name="description" id="description">' . $desc_value . '</textarea></td></tr>';
         echo '</table>';
 
         echo '<input type="hidden" name="menu_id" value="' . esc_attr($menu_id) . '">';

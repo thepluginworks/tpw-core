@@ -10,6 +10,7 @@ vendor/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+ai-session.md
 
 # === Build artifacts ===
 *.zip

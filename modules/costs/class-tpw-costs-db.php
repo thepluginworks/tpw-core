@@ -18,6 +18,7 @@ class TPW_Costs_DB {
             event_id BIGINT(20) UNSIGNED NOT NULL,
             meeting_cost DECIMAL(10,2) DEFAULT NULL,
             dining_cost DECIMAL(10,2) DEFAULT NULL,
+            has_dining TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (cost_id),

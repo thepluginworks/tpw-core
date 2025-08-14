@@ -31,13 +31,15 @@ class TPW_WooCommerce_Display {
         $guest_total = array_sum(array_map('floatval', $guest_amounts));
         $total_paid = $member_amount + $guest_total;
 
+        $currency_symbol = function_exists( 'tpw_core_get_currency_symbol' ) ? tpw_core_get_currency_symbol() : '£';
+
         echo '<div class="tpw-rsvp-thankyou">';
         echo '<h2>Thank you for your RSVP!</h2>';
         echo '<p><strong>Submission ID:</strong> ' . esc_html($submission_id) . '</p>';
         error_log('TPW: Checking for payment ID ' . $payment_id . ', Payment result: ' . print_r($payment, true));
 
         if ($payment) {
-            echo '<p><strong>Total Amount Paid:</strong> £' . esc_html(number_format($total_paid, 2)) . '</p>';
+            echo '<p><strong>Total Amount Paid:</strong> ' . esc_html( $currency_symbol . number_format($total_paid, 2) ) . '</p>';
             echo '<p><strong>Payment Method:</strong> ' . esc_html(ucfirst($payment->payment_method)) . '</p>';
             echo '<p><strong>Payment Reference:</strong> ' . esc_html($payment->payment_reference) . '</p>';
         } else {
@@ -70,7 +72,7 @@ class TPW_WooCommerce_Display {
             foreach ($guests as $guest) {
                 echo '<p><strong>Name:</strong> ' . esc_html("{$guest->title} {$guest->first_name} {$guest->surname}") . '</p>';
                 echo '<p><strong>Dining:</strong> ' . ($guest->guest_dining ? 'Yes' : 'No') . '</p>';
-                echo '<p><strong>Amount:</strong> £' . esc_html(number_format($guest->amount, 2)) . '</p>';
+                echo '<p><strong>Amount:</strong> ' . esc_html( $currency_symbol . number_format($guest->amount, 2) ) . '</p>';
                 if (!empty($guest->dietary)) {
                     echo '<p><strong>Dietary:</strong> ' . esc_html($guest->dietary) . '</p>';
                 }

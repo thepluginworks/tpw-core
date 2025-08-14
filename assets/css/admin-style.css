@@ -1,0 +1,465 @@
+/* =====================================
+   TPW - Admin Panel Styles
+   ===================================== */
+
+.tpw-origin, .tpw-fe-embed {
+  /* color system */
+  --tpw-primary: #2f0194;
+  --tpw-primary-600: #28017e;
+  --tpw-primary-700: #210168;
+  --tpw-on-primary: #ffffff;
+
+  --tpw-accent: #38a169;
+  --tpw-danger: #e53e3e;
+  --tpw-warning: #f6ad55;
+  --tpw-muted: #1b1b3a;
+
+  --tpw-surface: #ffffff;
+  --tpw-border: #d9d9d9;
+  --tpw-shadow: 0 1px 2px rgba(0,0,0,.06);
+
+  /* shape & rhythm */
+  --tpw-radius: 4px;
+  --tpw-radius-pill: 999px;
+  --tpw-gap: 12px;
+ --tpw-focus: 0 0 0 2px #fff, 0 0 0 4px rgba(47, 1, 148, 0.45); /* visible focus */
+  --tpw-focus-inset: inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(47, 1, 148, 0.45);
+  --tpw-focus-outline: 2px solid transparent;
+  --tpw-focus-outline-offset: 2px;
+  --tpw-focus-ring-color: rgba(47, 1, 148, 0.45);
+  --tpw-focus-ring-inset: inset 0 0 0 2px rgba(47, 1, 148, 0.45);
+  color: #1b1b3a;
+}
+
+/* ================================
+   TPW – Scoped WP Admin overrides
+   (Only affects screens wrapped in .tpw-origin or .tpw-fe-embed)
+   ================================ */
+
+/* Buttons */
+.wp-core-ui.tpw-origin .button-primary,
+.wp-core-ui.tpw-fe-embed .button-primary {
+  background: var(--tpw-primary);
+  border-color: var(--tpw-primary-700);
+  color: var(--tpw-on-primary);
+  text-shadow: none;
+  box-shadow: none;
+  border-radius: var(--tpw-radius);
+}
+/* Default/secondary buttons (non-primary) */
+.wp-core-ui.tpw-origin .button:not(.button-primary),
+.wp-core-ui.tpw-fe-embed .button:not(.button-primary) {
+  border-radius: var(--tpw-radius);
+  color: var(--tpw-primary);
+  background: #fff;
+  border-color: var(--tpw-primary-700);
+  transition: all .2s ease-in-out;
+}
+.wp-core-ui.tpw-origin .button-primary:hover,
+.wp-core-ui.tpw-fe-embed .button-primary:hover {
+  background: var(--tpw-primary-600);
+  border-color: var(--tpw-primary-700);
+}
+.wp-core-ui.tpw-origin .button-primary:focus,
+.wp-core-ui.tpw-fe-embed .button-primary:focus {
+  outline: var(--tpw-focus-outline);
+  outline-offset: var(--tpw-focus-outline-offset);
+  box-shadow: var(--tpw-focus);
+}
+.wp-core-ui.tpw-origin .button-primary:disabled,
+.wp-core-ui.tpw-fe-embed .button-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* Default/secondary buttons */
+.wp-core-ui.tpw-origin .button,
+.wp-core-ui.tpw-fe-embed .button {
+  border-radius: var(--tpw-radius);
+  color: inherit;
+}
+.wp-core-ui.tpw-origin .button:focus,
+.wp-core-ui.tpw-fe-embed .button:focus {
+  outline: var(--tpw-focus-outline);
+  outline-offset: var(--tpw-focus-outline-offset);
+  box-shadow: var(--tpw-focus);
+}
+
+/* Form controls */
+.wp-core-ui.tpw-origin input[type="text"],
+.wp-core-ui.tpw-origin input[type="email"],
+.wp-core-ui.tpw-origin input[type="url"],
+.wp-core-ui.tpw-origin input[type="number"],
+.wp-core-ui.tpw-origin input[type="search"],
+.wp-core-ui.tpw-origin input[type="password"],
+.wp-core-ui.tpw-origin select,
+.wp-core-ui.tpw-origin textarea,
+.wp-core-ui.tpw-fe-embed input[type="text"],
+.wp-core-ui.tpw-fe-embed input[type="email"],
+.wp-core-ui.tpw-fe-embed input[type="url"],
+.wp-core-ui.tpw-fe-embed input[type="number"],
+.wp-core-ui.tpw-fe-embed input[type="search"],
+.wp-core-ui.tpw-fe-embed input[type="password"],
+.wp-core-ui.tpw-fe-embed select,
+.wp-core-ui.tpw-fe-embed textarea {
+  border: 1px solid var(--tpw-border);
+  border-radius: var(--tpw-radius);
+  box-shadow: none;
+}
+.wp-core-ui.tpw-origin input:focus,
+.wp-core-ui.tpw-origin select:focus,
+.wp-core-ui.tpw-origin textarea:focus,
+.wp-core-ui.tpw-fe-embed input:focus,
+.wp-core-ui.tpw-fe-embed select:focus,
+.wp-core-ui.tpw-fe-embed textarea:focus {
+  outline: var(--tpw-focus-outline);
+  outline-offset: var(--tpw-focus-outline-offset);
+  box-shadow: var(--tpw-focus);
+}
+
+/* Notices */
+.wp-core-ui.tpw-origin .notice-success,
+.wp-core-ui .tpw-fe-embed .notice-success {
+  border-color: var(--tpw-accent);
+  background: #e9f7f1;
+}
+.wp-core-ui.tpw-origin .notice-error,
+.wp-core-ui.tpw-fe-embed .notice-error {
+  border-color: var(--tpw-danger);
+  background: #fdecea;
+}
+.wp-core-ui.tpw-origin .notice-warning,
+.wp-core-ui.tpw-fe-embed .notice-warning {
+  border-color: var(--tpw-warning);
+  background: #fff4e6;
+}
+
+/* Links (optional) */
+.tpw-origin a,
+.tpw-fe-embed a { color: var(--tpw-primary); }
+.tpw-origin a:hover,
+.tpw-fe-embed a:hover { color: var(--tpw-primary-600); }
+
+/* GENERAL FORM STYLING */
+.flexievent-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+    gap: 20px; /* Adds spacing */
+    align-items: center;
+    max-width: 900px;
+}
+
+/* Full-width fields */
+.full-width {
+    grid-column: span 2;
+}
+
+/* Label Styling */
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Input & Select Styling */
+.widefat {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+}
+
+/* Checkbox Alignment */
+.form-group input[type="checkbox"] {
+    margin-top: 6px;
+}
+
+/* Error Messages */
+.error-text {
+    color: red;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* Admin Dashboard */
+.flexievent-dashboard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.dashboard-card {
+    flex: 1 1 300px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/*
+ * FlexiEvent – Admin Header Styles
+ */
+
+.tpw-fe-header {
+    margin: 10px 20px 16px 0;
+    padding: 0;
+}
+
+.tpw-fe-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7; /* WP admin gray */
+    border-radius: 4px;
+}
+
+.tpw-fe-header-left{display:flex;align-items:center;gap:12px}
+.tpw-fe-header-icon{flex-shrink:0}
+.tpw-fe-header-icon img{width:88px;height:auto;display:block}
+.tpw-fe-title-wrap{display:flex;flex-direction:column;justify-content:center}
+.tpw-fe-title{margin:0;font-size:1.5em}
+.tpw-fe-notice p{margin:3px 0 0;color:#555}
+
+.tpw-fe-header-right {
+    flex: 0 0 auto;
+}
+
+.tpw-fe-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.tpw-fe-notice {
+    margin-top: 2px;
+    color: #50575e; /* WP admin muted */
+}
+
+.tpw-fe-logo {
+    display: block;
+    max-width: 140px;
+    height: auto;
+}
+
+/* Optional hook area below header (tabs, links) */
+
+.tpw-fe-header + .tpw-fe-tabs,
+.tpw-fe-header .tpw-fe-tabs {
+    margin-top: 8px;
+}
+
+.tpw-fe-embed #screen-meta-links {
+    display: flex;
+    justify-content: flex-end;
+}
+.tpw-fe-embed .tpw-fe-header {
+    margin-bottom: 2px;
+}
+
+/* Make the whole content area a vertical flex stack */
+.tpw-fe-embed #wpbody-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Default: everything inside stacks after our key items */
+.tpw-fe-embed #wpbody-content > * {
+    flex: 0 0 auto;
+    order: 3;
+}
+
+/* Our desired order */
+.tpw-fe-embed .tpw-fe-header { order: 0; }
+
+/* Screen Options / Help drop under the header */
+.tpw-fe-embed #screen-meta-links,
+.tpw-fe-embed #screen-meta {
+    position: static;
+    float: none;
+}
+
+.tpw-payments-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+                    .tpw-pay-row { display: flex; align-items: center; gap: 16px; padding: 10px 12px; border: 1px solid #ccd0d4; background: #fff; }
+                    .tpw-pay-col { display: flex; align-items: center; gap: 8px; }
+                    .tpw-pay-name { flex: 1 1 45%; min-width: 220px; }
+                    .tpw-pay-status { flex: 1 1 35%; min-width: 200px; }
+                    .tpw-pay-action { flex: 0 0 auto; justify-content: flex-end; }
+                    .tpw-pay-summary { display:block; color:#646970; font-size:12px; margin-left:4px; }
+                    .tpw-status-chip { padding:2px 6px; border-radius: 10px; font-size: 11px; line-height:1.6; border:1px solid transparent; }
+                    .tpw-status-chip.configured { color:#38a169; border-color:#38a169; background:#e9f7f1; }
+                    .tpw-status-chip.needs-setup { color:#b65c00; border-color:#f6ad55; background:#fff7ea; }
+                    .tpw-status-chip.disconnected { color:#e53e3e; border-color:#e53e3e; background:#fdecea; }
+                    @media (max-width: 782px) { /* WP admin mobile breakpoint */
+                        .tpw-pay-row { flex-direction: column; align-items: stretch; }
+                        .tpw-pay-action { justify-content: flex-start; }
+                    }
+
+@media (max-width: 782px) { /* WP admin breakpoint */
+    .tpw-fe-header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .tpw-fe-logo {
+        max-width: 120px;
+    }
+}
+
+/* =====================================
+   TPW Menu Form Styling
+   ===================================== */
+
+.tpw-menu-id,
+.tpw-menu-name,
+.tpw-menu-description,
+.tpw-menu-courses,
+.tpw-menu-price,
+.tpw-menu-submit {
+    margin-bottom: 12px;
+}
+
+.tpw-menu-courses-label,
+.tpw-menu-price-label {
+    display: block;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.tpw-menu-submit {
+    margin-top: 8px;
+}
+
+/* Primary button */
+.wp-core-ui.tpw-origin .button-primary,
+.wp-core-ui.tpw-fe-embed .button-primary {
+  background: var(--tpw-primary);
+  border-color: var(--tpw-primary-700);
+  color: var(--tpw-on-primary);
+  text-shadow: none;
+  box-shadow: none;
+  border-radius: var(--tpw-radius);
+}
+
+.wp-core-ui.tpw-origin .button-primary:hover,
+.wp-core-ui.tpw-fe-embed .button-primary:hover {
+  background: var(--tpw-primary-600);
+  border-color: var(--tpw-primary-700);
+}
+
+.wp-core-ui.tpw-origin .button-primary:focus,
+.wp-core-ui.tpw-fe-embed .button-primary:focus {
+  outline: var(--tpw-focus-outline);
+  outline-offset: var(--tpw-focus-outline-offset);
+  box-shadow: var(--tpw-focus);
+}
+
+.wp-core-ui.tpw-origin .button-primary:disabled,
+.wp-core-ui.tpw-fe-embed .button-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* Buttons – primary + variations */
+.wp-core-ui.tpw-origin .button-primary,
+.wp-core-ui.tpw-fe-embed .button-primary,
+.wp-core-ui.tpw-origin .page-title-action,
+.wp-core-ui.tpw-fe-embed .page-title-action,
+.wp-core-ui.tpw-origin .button.button-primary,
+.wp-core-ui.tpw-fe-embed .button.button-primary {
+  background: var(--tpw-primary);
+  border-color: var(--tpw-primary-700);
+  color: var(--tpw-on-primary);
+  text-shadow: none; box-shadow: none; border-radius: var(--tpw-radius);
+}
+.wp-core-ui.tpw-origin .button-primary:hover,
+.wp-core-ui.tpw-fe-embed .button-primary:hover,
+.wp-core-ui.tpw-origin .page-title-action:hover,
+.wp-core-ui.tpw-fe-embed .page-title-action:hover {
+  background: var(--tpw-primary-600); border-color: var(--tpw-primary-700);
+}
+.wp-core-ui.tpw-origin .button-link,
+.wp-core-ui.tpw-fe-embed .button-link { color: var(--tpw-primary); }
+.wp-core-ui.tpw-origin .button-link:hover,
+.wp-core-ui.tpw-fe-embed .button-link:hover { color: var(--tpw-primary-600); }
+
+/* Tabs */
+.tpw-origin .nav-tab,
+.tpw-fe-embed .nav-tab { border-radius: var(--tpw-radius); }
+.tpw-origin .nav-tab-active,
+.tpw-fe-embed .nav-tab-active {
+  border-color: var(--tpw-primary-700);
+  background: rgba(47,1,148,.07);
+  color: var(--tpw-primary);
+}
+
+/* Form controls – focus + checkbox/radio accent */
+.tpw-origin input:focus, .tpw-origin select:focus, .tpw-origin textarea:focus,
+.tpw-fe-embed input:focus, .tpw-fe-embed select:focus, .tpw-fe-embed textarea:focus {
+  outline: var(--tpw-focus-outline); outline-offset: var(--tpw-focus-outline-offset); box-shadow: var(--tpw-focus);
+}
+/* Modern browsers: brand the ticks */
+.tpw-origin input[type="checkbox"], .tpw-origin input[type="radio"],
+.tpw-fe-embed input[type="checkbox"], .tpw-fe-embed input[type="radio"] {
+  accent-color: var(--tpw-primary);
+}
+
+/* Notices (you already have base styles; this tightens inline cases) */
+.tpw-origin .notice.inline, .tpw-fe-embed .notice.inline { margin: 6px 0; }
+
+/* Pagination */
+.tpw-origin .tablenav .tablenav-pages a.button,
+.tpw-fe-embed .tablenav .tablenav-pages a.button { color: inherit; }
+.tpw-origin .tablenav .tablenav-pages .current,
+.tpw-fe-embed .tablenav .tablenav-pages .current {
+  background: var(--tpw-primary); border-color: var(--tpw-primary-700); color: var(--tpw-on-primary);
+}
+
+/* Metabox/postbox (if used) */
+.tpw-origin .postbox, .tpw-fe-embed .postbox { border-color: var(--tpw-border); }
+.tpw-origin .postbox .hndle, .tpw-fe-embed .postbox .hndle { color: var(--tpw-muted); }
+
+/* Spinner */
+.tpw-origin .spinner, .tpw-fe-embed .spinner { border-top-color: var(--tpw-primary); }
+
+/* Gutenberg buttons (if any appear) */
+.tpw-origin .components-button.is-primary,
+.tpw-fe-embed .components-button.is-primary {
+  background: var(--tpw-primary); border-color: var(--tpw-primary-700); color: var(--tpw-on-primary);
+}
+.tpw-origin .components-button.is-primary:hover,
+.tpw-fe-embed .components-button.is-primary:hover {
+  background: var(--tpw-primary-600);
+}
+
+/* Primary button base */
+.wp-core-ui.tpw-origin .button-primary,
+.wp-core-ui.tpw-fe-embed .button-primary,
+.wp-core-ui.tpw-origin .page-title-action,
+.wp-core-ui.tpw-fe-embed .page-title-action,
+.wp-core-ui.tpw-origin .button.button-primary,
+.wp-core-ui.tpw-fe-embed .button.button-primary {
+  background: var(--tpw-primary);
+  border-color: var(--tpw-primary-700);
+  color: var(--tpw-on-primary);
+  text-shadow: none;
+  box-shadow: none;
+  border-radius: var(--tpw-radius);
+  transition: all 0.2s ease-in-out; /* smooth transition */
+}
+
+/* Hover state with subtle pop */
+.wp-core-ui.tpw-origin .button-primary:hover,
+.wp-core-ui.tpw-fe-embed .button-primary:hover,
+.wp-core-ui.tpw-origin .page-title-action:hover,
+.wp-core-ui.tpw-fe-embed .page-title-action:hover,
+.wp-core-ui.tpw-origin .button.button-primary:hover,
+.wp-core-ui.tpw-fe-embed .button.button-primary:hover {
+  background: var(--tpw-primary-600);
+  border-color: var(--tpw-primary-700);
+  transform: translateY(-1px); /* small lift effect */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  filter: brightness(1.05); /* slight colour pop */
+}

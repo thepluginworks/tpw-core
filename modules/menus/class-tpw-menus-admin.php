@@ -6,6 +6,20 @@ class TPW_Menus_Admin {
         error_log('TPW_Menus_Admin::init() called');
         add_action('admin_menu', [__CLASS__, 'maybe_register']);
         add_action('admin_init', [__CLASS__, 'handle_menu_form']);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+    }
+
+    public static function enqueue_assets($hook) {
+        if (!isset($_GET['page']) || strpos($_GET['page'], 'tpw-core-dining-menus') !== 0) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'tpw-menus-css',
+            plugin_dir_url(__FILE__) . 'css/admin-menus.css',
+            [],
+            null
+        );
     }
 
     public static function handle_menu_form() {
@@ -33,10 +47,18 @@ class TPW_Menus_Admin {
             TPW_Menus_Manager::update_menu($menu_id, $name, $description, $number_of_courses, $price);
             wp_redirect(admin_url('admin.php?page=tpw-core-dining-menus&updated=1'));
         } else {
-            // Ensure all 4 arguments are passed to save_menu
-            //error_log('Calling save_menu() with: ' . json_encode([$name, $description, $number_of_courses, $price]));
-            $inserted_id = TPW_Menus_Saver::save_menu($name, $description, $number_of_courses, $price);
-            wp_redirect(admin_url('admin.php?page=tpw-core-dining-menus&saved=1'));
+            // Create a new menu, then redirect to Course Choices for that menu
+            $inserted_id = TPW_Menus_Saver::save_menu( $name, $description, $number_of_courses, $price );
+            if ( ! $inserted_id ) {
+                // Fallback to list with error flag if insert failed
+                error_log( '[TPW Menus] save_menu() failed; redirecting back to list.' );
+                wp_safe_redirect( admin_url( 'admin.php?page=tpw-core-dining-menus&saved=0' ) );
+                exit;
+            }
+            // Build target URL robustly
+            $target = admin_url( 'admin.php?page=tpw-course-choices' );
+            $url    = add_query_arg( 'menu_id', intval( $inserted_id ), $target );
+            wp_safe_redirect( $url );
         }
         exit;
     }
@@ -47,51 +69,46 @@ class TPW_Menus_Admin {
 
         $menus = TPW_Menus_Manager::get_all_menus();
 
-        $edit_menu_id = isset($_GET['edit_menu']) ? intval($_GET['edit_menu']) : 0;
-        $menu_to_edit = $edit_menu_id ? TPW_Menus_Manager::get_menu_by_id($edit_menu_id) : null;
-
-        echo '<div class="wrap">';
-        echo '<h1>Manage Menus</h1>';
-
-        echo '<form method="post">';
-        echo '<h2>' . ($menu_to_edit ? 'Edit Menu' : 'Add New Menu') . '</h2>';
-
-        $name_value = $menu_to_edit ? esc_attr($menu_to_edit->name) : '';
-        $desc_value = $menu_to_edit ? esc_textarea($menu_to_edit->description) : '';
-        $courses_value = (isset($menu_to_edit->number_of_courses)) ? intval($menu_to_edit->number_of_courses) : 3;
-        $price_value = isset($menu_to_edit->price) ? esc_attr(number_format((float) $menu_to_edit->price, 2)) : '0.00';
-
-        echo '<input type="text" name="menu_name" placeholder="Menu Name" value="' . $name_value . '" required />';
-        echo '<br/><textarea name="menu_description" placeholder="Description">' . $desc_value . '</textarea>';
-        echo '<br/><label>Number of Courses: <input type="number" name="number_of_courses" min="1" max="30" value="' . $courses_value . '" required /></label>';
-        echo '<br/><label>Price: <input type="text" name="price" pattern="^\d+(\.\d{1,2})?$" value="' . $price_value . '" required /></label>';
-
-        if ($menu_to_edit) {
-            echo '<input type="hidden" name="menu_id" value="' . esc_attr($menu_to_edit->id) . '" />';
+        if ( function_exists( 'tpw_admin_output_header' ) ) {
+            tpw_admin_output_header(
+                __( 'Manage Menus', 'tpw-core' ),
+                __( 'Add, edit, and delete dining menus for your events. For Admins and Secretaries.', 'tpw-core' )
+            );
+            echo '<div class="wrap">';
+        } elseif ( function_exists( 'flexievent_output_header' ) ) {
+            flexievent_output_header(
+                __( 'Manage Menus', 'tpw-core' ),
+                __( 'Add, edit, and delete dining menus for your events. For Admins and Secretaries.', 'tpw-core' )
+            );
+            echo '<div class="wrap">';
+        } else {
+            echo '<div class="wrap"><h1>' . esc_html__( 'Manage Menus', 'tpw-core' ) . '</h1>';
         }
 
-        echo '<br/><input type="submit" name="submit_menu" class="button button-primary" value="' . ($menu_to_edit ? 'Update Menu' : 'Save Menu') . '" />';
-        echo '</form>';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=tpw-core-dining-menus-add')) . '" class="page-title-action">Add New Menu</a>';
 
         echo '<h2>Existing Menus</h2>';
         if ($menus) {
             echo '<table class="widefat striped">';
-            echo '<thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Courses</th><th>Price</th><th>Actions</th></tr></thead>';
+            echo '<thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Courses</th><th>Price</th></tr></thead>';
             echo '<tbody>';
             foreach ($menus as $menu) {
                 echo '<tr>';
                 echo '<td>' . esc_html($menu->id) . '</td>';
-                echo '<td><a href="?page=tpw-core-dining-menus&edit_menu=' . intval($menu->id) . '">' . esc_html($menu->name) . '</a></td>';
+                $courses_url = admin_url('admin.php?page=tpw-course-choices&menu_id=' . intval($menu->id));
+                $edit_url = admin_url('admin.php?page=tpw-core-dining-menus-edit&menu_id=' . intval($menu->id));
+                $delete_url = wp_nonce_url(admin_url('admin.php?page=tpw-core-dining-menus&delete_menu=' . intval($menu->id)), 'delete_menu_' . intval($menu->id));
+                echo '<td>';
+                echo '<strong>' . esc_html($menu->name) . '</strong>';
+                echo '<div class="row-actions">';
+                echo '<span class="edit"><a href="' . esc_url($edit_url) . '">Edit</a></span> | ';
+                echo '<span class="courses"><a href="' . esc_url($courses_url) . '">Courses</a></span> | ';
+                echo '<span class="delete"><a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Are you sure you want to delete this menu?\')">Delete</a></span>';
+                echo '</div>';
+                echo '</td>';
                 echo '<td>' . esc_html($menu->description) . '</td>';
                 echo '<td>' . esc_html($menu->number_of_courses) . '</td>';
                 echo '<td>' . esc_html(number_format($menu->price, 2)) . '</td>';
-                $courses_url = admin_url('admin.php?page=tpw-course-choices&menu_id=' . intval($menu->id));
-                $delete_url = wp_nonce_url(admin_url('admin.php?page=tpw-core-dining-menus&delete_menu=' . intval($menu->id)), 'delete_menu_' . intval($menu->id));
-
-                echo '<td>';
-                echo '<a href="' . esc_url($courses_url) . '" class="button">Courses</a> ';
-                echo '<a href="' . esc_url($delete_url) . '" class="button delete" onclick="return confirm(\'Are you sure you want to delete this menu?\')">Delete</a>';
-                echo '</td>';
 
                 echo '</tr>';
             }

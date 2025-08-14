@@ -1,0 +1,188 @@
+/* ===== TPW Menu Modal UI ===== */
+
+/* Page lock when a modal is open */
+html.tpw-modal-open {
+  overflow: hidden;
+}
+
+/* Hide when [hidden] attribute is present */
+.tpw-modal[hidden] {
+  display: none !important;
+}
+
+/* Modal root */
+.tpw-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: block;
+}
+
+/* Backdrop */
+.tpw-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Dialog */
+.tpw-modal__dialog {
+  position: relative;
+  box-sizing: border-box;
+  margin: 6vh auto;
+  max-width: 720px;
+  width: min(92vw, 720px);
+  background: #fff;
+  color: inherit;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  outline: none;
+}
+
+/* Header */
+.tpw-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tpw-modal__title {
+  margin: 0;
+  font-size: clamp(1.125rem, 1vw + 1rem, 1.5rem);
+  line-height: 1.2;
+}
+
+/* Close button (×) */
+.tpw-modal__close {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.tpw-modal__close:hover,
+.tpw-modal__close:focus {
+  background: rgba(0, 0, 0, 0.06);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12) inset;
+}
+
+/* Footer */
+.tpw-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* Description + price */
+.tpw-menu__description {
+  margin: 8px 0 12px 0;
+  color: #444;
+}
+
+.tpw-menu__price {
+  margin: 6px 0 12px 0;
+  font-weight: 500;
+}
+
+/* Courses list */
+.tpw-menu__courses {
+  display: grid;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.tpw-menu__course {
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fafafa;
+}
+
+.tpw-menu__course-title {
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.tpw-menu__choices {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.tpw-menu__choice {
+  margin: 4px 0 6px;
+}
+
+.tpw-menu__choice-label {
+  font-weight: 600;
+}
+
+.tpw-menu__choice-desc {
+  color: #555;
+  margin-top: 2px;
+}
+
+/* Trigger button base style (keeps theme-friendly look) */
+.tpw-menu-modal-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+.tpw-menu-modal-trigger:hover {
+  background: #f6f6f6;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+.tpw-menu-modal-trigger:active {
+  transform: translateY(1px);
+}
+
+/* Focus styles (accessible) */
+.tpw-menu-modal-trigger:focus,
+.tpw-modal__close:focus,
+.tpw-modal button:focus,
+.tpw-modal a:focus {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.tpw-event-details .tpw-menu-row { margin: 0.5rem 0 1rem; }
+.tpw-event-details .tpw-menu-row .tpw-menu-modal-trigger { margin-top: .25rem; }
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .tpw-menu-modal-trigger {
+    transition: none;
+  }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .tpw-modal__dialog {
+    margin: 5vh auto;
+    width: 94vw;
+    border-radius: 10px;
+    padding: 16px 16px;
+  }
+  .tpw-menu__course {
+    padding: 10px 12px;
+  }
+}
+
+/* Make sure modal content sits over theme z-index elements (sticky headers etc.) */
+.tpw-modal,
+.tpw-modal__backdrop,
+.tpw-modal__dialog {
+  z-index: 9999;
+}

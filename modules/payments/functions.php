@@ -11,6 +11,7 @@
  * }
  * @return array|WP_Error
  */
+/*
 function tpw_core_create_payment($args = []) {
     $gateway = $args['payment_method'] ?? null; // e.g. 'sumup', 'square', 'stripe'
     error_log('[TPW_CORE] Gateway selected: ' . $gateway);
@@ -57,3 +58,4 @@ function tpw_core_create_payment($args = []) {
             return new WP_Error('no_gateway', 'No valid payment gateway selected.');
     }
 }
+*/

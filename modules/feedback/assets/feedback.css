@@ -1,0 +1,99 @@
+/* TPW Feedback Form Styles */
+
+.tpw-feedback-panel {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background-color: #fafafa;
+}
+
+.tpw-feedback-title {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.tpw-feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tpw-feedback-form fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tpw-feedback-form label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.tpw-feedback-form .tpw-rating-group label {
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-weight: normal;
+}
+
+.tpw-feedback-form .tpw-inline-text {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    padding: 0.4rem;
+    margin-top: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.tpw-feedback-form textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.tpw-feedback-form .tpw-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tpw-feedback-form .tpw-feedback-status {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.tpw-feedback-form .tpw-feedback-status.success {
+    color: #2e7d32;
+}
+
+.tpw-feedback-form .tpw-feedback-status.error {
+    color: #c62828;
+}
+
+/* Small screens */
+@media (max-width: 600px) {
+    .tpw-feedback-form {
+        gap: 0.75rem;
+    }
+
+    .tpw-feedback-title {
+        font-size: 1.1rem;
+    }
+}
+
+.tpw-feedback-powered {
+    font-size: 0.8rem;
+    color: #999;
+    margin-top: 0.8rem;
+}
+.tpw-feedback-powered a {
+    color: inherit;
+    text-decoration: underline;
+}

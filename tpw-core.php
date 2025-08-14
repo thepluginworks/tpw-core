@@ -3,7 +3,7 @@
  * Plugin Name: TPW Core
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
  * Author: ThePluginWorks Ltd
- * Version: 1.2.8
+ * Version: 0.3.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

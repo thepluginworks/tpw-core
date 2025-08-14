@@ -32,5 +32,18 @@ class TPW_Core_Activator {
         TPW_Members_DB::create_table();
 
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
+
+        // Set default currency settings if not already set
+        $settings = get_option( 'flexievent_settings', [] );
+
+        if ( empty( $settings['currency_symbol'] ) ) {
+            $settings['currency_symbol'] = '£';
+        }
+
+        if ( empty( $settings['currency_code'] ) ) {
+            $settings['currency_code'] = 'GBP';
+        }
+
+        update_option( 'flexievent_settings', $settings );
     }
 }

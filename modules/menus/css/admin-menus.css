@@ -1,0 +1,44 @@
+
+.course-section {
+  border: 1px solid #ccd0d4;
+  border-radius: 8px;
+  padding: 1em;
+  margin-bottom: 2em;
+  background: #f9f9f9;
+}
+
+
+.rename-trigger {
+  font-size: 12px;
+  padding: 1px 6px;
+  line-height: 1.2;
+  height: auto;
+  vertical-align: middle;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  color: #2271b1;
+  cursor: pointer;
+}
+
+.rename-trigger:hover {
+  color: #135e96;
+}
+
+.course-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.course-section .button.add-new-option {
+  margin-top: 1em;
+  display: inline-block;
+}
+
+.course-choice {
+  margin-bottom: 0.5em;
+}
+
+.tpw-event-details .tpw-menu-row { margin: 0.5rem 0 1rem; }
+.tpw-event-details .tpw-menu-row .tpw-menu-modal-trigger { margin-top: .25rem; }

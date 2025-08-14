@@ -5,14 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class TPW_Member_Fields {
 
 	public function __construct() {
-		if ( defined('TPW_USE_FRONTEND_MEMBER_UI') && TPW_USE_FRONTEND_MEMBER_UI ) {
-			add_shortcode( 'tpw_field_settings', [ $this, 'render_settings_page' ] );
-		}
-
-		if ( defined('TPW_USE_ADMIN_MEMBER_UI') && TPW_USE_ADMIN_MEMBER_UI ) {
-			add_action( 'admin_menu', [ $this, 'register_admin_screen' ] );
-		}
-
+		add_shortcode( 'tpw_field_settings', [ $this, 'render_settings_page' ] );
 		add_action( 'init', [ $this, 'handle_form_submission' ] );
 	}
 
@@ -25,8 +18,15 @@ class TPW_Member_Fields {
 		$custom_fields = $this->get_custom_fields();
 
 		ob_start();
-		include TPW_CORE_PATH . 'modules/members/templates/fields-settings.php';
+		$this->render_settings_template( $core_fields, $field_config, $custom_fields );
 		return ob_get_clean();
+	}
+
+	/**
+	 * Render the field settings template
+	 */
+	public function render_settings_template( $core_fields, $field_config, $custom_fields ) {
+		include TPW_CORE_PATH . 'modules/members/templates/fields-settings.php';
 	}
 
 	/**
@@ -166,22 +166,5 @@ class TPW_Member_Fields {
 		// Redirect to avoid resubmission
 		wp_redirect( add_query_arg( 'updated', '1', wp_get_referer() ) );
 		exit;
-	}
-	/**
-	 * Register the admin submenu page for field settings.
-	 */
-	public function register_admin_screen() {
-		add_submenu_page(
-			'tpw_core', // You may update this slug if needed
-			'Field Settings',
-			'Field Settings',
-			'manage_options',
-			'tpw-member-field-settings',
-			function () {
-				echo '<div class="wrap"><h1>Field Settings</h1>';
-				echo $this->render_settings_page();
-				echo '</div>';
-			}
-		);
 	}
 }

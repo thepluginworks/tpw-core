@@ -46,98 +46,106 @@ class TPW_Payments_Admin {
         }
 
         ?>
-        <div class="wrap">
-            <h1>Manage Payment Methods</h1>
+        <?php
+        if ( function_exists( 'tpw_admin_output_header' ) ) {
+            tpw_admin_output_header(
+                __( 'Manage Payment Methods', 'tpw-core' ),
+                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
+            );
+            echo '<div class="wrap">';
+        } elseif ( function_exists( 'flexievent_output_header' ) ) {
+            flexievent_output_header(
+                __( 'Manage Payment Methods', 'tpw-core' ),
+                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
+            );
+            echo '<div class="wrap">';
+        } else {
+            echo '<div class="wrap"><h1>' . esc_html__( 'Manage Payment Methods', 'tpw-core' ) . '</h1>';
+        }
+        ?>
             <form method="post">
                 <?php wp_nonce_field('tpw_update_payment_methods'); ?>
-                <table class="form-table">
-                    <tbody>
-                        <?php foreach ($methods as $method): ?>
-                            <?php
-                                if (in_array($method->slug, ['woocommerce', 'sumup'])) {
-                                    continue; // Temporarily hide these payment methods
-                                }
 
-                                if ($method->slug === 'cheque-cash') {
-                                    continue; // This combined slug is no longer used
-                                }
-                            ?>
-                            <?php
-                                $row_class = '';
-                                if ($method->slug === 'sumup' && !get_option('tpw_sumup_access_token')) {
-                                    $row_class = 'style="background-color: #ffe6e6;"';
-                                } elseif ($method->slug === 'bacs') {
-                                    $bacs_fields = ['tpw_bacs_account_name', 'tpw_bacs_account_number', 'tpw_bacs_sort_code'];
-                                    $missing = array_filter($bacs_fields, fn($opt) => !get_option($opt));
-                                    if (!empty($missing)) {
-                                        $row_class = 'style="background-color: #ffe6e6;"';
-                                    }
-                                } elseif ($method->slug === 'cheque' && !get_option('tpw_cheque_payable_to')) {
-                                    $row_class = 'style="background-color: #ffe6e6;"';
-                                }
+                <div class="tpw-payments-list">
+                    <?php foreach ($methods as $method): ?>
+                        <?php
+                            if (in_array($method->slug, ['woocommerce', 'sumup'])) { continue; }
+                            if ($method->slug === 'cheque-cash') { continue; }
 
-                                $disabled_attr = '';
-                                $note = '';
-                                if ($method->slug === 'woocommerce' && !class_exists('WooCommerce')) {
-                                    $disabled_attr = 'disabled';
-                                    $note = '<p style="color: gray; margin-top: 4px;">Requires WooCommerce to be installed and activated.</p>';
-                                }
-                            ?>
-                            <tr <?php echo $row_class; ?>>
-                                <th scope="row"><?php echo esc_html($method->name); ?></th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" name="payment_methods[]" value="<?php echo esc_attr($method->slug); ?>" <?php checked($method->active, 1); ?> <?php echo $disabled_attr; ?> />
-                                        Enable
-                                    </label>
-                                    <?php echo $note; ?>
-                                    <?php if ($method->slug === 'sumup'): ?>
-                                        <br/>
-                                        <?php
-                                        $client_id = get_option('tpw_sumup_client_id');
-                                        if ($client_id) {
-                                            $redirect_uri = urlencode(admin_url('admin-post.php?action=tpw_sumup_callback'));
-                                            $scope = 'payments checkout user.profile';
-                                            $auth_url = "https://api.sumup.com/authorize?response_type=code&client_id={$client_id}&redirect_uri={$redirect_uri}&scope={$scope}";
-                                        } else {
-                                            $auth_url = '';
-                                        }
-                                        ?>
-                                        <?php
-                                        $access_token = get_option('tpw_sumup_access_token');
-                                        if (!$client_id) {
-                                            echo '<p style="color: red; margin-top: 4px;">⚠️ Client ID not set. Please edit settings first.</p>';
-                                        } else {
-                                            $status = $access_token ? '✅ Connected to SumUp' : '⚠️ Disconnected from SumUp';
-                                            $status_color = $access_token ? 'green' : 'red';
-                                            echo '<p style="color: ' . esc_attr($status_color) . '; margin-top: 4px;">' . esc_html($status) . '</p>';
-                                        }
-                                        ?>
-                                    <?php elseif ($method->slug === 'bacs'): ?>
-                                        
-                                        <?php
-                                        $bacs_fields = ['tpw_bacs_account_name', 'tpw_bacs_account_number', 'tpw_bacs_sort_code'];
-                                        $missing = array_filter($bacs_fields, fn($opt) => !get_option($opt));
-                                        if (!empty($missing)) :
-                                        ?>
-                                            <p style="color: red; margin-top: 4px;">⚠️ One or more BACS fields are missing</p>
-                                        <?php endif; ?>
-                                    <?php elseif ($method->slug === 'cheque'): ?>
-                                        <br/>
-                                        <a href="admin.php?page=tpw-cheque-settings" class="button">Configure Cheque</a>
-                                        <?php if (!get_option('tpw_cheque_payable_to')): ?>
-                                            <p style="color: red; margin-top: 4px;">⚠️ Cheque payable name is missing</p>
-                                        <?php endif; ?>
-                                    <?php elseif ($method->slug === 'cash'): ?>
-                                        <br/>
-                                        <a href="admin.php?page=tpw-cash-settings" class="button">Configure Cash</a>
+                            $needs_setup = false; $status_chip = '<span class="tpw-status-chip configured">Configured</span>';
+                            $summary = '';
+
+                            if ($method->slug === 'bacs') {
+                                $bacs_fields = ['tpw_bacs_account_name', 'tpw_bacs_account_number', 'tpw_bacs_sort_code'];
+                                $missing = array_filter($bacs_fields, fn($opt) => !get_option($opt));
+                                if (!empty($missing)) { $needs_setup = true; $status_chip = '<span class="tpw-status-chip needs-setup">Needs setup</span>'; }
+                                $acc_name = get_option('tpw_bacs_account_name');
+                                $acc_no = get_option('tpw_bacs_account_number');
+                                $sort = get_option('tpw_bacs_sort_code');
+                                $masked_no = $acc_no ? str_repeat('•', max(0, strlen($acc_no)-4)) . substr($acc_no, -4) : '';
+                                $summary = ($acc_name || $acc_no || $sort) ? sprintf('<span class="tpw-pay-summary">%s%s%s%s%s</span>',
+                                    $acc_name ? esc_html($acc_name) : '',
+                                    ($acc_name && ($masked_no || $sort)) ? ' · ' : '',
+                                    $masked_no ? 'Acct ' . esc_html($masked_no) : '',
+                                    ($masked_no && $sort) ? ' · ' : '',
+                                    $sort ? 'Sort ' . esc_html($sort) : ''
+                                ) : '';
+                            } elseif ($method->slug === 'cheque') {
+                                $payable = get_option('tpw_cheque_payable_to');
+                                if (!$payable) { $needs_setup = true; $status_chip = '<span class="tpw-status-chip needs-setup">Needs setup</span>'; }
+                                $summary = $payable ? '<span class="tpw-pay-summary">Payable to: ' . esc_html($payable) . '</span>' : '';
+                            } elseif ($method->slug === 'cash') {
+                                $msg = trim((string) get_option('tpw_cash_message'));
+                                if (!$msg) { $needs_setup = true; $status_chip = '<span class="tpw-status-chip needs-setup">Needs setup</span>'; }
+                                if ($msg) { $snippet = wp_trim_words(wp_strip_all_tags($msg), 10, '…'); $summary = '<span class="tpw-pay-summary">' . esc_html($snippet) . '</span>'; }
+                            } elseif ($method->slug === 'sumup') {
+                                $access_token = get_option('tpw_sumup_access_token');
+                                $status_chip = $access_token ? '<span class="tpw-status-chip configured">Connected</span>' : '<span class="tpw-status-chip disconnected">Disconnected</span>';
+                            }
+
+                            $disabled_attr = '';
+                            if ($method->slug === 'woocommerce' && !class_exists('WooCommerce')) {
+                                $disabled_attr = 'disabled';
+                            }
+                        ?>
+                        <div class="tpw-pay-row">
+                            <div class="tpw-pay-col tpw-pay-name">
+                                <strong><?php echo esc_html($method->name); ?></strong>
+                                <?php echo $summary; ?>
+                            </div>
+                            <div class="tpw-pay-col tpw-pay-status">
+                                <label>
+                                    <input type="checkbox" name="payment_methods[]" value="<?php echo esc_attr($method->slug); ?>" <?php checked($method->active, 1); ?> <?php echo $disabled_attr; ?> />
+                                    <?php esc_html_e('Enable', 'tpw-core'); ?>
+                                </label>
+                                <?php echo $status_chip; ?>
+                            </div>
+                            <div class="tpw-pay-col tpw-pay-action">
+                                <?php if ($method->slug === 'bacs'): ?>
+                                    <?php if ($needs_setup): ?>
+                                        <a href="admin.php?page=tpw-bacs-settings" class="button button-primary">Configure Bank Transfer</a>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-bacs-settings')); ?>" class="button">Edit</a>
                                     <?php endif; ?>
+                                <?php elseif ($method->slug === 'cheque'): ?>
+                                    <?php if ($needs_setup): ?>
+                                        <a href="admin.php?page=tpw-cheque-settings" class="button button-primary">Configure Cheque</a>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-cheque-settings')); ?>" class="button">Edit</a>
+                                    <?php endif; ?>
+                                <?php elseif ($method->slug === 'cash'): ?>
+                                    <?php if ($needs_setup): ?>
+                                        <a href="admin.php?page=tpw-cash-settings" class="button button-primary">Configure Cash</a>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-cash-settings')); ?>" class="button">Edit</a>
+                                    <?php endif; ?>
+                                <?php else: ?>
                                     <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-' . esc_attr($method->slug) . '-settings')); ?>" class="button">Edit</a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
                 <?php submit_button('Save Changes'); ?>
             </form>
         </div>

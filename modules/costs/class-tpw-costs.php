@@ -23,7 +23,7 @@ class TPW_Costs {
         $table = $wpdb->prefix . 'tpw_event_costs';
         $row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT meeting_cost, dining_cost FROM $table WHERE event_id = %d",
+                "SELECT meeting_cost, dining_cost, has_dining FROM $table WHERE event_id = %d",
                 $event_id
             ),
             ARRAY_A
@@ -55,7 +55,7 @@ class TPW_Costs {
         if ( $event_id ) {
             $row = $wpdb->get_row(
                 $wpdb->prepare(
-                    "SELECT meeting_cost, dining_cost FROM $cost_table WHERE event_id = %d",
+                    "SELECT meeting_cost, dining_cost, has_dining FROM $cost_table WHERE event_id = %d",
                     $event_id
                 ),
                 ARRAY_A
@@ -73,9 +73,10 @@ class TPW_Costs {
      * @param int $event_id
      * @param float $meeting_cost
      * @param float $dining_cost
+     * @param int $has_dining
      * @return bool|int
      */
-    public static function save_costs( $event_id, $meeting_cost, $dining_cost ) {
+    public static function save_costs( $event_id, $meeting_cost, $dining_cost, $has_dining = 0 ) {
         global $wpdb;
 
         $table = $wpdb->prefix . 'tpw_event_costs';
@@ -93,10 +94,11 @@ class TPW_Costs {
                 [
                     'meeting_cost' => $meeting_cost,
                     'dining_cost'  => $dining_cost,
+                    'has_dining'   => $has_dining,
                     'updated_at'   => current_time( 'mysql' ),
                 ],
                 [ 'event_id' => $event_id ],
-                [ '%f', '%f', '%s' ],
+                [ '%f', '%f', '%d', '%s' ],
                 [ '%d' ]
             );
         } else {
@@ -106,10 +108,11 @@ class TPW_Costs {
                     'event_id'     => $event_id,
                     'meeting_cost' => $meeting_cost,
                     'dining_cost'  => $dining_cost,
+                    'has_dining'   => $has_dining,
                     'created_at'   => current_time( 'mysql' ),
                     'updated_at'   => current_time( 'mysql' ),
                 ],
-                [ '%d', '%f', '%f', '%s', '%s' ]
+                [ '%d', '%f', '%f', '%d', '%s', '%s' ]
             );
         }
     }

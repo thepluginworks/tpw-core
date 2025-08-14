@@ -15,6 +15,7 @@ require_once TPW_CORE_PATH . 'includes/tpw-core-functions.php';
 require_once TPW_CORE_PATH . 'includes/class-tpw-core-create-menu.php';
 require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs-save.php';
 require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs.php';
+require_once TPW_CORE_PATH . 'includes/admin-functions.php';
 
 // Module includes
 //require_once TPW_CORE_PATH . 'modules/guests/class-tpw-guests-cpt.php';
@@ -27,6 +28,9 @@ require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-manager.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-saver.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-event-menu-rel.php';
+// Front-end Menus API (modal rendering, public helpers)
+require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus.php';
+TPW_Menus::init();
 //member modules
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-fields.php';
 new TPW_Member_Fields();
@@ -42,11 +46,12 @@ new TPW_Member_Fields();
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payment-logger.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payment-logs-admin.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-core-payments.php';
+require_once TPW_CORE_PATH . 'modules/payments/admin-settings.php';
 TPW_Payment_Logs_Admin::init();
 require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-sumup-gateway.php';
 // Load WooCommerce display overrides only when Lodge Meetings plugin is active
 
-    require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-woocommerce-display.php';
+require_once TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-woocommerce-display.php';
 
 require_once TPW_CORE_PATH . 'modules/payments/gateways/sumup-oauth-callback.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-core-woocommerce-hooks.php';
@@ -57,12 +62,18 @@ require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cheque-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cash-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/views/thank-you-shortcode.php';
 
+require_once TPW_CORE_PATH . 'modules/feedback/class-tpw-feedback.php';
+
 add_action('init', 'tpw_core_load_optional_modules', 20);
 
 function tpw_core_load_optional_modules() {
     if ( apply_filters('tpw_show_dining_menu', false) ) {
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menu-courses-manager.php';
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin.php';
+        require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin-add.php';
+        require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin-edit.php';
+        TPW_Menus_Admin_Edit::init();
+        TPW_Menus_Admin_Add::init();
         TPW_Menus_Admin::init();
 
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
