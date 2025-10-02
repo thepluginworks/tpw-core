@@ -1,11 +1,31 @@
 <?php
 class TPW_Menus {
+    /**
+     * Holds last rendered menu modal block so we can append it to the_content
+     * if direct echo output is stripped by buffering or caching layers.
+     * @var string
+     */
+    protected static $last_rendered_block = '';
 
     public static function init() {
         // Hook into the FlexiEvent event page (after main event content)
         add_action( 'tpw_event_details_after_meta', [ __CLASS__, 'hook_after_event_content' ], 5 );
         // Back-compat: also listen to the older hook
         add_action( 'tpw_after_event_content', [ __CLASS__, 'hook_after_event_content' ], 5 );
+
+        // Late content filter fallback – if our echoed markup was removed we append it.
+        add_filter( 'the_content', [ __CLASS__, 'filter_content_append_menu' ], 999 );
+
+        // Shortcode fallback for explicit placement: [tpw_menu_modal event_id="123"]
+        add_shortcode( 'tpw_menu_modal', function( $atts ) {
+            $atts = shortcode_atts( [ 'event_id' => 0 ], $atts, 'tpw_menu_modal' );
+            $event_id = (int) $atts['event_id'];
+            if ( $event_id <= 0 ) return '';
+            // Capture render output – do not rely on hook context.
+            ob_start();
+            self::render_menu_modal_trigger( $event_id, true ); // silent echo into buffer
+            return ob_get_clean();
+        });
     }
 
     protected static function log( $message ) {
@@ -155,7 +175,12 @@ class TPW_Menus {
         }
     }
 
-    public static function render_menu_modal_trigger( $event_id ) {
+    /**
+     * Renders the trigger button + modal template for an event.
+     * @param int $event_id
+     * @param bool $internal_buffer_call When true we skip duplicate prevention (shortcode context) and just attempt render.
+     */
+    public static function render_menu_modal_trigger( $event_id, $internal_buffer_call = false ) {
         self::log('[TPW_Menus] render_menu_modal_trigger() called for event_id: ' . $event_id);
         if ( ! self::event_has_menu( $event_id ) ) {
             self::log('[TPW_Menus] event_has_menu() returned false for event_id: ' . $event_id . ' - aborting render.');
@@ -171,16 +196,48 @@ class TPW_Menus {
         }
         self::log('[TPW_Menus] Including menu modal template: ' . $template);
         $event_id = (int) $event_id;
-        // Wrap the modal in the same row structure as event details
+
+        // Buffer output so we can both echo and retain a copy for fallback injection.
+        $ob_level_before = ob_get_level();
+        self::log('[TPW_Menus] ob level before render: ' . $ob_level_before . ' URI=' . ( isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'n/a' ) );
+        ob_start();
+        echo '<!-- TPW_MENU_BLOCK_START event=' . $event_id . ' -->';
         echo '<div class="tpw-event-row tpw-menu-row"><div class="tpw-event-column-full">';
         include $template;
         echo '</div></div>';
+        echo '<!-- TPW_MENU_BLOCK_END event=' . $event_id . ' -->';
+        $block = ob_get_clean();
+
+        // Store for fallback filter usage.
+        self::$last_rendered_block = $block;
+
+        // Only echo directly in normal hook context (avoid double output when invoked via shortcode which already buffers outside).
+        if ( ! $internal_buffer_call ) {
+            echo $block; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped (already escaped inside template)
+        }
+        self::log('[TPW_Menus] render complete. Block length=' . strlen( $block ) . ' ob level after=' . ob_get_level() );
     }
 
     // --- Optional shim methods for template compatibility ---
     public static function tpw_core_event_has_menu( $event_id ) { return self::event_has_menu( $event_id ); }
     public static function tpw_core_get_menu_payload( $event_id ) { return self::get_menu_payload( $event_id ); }
     public static function tpw_core_flag_need_ui_assets() { self::flag_need_ui_assets(); }
+
+    /**
+     * Late content filter: append last rendered menu modal if it vanished from DOM/content.
+     */
+    public static function filter_content_append_menu( $content ) {
+        if ( empty( self::$last_rendered_block ) ) {
+            return $content;
+        }
+        // If trigger already present in content, do nothing.
+        if ( strpos( $content, 'tpw-menu-modal-trigger' ) !== false ) {
+            return $content;
+        }
+        // Append and log.
+        self::log('[TPW_Menus] Appending menu modal block via the_content fallback.');
+        return $content . "\n" . self::$last_rendered_block;
+    }
 }
 // Global helper wrappers (only if not already defined)
 if ( ! function_exists( 'tpw_core_event_has_menu' ) ) {

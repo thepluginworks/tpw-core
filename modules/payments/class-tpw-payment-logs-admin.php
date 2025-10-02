@@ -35,7 +35,7 @@ class TPW_Payment_Logs_Admin {
 
         $logs = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT 100");
 
-        echo '<div class="wrap">';
+    echo '<div class="tpw-admin-ui"><div class="wrap">';
         echo '<h1>TPW Payment Logs</h1>';
         echo '<table class="widefat fixed striped">';
         echo '<thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Status</th><th>Message</th></tr></thead>';
@@ -50,6 +50,6 @@ class TPW_Payment_Logs_Admin {
             echo '</tr>';
         }
         echo '</tbody></table>';
-        echo '</div>';
+        echo '</div></div>';
     }
 }

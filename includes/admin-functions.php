@@ -67,6 +67,12 @@ add_action( 'admin_enqueue_scripts', function () {
     $ver      = file_exists( $css_path ) ? filemtime( $css_path ) : null;
 
     wp_enqueue_style( 'tpw-core-admin-css', $css_url, [], $ver );
+
+    // Enqueue shared TPW Admin UI stylesheet (scoped to .tpw-admin-ui)
+    $ui_url  = plugin_dir_url( __DIR__ ) . 'assets/css/tpw-admin-ui.css';
+    $ui_path = plugin_dir_path( __DIR__ ) . 'assets/css/tpw-admin-ui.css';
+    $ui_ver  = file_exists( $ui_path ) ? filemtime( $ui_path ) : null;
+    wp_enqueue_style( 'tpw-admin-ui', $ui_url, [], $ui_ver );
 }, 99);
 
 /**
@@ -90,7 +96,7 @@ add_filter('admin_body_class', function ($classes) {
             strpos($id, 'admin_page_tpw-') === 0 ||        // TPW pages via admin.php?page=
             strpos($id, 'toplevel_page_tpw-') === 0 ||     // TPW top-level menu pages
             (isset($screen->post_type) && strpos($screen->post_type, 'tpw_') === 0) ||
-            $parent === 'flexievent';
+            $parent === 'tpw-flexievent-dashboard';
     }
 
     // Fallback: page param starts with tpw-
@@ -210,5 +216,71 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
             <?php do_action( 'tpw_core/admin_header/after', $title ); ?>
         </div>
         <?php
+    }
+}
+
+/**
+ * UI Theme helpers: read and apply custom CSS variable tokens for .tpw-admin-ui
+ */
+if ( ! function_exists( 'tpw_core_get_ui_theme_defaults' ) ) {
+    function tpw_core_get_ui_theme_defaults() {
+        return [
+            'font_family'  => 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
+            'btn_bg'       => '#0b6cad',
+            'btn_text'     => '#ffffff',
+            'accent_color' => '#2271b1',
+        ];
+    }
+}
+
+if ( ! function_exists( 'tpw_core_get_ui_theme_settings' ) ) {
+    function tpw_core_get_ui_theme_settings( $with_defaults = true ) {
+        $opt = get_option( 'tpw_ui_theme_settings', [] );
+        if ( ! is_array( $opt ) ) { $opt = []; }
+        if ( $with_defaults ) {
+            $opt = wp_parse_args( $opt, tpw_core_get_ui_theme_defaults() );
+        }
+        return $opt;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_build_ui_theme_style_attr' ) ) {
+    /**
+     * Build a style attribute string of CSS custom properties for the .tpw-admin-ui wrapper.
+     * Example output: "--tpw-font-family: ...; --tpw-btn-bg: ...; --tpw-btn-text: ...; --tpw-accent-color: ..."
+     */
+    function tpw_core_build_ui_theme_style_attr() {
+        $ui = tpw_core_get_ui_theme_settings( true );
+        $props = [];
+        if ( ! empty( $ui['font_family'] ) ) {
+            $props[] = '--tpw-font-family: ' . $ui['font_family'];
+        }
+        if ( ! empty( $ui['btn_bg'] ) ) {
+            $props[] = '--tpw-btn-bg: ' . $ui['btn_bg'];
+        }
+        if ( ! empty( $ui['btn_text'] ) ) {
+            $props[] = '--tpw-btn-text: ' . $ui['btn_text'];
+        }
+        if ( ! empty( $ui['accent_color'] ) ) {
+            $props[] = '--tpw-accent-color: ' . $ui['accent_color'];
+        }
+        return implode( '; ', $props );
+    }
+}
+
+/**
+ * Whether frontend admin-like screens should inherit the site's global styles (Elementor/theme),
+ * disabling the TPW scoped admin UI layer and wrapper.
+ *
+ * Stored under option 'tpw_ui_theme_settings' key 'inherit_global_frontend' (boolean-like 0/1).
+ * Defaults to false when not set.
+ *
+ * @return bool
+ */
+if ( ! function_exists( 'tpw_core_inherit_global_frontend_enabled' ) ) {
+    function tpw_core_inherit_global_frontend_enabled() {
+        $opt = get_option( 'tpw_ui_theme_settings', [] );
+        if ( ! is_array( $opt ) ) { $opt = []; }
+        return ! empty( $opt['inherit_global_frontend'] );
     }
 }

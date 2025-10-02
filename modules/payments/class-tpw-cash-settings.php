@@ -24,7 +24,7 @@ class TPW_Cash_Settings {
 
     public function render_cash_settings_page() {
         ?>
-        <div class="wrap">
+    <div class="tpw-admin-ui"><div class="wrap">
             <h1>Cash Payment Settings</h1>
             <form method="post" action="options.php">
                 <?php
@@ -43,7 +43,7 @@ class TPW_Cash_Settings {
                 </table>
                 <?php submit_button(); ?>
             </form>
-        </div>
+        </div></div>
         <?php
     }
 }

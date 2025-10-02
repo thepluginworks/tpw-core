@@ -31,7 +31,7 @@ class TPW_Core_Create_Menu {
 
         if (class_exists('TPW_Menus_Admin')) {
             add_submenu_page(
-                'flexievent',
+                'tpw-flexievent-dashboard',
                 'Dining Menus',
                 'Dining Menus',
                 'manage_options',
@@ -42,7 +42,7 @@ class TPW_Core_Create_Menu {
 
         if (class_exists('TPW_Payments_Admin')) {
             add_submenu_page(
-                'flexievent',
+                'tpw-flexievent-dashboard',
                 'Payment Methods',
                 'Payment Methods',
                 'manage_options',

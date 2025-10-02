@@ -1,0 +1,170 @@
+/* Register layer order so Elementor layer comes before ours */
+@layer elementor, tpw-admin-ui;
+
+@layer tpw-admin-ui {
+  /* Token variables scoped to .tpw-admin-ui */
+  .tpw-admin-ui {
+    --tpw-font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --tpw-text-color: #1d2327;
+    --tpw-bg-color: #ffffff;
+    --tpw-border-color: #ccd0d4;
+    --tpw-accent-color: #2271b1;
+    --tpw-muted-color: #6c7781;
+
+    --tpw-btn-bg: #0b6cad;
+    --tpw-btn-text: #ffffff;
+    --tpw-btn-radius: 6px;
+    --tpw-btn-padding: 6px 12px;
+
+    --tpw-input-bg: #ffffff;
+    --tpw-input-text: #1d2327;
+    --tpw-input-radius: 6px;
+    --tpw-input-padding: 6px 10px;
+    --tpw-input-focus: var(--tpw-accent-color);
+
+    /* Neutralise common Elementor globals leaking in from ancestors */
+    --e-global-color-primary: initial;
+    --e-global-color-secondary: initial;
+    --e-global-color-text: initial;
+    --e-global-color-accent: initial;
+    --e-global-typography-primary-font-family: initial;
+
+    font-family: var(--tpw-font-family);
+    color: var(--tpw-text-color);
+    background: transparent; /* inherit page background */
+    line-height: 1.5;
+  }
+
+  /* Reset inherited styles inside the namespace, then apply consistent box model and font */
+  .tpw-admin-ui * {
+    all: revert-layer;
+    box-sizing: border-box;
+    font: inherit;
+  }
+  .tpw-admin-ui *::before,
+  .tpw-admin-ui *::after { box-sizing: border-box; }
+
+  /* Base text & links */
+  .tpw-admin-ui :where(a) { color: var(--tpw-accent-color); text-decoration: none; }
+  .tpw-admin-ui :where(a:hover, a:focus) { text-decoration: underline; }
+
+  /* Headings */
+  .tpw-admin-ui :where(h1, h2, h3, h4, h5, h6) {
+    color: var(--tpw-text-color);
+    margin: 0 0 0.75em;
+    line-height: 1.25;
+    font-weight: 600;
+  }
+  .tpw-admin-ui :where(h1) { font-size: 1.75rem; }
+  .tpw-admin-ui :where(h2) { font-size: 1.5rem; }
+  .tpw-admin-ui :where(h3) { font-size: 1.25rem; }
+  .tpw-admin-ui :where(h4) { font-size: 1.125rem; }
+  .tpw-admin-ui :where(h5) { font-size: 1rem; }
+  .tpw-admin-ui :where(h6) { font-size: 0.875rem; }
+
+  /* Paragraphs and small */
+  .tpw-admin-ui :where(p) { margin: 0 0 1em; }
+  .tpw-admin-ui :where(small, .description) { color: var(--tpw-muted-color); }
+
+  /* Layout helpers */
+  .tpw-admin-ui :where(.tpw-row) { display: flex; flex-wrap: wrap; gap: 12px; }
+  .tpw-admin-ui :where(.tpw-col) { flex: 1 1 0; min-width: 200px; }
+  .tpw-admin-ui :where(.tpw-section) { margin: 0 0 1.25rem; }
+
+  /* Tables */
+  .tpw-admin-ui :where(table) { width: 100%; border-collapse: collapse; }
+  .tpw-admin-ui :where(th, td) { padding: 8px 10px; border: 1px solid var(--tpw-border-color); text-align: left; }
+  .tpw-admin-ui :where(thead th) { background: #f6f7f7; }
+
+  /* Buttons */
+  /* Base button styles apply only to un-variant buttons, preserving .tpw-btn-* variants */
+  .tpw-admin-ui :where(button:not([class*="tpw-btn-"]),
+                       input[type="button"]:not([class*="tpw-btn-"]),
+                       input[type="submit"]:not([class*="tpw-btn-"]),
+                       a.button,
+                       .button),
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--tpw-btn-padding);
+    background: var(--tpw-btn-bg);
+    color: var(--tpw-btn-text);
+    border: 1px solid color-mix(in oklab, var(--tpw-btn-bg) 75%, black 25%);
+    border-radius: var(--tpw-btn-radius);
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .tpw-admin-ui :where(button:hover:not([class*="tpw-btn-"]),
+                       input[type="button"]:hover:not([class*="tpw-btn-"]),
+                       input[type="submit"]:hover:not([class*="tpw-btn-"]),
+                       a.button:hover,
+                       .button:hover),
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]):hover {
+    filter: brightness(0.98);
+  }
+  .tpw-admin-ui :where(button:disabled:not([class*="tpw-btn-"]),
+                       input[type="button"][disabled]:not([class*="tpw-btn-"]),
+                       input[type="submit"][disabled]:not([class*="tpw-btn-"])),
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]):disabled,
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"])[disabled] {
+    opacity: .6;
+    cursor: not-allowed;
+  }
+  .tpw-admin-ui :where(.button.button-secondary,
+                       .button-secondary) {
+    background: #f6f7f7;
+    color: var(--tpw-text-color);
+    border-color: var(--tpw-border-color);
+  }
+
+  /* Ensure .tpw-btn-* variants keep their global styling (from tpw-buttons.css) */
+  .tpw-admin-ui .tpw-btn[class*="tpw-btn-"] {
+    all: revert-layer;
+    font: inherit;
+    box-sizing: border-box;
+  }
+
+  /* Inputs */
+  .tpw-admin-ui :where(input[type="text"],
+                       input[type="email"],
+                       input[type="number"],
+                       input[type="url"],
+                       input[type="password"],
+                       input[type="search"],
+                       select,
+                       textarea) {
+    width: 100%;
+    max-width: 600px;
+    padding: var(--tpw-input-padding);
+    border: 1px solid var(--tpw-border-color);
+    border-radius: var(--tpw-input-radius);
+    background: var(--tpw-input-bg);
+    color: var(--tpw-input-text);
+  }
+  .tpw-admin-ui :where(textarea) { min-height: 120px; }
+  .tpw-admin-ui :where(input:focus,
+                       select:focus,
+                       textarea:focus) {
+    outline: 2px solid color-mix(in oklab, var(--tpw-input-focus) 40%, white 60%);
+    outline-offset: 1px;
+    border-color: var(--tpw-input-focus);
+  }
+
+  /* Notices */
+  .tpw-admin-ui :where(.notice) { padding: 10px 12px; border: 1px solid var(--tpw-border-color); border-left-width: 4px; background: #fff; }
+  .tpw-admin-ui :where(.notice.notice-success) { border-left-color: #00a32a; }
+  .tpw-admin-ui :where(.notice.notice-warning) { border-left-color: #dba617; }
+  .tpw-admin-ui :where(.notice.notice-error) { border-left-color: #d63638; }
+
+  /* Cards */
+  .tpw-admin-ui :where(.tpw-card) {
+    border: 1px solid var(--tpw-border-color);
+    border-radius: 8px;
+    background: var(--tpw-bg-color);
+    padding: 14px;
+  }
+  .tpw-admin-ui :where(.tpw-card + .tpw-card) { margin-top: 12px; }
+}

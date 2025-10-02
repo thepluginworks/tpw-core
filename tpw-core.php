@@ -2,8 +2,8 @@
 /**
  * Plugin Name: TPW Core
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
- * Author: ThePluginWorks Ltd
- * Version: 0.3.1
+ * Author: ThePluginWorks
+ * Version: 0.3.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -48,6 +48,9 @@ if ( ! function_exists( 'tpw_core_loaded_marker' ) ) {
     }
 }
 
+// Handle early member delete requests before output starts
+add_action( 'template_redirect', [ 'TPW_Member_Form_Handler', 'handle_delete_request' ] );
+
 // Declare HPOS compatibility with WooCommerce
 add_action( 'before_woocommerce_init', function() {
     if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
@@ -58,3 +61,58 @@ add_action( 'before_woocommerce_init', function() {
         );
     }
 } );
+
+// Define the current members DB version
+define( 'TPW_MEMBERS_DB_VERSION', '0.3.5' );
+
+// Run DB upgrades if needed
+add_action( 'admin_init', 'tpw_maybe_upgrade_members_db' );
+function tpw_maybe_upgrade_members_db() {
+    $stored_version = get_option( 'tpw_members_db_version' );
+
+    if ( $stored_version !== TPW_MEMBERS_DB_VERSION ) {
+        if ( class_exists( 'TPW_Members_DB' ) ) {
+            TPW_Members_DB::create_table(); // This should be dbDelta-aware
+        }
+        update_option( 'tpw_members_db_version', TPW_MEMBERS_DB_VERSION );
+    }
+}
+
+// Provide a default login redirect handler in Core reading tpw_login_redirect_page_id
+add_filter( 'tpw_member_login_redirect', function( $url, $user ) {
+    $page_id = (int) get_option( 'tpw_login_redirect_page_id', 0 );
+    if ( $page_id > 0 && get_post_status( $page_id ) === 'publish' ) {
+        // Avoid directing to the login page itself
+        $is_login_page = false;
+        if ( class_exists( 'TPW_Core_System_Pages' ) ) {
+            $login_id = (int) \TPW_Core_System_Pages::get_page_id( 'member-login' );
+            if ( $login_id > 0 && $login_id === $page_id ) {
+                $is_login_page = true;
+            }
+        }
+        if ( ! $is_login_page ) {
+            $content = get_post_field( 'post_content', $page_id );
+            if ( is_string( $content ) && false !== strpos( $content, '[tpw_member_login' ) ) {
+                $is_login_page = true;
+            }
+        }
+        if ( $is_login_page ) {
+            return home_url();
+        }
+
+        $target = get_permalink( $page_id );
+        if ( $target ) {
+            // Allow redirect host just in case site domain differs
+            $host = parse_url( $target, PHP_URL_HOST );
+            if ( $host ) {
+                add_filter( 'allowed_redirect_hosts', function( $hosts ) use ( $host ) {
+                    $hosts[] = $host;
+                    return array_values( array_unique( array_filter( $hosts ) ) );
+                } );
+            }
+            return $target;
+        }
+    }
+    // Fallback: site home
+    return home_url();
+}, 50, 2 );

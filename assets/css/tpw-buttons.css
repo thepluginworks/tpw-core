@@ -1,0 +1,207 @@
+/*
+ Global TPW button system
+ Shared across TPW Core and FlexiGolf
+*/
+
+:root {
+  --tpw-btn-primary: #0b6cad;
+  --tpw-btn-secondary: #6c757d;
+  --tpw-btn-danger: #dc3545;
+  --tpw-btn-light: #f8f9fa;
+  --tpw-btn-dark: #343a40;
+  --tpw-btn-text-light: #fff;
+  --tpw-btn-text-dark: #000;
+  --tpw-btn-radius: 7px;
+  --tpw-btn-padding: 4px 8px;
+  --tpw-btn-font-size: 0.9rem;
+}
+
+/* Base shared button class */
+.tpw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: var(--tpw-btn-padding);
+  font-size: var(--tpw-btn-font-size);
+  line-height: 1.25;
+  border-radius: var(--tpw-btn-radius);
+  border: 1px solid transparent;
+  background: var(--tpw-btn-secondary);
+  color: var(--tpw-btn-text-light);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease-in-out;
+}
+
+/* Size variants */
+.tpw-btn.small,
+.tpw-btn-sm {
+  padding: calc(0.75 * var(--tpw-btn-padding));
+  font-size: calc(0.9 * var(--tpw-btn-font-size));
+  line-height: 1.2;
+}
+
+.tpw-btn:hover,
+.tpw-btn:focus {
+  text-decoration: none;
+  filter: brightness(0.95);
+}
+
+.tpw-btn:active {
+  transform: translateY(1px);
+}
+
+.tpw-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(11, 108, 173, 0.25);
+}
+
+.tpw-btn[disabled],
+.tpw-btn.disabled,
+.tpw-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Variants */
+.tpw-btn-primary {
+  background: var(--tpw-btn-primary);
+  color: var(--tpw-btn-text-light);
+}
+
+.tpw-btn-secondary {
+  background: var(--tpw-btn-secondary);
+  color: var(--tpw-btn-text-light);
+}
+
+.tpw-btn-danger {
+  background: var(--tpw-btn-danger);
+  color: var(--tpw-btn-text-light);
+}
+
+.tpw-btn-light {
+  background: var(--tpw-btn-light);
+  color: var(--tpw-btn-text-dark);
+  border-color: rgba(0,0,0,0.1);
+}
+
+.tpw-btn-dark {
+  background: var(--tpw-btn-dark);
+  color: var(--tpw-btn-text-light);
+}
+
+/* Edit variant (neutral blue similar to WordPress admin) */
+.tpw-btn-edit {
+  background: #007cba;
+  color: var(--tpw-btn-text-light);
+}
+.tpw-btn-edit:hover,
+.tpw-btn-edit:focus {
+  background: #006ba1;
+}
+
+/* Outline style: transparent bg with border */
+.tpw-btn-outline {
+  background: transparent;
+  color: var(--tpw-btn-dark);
+  border-color: currentColor;
+}
+
+.tpw-btn-outline:hover,
+.tpw-btn-outline:focus {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Full width */
+.tpw-btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* Admin alias */
+.tpw-btn-admin {
+  background: var(--tpw-btn-dark);
+  color: var(--tpw-btn-text-light);
+}
+
+/* Minor resets for native buttons and links using the class */
+button.tpw-btn {
+  border: none;
+}
+
+a.tpw-btn {
+  text-decoration: none;
+}
+.page-content a.tpw-btn {
+  text-decoration: none;
+}
+
+/* Specificity bump: ensure native buttons using .tpw-btn are not overridden by broad resets */
+button.tpw-btn,
+input[type="button"].tpw-btn,
+input[type="submit"].tpw-btn {
+  border: 1px solid transparent;
+}
+
+button.tpw-btn.tpw-btn-primary,
+input[type="button"].tpw-btn.tpw-btn-primary,
+input[type="submit"].tpw-btn.tpw-btn-primary {
+  background: var(--tpw-btn-primary);
+  color: var(--tpw-btn-text-light);
+}
+
+button.tpw-btn.tpw-btn-secondary,
+input[type="button"].tpw-btn.tpw-btn-secondary,
+input[type="submit"].tpw-btn.tpw-btn-secondary {
+  background: var(--tpw-btn-secondary);
+  color: var(--tpw-btn-text-light);
+}
+
+button.tpw-btn.tpw-btn-danger,
+input[type="button"].tpw-btn.tpw-btn-danger,
+input[type="submit"].tpw-btn.tpw-btn-danger {
+  background: var(--tpw-btn-danger);
+  color: var(--tpw-btn-text-light);
+}
+
+button.tpw-btn.tpw-btn-light,
+input[type="button"].tpw-btn.tpw-btn-light,
+input[type="submit"].tpw-btn.tpw-btn-light {
+  background: var(--tpw-btn-light);
+  color: var(--tpw-btn-text-dark);
+  border-color: rgba(0,0,0,0.1);
+}
+
+button.tpw-btn.tpw-btn-dark,
+input[type="button"].tpw-btn.tpw-btn-dark,
+input[type="submit"].tpw-btn.tpw-btn-dark {
+  background: var(--tpw-btn-dark);
+  color: var(--tpw-btn-text-light);
+}
+
+button.tpw-btn.tpw-btn-outline,
+input[type="button"].tpw-btn.tpw-btn-outline,
+input[type="submit"].tpw-btn.tpw-btn-outline {
+  background: transparent;
+  color: var(--tpw-btn-dark);
+  border-color: currentColor;
+}
+
+/* Specificity bump: native buttons for Edit variant */
+button.tpw-btn.tpw-btn-edit,
+input[type="button"].tpw-btn.tpw-btn-edit,
+input[type="submit"].tpw-btn.tpw-btn-edit {
+  background: #007cba;
+  color: var(--tpw-btn-text-light);
+}
+button.tpw-btn.tpw-btn-edit:hover,
+button.tpw-btn.tpw-btn-edit:focus,
+input[type="button"].tpw-btn.tpw-btn-edit:hover,
+input[type="button"].tpw-btn.tpw-btn-edit:focus,
+input[type="submit"].tpw-btn.tpw-btn-edit:hover,
+input[type="submit"].tpw-btn.tpw-btn-edit:focus {
+  background: #006ba1;
+}

@@ -16,7 +16,7 @@ class TPW_Menus_Admin_Add {
     }
 
     public static function render_add_menu_page() {
-        echo '<div class="wrap">';
+        echo '<div class="tpw-admin-ui"><div class="wrap">';
         echo '<h1>Add New Menu</h1>';
         echo '<form method="post">';
         echo '<input type="text" name="menu_name" placeholder="Menu Name" required class="widefat" />';
@@ -25,6 +25,6 @@ class TPW_Menus_Admin_Add {
         echo '<br/><label>Price: <input type="text" name="price" pattern="^\\d+(\\.\\d{1,2})?$" value="0.00" required /></label>';
         echo '<br/><input type="submit" name="submit_menu" class="button button-primary" value="Save Menu" />';
         echo '</form>';
-        echo '</div>';
+        echo '</div></div>';
     }
 }

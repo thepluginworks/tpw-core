@@ -20,7 +20,7 @@ class TPW_Course_Choices_Admin {
 
     public static function hide_hidden_pages() {
         // Hide these from the FlexiEvent submenu but keep them associated with it
-        remove_submenu_page('flexievent', 'tpw-course-choices');
+        remove_submenu_page('tpw-flexievent-dashboard', 'tpw-course-choices');
     }
 
     public static function render_page() {
@@ -47,13 +47,15 @@ class TPW_Course_Choices_Admin {
                 __( 'Manage Course Options', 'tpw-core' ),
                 __( 'View and edit available choices for each course in your dining menus. For Admins and Secretaries.', 'tpw-core' )
             );
+            echo '<div class="tpw-admin-ui">';
         } elseif ( function_exists( 'flexievent_output_header' ) ) {
             flexievent_output_header(
                 __( 'Manage Course Options', 'tpw-core' ),
                 __( 'View and edit available choices for each course in your dining menus. For Admins and Secretaries.', 'tpw-core' )
             );
+            echo '<div class="tpw-admin-ui">';
         } else {
-            echo '<div class="wrap"><h1>' . esc_html__( 'Manage Course Options', 'tpw-core' ) . '</h1>';
+            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html__( 'Manage Course Options', 'tpw-core' ) . '</h1>';
         }
         echo '<p><a href="' . esc_url(admin_url('admin.php?page=tpw-core-dining-menus')) . '" class="button button-secondary">&larr; Back to Dining Menus</a></p>';
         echo '<div class="wrap">';
@@ -122,7 +124,7 @@ class TPW_Course_Choices_Admin {
             echo '<p>Please select a menu to manage its course options.</p>';
         }
 
-        echo '</div>';
+        echo '</div></div>';
     }
     public static function enqueue_scripts($hook) {
         if (!isset($_GET['page']) || $_GET['page'] !== 'tpw-course-choices') {

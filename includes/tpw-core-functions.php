@@ -23,7 +23,7 @@ if ( is_admin() && ! class_exists( 'TPW_Core_Admin_Menu_Helper' ) ) {
             // Harmless if the CPT isn't registered; checks happen at runtime.
             $default[] = [
                 'post_types'  => [ 'tpw_event' ],
-                'parent_slug' => 'flexievent',
+                'parent_slug' => 'tpw-flexievent-dashboard',
                 'submenu_slug'=> 'edit.php?post_type=tpw_event',
             ];
 
@@ -38,7 +38,7 @@ if ( is_admin() && ! class_exists( 'TPW_Core_Admin_Menu_Helper' ) ) {
              *       'tpw-lodge-rsvp-edit-submission',
              *       'tpw-lodge-rsvp-submissions-payments',
              *   ],
-             *   'parent_slug'  => 'flexievent',
+             *   'parent_slug'  => 'tpw-flexievent-dashboard',
              *   'submenu_slug' => 'tpw-lodge-rsvp-submissions',
              * ]
              */
@@ -149,4 +149,235 @@ function tpw_core_get_currency_symbol() {
  */
 function tpw_core_get_currency_code() {
     return get_option( 'flexievent_currency_code', 'GBP' );
+}
+
+/**
+ * Retrieve configured date format from FlexiEvent settings.
+ * Falls back to d-m-Y.
+ */
+function tpw_core_get_date_format(): string {
+    // Prefer dedicated option if present
+    $opt = get_option( 'flexievent_date_format', '' );
+    if ( is_string( $opt ) && $opt !== '' ) {
+        return $opt;
+    }
+    // Fallback to nested settings array
+    $settings = get_option( 'flexievent_settings', [] );
+    if ( is_array( $settings ) && ! empty( $settings['date_format'] ) ) {
+        return (string) $settings['date_format'];
+    }
+    return 'd-m-Y';
+}
+
+/**
+ * Retrieve configured time format from FlexiEvent settings.
+ * Falls back to H:i.
+ */
+function tpw_core_get_time_format(): string {
+    // Prefer dedicated option if present
+    $opt = get_option( 'flexievent_time_format', '' );
+    if ( is_string( $opt ) && $opt !== '' ) {
+        return $opt;
+    }
+    // Fallback to nested settings array
+    $settings = get_option( 'flexievent_settings', [] );
+    if ( is_array( $settings ) && ! empty( $settings['time_format'] ) ) {
+        return (string) $settings['time_format'];
+    }
+    return 'H:i';
+}
+
+/**
+ * Format a date value (date only) for display using site-configured format.
+ * Accepts timestamp, MySQL date/datetime strings, or DateTimeInterface.
+ */
+function tpw_format_date( $value ): string {
+    if ( empty( $value ) ) return '';
+    if ( is_string( $value ) ) {
+        $trim = trim( $value );
+        if ( $trim === '0000-00-00' || $trim === '0000-00-00 00:00:00' ) return '';
+    }
+    if ( $value instanceof DateTimeInterface ) {
+        $ts = $value->getTimestamp();
+    } elseif ( is_numeric( $value ) ) {
+        $ts = (int) $value;
+    } else {
+        $ts = strtotime( (string) $value );
+    }
+    if ( ! $ts ) return is_string( $value ) ? (string) $value : '';
+    return date_i18n( tpw_core_get_date_format(), $ts );
+}
+
+/**
+ * Format a time value (time only) for display using site-configured format.
+ * Accepts timestamp, time/datetime string, or DateTimeInterface.
+ */
+function tpw_format_time( $value ): string {
+    if ( empty( $value ) ) return '';
+    if ( $value instanceof DateTimeInterface ) {
+        $ts = $value->getTimestamp();
+    } elseif ( is_numeric( $value ) ) {
+        $ts = (int) $value;
+    } else {
+        $ts = strtotime( (string) $value );
+    }
+    if ( ! $ts ) return is_string( $value ) ? (string) $value : '';
+    return date_i18n( tpw_core_get_time_format(), $ts );
+}
+
+/**
+ * Format a datetime value for display using site-configured date and time formats.
+ */
+function tpw_format_datetime( $value ): string {
+    if ( empty( $value ) ) return '';
+    if ( is_string( $value ) ) {
+        $trim = trim( $value );
+        if ( $trim === '0000-00-00' || $trim === '0000-00-00 00:00:00' ) return '';
+    }
+    if ( $value instanceof DateTimeInterface ) {
+        $ts = $value->getTimestamp();
+    } elseif ( is_numeric( $value ) ) {
+        $ts = (int) $value;
+    } else {
+        $ts = strtotime( (string) $value );
+    }
+    if ( ! $ts ) return is_string( $value ) ? (string) $value : '';
+    $format = trim( tpw_core_get_date_format() . ' ' . tpw_core_get_time_format() );
+    return date_i18n( $format, $ts );
+}
+
+/**
+ * Convert a PHP date format string to a jQuery UI datepicker format string.
+ * Covers common tokens used by TPW Core: d, j, m, n, M, F, y, Y.
+ */
+function tpw_core_php_date_to_jqueryui( string $php_format ): string {
+    $map = [
+        // Day
+        'd' => 'dd', // 01-31
+        'j' => 'd',  // 1-31
+        // Month
+        'm' => 'mm', // 01-12
+        'n' => 'm',  // 1-12
+        'M' => 'M',  // Jan-Dec
+        'F' => 'MM', // January-December
+        // Year
+        'y' => 'y',  // 00-99
+        'Y' => 'yy', // 1900-2099 (datepicker uses yy for 4-digit year)
+    ];
+
+    $out = '';
+    $len = strlen( $php_format );
+    for ( $i = 0; $i < $len; $i++ ) {
+        $ch = $php_format[$i];
+        // Escape next char when PHP format uses backslash
+        if ( $ch === '\\' && ($i + 1) < $len ) {
+            // In jQuery UI, literal text should be wrapped in single quotes
+            $out .= "'" . $php_format[$i+1] . "'";
+            $i++;
+            continue;
+        }
+        $out .= $map[$ch] ?? $ch;
+    }
+    return $out;
+}
+
+/**
+ * Return a human-friendly input hint for a given PHP date format.
+ * Covers requested mappings; falls back to echoing the raw format.
+ */
+function tpw_core_human_date_hint( string $php_format ): string {
+    $fmt = trim( $php_format );
+    switch ( $fmt ) {
+        case 'j F Y':
+            // Example using 1 September 2025
+            $example = date_i18n( $fmt, mktime(0,0,0,9,1,2025) );
+            return 'Format: day month year (e.g. ' . $example . ')';
+
+        case 'Y-m-d':
+            return 'Format: yyyy-mm-dd';
+
+        case 'd/m/Y':
+            return 'Format: dd/mm/yyyy';
+
+        case 'm/d/Y':
+            return 'Format: mm/dd/yyyy';
+
+        case 'D, j M Y':
+            // Use 1 Sep 2020 to render Tue consistently
+            $example = date_i18n( $fmt, mktime(0,0,0,9,1,2020) );
+            return 'Format: ' . $example . ' (weekday, day month year)';
+
+        default:
+            return 'Format: ' . $fmt;
+    }
+}
+
+/**
+ * Placeholder text for date inputs that matches the instruction hint.
+ */
+function tpw_core_date_placeholder( string $php_format ): string {
+    switch ( trim($php_format) ) {
+        case 'j F Y':
+            // Match the instruction style
+            $example = date_i18n( 'j F Y', mktime(0,0,0,9,1,2025) ); // 1 September 2025
+            return 'day month year (e.g. ' . $example . ')';
+        case 'Y-m-d':
+            return 'yyyy-mm-dd';
+        case 'd/m/Y':
+            return 'dd/mm/yyyy';
+        case 'm/d/Y':
+            return 'mm/dd/yyyy';
+        case 'D, j M Y':
+            $example = date_i18n( 'D, j M Y', mktime(0,0,0,9,1,2020) ); // Tue, 1 Sep 2020
+            return $example . ' (weekday, day month year)';
+        default:
+            // Fallback: render an example using the configured format on a safe sample date
+            return date_i18n( $php_format, mktime(0,0,0,9,1,2025) );
+    }
+}
+
+/**
+ * Determine if a group can see a field in the directory/modal context.
+ *
+ * Purpose:
+ * - Central helper for directory and member details modal to check per-group field visibility.
+ * - Looks up rules from the tpw_member_field_visibility table and caches results per group.
+ *
+ * Parameters:
+ * - $group string One of: 'admin', 'committee', 'member', 'guest'. Controls which column in the matrix applies.
+ * - $field string The member field key (e.g. 'email', 'telephone', 'address1').
+ *
+ * Returns:
+ * - bool True when the field is visible to the given group; false otherwise.
+ *
+ * Notes:
+ * - This does not govern the Member Profile page visibility. Profile visibility is handled separately via
+ *   the tpw_member_viewable_fields option and related logic.
+ * - The admin edit form intentionally does not consult this helper; admins see all enabled fields when editing.
+ */
+function tpw_can_group_view_field( string $group, string $field ): bool {
+    global $wpdb;
+    static $cache = [];
+
+    $group_key = sanitize_key( $group );
+    $field_key = sanitize_key( $field );
+    if ( '' === $group_key || '' === $field_key ) {
+        return false;
+    }
+
+    if ( ! isset( $cache[ $group_key ] ) ) {
+        $table = $wpdb->prefix . 'tpw_member_field_visibility';
+        // Fetch all visible fields for this group into a set for quick lookups
+        $sql = $wpdb->prepare( "SELECT field_key FROM {$table} WHERE `group` = %s AND is_visible = 1", $group_key );
+        $rows = $wpdb->get_col( $sql );
+        if ( is_wp_error( $rows ) || ! is_array( $rows ) ) {
+            $cache[ $group_key ] = [];
+        } else {
+            $keys = array_map( 'sanitize_key', array_filter( array_map( 'strval', $rows ) ) );
+            // De-duplicate and make it a set for O(1) checks
+            $cache[ $group_key ] = array_fill_keys( $keys, true );
+        }
+    }
+
+    return ! empty( $cache[ $group_key ][ $field_key ] );
 }

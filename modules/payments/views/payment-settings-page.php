@@ -25,7 +25,7 @@ class TPW_SumUp_Settings_Page {
         }
 
         error_log('TPW_SumUp_Settings_Page::render_page() was called');
-        echo '<div class="wrap">';
+    echo '<div class="tpw-admin-ui"><div class="wrap">';
         echo '<h1>Payment Gateway Settings</h1>';
         echo '<p><button type="button" class="button button-secondary" id="tpw-show-secure-setup">View Secure Setup Guide</button></p>';
 
@@ -103,7 +103,7 @@ define(\'TPW_SUMUP_CLIENT_SECRET\', \'your-client-secret\');</code></pre>
             }
         }
 
-        echo '</div>';
+        echo '</div></div>';
     }
 }
 

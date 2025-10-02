@@ -46,12 +46,12 @@ class TPW_Course_Choice_Form_Admin {
 
         if ( function_exists( 'tpw_admin_output_header' ) ) {
             tpw_admin_output_header( $header_title, $header_desc );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } elseif ( function_exists( 'flexievent_output_header' ) ) {
             flexievent_output_header( $header_title, $header_desc );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } else {
-            echo '<div class="wrap"><h1>' . esc_html( $header_title ) . '</h1>';
+            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html( $header_title ) . '</h1>';
         }
 
         $menu_id_param = isset($_GET['menu_id']) ? intval($_GET['menu_id']) : 0;
@@ -82,7 +82,7 @@ class TPW_Course_Choice_Form_Admin {
         }
 
         echo '<p><input type="submit" name="submit_course_choice" class="button-primary" value="' . ($choice_id ? 'Update' : 'Add') . ' Choice"></p>';
-        echo '</form></div>';
+        echo '</form></div></div>';
     }
 }
 

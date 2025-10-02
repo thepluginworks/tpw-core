@@ -2,5 +2,20 @@
     "require": {
         "guzzlehttp/guzzle": "^7.9",
         "square/square": "^43.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "archive": {
+        "exclude": [
+            "/tests",
+            "/docs",
+            "/*.md",
+            "/.github",
+            "/composer.*",
+            "/phpunit.*"
+        ]
     }
 }

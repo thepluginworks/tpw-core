@@ -52,15 +52,15 @@ class TPW_Payments_Admin {
                 __( 'Manage Payment Methods', 'tpw-core' ),
                 __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
             );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } elseif ( function_exists( 'flexievent_output_header' ) ) {
             flexievent_output_header(
                 __( 'Manage Payment Methods', 'tpw-core' ),
                 __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
             );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } else {
-            echo '<div class="wrap"><h1>' . esc_html__( 'Manage Payment Methods', 'tpw-core' ) . '</h1>';
+            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html__( 'Manage Payment Methods', 'tpw-core' ) . '</h1>';
         }
         ?>
             <form method="post">
@@ -148,7 +148,7 @@ class TPW_Payments_Admin {
                 </div>
                 <?php submit_button('Save Changes'); ?>
             </form>
-        </div>
+        </div></div>
         <?php
     }
 }

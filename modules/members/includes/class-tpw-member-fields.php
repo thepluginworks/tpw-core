@@ -5,14 +5,28 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class TPW_Member_Fields {
 
 	public function __construct() {
-		add_shortcode( 'tpw_field_settings', [ $this, 'render_settings_page' ] );
-		add_action( 'init', [ $this, 'handle_form_submission' ] );
+		// add_shortcode( 'tpw_field_settings', [ $this, 'render_settings_page' ] );
+		add_action( 'init', [ $this, 'handle_field_settings_submission' ] );
+		// If ?action=field_settings is active, hook render_settings_page via the_content
+		if ( isset($_GET['action']) && $_GET['action'] === 'field_settings' ) {
+			add_action( 'wp', [ $this, 'render_settings_page_wrapper' ] );
+		}
+	}
+
+	/**
+	 * Helper: retrieve visible fields for a group from the new visibility table.
+	 */
+	public static function get_visible_fields_for_group( $group = 'member' ) {
+		global $wpdb;
+		$tbl = $wpdb->prefix . 'tpw_member_field_visibility';
+		return (array) $wpdb->get_col( $wpdb->prepare("SELECT field_key FROM $tbl WHERE `group` = %s AND is_visible = 1", $group) );
 	}
 
 	/**
 	 * Load and render the field settings admin page
 	 */
 	public function render_settings_page() {
+		$this->maybe_insert_missing_core_fields();
 		$core_fields  = $this->get_core_fields();
 		$field_config = $this->get_field_settings();
 		$custom_fields = $this->get_custom_fields();
@@ -26,20 +40,69 @@ class TPW_Member_Fields {
 	 * Render the field settings template
 	 */
 	public function render_settings_template( $core_fields, $field_config, $custom_fields ) {
-		include TPW_CORE_PATH . 'modules/members/templates/fields-settings.php';
+		include TPW_CORE_PATH . 'modules/members/settings/member-fields-settings.php';
 	}
 
 	/**
 	 * Fetch all core fields from the database or define statically
 	 */
 	private function get_core_fields() {
-		// TODO: You could define these manually or introspect the members table schema
-		return [
-			'first_name' => 'First Name',
-			'last_name'  => 'Last Name',
-			'email'      => 'Email',
-			// Add more fields as needed
+		global $wpdb;
+		$fields = [
+			'first_name'            => [ 'label' => 'First Name', 'type' => 'varchar(100)' ],
+			'surname'               => [ 'label' => 'Last Name', 'type' => 'varchar(100)' ],
+			'initials'              => [ 'label' => 'Initials', 'type' => 'varchar(10)' ],
+			'title'                 => [ 'label' => 'Title', 'type' => 'varchar(20)' ],
+			'decoration'            => [ 'label' => 'Decoration', 'type' => 'varchar(50)' ],
+			'email'                 => [ 'label' => 'Email', 'type' => 'varchar(255)' ],
+			'mobile'                => [ 'label' => 'Mobile', 'type' => 'varchar(30)' ],
+			'landline'              => [ 'label' => 'Landline', 'type' => 'varchar(30)' ],
+			'address1'              => [ 'label' => 'Address Line 1', 'type' => 'varchar(255)' ],
+			'address2'              => [ 'label' => 'Address Line 2', 'type' => 'varchar(255)' ],
+			'town'                  => [ 'label' => 'Town/City', 'type' => 'varchar(100)' ],
+			'county'                => [ 'label' => 'County', 'type' => 'varchar(100)' ],
+			'postcode'              => [ 'label' => 'Postcode', 'type' => 'varchar(20)' ],
+			'country'               => [ 'label' => 'Country', 'type' => 'varchar(100)' ],
+			'date_joined'           => [ 'label' => 'Date Joined', 'type' => 'date' ],
+			'status' => [
+				'label'   => 'Status',
+				'type'    => 'select',
+				'options' => [
+					'Active',
+					'Inactive',
+					'Deceased',
+					'Honorary',
+					'Resigned',
+					'Suspended',
+					'Pending',
+					'Life Member',
+				]
+			],
+			'is_committee'          => [ 'label' => 'Committee Member', 'type' => 'tinyint(1)' ],
+			'is_match_manager'      => [ 'label' => 'Match Manager', 'type' => 'tinyint(1)' ],
+			'is_admin'              => [ 'label' => 'Administrator', 'type' => 'tinyint(1)' ],
+			'is_noticeboard_admin' => [ 'label' => 'Noticeboard Admin', 'type' => 'tinyint(1)' ],
+			'username'              => [ 'label' => 'Username', 'type' => 'varchar(100)' ],
+			'password_hash'         => [ 'label' => 'Password Hash', 'type' => 'varchar(255)' ],
 		];
+
+		// If FlexiGolf is active and columns exist, append them as core fields
+		if ( method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() ) {
+			$table = $wpdb->prefix . 'tpw_members';
+			$cols  = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table, 0 );
+			if ( in_array( 'whi', (array) $cols, true ) ) {
+				$fields['whi'] = [ 'label' => 'WHI', 'type' => 'varchar(10)' ];
+			}
+			if ( in_array( 'whi_updated', (array) $cols, true ) ) {
+				$fields['whi_updated'] = [ 'label' => 'WHI Updated', 'type' => 'date' ];
+			}
+			if ( in_array( 'cdh_id', (array) $cols, true ) ) {
+				$fields['cdh_id'] = [ 'label' => 'CDH ID', 'type' => 'varchar(50)' ];
+			}
+		}
+		// If inactive, do not add FG fields at all (ensures settings UI stays clean)
+
+		return $fields;
 	}
 
 	/**
@@ -48,7 +111,20 @@ class TPW_Member_Fields {
 	private function get_field_settings() {
 		global $wpdb;
 		$table = $wpdb->prefix . 'tpw_field_settings';
-		$results = $wpdb->get_results( "SELECT * FROM $table", OBJECT_K );
+		$results = [];
+		$rows = $wpdb->get_results( "SELECT * FROM $table" );
+		foreach ( $rows as $row ) {
+			$results[ $row->field_key ] = $row;
+		}
+
+		// Ensure core fields are always enabled
+		$always_enabled = [ 'username', 'first_name', 'surname', 'status' ];
+		foreach ( $always_enabled as $key ) {
+			if ( isset( $results[$key] ) ) {
+				$results[$key]->is_enabled = 1;
+			}
+		}
+
 		return $results;
 	}
 
@@ -58,32 +134,60 @@ class TPW_Member_Fields {
 	 */
 	private function get_custom_fields() {
 		global $wpdb;
-		$meta_table = $wpdb->prefix . 'tpw_member_meta';
-		$settings_table = $wpdb->prefix . 'tpw_field_settings';
 
-		$results = $wpdb->get_results("
-			SELECT DISTINCT m.meta_key, s.label,
-				(SELECT COUNT(*) FROM $meta_table WHERE meta_key = m.meta_key) as usage_count
-			FROM $meta_table m
-			LEFT JOIN $settings_table s ON m.meta_key = s.field_key
-		");
+		$settings_table = $wpdb->prefix . 'tpw_field_settings';
+		$core_fields = array_keys( $this->get_core_fields() );
+		$placeholders = implode( ',', array_fill( 0, count($core_fields), '%s' ) );
+
+		$sql = "
+			SELECT field_key as meta_key, custom_label, is_enabled, sort_order, field_type,
+				(SELECT COUNT(*) FROM {$wpdb->prefix}tpw_member_meta WHERE meta_key = field_key) as usage_count
+			FROM $settings_table
+			WHERE field_key NOT IN ($placeholders)
+		";
+
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, ...$core_fields ) );
+
+		// Hide FlexiGolf-related fields from the settings UI when FlexiGolf is inactive
+		// Also hide specific FG fields if their DB columns are missing
+		$fg_keys = ['whi','whi_updated','cdh_id'];
+		$fg_active = ( method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() );
+		if ( ! $fg_active ) {
+			$results = array_values( array_filter( (array) $results, function( $row ) use ( $fg_keys ) {
+				return ! in_array( $row->field_key, $fg_keys, true );
+			} ) );
+		} else {
+			// If active, check columns exist before showing
+			$cols = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $wpdb->prefix . 'tpw_members', 0 );
+			$results = array_values( array_filter( (array) $results, function( $row ) use ( $fg_keys, $cols ) {
+				if ( ! in_array( $row->field_key, $fg_keys, true ) ) return true;
+				return in_array( $row->field_key, (array) $cols, true );
+			} ) );
+		}
 
 		$custom_fields = [];
 		foreach ( $results as $row ) {
 			$custom_fields[] = [
-				'key'      => $row->meta_key,
-				'label'    => $row->label ?: $row->meta_key,
-				'in_use'   => intval($row->usage_count) > 0
+				'key'        => $row->meta_key,
+				'label'      => $row->custom_label ?: $row->meta_key,
+				'in_use'     => intval($row->usage_count) > 0,
+				'is_enabled' => isset($row->is_enabled) ? intval($row->is_enabled) : 1,
+				'sort_order' => isset($row->sort_order) ? intval($row->sort_order) : 999,
+				'type'       => isset($row->field_type) ? $row->field_type : 'text',
 			];
 		}
+
 		return $custom_fields;
 	}
 
 	/**
 	 * Handle POST requests to save settings
 	 */
-	public function handle_form_submission() {
-		if ( $_SERVER['REQUEST_METHOD'] !== 'POST' || empty( $_POST['tpw_field_settings_nonce'] ) ) return;
+	public function handle_field_settings_submission() {
+		// Early exit guard for irrelevant requests
+		if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) return;
+		if ( empty( $_POST['tpw_field_settings_nonce'] ) ) return;
+		if ( ! isset($_POST['fields']) && ! isset($_POST['new_meta_label']) && ! isset($_POST['custom_fields']) ) return;
 		if ( ! wp_verify_nonce( $_POST['tpw_field_settings_nonce'], 'tpw_save_field_settings' ) ) return;
 
 		global $wpdb;
@@ -93,17 +197,23 @@ class TPW_Member_Fields {
 		if ( isset($_POST['fields']) && is_array($_POST['fields']) ) {
 			foreach ( $_POST['fields'] as $key => $field ) {
 				$key = sanitize_key($key);
-				$enabled = isset($field['enabled']) ? 1 : 0;
-				$label = sanitize_text_field($field['label']);
+				// Prevent disabling of critical core fields
+				$always_enabled = [ 'username', 'first_name', 'surname', 'status' ];
+				if ( in_array( $key, $always_enabled, true ) ) {
+					$is_enabled = 1;
+				} else {
+					$is_enabled = (!empty($field['is_enabled']) || $field['is_enabled'] === '0') ? 1 : 0;
+				}
+				$custom_label = sanitize_text_field($field['custom_label']);
 				$sort_order = intval($field['sort_order']);
 
 				$wpdb->replace(
 					$table,
 					[
-						'field_key'   => $key,
-						'enabled'     => $enabled,
-						'label'       => $label,
-						'sort_order'  => $sort_order,
+						'field_key'     => $key,
+						'is_enabled'    => $is_enabled,
+						'custom_label'  => $custom_label,
+						'sort_order'    => $sort_order,
 					],
 					[
 						'%s', '%d', '%s', '%d'
@@ -112,23 +222,81 @@ class TPW_Member_Fields {
 			}
 		}
 
+		// Persist conditional fields (multiple)
+		if ( isset($_POST['tpw_conditional_fields']) && is_array($_POST['tpw_conditional_fields']) ) {
+			$conds = array_values( array_unique( array_filter( array_map('sanitize_key', $_POST['tpw_conditional_fields']) ) ) );
+			update_option( 'tpw_conditional_fields', $conds );
+			// Optional: clean up legacy single option if present
+			if ( get_option('tpw_conditional_field', null ) !== null ) {
+				delete_option('tpw_conditional_field');
+			}
+		} elseif ( isset($_POST['tpw_conditional_fields']) ) {
+			// If provided but empty array, save empty to clear
+			update_option( 'tpw_conditional_fields', [] );
+		}
+
 		// Save new custom field label, if provided
-		if ( ! empty($_POST['new_meta_key']) && ! empty($_POST['new_meta_label']) ) {
-			$meta_key = sanitize_key($_POST['new_meta_key']);
+		if ( ! empty($_POST['new_meta_label']) ) {
 			$label = sanitize_text_field($_POST['new_meta_label']);
+			$field_type = sanitize_text_field($_POST['new_meta_type']);
+			$base_key = 'tpw_' . sanitize_key( strtolower( $label ) );
+			$meta_key = $base_key;
+			$suffix = 1;
+
+			// Ensure the generated meta_key is unique
+			while ( $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE field_key = %s", $meta_key ) ) > 0 ) {
+				$meta_key = $base_key . '_' . $suffix;
+				$suffix++;
+			}
 
 			$wpdb->insert(
 				$table,
 				[
-					'field_key'   => $meta_key,
-					'enabled'     => 1,
-					'label'       => $label,
-					'sort_order'  => 999,
+					'field_key'     => $meta_key,
+					'is_enabled'    => 1,
+					'custom_label'  => $label,
+					'field_type'    => $field_type,
+					'sort_order'    => 999,
 				],
 				[
-					'%s', '%d', '%s', '%d'
+					'%s', '%d', '%s', '%s', '%d'
 				]
 			);
+
+			// Default visibility for new custom field: Admin only
+			try {
+				$vis_table = $wpdb->prefix . 'tpw_member_field_visibility';
+				// Avoid duplicate if somehow exists
+				$exists = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$vis_table} WHERE `group` = %s AND field_key = %s", 'admin', $meta_key ) );
+				if ( $exists === 0 ) {
+					$wpdb->insert( $vis_table, [ 'field_key' => $meta_key, 'group' => 'admin', 'is_visible' => 1 ], [ '%s','%s','%d' ] );
+				}
+			} catch ( \Throwable $e ) {
+				// Suppress and continue; not critical to block field creation
+			}
+		}
+
+		// Handle delete buttons (new method)
+		if ( isset($_POST['delete_custom_field']) && is_array($_POST['delete_custom_field']) ) {
+			foreach ( $_POST['delete_custom_field'] as $key ) {
+				$key = sanitize_key($key);
+
+				$in_use = $wpdb->get_var( $wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->prefix}tpw_member_meta WHERE meta_key = %s", $key
+				) );
+
+				if ( $in_use > 0 ) continue;
+
+				$wpdb->delete(
+					$table,
+					[ 'field_key' => $key ],
+					[ '%s' ]
+				);
+
+				// Also remove any visibility mappings for this field
+				$vis_table = $wpdb->prefix . 'tpw_member_field_visibility';
+				$wpdb->delete( $vis_table, [ 'field_key' => $key ], [ '%s' ] );
+			}
 		}
 
 		// Edit or delete custom fields
@@ -150,13 +318,43 @@ class TPW_Member_Fields {
 						[ 'field_key' => $meta_key ],
 						[ '%s' ]
 					);
+
+					// Also remove any visibility mappings for this field
+					$vis_table = $wpdb->prefix . 'tpw_member_field_visibility';
+					$wpdb->delete( $vis_table, [ 'field_key' => $meta_key ], [ '%s' ] );
 				} else {
-					$new_label = sanitize_text_field($field['label']);
+					// Handle possible rename: if a new key is provided and differs, update both settings and visibility tables
+					if ( isset($field['key']) ) {
+						$new_key = sanitize_key( $field['key'] );
+						if ( $new_key && $new_key !== $meta_key ) {
+							// Ensure target key does not already exist in field settings to avoid collision
+							$exists = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE field_key = %s", $new_key ) );
+							if ( $exists === 0 ) {
+								// Update settings table key
+								$wpdb->update( $table, [ 'field_key' => $new_key ], [ 'field_key' => $meta_key ], [ '%s' ], [ '%s' ] );
+								// Update member meta keys
+								$wpdb->update( $wpdb->prefix . 'tpw_member_meta', [ 'meta_key' => $new_key ], [ 'meta_key' => $meta_key ], [ '%s' ], [ '%s' ] );
+								// Update visibility mappings
+								$wpdb->update( $wpdb->prefix . 'tpw_member_field_visibility', [ 'field_key' => $new_key ], [ 'field_key' => $meta_key ], [ '%s' ], [ '%s' ] );
+
+								// Keep working variable aligned to the new key for subsequent updates below
+								$meta_key = $new_key;
+							}
+						}
+					}
+					$new_label  = sanitize_text_field($field['custom_label']);
+					$sort_order = isset($field['sort_order']) ? intval($field['sort_order']) : 999;
+					$is_enabled = (!empty($field['is_enabled']) || $field['is_enabled'] === '0') ? 1 : 0;
+
 					$wpdb->update(
 						$table,
-						[ 'label' => $new_label ],
+						[
+							'custom_label' => $new_label,
+							'is_enabled'   => $is_enabled,
+							'sort_order'   => $sort_order,
+						],
 						[ 'field_key' => $meta_key ],
-						[ '%s' ],
+						[ '%s', '%d', '%d' ],
 						[ '%s' ]
 					);
 				}
@@ -164,7 +362,45 @@ class TPW_Member_Fields {
 		}
 
 		// Redirect to avoid resubmission
-		wp_redirect( add_query_arg( 'updated', '1', wp_get_referer() ) );
+		wp_safe_redirect( esc_url_raw( add_query_arg( 'updated', '1', $_SERVER['REQUEST_URI'] ) ) );
 		exit;
 	}
+
+	/**
+	 * Ensure all core fields exist in the tpw_field_settings table.
+	 */
+	private function maybe_insert_missing_core_fields() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'tpw_field_settings';
+		$existing_keys = $wpdb->get_col( "
+			SELECT field_key FROM $table
+			WHERE 1=1
+		" );
+
+		$sort = 0;
+		foreach ( $this->get_core_fields() as $field_key => $field_info ) {
+			if ( ! in_array( $field_key, $existing_keys, true ) ) {
+				$wpdb->insert(
+					$table,
+					[
+						'field_key'   => $field_key,
+						'is_enabled'     => 1,
+						'custom_label'       => $field_info['label'],
+						'sort_order'  => $sort++,
+						'field_type'  => isset($field_info['type']) ? $field_info['type'] : 'text',
+					],
+					[ '%s', '%d', '%s', '%d', '%s' ]
+				);
+			}
+		}
+	}
+
+	/**
+	 * Hook render_settings_page to the_content for settings page display
+	 */
+	public function render_settings_page_wrapper() {
+		add_filter( 'the_content', [ $this, 'render_settings_page' ] );
+	}
+
 }

@@ -31,12 +31,12 @@ class TPW_Menus_Admin_Edit {
 
         if ( function_exists( 'tpw_admin_output_header' ) ) {
             tpw_admin_output_header( $header_title, $header_desc );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } elseif ( function_exists( 'flexievent_output_header' ) ) {
             flexievent_output_header( $header_title, $header_desc );
-            echo '<div class="wrap">';
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
         } else {
-            echo '<div class="wrap"><h1>' . esc_html( $header_title ) . '</h1>';
+            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html( $header_title ) . '</h1>';
         }
                 echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=tpw-core-dining-menus' ) ) . '" class="button button-secondary">&larr; Back to Manage Menus</a></p>';
         echo '<form method="post">';
@@ -47,6 +47,6 @@ class TPW_Menus_Admin_Edit {
         echo '<br/><label class="tpw-menu-price-label">Price: <input type="text" name="price" pattern="^\\d+(\\.\\d{1,2})?$" value="' . esc_attr(number_format((float) $menu->price, 2)) . '" required class="tpw-menu-price" /></label>';
         echo '<br/><input type="submit" name="submit_menu" class="button button-primary tpw-menu-submit" value="Update Menu" />';
         echo '</form>';
-        echo '</div>';
+        echo '</div></div>';
     }
 }

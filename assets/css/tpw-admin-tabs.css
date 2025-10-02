@@ -1,0 +1,9 @@
+/* TPW Admin Tabs (centralized) */
+.tpw-tabs { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 12px; padding: 0; }
+.tpw-tabs .tpw-tab,
+.tpw-tab { display:inline-flex; align-items:center; justify-content:center; height: 32px; padding: 0 12px; border-radius: 8px; text-decoration:none; border: 1px solid #c3c4c7; background: #f6f7f7; color: #1d2327; font-weight: 600; font-size: 13px; line-height: 1; }
+.tpw-tabs .tpw-tab:hover { filter: brightness(0.98); }
+.tpw-tabs .tpw-tab.active { background: #2271b1; border-color: #2271b1; color: #fff; }
+
+/* Compact variant for tight spaces */
+.tpw-tabs.is-compact .tpw-tab { height: 28px; padding: 0 10px; border-radius: 6px; font-size: 12px; }

@@ -1,0 +1,77 @@
+:root {
+  --tpw-primary: #0B6CAD;
+  --tpw-accent: #F8B700;
+  --tpw-bg-light: #F9F9F9;
+  --tpw-text-dark: #222;
+  --tpw-border: #DDD;
+}
+
+.table-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--tpw-border);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1px solid var(--tpw-border);
+  padding: 0.75rem 0.5rem;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-head {
+  background-color: var(--tpw-bg-light);
+  font-weight: bold;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  word-break: break-word;
+}
+
+.button {
+  background-color: var(--tpw-primary);
+  color: #fff;
+  padding: 6px 12px;
+  text-decoration: none !important;
+  border-radius: 3px;
+  font-size: 0.875rem;
+  display: inline-block;
+  border:none;
+}
+
+.button.small {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
+
+.button:hover {
+  background-color: #094c8c;
+}
+
+@media screen and (max-width: 768px) {
+  .table-row,
+  .table-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-cell {
+    padding: 6px 0;
+  }
+}
+
+/* --- Global member profile avatar in navigation --- */
+/* Keep the member avatar consistent anywhere the member menu renders */
+.tpw-member-profile-menu > a.tpw-member-profile-link { display: inline-flex; align-items: center; gap: 8px; }
+.tpw-nav-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: inline-block; }
+.tpw-nav-initials { width: 28px; height: 28px; border-radius: 50%; background:#e8eef6; color:#2a4365; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }

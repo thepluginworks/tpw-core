@@ -1,0 +1,6 @@
+/* Single Notice layout: center featured image at the top */
+.tpw-notice-hero{display:flex;justify-content:center;align-items:center;margin:1rem 0}
+.tpw-notice-hero img{max-width:100%;height:auto;border-radius:8px}
+.tpw-notice-single .entry-header{margin:0 0 1rem}
+.tpw-notice-single .entry-title{margin:0 0 .5rem}
+.tpw-notice-meta{color:#6b7280;font-size:.9rem}

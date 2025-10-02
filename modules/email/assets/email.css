@@ -1,0 +1,11 @@
+.tpw-email-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999}
+.tpw-email-modal[hidden]{display:none}
+.tpw-email-modal__dialog{background:#fff;width:min(700px,92vw);max-height:80vh;overflow:auto;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+.tpw-email-modal__header,.tpw-email-modal__body{padding:12px 16px}
+.tpw-email-modal__header{border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.tpw-email-row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.tpw-email-row input[type="text"],
+.tpw-email-row input[type="email"],
+.tpw-email-row textarea{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+.tpw-email-actions{margin-top:8px}
+.tpw-email-result{margin-top:4px;color:#444}

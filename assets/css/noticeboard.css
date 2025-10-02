@@ -1,0 +1,18 @@
+/* Noticeboard basic styles */
+.tpw-notice-admin-actions{margin-bottom:1rem}
+.tpw-notice-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.tpw-notice-card{border:1px solid #e5e7eb;border-radius:8px;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.tpw-notice-thumb img{width:100%;height:180px;object-fit:cover}
+.tpw-notice-body{padding:12px}
+.tpw-notice-title{margin:0 0 6px;font-size:1.1rem}
+.tpw-notice-cat{font-size:.85rem;color:#6b7280;margin-bottom:8px}
+.tpw-notice-excerpt{font-size:.95rem;margin-bottom:10px}
+.tpw-notice-actions{display:flex;gap:6px;padding:8px 12px;border-top:1px solid #eee}
+
+/* Modal */
+.tpw-notice-modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:none}
+.tpw-notice-modal-content{background:#fff;max-width:900px;margin:4vh auto;padding:16px;border-radius:8px;}
+.tpw-notice-modal-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:12px}
+.tpw-notice-modal-title{margin:0}
+.tpw-notice-modal-close{background:none;border:none;font-size:20px;cursor:pointer}
+.tpw-field{margin-bottom:12px}

@@ -10,10 +10,11 @@ class TPW_Payment_DB {
         $sql = "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name varchar(100) NOT NULL,
-            slug varchar(100) NOT NULL UNIQUE,
+            slug varchar(100) NOT NULL,
             active tinyint(1) DEFAULT 1,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
+            PRIMARY KEY  (id),
+            UNIQUE KEY slug_unique (slug)
         ) $charset_collate;";
         error_log('🔧 SQL to be run: ' . $sql);
         

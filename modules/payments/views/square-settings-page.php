@@ -1,6 +1,6 @@
 
 
-<div class="wrap">
+<div class="tpw-admin-ui"><div class="wrap">
     <h1>Square Payment Settings</h1>
     <form method="post" action="options.php">
         <?php
@@ -30,4 +30,4 @@
         </table>
         <?php submit_button(); ?>
     </form>
-</div>
+</div></div>
