@@ -1,0 +1,183 @@
+/* Fixtures Manage responsive tweaks
+   Scope: Front-end fixtures manager route (/fixtures-manage/) only.
+   Goal: Make top button/tab groups wrap on small screens to avoid horizontal scrolling.
+*/
+
+/* Try to target common containers seen in the fixtures UI without being over-specific. */
+/* Explicit selectors for the provided markup */
+.tpw-toolbar { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; overflow-x: hidden; max-width: 100%; width: 100%; white-space: normal; }
+.tpw-toolbar .tpw-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap !important; max-width: 100%; min-width: 0; }
+.tpw-toolbar .tpw-group .tpw-btn,
+.tpw-toolbar .tpw-group a.button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal !important; /* defeat global nowrap on buttons in this context */
+  overflow-wrap: anywhere; /* break long labels */
+}
+
+/* Primary group: simple grouped box (used for top nav buttons) */
+.tpw-toolbar .tpw-group-primary { gap: 8px; }
+
+/* Admin group styling extracted from inline */
+.tpw-toolbar .tpw-group-admin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 12px 12px;
+  padding-top: 16px; /* make room for floating label */
+  border: 1px solid #e3e6ea;
+  border-radius: 6px;
+  background: #fff;
+}
+.tpw-toolbar .tpw-group-admin .tpw-group-label {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: #fff;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: .2px;
+  line-height: 1.1;
+  z-index: 1;
+}
+
+/* Layout toggle utility classes */
+.tpw-layout-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.tpw-layout-toggle .tpw-layout-toggle-icon { display: inline-flex; width: 16px; height: 16px; }
+
+/* Fixture tabs container (wraps on mobile) */
+.tpw-fixture-tabs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Top actions row — mirror members layout */
+.tpw-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin: 0 0 12px;
+}
+
+/* Action group styles (copied from members admin for consistency) */
+.tpw-action-group {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 10px 10px 8px; /* tight box around buttons */
+  display: inline-block;   /* shrink to content */
+  flex: 0 0 auto;          /* don't stretch */
+}
+.tpw-action-group__title {
+  position: absolute;
+  top: -10px;                /* sit on border */
+  left: 12px;
+  background: #fff;          /* cover border under label */
+  padding: 0 6px;
+  font-weight: 700;
+  margin: 0;
+  font-size: 13px;
+  color: #1d2327;
+}
+.tpw-action-group__buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Fallback spacing for action group where flex gap isn't supported */
+@supports not (gap: 8px) {
+  .tpw-action-group__buttons > * { margin-right: 8px; }
+  .tpw-action-group__buttons > *:last-child { margin-right: 0; }
+}
+
+/* Make .tpw-action-group look like in members module on frontend */
+.tpw-toolbar .tpw-action-group {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 10px 10px 8px;
+  display: inline-block; /* shrink to fit buttons */
+}
+.tpw-toolbar .tpw-action-group__title {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: #fff;
+  padding: 0 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #1d2327;
+}
+.tpw-toolbar .tpw-action-group__buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Generic button groups: allow wrapping and tighter gaps on small widths */
+.tpw-tabs,
+.tpw-primary-actions,
+.tpw-action-group__buttons,
+.tpw-actions-group,
+.nav-tabs,
+.button-group,
+.btn-group,
+.tabs,
+.toolbar,
+.tools-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Ensure individual controls can shrink and wrap neatly */
+.tpw-tabs .tpw-tab,
+.tpw-actions-group .tpw-btn,
+.tpw-actions-group .button,
+.tpw-primary-actions .button,
+.tpw-primary-actions .tpw-btn,
+.button-group > *,
+.nav-tabs > a,
+.tabs > a,
+.toolbar .button,
+.tools-bar .button {
+  min-width: 0;           /* allow shrinking */
+  white-space: normal;    /* text can wrap if needed */
+}
+
+/* On narrow screens, stack into 2 columns if space is tight */
+@media (max-width: 520px) {
+  .tpw-toolbar .tpw-group .tpw-btn,
+  .tpw-toolbar .tpw-group a.button { flex: 1 1 calc(50% - 8px); }
+  .tpw-tabs .tpw-tab,
+  .tpw-primary-actions .button,
+  .tpw-primary-actions .tpw-btn,
+  .tpw-actions-group .tpw-btn,
+  .tpw-actions-group .button {
+    flex: 1 1 calc(50% - 8px);
+  }
+}
+
+/* Fallback spacing for browsers without flex gap (older iOS Safari) */
+@supports not (gap: 8px) {
+  .tpw-toolbar .tpw-group > * { margin-right: 8px; }
+  .tpw-toolbar .tpw-group > *:last-child { margin-right: 0; }
+}
+
+/* On very narrow screens, full width buttons for easy tapping */
+@media (max-width: 380px) {
+  .tpw-toolbar .tpw-group .tpw-btn,
+  .tpw-toolbar .tpw-group a.button { flex: 1 1 100%; }
+  .tpw-tabs .tpw-tab,
+  .tpw-primary-actions .button,
+  .tpw-primary-actions .tpw-btn,
+  .tpw-actions-group .tpw-btn,
+  .tpw-actions-group .button { flex: 1 1 100%; }
+}
+
+/* Remove accidental horizontal overflow from wrappers */
+.container, .wrap, .tpw-admin-ui, .tpw-frontend-ui, .tpw-fe-embed {
+  overflow-x: clip; /* keep layout from causing page scroll */
+}

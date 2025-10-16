@@ -35,6 +35,27 @@ class TPW_Core_Activator {
 
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
 
+        // Gallery module DB (Phase 2: create schema on activation, silent and safe)
+        try {
+            require_once TPW_CORE_PATH . 'modules/gallery/gallery-db.php';
+            if ( class_exists( 'TPW_Gallery_DB' ) ) {
+                $current = get_option( 'tpw_gallery_db_version', '' );
+                // Read target schema version from class constant
+                $target  = TPW_Gallery_DB::VERSION;
+                if ( version_compare( (string) $current, (string) $target, '<' ) ) {
+                    TPW_Gallery_DB::create_tables();
+                    // Best-effort: log success, but no admin notices
+                    if ( function_exists( 'error_log' ) ) {
+                        error_log( 'TPW Core activation: Gallery DB schema ensured (v' . $target . ').' );
+                    }
+                }
+            }
+        } catch ( \Throwable $e ) {
+            if ( function_exists( 'error_log' ) ) {
+                error_log( 'TPW Core activation: Gallery DB setup failed - ' . $e->getMessage() );
+            }
+        }
+
         // Create Email Templates table
         try {
             require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-templates-db.php';

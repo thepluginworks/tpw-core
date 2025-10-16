@@ -4,7 +4,8 @@ if (!defined('ABSPATH')) { exit; }
 class TPW_Noticeboard_List_Shortcode {
     public static function init() {
         add_shortcode('tpw_noticeboard_list', [__CLASS__, 'render']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'maybe_enqueue']);
+        // Load after most theme/page‑builder styles so our button rules can win on specificity + order
+        add_action('wp_enqueue_scripts', [__CLASS__, 'maybe_enqueue'], 100);
     }
 
     public static function maybe_enqueue() {
@@ -12,7 +13,28 @@ class TPW_Noticeboard_List_Shortcode {
         global $post; if (!$post) return;
         if (has_shortcode($post->post_content, 'tpw_noticeboard_list')) {
             wp_enqueue_media();
-            wp_enqueue_script('tpw-noticeboard', TPW_CORE_URL . 'assets/js/noticeboard.js', ['jquery'], '1.0', true);
+            wp_enqueue_script('tpw-noticeboard', TPW_CORE_URL . 'assets/js/noticeboard.js', ['jquery'], '1.1', true);
+            // Determine Noticeboard management capability strictly via members flags: is_admin OR is_noticeboard_admin
+            $can_manage = false;
+            // Check Noticeboard Admin flag first
+            if ( ! class_exists('TPW_Control_UI') ) {
+                $ui_path = TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-ui.php';
+                if ( file_exists( $ui_path ) ) { require_once $ui_path; }
+            }
+            if ( class_exists('TPW_Control_UI') && TPW_Control_UI::is_noticeboard_admin() ) {
+                $can_manage = true;
+            } else {
+                // Check Members is_admin flag directly, without WP capability fallback
+                $ma_path = TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
+                if ( file_exists( $ma_path ) ) { require_once $ma_path; }
+                if ( class_exists('TPW_Member_Access') && is_user_logged_in() ) {
+                    $user = wp_get_current_user();
+                    $member = TPW_Member_Access::get_member_by_user_id( (int) $user->ID );
+                    if ( $member && isset($member->is_admin) && (int)$member->is_admin === 1 ) {
+                        $can_manage = true;
+                    }
+                }
+            }
             wp_localize_script('tpw-noticeboard', 'TPWNoticeboard', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonces' => [
@@ -21,7 +43,7 @@ class TPW_Noticeboard_List_Shortcode {
                     'duplicate' => wp_create_nonce('tpw_notice_duplicate'),
                     'addCategory' => wp_create_nonce('tpw_notice_add_category'),
                 ],
-                'caps' => [ 'isAdmin' => current_user_can('manage_options') ],
+                'caps' => [ 'canManage' => $can_manage ],
             ]);
             wp_enqueue_style('tpw-noticeboard', TPW_CORE_URL . 'assets/css/noticeboard.css', [], '1.0');
         }
@@ -48,7 +70,26 @@ class TPW_Noticeboard_List_Shortcode {
         $q = new WP_Query($args);
 
         ob_start();
-        if (current_user_can('manage_options')) {
+        // Determine if current user can manage notices strictly via members flags
+        $can_manage = false;
+        if ( ! class_exists('TPW_Control_UI') ) {
+            $ui_path = TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-ui.php';
+            if ( file_exists( $ui_path ) ) { require_once $ui_path; }
+        }
+        if ( class_exists('TPW_Control_UI') && TPW_Control_UI::is_noticeboard_admin() ) {
+            $can_manage = true;
+        } else {
+            $ma_path = TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
+            if ( file_exists( $ma_path ) ) { require_once $ma_path; }
+            if ( class_exists('TPW_Member_Access') && is_user_logged_in() ) {
+                $user = wp_get_current_user();
+                $member = TPW_Member_Access::get_member_by_user_id( (int) $user->ID );
+                if ( $member && isset($member->is_admin) && (int)$member->is_admin === 1 ) {
+                    $can_manage = true;
+                }
+            }
+        }
+        if ($can_manage) {
             echo '<div class="tpw-notice-admin-actions">';
             echo '<button class="button button-primary tpw-notice-add">' . esc_html__('Add New Notice', 'tpw-core') . '</button>';
             echo '</div>';
@@ -71,7 +112,7 @@ class TPW_Noticeboard_List_Shortcode {
                 if ($excerpt) echo '<div class="tpw-notice-excerpt">' . esc_html($excerpt) . '</div>';
                 if ($atts['read_more'] === 'true') echo '<a class="tpw-notice-more" href="' . esc_url(get_permalink($id)) . '">' . esc_html__('Read More', 'tpw-core') . '</a>';
                 echo '</div>';
-                if (current_user_can('manage_options')) {
+                if ($can_manage) {
                     echo '<div class="tpw-notice-actions">';
                     echo '<button class="button tpw-notice-edit">' . esc_html__('Edit', 'tpw-core') . '</button>';
                     echo '<button class="button tpw-notice-duplicate">' . esc_html__('Duplicate', 'tpw-core') . '</button>';
@@ -86,7 +127,7 @@ class TPW_Noticeboard_List_Shortcode {
         }
         echo '</div>';
 
-        if (current_user_can('manage_options')) {
+        if ($can_manage) {
             // Modal container
             include TPW_CORE_PATH . 'templates/noticeboard/form.php';
         }

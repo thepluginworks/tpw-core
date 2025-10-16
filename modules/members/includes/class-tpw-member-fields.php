@@ -195,6 +195,8 @@ class TPW_Member_Fields {
 
 		// Save core field settings
 		if ( isset($_POST['fields']) && is_array($_POST['fields']) ) {
+			$sections_map = get_option('tpw_member_field_sections', []);
+			if (!is_array($sections_map)) { $sections_map = []; }
 			foreach ( $_POST['fields'] as $key => $field ) {
 				$key = sanitize_key($key);
 				// Prevent disabling of critical core fields
@@ -206,6 +208,16 @@ class TPW_Member_Fields {
 				}
 				$custom_label = sanitize_text_field($field['custom_label']);
 				$sort_order = intval($field['sort_order']);
+				$basic_search = isset($field['basic_search']) ? 1 : 0;
+				$depends_on = isset($field['depends_on']) ? sanitize_key($field['depends_on']) : '';
+				if ( $depends_on === '' ) { $depends_on = null; }
+				// Guard against self or circular (one-level only): if invalid, discard
+				if ( $depends_on === $key ) { $depends_on = null; }
+				if ( $depends_on ) {
+					// Simple circular check: look up parent depends_on; if parent depends on this, reject
+					$parent_dep = $wpdb->get_var( $wpdb->prepare( "SELECT depends_on FROM {$table} WHERE field_key = %s", $depends_on ) );
+					if ( $parent_dep === $key ) { $depends_on = null; }
+				}
 
 				$wpdb->replace(
 					$table,
@@ -214,12 +226,25 @@ class TPW_Member_Fields {
 						'is_enabled'    => $is_enabled,
 						'custom_label'  => $custom_label,
 						'sort_order'    => $sort_order,
+						'basic_search'  => $basic_search,
+						'depends_on'    => $depends_on,
 					],
 					[
-						'%s', '%d', '%s', '%d'
+						'%s', '%d', '%s', '%d', '%d', '%s'
 					]
 				);
+
+				// Persist optional section in a separate option mapping (no DB schema change)
+				if ( isset($field['section']) ) {
+					$sec = sanitize_text_field($field['section']);
+					if ($sec === '') {
+						unset($sections_map[$key]);
+					} else {
+						$sections_map[$key] = $sec;
+					}
+				}
 			}
+			update_option('tpw_member_field_sections', $sections_map );
 		}
 
 		// Persist conditional fields (multiple)
@@ -301,6 +326,8 @@ class TPW_Member_Fields {
 
 		// Edit or delete custom fields
 		if ( isset($_POST['custom_fields']) && is_array($_POST['custom_fields']) ) {
+			$sections_map = get_option('tpw_member_field_sections', []);
+			if (!is_array($sections_map)) { $sections_map = []; }
 			foreach ($_POST['custom_fields'] as $meta_key => $field) {
 				$meta_key = sanitize_key($meta_key);
 
@@ -345,6 +372,14 @@ class TPW_Member_Fields {
 					$new_label  = sanitize_text_field($field['custom_label']);
 					$sort_order = isset($field['sort_order']) ? intval($field['sort_order']) : 999;
 					$is_enabled = (!empty($field['is_enabled']) || $field['is_enabled'] === '0') ? 1 : 0;
+					$basic_search = isset($field['basic_search']) ? 1 : 0;
+					$depends_on = isset($field['depends_on']) ? sanitize_key($field['depends_on']) : '';
+					if ( $depends_on === '' ) { $depends_on = null; }
+					if ( $depends_on === $meta_key ) { $depends_on = null; }
+					if ( $depends_on ) {
+						$parent_dep = $wpdb->get_var( $wpdb->prepare( "SELECT depends_on FROM {$table} WHERE field_key = %s", $depends_on ) );
+						if ( $parent_dep === $meta_key ) { $depends_on = null; }
+					}
 
 					$wpdb->update(
 						$table,
@@ -352,13 +387,26 @@ class TPW_Member_Fields {
 							'custom_label' => $new_label,
 							'is_enabled'   => $is_enabled,
 							'sort_order'   => $sort_order,
+							'basic_search'  => $basic_search,
+							'depends_on'    => $depends_on,
 						],
 						[ 'field_key' => $meta_key ],
-						[ '%s', '%d', '%d' ],
+						[ '%s', '%d', '%d', '%d', '%s' ],
 						[ '%s' ]
 					);
+
+					// Persist optional section for this custom field
+					if ( isset($field['section']) ) {
+						$sec = sanitize_text_field($field['section']);
+						if ($sec === '') {
+							unset($sections_map[$meta_key]);
+						} else {
+							$sections_map[$meta_key] = $sec;
+						}
+					}
 				}
 			}
+			update_option('tpw_member_field_sections', $sections_map );
 		}
 
 		// Redirect to avoid resubmission

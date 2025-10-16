@@ -40,8 +40,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                     $update_node = function( $node, $parent_id ) use ( &$position, &$update_node ) {
                         $id = isset($node['id']) ? (int) $node['id'] : 0;
                         if ( $id > 0 ) {
-                            // Safer: only adjust hierarchy and order without touching content
-                            // Parent is stored in post meta; order is post.menu_order
+                            // Update only order and parent meta to avoid clobbering fields
                             wp_update_post( [ 'ID' => $id, 'menu_order' => (int) $position ] );
                             update_post_meta( $id, '_menu_item_menu_item_parent', (int) $parent_id );
                             $position++;
@@ -52,9 +51,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                             }
                         }
                     };
-                    foreach ( $tree as $top ) {
-                        $update_node( $top, 0 );
-                    }
+                    foreach ( $tree as $top ) { $update_node( $top, 0 ); }
+                    // Clear caches so the change is visible immediately
+                    if ( function_exists( 'clean_nav_menu_cache' ) ) { clean_nav_menu_cache( $menu_id ); }
                 }
             }
             break;
@@ -227,6 +226,55 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
         case 'delete_item':
             $item_id = (int) ($_POST['item_id'] ?? 0);
             if ( $item_id ) wp_delete_post( $item_id, true );
+            break;
+        case 'repair_menu_items':
+            $menu_id = (int) ($_POST['menu_id'] ?? 0);
+            if ( $menu_id ) {
+                $items_to_fix = wp_get_nav_menu_items( $menu_id, [ 'update_post_term_cache' => false ] );
+                if ( is_array( $items_to_fix ) ) {
+                    foreach ( $items_to_fix as $mi ) {
+                        $id = (int) $mi->ID;
+                        $need_update = false;
+                        $new_title = (string) $mi->title;
+                        $new_url   = (string) $mi->url;
+                        // Try to restore from TPW meta first
+                        if ( $new_url === '' ) {
+                            $slug = get_post_meta( $id, '_tpw_page_slug', true );
+                            if ( $slug && class_exists('TPW_Core_System_Pages') ) {
+                                $u = TPW_Core_System_Pages::get_permalink( sanitize_key( $slug ) );
+                                if ( $u ) { $new_url = $u; $need_update = true; }
+                            }
+                        }
+                        if ( $new_title === '' ) {
+                            if ( $slug && class_exists('TPW_Core_System_Pages') ) {
+                                $rows = TPW_Core_System_Pages::get_all();
+                                foreach ( (array) $rows as $r ) { if ( $r->slug === $slug ) { $new_title = (string) $r->title; break; } }
+                            }
+                            if ( $new_title === '' && $new_url !== '' ) {
+                                // Derive a sensible label from URL
+                                $parts = wp_parse_url( $new_url );
+                                if ( $parts ) {
+                                    $seg = '';
+                                    if ( ! empty( $parts['path'] ) ) {
+                                        $p = trim( (string) $parts['path'], '/' );
+                                        $bits = $p !== '' ? explode( '/', $p ) : [];
+                                        $seg = end( $bits ) ?: '';
+                                    }
+                                    $new_title = $seg !== '' ? ucwords( str_replace( ['-','_'], ' ', $seg ) ) : ( $parts['host'] ?? 'Link' );
+                                } else {
+                                    $new_title = 'Link';
+                                }
+                            }
+                            if ( $new_title !== '' ) $need_update = true;
+                        }
+                        if ( $need_update ) {
+                            // Update fields directly to avoid API side-effects
+                            if ( $new_title !== '' ) { wp_update_post( [ 'ID' => $id, 'post_title' => $new_title ] ); }
+                            if ( $new_url   !== '' ) { update_post_meta( $id, '_menu_item_url', esc_url_raw( $new_url ) ); }
+                        }
+                    }
+                }
+            }
             break;
     }
     // Redirect to avoid resubmission (build robust URL with add_query_arg)
@@ -640,7 +688,17 @@ if ( $selected_menu_id ) {
             echo '<input type="hidden" name="tpw_menu_action" value="save_structure" />';
             echo '<input type="hidden" name="menu_id" value="' . (int)$selected_menu_id . '" />';
             echo '<input type="hidden" name="mm_tree" id="tpw-mm-tree-json" value="" />';
-            echo '<div class="tpw-mm-savebar"><button type="submit" class="tpw-btn tpw-btn-primary">Save Order</button></div>';
+            echo '<div class="tpw-mm-savebar" style="display:flex;gap:8px;justify-content:flex-end">';
+            echo '  <button type="submit" class="tpw-btn tpw-btn-primary">Save Order</button>';
+            echo '</div>';
+            echo '</form>';
+
+            // Add a small repair button (separate form to avoid accidental trigger)
+            echo '<form id="tpw-mm-repair" method="post" style="margin-top:6px;text-align:right">';
+            wp_nonce_field( $nonce_action );
+            echo '<input type="hidden" name="tpw_menu_action" value="repair_menu_items" />';
+            echo '<input type="hidden" name="menu_id" value="' . (int)$selected_menu_id . '" />';
+            echo '<button type="submit" class="tpw-btn tpw-btn-light" onclick="return confirm(\'Attempt to repair blank labels/URLs in this menu?\')">Attempt Repair Blank Items</button>';
             echo '</form>';
         }
 } else {

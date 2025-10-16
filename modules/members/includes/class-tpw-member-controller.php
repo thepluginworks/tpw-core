@@ -9,7 +9,8 @@ class TPW_Member_Controller {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
 
-    $sql = "SELECT * FROM $table WHERE 1=1";
+    // IMPORTANT: select only base member columns to avoid meta JOIN 'id' columns overwriting $member->id
+    $sql = "SELECT {$table}.* FROM $table WHERE 1=1";
     $meta_joins = [];
 
         // Optional filters
@@ -291,7 +292,33 @@ class TPW_Member_Controller {
         // Always bump the updated_at timestamp
         $update['updated_at'] = current_time( 'mysql' );
 
-        return $wpdb->update( $table, $update, [ 'id' => $id ] );
+        $res = $wpdb->update( $table, $update, [ 'id' => $id ] );
+        if ( $res !== false ) {
+            // Bust dependent option caches for any updated columns
+            if ( ! empty($update) ) {
+                $changed = array_keys($update);
+                $searchable = get_option('tpw_member_searchable_fields', []);
+                if ( is_array($searchable) ) {
+                    foreach ($searchable as $fkey => $conf) {
+                        if ( ! empty($conf['depends_on']) && in_array($conf['depends_on'], $changed, true ) ) {
+                            // Delete transients matching child-parent pattern
+                            // We cannot wildcard delete easily; store a mini index option of dependency caches? Simpler: brute force keys for last parent values not known.
+                            // Minimal approach: delete all transients for this child (scan wp_options). Only if feasible.
+                            global $wpdb;
+                            $like = '%tpw_dep_opts_%';
+                            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+                            $transient_rows = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_'.esc_sql( 'tpw_dep_opts_' ).'%'" );
+                            if ( $transient_rows ) {
+                                foreach ($transient_rows as $on) {
+                                    if ( strpos( $on, md5($fkey.'|') ) !== false ) { delete_option( $on ); }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $res;
     }
 
     /**

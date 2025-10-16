@@ -228,9 +228,10 @@
 }
 
 .tpw-fe-title {
-    margin: 0 0 4px;
-    font-size: 24px;
-    line-height: 1.2;
+  margin: 0 0 4px;
+  font-size: var(--tpw-h3-size, 1.25rem);
+  font-weight: var(--tpw-h3-weight, 600);
+  line-height: 1.2;
 }
 
 .tpw-fe-notice {

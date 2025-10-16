@@ -1,0 +1,10 @@
+/* Minimal gallery lightbox */
+#tpw-gallery-lb .tpw-lb-close, #tpw-gallery-lb .tpw-lb-prev, #tpw-gallery-lb .tpw-lb-next {
+  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#fff; padding:6px 10px; border-radius:6px;
+}
+#tpw-gallery-lb { touch-action: pan-y; overscroll-behavior: contain; }
+html.tpw-lb-open, body.tpw-lb-open { overflow: hidden; height: 100%; }
+#tpw-gallery-lb { -webkit-overflow-scrolling: touch; }
+
+/* Public gallery lightbox-only image styles */
+#tpw-gallery-lb .tpw-lb-img { max-width: 90vw; max-height: 85vh; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto; }

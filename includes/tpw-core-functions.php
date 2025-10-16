@@ -381,3 +381,88 @@ function tpw_can_group_view_field( string $group, string $field ): bool {
 
     return ! empty( $cache[ $group_key ][ $field_key ] );
 }
+
+// --- TPW Core Module Registry (lightweight, internal) ---
+// Global registry storage
+if ( ! isset( $GLOBALS['tpw_module_registry'] ) || ! is_array( $GLOBALS['tpw_module_registry'] ) ) {
+    $GLOBALS['tpw_module_registry'] = [];
+}
+
+if ( ! function_exists( 'tpw_register_module' ) ) {
+    /**
+     * Register a TPW module in the in-memory registry.
+     * Safe no-op beyond storing metadata; enables diagnostics and orchestration.
+     *
+     * @param string $slug Unique slug (e.g. 'gallery').
+     * @param array  $args Module meta: title, version, status, plugin, has_ui, capabilities, description.
+     * @return array The stored module definition.
+     */
+    function tpw_register_module( string $slug, array $args = [] ): array {
+        $key = sanitize_key( $slug );
+        if ( '' === $key ) {
+            return [];
+        }
+
+        $defaults = [
+            'title'        => $key,
+            'version'      => '',
+            'status'       => 'active', // scaffold|active|disabled
+            'plugin'       => 'tpw-core',
+            'has_ui'       => false,
+            'capabilities' => [],
+            'description'  => '',
+            'registered_at'=> time(),
+        ];
+
+        $def = array_merge( $defaults, $args );
+        $GLOBALS['tpw_module_registry'][ $key ] = $def;
+
+        /**
+         * Fires after a TPW module is registered.
+         *
+         * @param string $key Module slug.
+         * @param array  $def Module definition.
+         */
+        do_action( 'tpw_module_registered', $key, $def );
+        return $def;
+    }
+}
+
+if ( ! function_exists( 'tpw_get_registered_modules' ) ) {
+    /**
+     * Return all registered TPW modules.
+     *
+     * @return array<string,array>
+     */
+    function tpw_get_registered_modules(): array {
+        $all = isset( $GLOBALS['tpw_module_registry'] ) && is_array( $GLOBALS['tpw_module_registry'] )
+            ? $GLOBALS['tpw_module_registry']
+            : [];
+        return apply_filters( 'tpw_registered_modules', $all );
+    }
+}
+
+if ( ! function_exists( 'tpw_is_module_registered' ) ) {
+    /**
+     * Check whether a module is registered.
+     */
+    function tpw_is_module_registered( string $slug ): bool {
+        $all = tpw_get_registered_modules();
+        $key = sanitize_key( $slug );
+        return isset( $all[ $key ] );
+    }
+}
+
+/**
+ * Determine if the Members module should be enabled for front-end features.
+ *
+ * Returns true when TPW_MEMBERS_ACTIVE is defined and truthy. Filterable via
+ * 'tpw_members/module_enabled' to support future toggles.
+ */
+function tpw_members_module_enabled(): bool {
+    $enabled = defined('TPW_MEMBERS_ACTIVE') && TPW_MEMBERS_ACTIVE;
+    /**
+     * Filter: allow products to override Members module enabled flag.
+     */
+    return (bool) apply_filters( 'tpw_members/module_enabled', $enabled );
+}

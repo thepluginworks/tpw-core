@@ -87,11 +87,19 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 // Handle POST back for UI theme fields
                 if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tpw_core_branding_nonce']) && wp_verify_nonce( $_POST['tpw_core_branding_nonce'], 'tpw_core_save_branding' ) ) {
                     $font  = isset($_POST['tpw_ui_font_family']) ? wp_unslash( (string) $_POST['tpw_ui_font_family'] ) : '';
+                    $fontw = isset($_POST['tpw_ui_font_weight']) ? preg_replace('/[^0-9a-zA-Z-]/', '', (string) $_POST['tpw_ui_font_weight'] ) : '';
+                    $ttrans= isset($_POST['tpw_ui_text_transform']) ? preg_replace('/[^a-z-]/', '', strtolower( (string) $_POST['tpw_ui_text_transform'] ) ) : '';
+                    $lsp   = isset($_POST['tpw_ui_letter_spacing']) ? wp_unslash( (string) $_POST['tpw_ui_letter_spacing'] ) : '';
+                    $tsh   = isset($_POST['tpw_ui_text_shadow']) ? wp_unslash( (string) $_POST['tpw_ui_text_shadow'] ) : '';
                     $btnbg = isset($_POST['tpw_ui_btn_bg']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_bg'] ) : '';
                     $btntx = isset($_POST['tpw_ui_btn_text']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_text'] ) : '';
                     $acc   = isset($_POST['tpw_ui_accent']) ? sanitize_hex_color( (string) $_POST['tpw_ui_accent'] ) : '';
                     $save = [];
                     if ( $font !== '' ) { $save['font_family'] = $font; }
+                    if ( $fontw !== '' ) { $save['font_weight'] = $fontw; }
+                    if ( in_array( $ttrans, ['none','uppercase','lowercase','capitalize'], true ) ) { $save['text_transform'] = $ttrans; }
+                    if ( $lsp !== '' ) { $save['letter_spacing'] = $lsp; }
+                    if ( $tsh !== '' ) { $save['text_shadow'] = $tsh; }
                     if ( $btnbg ) { $save['btn_bg'] = $btnbg; }
                     if ( $btntx ) { $save['btn_text'] = $btntx; }
                     if ( $acc )   { $save['accent_color'] = $acc; }
@@ -115,6 +123,40 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                                 <td>
                                     <input type="text" class="regular-text" id="tpw_ui_font_family" name="tpw_ui_font_family" value="<?php echo esc_attr( (string) ($ui['font_family'] ?? '') ); ?>" placeholder="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" />
                                     <p class="description"><?php esc_html_e('Applies within .tpw-admin-ui only.', 'tpw-core'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="tpw_ui_font_weight"><?php esc_html_e('Font weight', 'tpw-core'); ?></label></th>
+                                <td>
+                                    <?php $fw = (string) ($ui['font_weight'] ?? '600'); ?>
+                                    <select id="tpw_ui_font_weight" name="tpw_ui_font_weight">
+                                        <?php foreach ( ['normal','500','600','700'] as $opt ): ?>
+                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected( $fw, $opt ); ?>><?php echo esc_html($opt); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="tpw_ui_text_transform"><?php esc_html_e('Text transform', 'tpw-core'); ?></label></th>
+                                <td>
+                                    <?php $tt = (string) ($ui['text_transform'] ?? 'none'); ?>
+                                    <select id="tpw_ui_text_transform" name="tpw_ui_text_transform">
+                                        <?php foreach ( ['none','uppercase','lowercase','capitalize'] as $opt ): ?>
+                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected( $tt, $opt ); ?>><?php echo esc_html( ucfirst($opt) ); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="tpw_ui_letter_spacing"><?php esc_html_e('Letter spacing', 'tpw-core'); ?></label></th>
+                                <td>
+                                    <input type="text" class="regular-text" id="tpw_ui_letter_spacing" name="tpw_ui_letter_spacing" value="<?php echo esc_attr( (string) ($ui['letter_spacing'] ?? 'normal') ); ?>" placeholder="normal | 0.03em | 1px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="tpw_ui_text_shadow"><?php esc_html_e('Text shadow', 'tpw-core'); ?></label></th>
+                                <td>
+                                    <input type="text" class="regular-text" id="tpw_ui_text_shadow" name="tpw_ui_text_shadow" value="<?php echo esc_attr( (string) ($ui['text_shadow'] ?? 'none') ); ?>" placeholder="none | 0 0 0 rgba(0,0,0,0.3)" />
                                 </td>
                             </tr>
                             <tr>
@@ -510,9 +552,14 @@ if ( ! function_exists('tpw_core_build_branding_css') ) {
             'btn_dark'       => '--tpw-btn-dark',
             'btn_text_light' => '--tpw-btn-text-light',
             'btn_text_dark'  => '--tpw-btn-text-dark',
+            // Action colours
+            'action_edit'    => '--tpw-action-edit',
             'btn_radius'     => '--tpw-btn-radius',
             'btn_padding'    => '--tpw-btn-padding',
             'btn_font_size'  => '--tpw-btn-font-size',
+            'btn_font_family'=> '--tpw-btn-font-family',
+            'btn_font_weight'=> '--tpw-btn-font-weight',
+            'btn_height'     => '--tpw-btn-height',
         ];
         $lines = [];
         foreach ( $map as $key => $var ) {
@@ -521,6 +568,24 @@ if ( ! function_exists('tpw_core_build_branding_css') ) {
             if ( $only_if_not_empty && $val === '' ) { continue; }
             if ( $val === '' ) { continue; }
             $lines[] = $var . ': ' . $val . ';';
+        }
+        // Also include UI Theme typography tokens globally so front-end .tpw-btn can inherit them
+        $ui = get_option( 'tpw_ui_theme_settings', [] );
+        if ( is_array( $ui ) && ! empty( $ui ) ) {
+            $ui_map = [
+                'font_family'    => '--tpw-font-family',
+                'font_weight'    => '--tpw-font-weight',
+                'text_transform' => '--tpw-text-transform',
+                'letter_spacing' => '--tpw-letter-spacing',
+                'text_shadow'    => '--tpw-text-shadow',
+            ];
+            foreach ( $ui_map as $key => $var ) {
+                if ( ! array_key_exists( $key, $ui ) ) { continue; }
+                $val = trim( (string) $ui[ $key ] );
+                if ( $only_if_not_empty && $val === '' ) { continue; }
+                if ( $val === '' ) { continue; }
+                $lines[] = $var . ': ' . $val . ';';
+            }
         }
         if ( empty($lines) ) { return ''; }
         return ":root{\n" . implode("\n", $lines) . "\n}";
@@ -537,6 +602,74 @@ add_action( 'wp_head', function(){
     if ( $css ) { echo '<style id="tpw-core-branding-vars">' . $css . '</style>'; }
 });
 
+// Heading typography tokens: defaults, builder, and output
+if ( ! function_exists( 'tpw_core_get_heading_defaults' ) ) {
+    function tpw_core_get_heading_defaults() {
+        // Defaults align with tpw-admin-ui.css fallbacks
+        return [
+            'font_family' => '', // inherit UI font when empty
+            'h1' => [ 'color' => '', 'size' => '1.75rem', 'weight' => '700' ],
+            'h2' => [ 'color' => '', 'size' => '1.5rem',  'weight' => '600' ],
+            'h3' => [ 'color' => '', 'size' => '1.25rem', 'weight' => '600' ],
+            'h4' => [ 'color' => '', 'size' => '1.125rem','weight' => '600' ],
+            'h5' => [ 'color' => '', 'size' => '1rem',    'weight' => '600' ],
+            'h6' => [ 'color' => '', 'size' => '0.875rem','weight' => '600' ],
+        ];
+    }
+}
+
+if ( ! function_exists( 'tpw_core_build_heading_css' ) ) {
+    /**
+     * Build CSS custom properties for heading typography.
+     * When $only_if_not_empty is true, only outputs vars that have non-empty values (so CSS fallbacks apply).
+     */
+    function tpw_core_build_heading_css( $only_if_not_empty = true ) {
+        $opt = get_option( 'tpw_heading_styles', [] );
+        if ( ! is_array( $opt ) ) { $opt = []; }
+        $defaults = tpw_core_get_heading_defaults();
+        $val = wp_parse_args( $opt, $defaults );
+
+        $lines = [];
+        // Global heading font family
+        $ff = isset( $val['font_family'] ) ? trim( (string) $val['font_family'] ) : '';
+        if ( $ff !== '' || ! $only_if_not_empty ) {
+            if ( $ff !== '' ) { $lines[] = '--tpw-heading-font: ' . $ff . ';'; }
+        }
+        // Per level: h1..h6
+        for ( $i = 1; $i <= 6; $i++ ) {
+            $k = 'h' . $i;
+            $row = isset( $val[$k] ) && is_array( $val[$k] ) ? $val[$k] : [];
+            $def = $defaults[$k];
+            $color = isset($row['color']) ? trim((string)$row['color']) : '';
+            $size  = isset($row['size'])  ? trim((string)$row['size'])  : '';
+            $weight= isset($row['weight'])? trim((string)$row['weight']): '';
+            if ( $color !== '' || ! $only_if_not_empty ) {
+                if ( $color !== '' ) { $lines[] = '--tpw-h' . $i . '-color: ' . $color . ';'; }
+            }
+            if ( $size !== '' || ! $only_if_not_empty ) {
+                $lines[] = '--tpw-h' . $i . '-size: ' . ( $size !== '' ? $size : $def['size'] ) . ';';
+            }
+            if ( $weight !== '' || ! $only_if_not_empty ) {
+                $lines[] = '--tpw-h' . $i . '-weight: ' . ( $weight !== '' ? $weight : $def['weight'] ) . ';';
+            }
+        }
+        if ( empty($lines) ) { return ''; }
+        // Apply within both admin and (future) frontend UI scopes, and :root so header styles can consume tokens
+        $vars = implode("\n", $lines);
+        return ".tpw-admin-ui,\n.tpw-frontend-ui,\n:root{\n$vars\n}";
+    }
+}
+
+// Output heading CSS variables in admin and front-end heads
+add_action( 'admin_head', function(){
+    $css = tpw_core_build_heading_css( true );
+    if ( $css ) { echo '<style id="tpw-core-heading-vars">' . $css . '</style>'; }
+});
+add_action( 'wp_head', function(){
+    $css = tpw_core_build_heading_css( true );
+    if ( $css ) { echo '<style id="tpw-core-heading-vars">' . $css . '</style>'; }
+});
+
 // Render Branding tab
 if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
     function tpw_core_render_branding_tab() {
@@ -551,9 +684,14 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
             'btn_dark'       => '#343a40',
             'btn_text_light' => '#ffffff',
             'btn_text_dark'  => '#000000',
+            // Action buttons (module UIs)
+            'action_edit'    => '#2d7ff9',
             'btn_radius'     => '7px',
             'btn_padding'    => '4px 8px',
             'btn_font_size'  => '0.9rem',
+            'btn_font_family'=> '',
+            'btn_font_weight'=> '600',
+            'btn_height'     => '',
         ];
         $opt = get_option( 'tpw_core_branding', [] );
         if ( ! is_array($opt) ) { $opt = []; }
@@ -573,7 +711,7 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
         $ui_defaults = function_exists('tpw_core_get_ui_theme_defaults') ? tpw_core_get_ui_theme_defaults() : [];
         $ui = function_exists('tpw_core_get_ui_theme_settings') ? tpw_core_get_ui_theme_settings(true) : $ui_defaults;
         ?>
-        <form method="post" action="<?php echo $action; ?>" class="tpw-branding-form">
+    <form method="post" action="<?php echo $action; ?>" class="tpw-branding-form">
             <?php wp_nonce_field( 'tpw_core_save_branding', 'tpw_core_branding_nonce' ); ?>
             <input type="hidden" name="action" value="tpw_core_save_branding" />
             <table class="form-table" role="presentation">
@@ -584,6 +722,40 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                         <td>
                             <input type="text" class="regular-text" id="tpw_ui_font_family" name="tpw_ui_font_family" value="<?php echo esc_attr( (string) ($ui['font_family'] ?? '') ); ?>" placeholder="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" />
                             <p class="description"><?php esc_html_e('Applies within .tpw-admin-ui only.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_font_weight"><?php esc_html_e('Font weight', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $fw = (string) ($ui['font_weight'] ?? '600'); ?>
+                            <select id="tpw_ui_font_weight" name="tpw_ui_font_weight">
+                                <?php foreach ( ['normal','500','600','700'] as $opt ): ?>
+                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $fw, $opt ); ?>><?php echo esc_html($opt); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_text_transform"><?php esc_html_e('Text transform', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $tt = (string) ($ui['text_transform'] ?? 'none'); ?>
+                            <select id="tpw_ui_text_transform" name="tpw_ui_text_transform">
+                                <?php foreach ( ['none','uppercase','lowercase','capitalize'] as $opt ): ?>
+                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $tt, $opt ); ?>><?php echo esc_html( ucfirst($opt) ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_letter_spacing"><?php esc_html_e('Letter spacing', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_letter_spacing" name="tpw_ui_letter_spacing" value="<?php echo esc_attr( (string) ($ui['letter_spacing'] ?? 'normal') ); ?>" placeholder="normal | 0.03em | 1px" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_text_shadow"><?php esc_html_e('Text shadow', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_text_shadow" name="tpw_ui_text_shadow" value="<?php echo esc_attr( (string) ($ui['text_shadow'] ?? 'none') ); ?>" placeholder="none | 0 0 0 rgba(0,0,0,0.3)" />
                         </td>
                     </tr>
                     <tr>
@@ -618,6 +790,45 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                             <p class="description"><?php esc_html_e('Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected.', 'tpw-core'); ?></p>
                         </td>
                     </tr>
+                    <?php
+                    // Headings section UI
+                    $heading_defaults = function_exists('tpw_core_get_heading_defaults') ? tpw_core_get_heading_defaults() : [];
+                    $heading_opt = get_option( 'tpw_heading_styles', [] );
+                    if ( ! is_array( $heading_opt ) ) { $heading_opt = []; }
+                    $heading = wp_parse_args( $heading_opt, $heading_defaults );
+                    ?>
+                    <tr><th colspan="2"><h2 style="margin:12px 0 6px;">Headings</h2></th></tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_heading_font_family"><?php esc_html_e('Heading font family', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_heading_font_family" name="tpw_heading_font_family" value="<?php echo esc_attr( (string) ($heading['font_family'] ?? '') ); ?>" placeholder='inherit UI font (leave empty) or e.g. "Inter", system-ui' />
+                            <p class="description"><?php esc_html_e('Leave empty to inherit the UI Theme font. Applies to h1–h6 within TPW UIs.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <?php for ( $i = 1; $i <= 6; $i++ ):
+                        $hk = 'h' . $i; $row = isset($heading[$hk]) && is_array($heading[$hk]) ? $heading[$hk] : ['color'=>'','size'=>'','weight'=>''];
+                        $color = (string) ($row['color'] ?? '');
+                        $size  = (string) ($row['size'] ?? '');
+                        $weight= (string) ($row['weight'] ?? '');
+                    ?>
+                    <tr>
+                        <th scope="row"><label for="<?php echo 'h' . $i . '_color'; ?>"><?php echo esc_html( strtoupper($hk) ); ?> <?php esc_html_e('colour / size / weight', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="small-text" id="<?php echo 'h' . $i . '_color'; ?>" name="<?php echo 'h' . $i . '_color'; ?>" value="<?php echo esc_attr( $color ); ?>" placeholder="e.g. #1d2327 or var(--brand)" />
+                            <input type="color" value="<?php echo esc_attr( preg_match('/^var\(/', $color) ? '#000000' : ( $color !== '' ? $color : '#000000' ) ); ?>" oninput="document.getElementById('<?php echo 'h' . $i . '_color'; ?>').value=this.value" />
+                            <input type="text" class="small-text" id="<?php echo 'h' . $i . '_size'; ?>" name="<?php echo 'h' . $i . '_size'; ?>" value="<?php echo esc_attr( $size ); ?>" placeholder="e.g. <?php echo esc_attr( $heading_defaults[$hk]['size'] ); ?>" />
+                            <?php $fw = $weight !== '' ? $weight : $heading_defaults[$hk]['weight']; ?>
+                            <select id="<?php echo 'h' . $i . '_weight'; ?>" name="<?php echo 'h' . $i . '_weight'; ?>">
+                                <?php foreach ( ['','normal','500','600','700'] as $wopt ): ?>
+                                    <option value="<?php echo esc_attr($wopt); ?>" <?php selected( $fw, $wopt ); ?>><?php echo $wopt === '' ? esc_html__('Default','tpw-core') : esc_html($wopt); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description" style="margin-top:4px;">
+                                <?php esc_html_e('Leave colour empty to inherit. Size accepts px, rem, or em. Weight: choose Default to use the built-in scale.', 'tpw-core'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <?php endfor; ?>
                     <tr><th colspan="2"><h2 style="margin:6px 0;">Buttons</h2></th></tr>
                     <tr>
                         <th scope="row"><label for="btn_primary">Primary</label></th>
@@ -648,6 +859,14 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                         <td><input type="text" class="regular-text" id="btn_text_dark" name="btn_text_dark" value="<?php echo esc_attr($val['btn_text_dark']); ?>" placeholder="#000000" /> <input type="color" value="<?php echo esc_attr($val['btn_text_dark']); ?>" oninput="document.getElementById('btn_text_dark').value=this.value" /></td>
                     </tr>
                     <tr>
+                        <th scope="row"><label for="action_edit">Action: Edit</label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="action_edit" name="action_edit" value="<?php echo esc_attr($val['action_edit']); ?>" placeholder="#2d7ff9" />
+                            <input type="color" value="<?php echo esc_attr($val['action_edit']); ?>" oninput="document.getElementById('action_edit').value=this.value" />
+                            <p class="description"><?php esc_html_e('Used for .tpw-action-edit buttons in admin module lists.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><label for="btn_radius">Border radius</label></th>
                         <td><input type="text" class="regular-text" id="btn_radius" name="btn_radius" value="<?php echo esc_attr($val['btn_radius']); ?>" placeholder="7px" /> <span class="description">e.g., 7px, 0.5rem</span></td>
                     </tr>
@@ -658,6 +877,32 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                     <tr>
                         <th scope="row"><label for="btn_font_size">Font size</label></th>
                         <td><input type="text" class="regular-text" id="btn_font_size" name="btn_font_size" value="<?php echo esc_attr($val['btn_font_size']); ?>" placeholder="0.9rem" /> <span class="description">e.g., 14px, 0.9rem</span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_height"><?php esc_html_e('Buttons Height', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="btn_height" name="btn_height" value="<?php echo esc_attr($val['btn_height']); ?>" placeholder="auto | 32px" />
+                            <span class="description"><?php esc_html_e('Optional. Sets a fixed height for TPW buttons. Use a unit (e.g., 32px). Leave blank or set to “auto” to size by padding.', 'tpw-core'); ?></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_font_weight"><?php esc_html_e('Buttons Font Weight', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $bfw = isset($val['btn_font_weight']) ? (string) $val['btn_font_weight'] : '600'; ?>
+                            <select id="btn_font_weight" name="btn_font_weight">
+                                <?php foreach (['normal','500','600','700'] as $opt): ?>
+                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected($bfw, $opt); ?>><?php echo esc_html($opt); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="description"><?php esc_html_e('Overrides UI weight for TPW buttons only. Leave as 600 for the default.', 'tpw-core'); ?></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_font_family"><?php esc_html_e('Buttons Font Family', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="btn_font_family" name="btn_font_family" value="<?php echo esc_attr($val['btn_font_family']); ?>" placeholder='"Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial' />
+                            <span class="description"><?php esc_html_e('Optional. Overrides UI font for TPW buttons only. If empty, buttons use the UI Theme font or the system stack.', 'tpw-core'); ?></span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -712,21 +957,30 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         'btn_dark'       => '#343a40',
         'btn_text_light' => '#ffffff',
         'btn_text_dark'  => '#000000',
+        // Action buttons (module UIs)
+        'action_edit'    => '#2d7ff9',
         'btn_radius'     => '7px',
         'btn_padding'    => '4px 8px',
         'btn_font_size'  => '0.9rem',
+        'btn_font_family'=> '',
+        'btn_font_weight'=> '600',
+        'btn_height'     => '',
     ];
 
     if ( isset($_POST['tpw_branding_reset']) && $_POST['tpw_branding_reset'] == '1' ) {
         update_option( 'tpw_core_branding', $defaults );
         add_settings_error( 'tpw_core_branding', 'tpw_branding_reset', __( 'Branding reset to defaults.', 'tpw-core' ), 'updated' );
+        // Also reset heading styles to defaults
+        if ( function_exists('tpw_core_get_heading_defaults') ) {
+            update_option( 'tpw_heading_styles', tpw_core_get_heading_defaults() );
+        }
     } else {
         $in = [];
-        $fields = array_keys( $defaults );
+    $fields = array_keys( $defaults );
         foreach ( $fields as $k ) { $in[$k] = isset($_POST[$k]) ? wp_unslash( (string) $_POST[$k] ) : ''; }
 
         // Sanitize colors
-        foreach ( ['btn_primary','btn_secondary','btn_danger','btn_light','btn_dark','btn_text_light','btn_text_dark'] as $ck ) {
+        foreach ( ['btn_primary','btn_secondary','btn_danger','btn_light','btn_dark','btn_text_light','btn_text_dark','action_edit'] as $ck ) {
             $v = trim( (string) $in[$ck] );
             $hex = sanitize_hex_color( $v );
             // allow #fff shorthand also
@@ -752,7 +1006,35 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         };
         $in['btn_radius']    = $sanitize_size( $in['btn_radius'], $defaults['btn_radius'] );
         $in['btn_padding']   = $sanitize_size( $in['btn_padding'], $defaults['btn_padding'] );
-        $in['btn_font_size'] = $sanitize_size( $in['btn_font_size'], $defaults['btn_font_size'] );
+    $in['btn_font_size'] = $sanitize_size( $in['btn_font_size'], $defaults['btn_font_size'] );
+
+    // Font family is free text; trim only (quotes allowed)
+    $in['btn_font_family'] = trim( (string) $in['btn_font_family'] );
+
+        // Font weight: allow normal or numeric tokens 100–900; default fallback
+        $w = trim( (string ) ( $in['btn_font_weight'] ?? '' ) );
+        if ( $w === '' ) {
+            $in['btn_font_weight'] = $defaults['btn_font_weight'];
+        } else {
+            if ( $w === 'normal' || preg_match('/^(100|200|300|400|500|600|700|800|900)$/', $w) ) {
+                $in['btn_font_weight'] = $w;
+            } else {
+                $in['btn_font_weight'] = $defaults['btn_font_weight'];
+            }
+        }
+
+        // Button height: allow empty (means omit), or a size with unit; 'auto' allowed
+        $h = trim( (string ) ( $in['btn_height'] ?? '' ) );
+        if ( $h === '' || strtolower($h) === 'auto' ) {
+            $in['btn_height'] = $h === '' ? '' : 'auto';
+        } else {
+            if ( preg_match('/^\d+(?:\.\d+)?(px|rem|em|%)$/', $h) ) {
+                $in['btn_height'] = $h;
+            } else {
+                // invalid value, clear it so it won’t be output
+                $in['btn_height'] = '';
+            }
+        }
 
         update_option( 'tpw_core_branding', $in );
         add_settings_error( 'tpw_core_branding', 'tpw_branding_saved', __( 'Branding saved.', 'tpw-core' ), 'updated' );
@@ -764,14 +1046,69 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         $ui_theme['inherit_global_frontend'] = $inherit_ui ? 1 : 0;
         // UI Theme fields
         $font  = isset($_POST['tpw_ui_font_family']) ? wp_unslash( (string) $_POST['tpw_ui_font_family'] ) : '';
+    $fontw = isset($_POST['tpw_ui_font_weight']) ? preg_replace('/[^0-9a-zA-Z-]/', '', (string) $_POST['tpw_ui_font_weight'] ) : '';
+    $ttrans= isset($_POST['tpw_ui_text_transform']) ? preg_replace('/[^a-z-]/', '', strtolower( (string) $_POST['tpw_ui_text_transform'] ) ) : '';
+    $lsp   = isset($_POST['tpw_ui_letter_spacing']) ? wp_unslash( (string) $_POST['tpw_ui_letter_spacing'] ) : '';
+    $tsh   = isset($_POST['tpw_ui_text_shadow']) ? wp_unslash( (string) $_POST['tpw_ui_text_shadow'] ) : '';
         $btnbg = isset($_POST['tpw_ui_btn_bg']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_bg'] ) : '';
         $btntx = isset($_POST['tpw_ui_btn_text']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_text'] ) : '';
         $acc   = isset($_POST['tpw_ui_accent']) ? sanitize_hex_color( (string) $_POST['tpw_ui_accent'] ) : '';
         if ( $font !== '' ) { $ui_theme['font_family'] = $font; }
+    if ( $fontw !== '' ) { $ui_theme['font_weight'] = $fontw; }
+    if ( in_array( $ttrans, ['none','uppercase','lowercase','capitalize'], true ) ) { $ui_theme['text_transform'] = $ttrans; }
+    if ( $lsp !== '' ) { $ui_theme['letter_spacing'] = $lsp; }
+    if ( $tsh !== '' ) { $ui_theme['text_shadow'] = $tsh; }
         if ( $btnbg ) { $ui_theme['btn_bg'] = $btnbg; }
         if ( $btntx ) { $ui_theme['btn_text'] = $btntx; }
         if ( $acc )   { $ui_theme['accent_color'] = $acc; }
         update_option( 'tpw_ui_theme_settings', $ui_theme );
+
+        // Save Headings fields into tpw_heading_styles
+        $h_defaults = function_exists('tpw_core_get_heading_defaults') ? tpw_core_get_heading_defaults() : [];
+        $h_in = [];
+        // Font family: free text
+        $h_in['font_family'] = isset($_POST['tpw_heading_font_family']) ? trim( (string) wp_unslash( $_POST['tpw_heading_font_family'] ) ) : '';
+        // Per level
+        $sanitize_size = function($s, $fallback){
+            $t = trim((string)$s);
+            if ($t === '') return '';
+            if ( preg_match('/^\d+(?:\.\d+)?(px|rem|em|%)?$/', $t) ) {
+                if ( ! preg_match('/[a-z%]$/i', $t) ) { $t .= 'px'; }
+                return $t;
+            }
+            return $fallback;
+        };
+        for ( $i = 1; $i <= 6; $i++ ) {
+            $hk = 'h' . $i;
+            $color = isset($_POST[$hk . '_color']) ? trim( (string) wp_unslash( $_POST[$hk . '_color'] ) ) : '';
+            // allow hex and var() or empty
+            if ( $color !== '' ) {
+                $hex = sanitize_hex_color( $color );
+                if ( ! $hex && preg_match('/^var\([^)]+\)$/', $color) ) { /* keep var(...) */ }
+                elseif ( ! $hex && preg_match('/^#([0-9a-fA-F]{3})$/', $color) ) { $hex = $color; }
+                $color = $hex ? $hex : $color; // keep var() or valid hex
+            }
+            $size  = isset($_POST[$hk . '_size']) ? $sanitize_size( wp_unslash( $_POST[$hk . '_size'] ), '' ) : '';
+            $wraw  = isset($_POST[$hk . '_weight']) ? trim( (string) wp_unslash( $_POST[$hk . '_weight'] ) ) : '';
+            $weight= '';
+            if ( $wraw !== '' ) {
+                if ( $wraw === 'normal' || preg_match('/^(100|200|300|400|500|600|700|800|900)$/', $wraw) ) {
+                    $weight = $wraw;
+                }
+            }
+            $h_in[$hk] = [ 'color' => $color, 'size' => $size, 'weight' => $weight ];
+        }
+        // Merge with existing, then defaults
+        $existing_h = get_option( 'tpw_heading_styles', [] );
+        if ( ! is_array( $existing_h ) ) { $existing_h = []; }
+        $merged_h = array_merge( $existing_h, $h_in );
+        // Ensure per-level arrays exist
+        foreach ( ['h1','h2','h3','h4','h5','h6'] as $hk ) {
+            if ( ! isset( $merged_h[$hk] ) || ! is_array( $merged_h[$hk] ) ) { $merged_h[$hk] = $h_defaults[$hk]; }
+            $merged_h[$hk] = wp_parse_args( $merged_h[$hk], $h_defaults[$hk] );
+        }
+        if ( isset($h_in['font_family']) ) { $merged_h['font_family'] = $h_in['font_family']; }
+        update_option( 'tpw_heading_styles', $merged_h );
     }
 
     $errors = get_settings_errors();
@@ -1094,8 +1431,13 @@ add_filter( 'wp_nav_menu_objects', function( $items, $args ) {
     if ( empty( $items ) || ! is_array( $items ) ) return $items;
     // Avoid affecting REST or feeds
     if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) return $items;
-    // Apply only to the TPW Member Menu location to avoid interfering with theme menus
-    if ( empty( $args->theme_location ) || $args->theme_location !== 'tpw_member_menu' ) return $items;
+    // Only apply if at least one item in this menu carries TPW visibility meta.
+    $has_rules = false;
+    foreach ( $items as $probe ) {
+        $pid = (int) $probe->ID;
+        if ( get_post_meta( $pid, '_tpw_requires_login', true ) || get_post_meta( $pid, '_tpw_visibility_json', true ) ) { $has_rules = true; break; }
+    }
+    if ( ! $has_rules ) return $items;
 
     // Build a quick lookup of items by ID and parent relationships
     $by_id = [];

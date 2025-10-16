@@ -5,16 +5,19 @@
   /* Token variables scoped to .tpw-admin-ui */
   .tpw-admin-ui {
     --tpw-font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    /* New typography tokens for buttons/text within TPW Admin UI */
+    --tpw-font-weight: 600;            /* default */
+    --tpw-text-transform: none;        /* default */
+    --tpw-letter-spacing: normal;      /* default */
+    --tpw-text-shadow: none;           /* default */
     --tpw-text-color: #1d2327;
     --tpw-bg-color: #ffffff;
     --tpw-border-color: #ccd0d4;
     --tpw-accent-color: #2271b1;
     --tpw-muted-color: #6c7781;
 
-    --tpw-btn-bg: #0b6cad;
-    --tpw-btn-text: #ffffff;
-    --tpw-btn-radius: 6px;
-    --tpw-btn-padding: 6px 12px;
+  --tpw-btn-bg: #0b6cad;
+  --tpw-btn-text: #ffffff;
 
     --tpw-input-bg: #ffffff;
     --tpw-input-text: #1d2327;
@@ -39,7 +42,6 @@
   .tpw-admin-ui * {
     all: revert-layer;
     box-sizing: border-box;
-    font: inherit;
   }
   .tpw-admin-ui *::before,
   .tpw-admin-ui *::after { box-sizing: border-box; }
@@ -53,14 +55,29 @@
     color: var(--tpw-text-color);
     margin: 0 0 0.75em;
     line-height: 1.25;
-    font-weight: 600;
+    font-weight: var(--tpw-hn-weight, 600);
+    font-family: var(--tpw-heading-font, var(--tpw-font-family));
   }
-  .tpw-admin-ui :where(h1) { font-size: 1.75rem; }
-  .tpw-admin-ui :where(h2) { font-size: 1.5rem; }
-  .tpw-admin-ui :where(h3) { font-size: 1.25rem; }
-  .tpw-admin-ui :where(h4) { font-size: 1.125rem; }
-  .tpw-admin-ui :where(h5) { font-size: 1rem; }
-  .tpw-admin-ui :where(h6) { font-size: 0.875rem; }
+  .tpw-admin-ui :where(h1) { font-size: var(--tpw-h1-size, 1.75rem); font-weight: var(--tpw-h1-weight, 700); color: var(--tpw-h1-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h2) { font-size: var(--tpw-h2-size, 1.5rem);  font-weight: var(--tpw-h2-weight, 600); color: var(--tpw-h2-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h3) { font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h4) { font-size: var(--tpw-h4-size, 1.125rem);font-weight: var(--tpw-h4-weight, 600); color: var(--tpw-h4-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h5) { font-size: var(--tpw-h5-size, 1rem);    font-weight: var(--tpw-h5-weight, 600); color: var(--tpw-h5-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h6) { font-size: var(--tpw-h6-size, 0.875rem);font-weight: var(--tpw-h6-weight, 600); color: var(--tpw-h6-color, var(--tpw-text-color)); }
+
+  /* Front-end admin-like wrapper: apply the same heading tokens when used */
+  .tpw-frontend-ui :where(h1, h2, h3, h4, h5, h6) {
+    color: inherit;
+    margin: 0 0 0.75em;
+    line-height: 1.25;
+    font-family: var(--tpw-heading-font, var(--tpw-font-family, inherit));
+  }
+  .tpw-frontend-ui :where(h1) { font-size: var(--tpw-h1-size, 1.75rem); font-weight: var(--tpw-h1-weight, 700); color: var(--tpw-h1-color, inherit); }
+  .tpw-frontend-ui :where(h2) { font-size: var(--tpw-h2-size, 1.5rem);  font-weight: var(--tpw-h2-weight, 600); color: var(--tpw-h2-color, inherit); }
+  .tpw-frontend-ui :where(h3) { font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, inherit); }
+  .tpw-frontend-ui :where(h4) { font-size: var(--tpw-h4-size, 1.125rem);font-weight: var(--tpw-h4-weight, 600); color: var(--tpw-h4-color, inherit); }
+  .tpw-frontend-ui :where(h5) { font-size: var(--tpw-h5-size, 1rem);    font-weight: var(--tpw-h5-weight, 600); color: var(--tpw-h5-color, inherit); }
+  .tpw-frontend-ui :where(h6) { font-size: var(--tpw-h6-size, 0.875rem);font-weight: var(--tpw-h6-weight, 600); color: var(--tpw-h6-color, inherit); }
 
   /* Paragraphs and small */
   .tpw-admin-ui :where(p) { margin: 0 0 1em; }
@@ -96,6 +113,44 @@
     cursor: pointer;
     line-height: 1.2;
     white-space: nowrap;
+    font-weight: var(--tpw-font-weight);
+    text-transform: var(--tpw-text-transform);
+    letter-spacing: var(--tpw-letter-spacing);
+    text-shadow: var(--tpw-text-shadow);
+  }
+
+  /* Quicktags toolbar small buttons: neutralize Elementor overrides explicitly */
+  .tpw-admin-ui .wp-core-ui .quicktags-toolbar input.button.button-small {
+    margin: 2px; /* keep native spacing */
+    background-color: #ffffff !important; /* requested white background */
+    color: #111827 !important; /* ensure readable text */
+    border-color: rgba(0,0,0,0.1) !important;
+    text-transform: none !important;
+    font-family: var(--tpw-font-family) !important;
+    border-radius: var(--tpw-btn-radius) !important;
+    padding: var(--tpw-btn-padding) !important;
+  }
+
+  /* Visual/Text tabs */
+  .tpw-admin-ui .wp-editor-tabs .wp-switch-editor {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    text-transform: none !important;
+    font-family: var(--tpw-font-family) !important;
+    border-radius: var(--tpw-btn-radius) !important;
+    padding: var(--tpw-btn-padding) !important;
+  }
+
+  /* Add Media button */
+  .tpw-admin-ui .wp-media-buttons .button {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    text-transform: none !important;
+    font-family: var(--tpw-font-family) !important;
+    border-radius: var(--tpw-btn-radius) !important;
+    padding: var(--tpw-btn-padding) !important;
   }
   .tpw-admin-ui :where(button:hover:not([class*="tpw-btn-"]),
                        input[type="button"]:hover:not([class*="tpw-btn-"]),
@@ -125,6 +180,13 @@
     all: revert-layer;
     font: inherit;
     box-sizing: border-box;
+  }
+  /* Apply typography tokens to all TPW buttons within the scoped UI */
+  .tpw-admin-ui .tpw-btn {
+    font-weight: var(--tpw-font-weight);
+    text-transform: var(--tpw-text-transform);
+    letter-spacing: var(--tpw-letter-spacing);
+    text-shadow: var(--tpw-text-shadow);
   }
 
   /* Inputs */

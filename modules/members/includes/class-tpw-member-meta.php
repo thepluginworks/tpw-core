@@ -45,19 +45,38 @@ class TPW_Member_Meta {
             $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE member_id = %d AND meta_key = %s", $member_id, $key )
         );
 
+        $res = false;
         if ( $exists ) {
-            return $wpdb->update(
+            $res = $wpdb->update(
                 $table,
                 [ 'meta_value' => $value ],
                 [ 'member_id' => $member_id, 'meta_key' => $key ]
             );
         } else {
-            return $wpdb->insert( $table, [
+            $res = $wpdb->insert( $table, [
                 'member_id'  => $member_id,
                 'meta_key'   => $key,
                 'meta_value' => $value,
             ] );
         }
+        if ( $res !== false ) {
+            // Bust dependency caches where this key is a parent
+            $searchable = get_option('tpw_member_searchable_fields', []);
+            if ( is_array($searchable) ) {
+                foreach ($searchable as $fkey => $conf) {
+                    if ( ! empty($conf['depends_on']) && $conf['depends_on'] === $key ) {
+                        global $wpdb;
+                        $transient_rows = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_tpw_dep_opts_%'" );
+                        if ( $transient_rows ) {
+                            foreach ($transient_rows as $on) {
+                                delete_option( $on );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $res;
     }
 
     /**

@@ -9,8 +9,31 @@ class TPW_Noticeboard_Handler {
         add_action('wp_ajax_tpw_notice_add_category', [__CLASS__, 'add_category']);
     }
 
+    private static function user_can_manage_notices() {
+        // Check Noticeboard Admin flag
+        if ( ! class_exists('TPW_Control_UI') ) {
+            $ui_path = TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-ui.php';
+            if ( file_exists( $ui_path ) ) { require_once $ui_path; }
+        }
+        if ( class_exists('TPW_Control_UI') && TPW_Control_UI::is_noticeboard_admin() ) {
+            return true;
+        }
+        // Check Members is_admin flag directly (no WP admin fallback)
+        $ma_path = TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
+        if ( file_exists( $ma_path ) ) { require_once $ma_path; }
+        if ( class_exists('TPW_Member_Access') && is_user_logged_in() ) {
+            $user = wp_get_current_user();
+            $member = TPW_Member_Access::get_member_by_user_id( (int) $user->ID );
+            if ( $member && isset($member->is_admin) && (int)$member->is_admin === 1 ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static function check_caps_and_nonce($action) {
-        if (!current_user_can('manage_options')) {
+        // Only allow users with is_admin (members flag) or is_noticeboard_admin
+        if ( ! self::user_can_manage_notices() ) {
             wp_send_json_error(['message' => __('Permission denied.', 'tpw-core')], 403);
         }
         $nonce = $_POST['_wpnonce'] ?? '';

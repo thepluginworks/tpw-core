@@ -12,8 +12,29 @@ if ( $paged_q ) {
 } elseif ( isset($_SERVER['REQUEST_URI']) && preg_match('#/page/(\d+)/?#', $_SERVER['REQUEST_URI'], $m) ) {
     $page = max(1, (int) $m[1]);
 }
-$per_page = isset($_GET['per_page']) ? max(10, (int) $_GET['per_page']) : 25;
+$site_default_view = get_option('tpw_members_default_view', 'list');
+$initial_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) === 'card' ) ? 'card' : ( $site_default_view === 'card' ? 'card' : 'list' );
+$current_view = $initial_view;
+$default_per_page = (int) get_option('tpw_members_default_per_page', 25);
+$default_per_page_card = (int) get_option('tpw_members_default_per_page_card', 24);
+// Initial hide flag; may be refined after we detect other filters
+if ( $current_view === 'card' ) {
+    $hide_initial = ($default_per_page_card === 0 && $search_query === '');
+} else {
+    $hide_initial = ($default_per_page === 0 && $search_query === '');
+}
+// Determine per-page: explicit GET overrides; else per-view default if > 0; else fallback 25
+if ( isset($_GET['per_page']) ) {
+    $per_page = max(1, (int) $_GET['per_page']);
+} else {
+    $per_page = ($current_view === 'card')
+        ? ( ($default_per_page_card > 0) ? max(1, $default_per_page_card) : 25 )
+        : ( ($default_per_page > 0) ? max(1, $default_per_page) : 25 );
+}
 $is_admin = !empty($GLOBALS['tpw_members_is_admin']);
+// Determine visibility group used by tpw_can_group_view_field for non-admin directory users
+$vis_group = isset($GLOBALS['tpw_members_vis_group']) ? sanitize_key($GLOBALS['tpw_members_vis_group']) : ($is_admin ? 'admin' : 'member');
+$adv_for_members = get_option('tpw_members_enable_advanced_search', '0') === '1';
 $selected_status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
 
 // Build selected has_value filters from GET based on configured searchable fields
@@ -83,6 +104,79 @@ foreach ($searchable_opt as $skey => $sconf) {
     }
 }
 
+// Also honor Basic Search fields (tpw_field_settings.basic_search = 1) even if not configured as 'searchable'
+try {
+    global $wpdb;
+    $fs_tbl = $wpdb->prefix . 'tpw_field_settings';
+    $basic_rows_merge = $wpdb->get_results( "SELECT field_key FROM {$fs_tbl} WHERE is_enabled = 1 AND basic_search = 1" );
+    if (!empty($basic_rows_merge)) {
+        // Use configured searchable options to infer control types for these fields
+        $searchable_opt_inline_merge = get_option('tpw_member_searchable_fields', []);
+        foreach ($basic_rows_merge as $row_merge) {
+            $bk = sanitize_key($row_merge->field_key);
+            // Determine search type; default to text
+            $stype = isset($searchable_opt_inline_merge[$bk]['search_type']) ? $searchable_opt_inline_merge[$bk]['search_type'] : 'text';
+            if ($stype === 'text') {
+                // Only for core columns
+                if (in_array($bk, $tpw_cols, true) && isset($_GET['adv_txt_'.$bk]) && $_GET['adv_txt_'.$bk] !== '') {
+                    if (!isset($adv_text[$bk])) { $adv_text[$bk] = sanitize_text_field($_GET['adv_txt_'.$bk]); }
+                }
+            } elseif ($stype === 'select') {
+                if (isset($_GET['adv_sel_'.$bk]) && $_GET['adv_sel_'.$bk] !== '') {
+                    $valSel = sanitize_text_field($_GET['adv_sel_'.$bk]);
+                    if (in_array($bk, $tpw_cols, true)) {
+                        if (!isset($adv_select[$bk])) { $adv_select[$bk] = $valSel; }
+                    } else {
+                        if (!isset($adv_select_meta[$bk])) { $adv_select_meta[$bk] = $valSel; }
+                    }
+                }
+            } elseif ($stype === 'date_range') {
+                // Only for core columns
+                if (!in_array($bk, $tpw_cols, true)) { continue; }
+                $from = isset($_GET['adv_from_'.$bk]) ? sanitize_text_field($_GET['adv_from_'.$bk]) : '';
+                $to   = isset($_GET['adv_to_'.$bk]) ? sanitize_text_field($_GET['adv_to_'.$bk]) : '';
+                $norm = function($d){
+                    if (!$d) return '';
+                    if (strpos($d,'/') !== false) {
+                        $parts = explode('/', $d);
+                        if (count($parts) === 3) {
+                            return sprintf('%04d-%02d-%02d', (int)$parts[2], (int)$parts[1], (int)$parts[0]);
+                        }
+                    }
+                    return $d;
+                };
+                $fromN = $norm($from); $toN = $norm($to);
+                if ($fromN !== '' || $toN !== '') {
+                    if (!isset($adv_date_range[$bk])) { $adv_date_range[$bk] = ['from'=>$fromN, 'to'=>$toN]; }
+                }
+            } elseif ($stype === 'has_value') {
+                $param = 'has_' . $bk;
+                if (isset($_GET[$param]) && $_GET[$param] === '1') {
+                    if (!in_array($bk, $has_value_selected, true)) { $has_value_selected[] = $bk; }
+                }
+            } elseif ($stype === 'checkbox') {
+                if (in_array($bk, $tpw_cols, true)) {
+                    if (isset($_GET[$bk]) && $_GET[$bk] === '1') { if (!in_array($bk, $adv_checkbox, true)) { $adv_checkbox[] = $bk; } }
+                }
+            } else {
+                // Unknown type: attempt text for core, meta as select-like into adv_select_meta (text fallback)
+                if (in_array($bk, $tpw_cols, true)) {
+                    if (isset($_GET['adv_txt_'.$bk]) && $_GET['adv_txt_'.$bk] !== '') {
+                        if (!isset($adv_text[$bk])) { $adv_text[$bk] = sanitize_text_field($_GET['adv_txt_'.$bk]); }
+                    }
+                } else {
+                    if (isset($_GET['adv_sel_'.$bk]) && $_GET['adv_sel_'.$bk] !== '') {
+                        $valSel = sanitize_text_field($_GET['adv_sel_'.$bk]);
+                        if (!isset($adv_select_meta[$bk])) { $adv_select_meta[$bk] = $valSel; }
+                    }
+                }
+            }
+        }
+    }
+} catch (\Throwable $e) {
+    // Fail silently; basic search merge is best-effort
+}
+
 $controller = new TPW_Member_Controller();
 $all_statuses = $is_admin ? $controller->get_statuses() : [];
 $args = [
@@ -110,9 +204,20 @@ if ( ! $is_admin ) {
 if ( $is_admin && $selected_status !== '' ) {
     $args['status'] = $selected_status;
 }
-$members = $controller->get_members( $args );
-// Determine current view (default list). Allow override by GET param 'view=card'.
-$current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) === 'card' ) ? 'card' : 'list';
+// Recompute hide flag: if any filter besides plain empty search is present, do not hide
+$has_any_filters = (
+    $search_query !== '' ||
+    ($is_admin && $selected_status !== '') ||
+    !empty($has_value_selected) ||
+    !empty($adv_text) || !empty($adv_select) || !empty($adv_date_range) || !empty($adv_checkbox) || !empty($adv_select_meta)
+);
+if ( $has_any_filters ) { $hide_initial = false; }
+// Allow a bypass via URL param ?show_all=1
+if ( isset($_GET['show_all']) && $_GET['show_all'] === '1' ) { $hide_initial = false; }
+$members = $hide_initial ? [] : $controller->get_members( $args );
+// Determine current view (computed earlier)
+$current_view = $initial_view;
+// $hide_initial is computed above
 ?>
 <div class="tpw-table-container">
 <div class="tpw-members-list">
@@ -170,9 +275,9 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
         <div class="tpw-action-group">
             <div class="tpw-action-group__title">Tools</div>
             <div class="tpw-action-group__buttons">
-                <a href="<?php echo esc_url($export_url); ?>" class="tpw-btn tpw-btn-light" role="button">Export CSV</a>
+                <button type="button" class="tpw-btn tpw-btn-secondary tpw-nav-btn" data-href="<?php echo esc_url( $export_url ); ?>">Export CSV</button>
                 <button type="button" class="tpw-btn tpw-btn-secondary tpw-nav-btn" data-href="<?php echo esc_url( add_query_arg( 'action', 'import_csv', get_permalink() ) ); ?>">Import CSV</button>
-                <a href="?action=settings" class="tpw-btn tpw-btn-admin" role="button">Member Settings</a>
+                <button type="button" class="tpw-btn tpw-btn-secondary tpw-btn-admin tpw-nav-btn" data-href="?action=settings">Member Settings</button>
                 <?php
                 /**
                  * Fires at the end of the Tools button group on /manage-members/.
@@ -237,17 +342,117 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
     <?php if ( $is_admin ) : ?>
     <?php endif; ?>
 
-    <form method="get" action="<?php echo esc_url( get_permalink() ); ?>" class="tpw-member-search-form" style="margin-bottom: 20px;">
+    <form method="get" action="<?php echo esc_url( get_permalink() ); ?>" class="tpw-member-search-form tpw-admin-ui" style="margin-bottom: 20px;">
         <input type="hidden" name="view" value="<?php echo esc_attr($current_view); ?>">
-        <div class="tpw-search-row">
-            <label for="tpw-filter-search">Search members</label>
-            <input id="tpw-filter-search" type="text" name="search" placeholder="Search members..." value="<?php echo esc_attr($search_query); ?>">
-            <button type="submit" class="tpw-btn tpw-btn-primary">Search</button>
-            <button type="button" class="tpw-btn tpw-btn-light" id="tpw-clear-filters">Clear</button>
-            <?php if ($is_admin): ?>
-            <button type="button" class="tpw-btn tpw-btn-secondary" id="open-advanced-search">Advanced Search</button>
-            <?php endif; ?>
+        <div class="tpw-card tpw-section-card" style="margin-bottom:12px;">
+            <div class="tpw-section-title" style="display:flex; align-items:center; gap:8px;">
+                <span aria-hidden="true">🔍</span>
+                <span>Member Search</span>
+            </div>
+            <div class="tpw-basic-search" style="display:flex; flex-wrap:wrap; gap:10px; margin:10px 0;">
+                <div class="tpw-basic-item" style="display:flex; flex-direction:column; gap:6px; min-width:220px; flex:1 1 260px;">
+                    <label for="tpw-filter-search"><strong>Search members</strong></label>
+                    <input id="tpw-filter-search" type="text" name="search" placeholder="Search members..." value="<?php echo esc_attr($search_query); ?>">
+                </div>
+                <?php /* Basic search fields follow below; moved buttons after them */ ?>
+            </div>
+        <?php
+            // Render Basic Search fields (visible inline) based on tpw_field_settings.basic_search = 1
+            global $wpdb; $fs_tbl = $wpdb->prefix . 'tpw_field_settings';
+            $basic_rows = $wpdb->get_results( "SELECT field_key, custom_label FROM {$fs_tbl} WHERE is_enabled = 1 AND basic_search = 1 ORDER BY sort_order ASC" );
+            $members_table = $wpdb->prefix . 'tpw_members';
+            $tpw_cols_inline = (array) $wpdb->get_col( 'SHOW COLUMNS FROM ' . $members_table, 0 );
+            // Visibility guard for members
+            $can_view = function($key) use ($is_admin, $vis_group) {
+                if ($is_admin) return true;
+                if ( function_exists('tpw_can_group_view_field') ) {
+                    return tpw_can_group_view_field($vis_group, $key);
+                }
+                return true;
+            };
+            if (!empty($basic_rows)):
+        ?>
+        <div class="tpw-basic-search" style="display:flex; flex-wrap:wrap; gap:10px; margin:10px 0;">
+            <?php foreach ($basic_rows as $r):
+                $bk = sanitize_key($r->field_key);
+                if (!$can_view($bk)) continue;
+                $label = $r->custom_label ?: ucwords(str_replace('_',' ', $bk));
+                $val_text = isset($_GET['adv_txt_'.$bk]) ? sanitize_text_field($_GET['adv_txt_'.$bk]) : '';
+                $val_select = isset($_GET['adv_sel_'.$bk]) ? sanitize_text_field($_GET['adv_sel_'.$bk]) : '';
+                // Decide control type: reuse existing config if present; default to text
+                $searchable_opt_inline = get_option('tpw_member_searchable_fields', []);
+                $stype_inline = isset($searchable_opt_inline[$bk]['search_type']) ? $searchable_opt_inline[$bk]['search_type'] : 'text';
+                $source_inline = isset($searchable_opt_inline[$bk]['options_source']) ? $searchable_opt_inline[$bk]['options_source'] : 'static';
+                $options_inline = isset($searchable_opt_inline[$bk]['options']) ? (array) $searchable_opt_inline[$bk]['options'] : [];
+                $depends_on_inline = isset($searchable_opt_inline[$bk]['depends_on']) ? sanitize_key($searchable_opt_inline[$bk]['depends_on']) : '';
+            ?>
+                <div class="tpw-basic-item" style="display:flex; flex-direction:column; gap:6px; min-width:220px; flex:1 1 220px;">
+                    <label><strong><?php echo esc_html($label); ?></strong></label>
+                    <?php if ($stype_inline === 'select'):
+                        $opts = [];
+                        if ($source_inline === 'dynamic') {
+                            // Build options dynamically from DB (core column or meta)
+                            if (in_array($bk, $tpw_cols_inline, true)) {
+                                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                                $sql = "SELECT DISTINCT `{$bk}` AS v FROM {$members_table} WHERE `{$bk}` IS NOT NULL AND `{$bk}` <> '' ORDER BY `{$bk}`";
+                                $opts = (array) $wpdb->get_col($sql);
+                            } else {
+                                $meta_table = $wpdb->prefix . 'tpw_member_meta';
+                                $rows = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT meta_value AS v FROM {$meta_table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> '' ORDER BY meta_value", $bk ) );
+                                $opts = (array) $rows;
+                            }
+                        } else {
+                            $opts = $options_inline;
+                        }
+                    ?>
+                        <select name="<?php echo esc_attr('adv_sel_'.$bk); ?>" data-field-key="<?php echo esc_attr($bk); ?>"<?php echo $depends_on_inline ? ' data-depends-on="'.esc_attr($depends_on_inline).'" disabled' : ''; ?>>
+                            <option value="">— Any —</option>
+                            <?php foreach ($opts as $opt): ?>
+                                <option value="<?php echo esc_attr($opt); ?>" <?php selected($val_select, (string)$opt); ?>><?php echo esc_html($opt); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php elseif ($stype_inline === 'date_range' && in_array($bk, $tpw_cols_inline, true)):
+                        $from = isset($_GET['adv_from_'.$bk]) ? sanitize_text_field($_GET['adv_from_'.$bk]) : '';
+                        $to   = isset($_GET['adv_to_'.$bk]) ? sanitize_text_field($_GET['adv_to_'.$bk]) : '';
+                    ?>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" name="<?php echo esc_attr('adv_from_'.$bk); ?>" value="<?php echo esc_attr($from); ?>" placeholder="From" class="tpw-adv-date" style="width:120px;" data-field-key="<?php echo esc_attr($bk); ?>" />
+                            <span>to</span>
+                            <input type="text" name="<?php echo esc_attr('adv_to_'.$bk); ?>" value="<?php echo esc_attr($to); ?>" placeholder="To" class="tpw-adv-date" style="width:120px;" data-field-key="<?php echo esc_attr($bk); ?>" />
+                        </div>
+                    <?php elseif ($stype_inline === 'checkbox' && in_array($bk, $tpw_cols_inline, true)):
+                        $isChecked = isset($_GET[$bk]) && $_GET[$bk] === '1';
+                    ?>
+                        <label style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" name="<?php echo esc_attr($bk); ?>" value="1" <?php checked($isChecked); ?> data-field-key="<?php echo esc_attr($bk); ?>" />
+                            <span><?php echo esc_html($label); ?></span>
+                        </label>
+                    <?php elseif ($stype_inline === 'has_value'):
+                        $isChecked = isset($_GET['has_'.$bk]) && $_GET['has_'.$bk] === '1';
+                    ?>
+                        <label style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" name="<?php echo esc_attr('has_'.$bk); ?>" value="1" <?php checked($isChecked); ?> data-field-key="<?php echo esc_attr($bk); ?>" />
+                            <span><?php echo esc_html('Has ' . $label); ?></span>
+                        </label>
+                    <?php else: // default text for core columns only ?>
+                        <?php if (in_array($bk, $tpw_cols_inline, true)): ?>
+                            <input type="text" name="<?php echo esc_attr('adv_txt_'.$bk); ?>" value="<?php echo esc_attr($val_text); ?>" class="regular-text" data-field-key="<?php echo esc_attr($bk); ?>" />
+                        <?php else: ?>
+                            <input type="text" name="<?php echo esc_attr('adv_sel_'.$bk); ?>" value="<?php echo esc_attr($val_select); ?>" class="regular-text" data-field-key="<?php echo esc_attr($bk); ?>" />
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
         </div>
+            <div class="tpw-actions" style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="submit" class="tpw-btn tpw-btn-primary">Search</button>
+                <button type="button" class="tpw-btn tpw-btn-light" id="tpw-clear-filters">Clear</button>
+                <?php if ( $is_admin || $adv_for_members ) : ?>
+                    <button type="button" class="tpw-btn tpw-btn-secondary" id="open-advanced-search">Advanced Search</button>
+                <?php endif; ?>
+            </div>
+        </div> <!-- .tpw-card -->
+        <?php endif; ?>
         <div class="tpw-filter-row">
             <?php if ( $is_admin ): ?>
             <label for="tpw-filter-status">Status:</label>
@@ -259,8 +464,17 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
             </select>
             <?php endif; ?>
             <label for="tpw-filter-per-page">Per page:</label>
-            <select id="tpw-filter-per-page" name="per_page" onchange="this.form.submit()">
-                <?php foreach ([10,25,50,100] as $pp): ?>
+            <select id="tpw-filter-per-page" name="per_page" onchange="this.form.submit()" <?php echo $hide_initial ? 'disabled' : ''; ?>>
+                <?php
+                    // Use grid-friendly options in card view; classic options in list view
+                    $options_pp = ($current_view === 'card') ? [8,16,24] : [10,25,50,100];
+                    // Always include site default if non-standard and > 0
+                    if ($default_per_page > 0 && !in_array($default_per_page, $options_pp, true)) { $options_pp[] = (int)$default_per_page; }
+                    // Ensure current selection is present so it stays selected when toggling views
+                    if ($per_page > 0 && !in_array((int)$per_page, $options_pp, true)) { $options_pp[] = (int)$per_page; }
+                    sort($options_pp);
+                    $options_pp = array_values(array_unique(array_map('intval', $options_pp)));
+                    foreach ($options_pp as $pp): ?>
                     <option value="<?php echo $pp; ?>" <?php selected($per_page, $pp); ?>><?php echo $pp; ?></option>
                 <?php endforeach; ?>
             </select>
@@ -271,6 +485,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                 aria-pressed="<?php echo $current_view === 'card' ? 'true' : 'false'; ?>"
                 aria-label="<?php echo $current_view === 'card' ? 'Switch to List View' : 'Switch to Card View'; ?>"
                 title="<?php echo $current_view === 'card' ? 'Switch to List View' : 'Switch to Card View'; ?>"
+                <?php echo $hide_initial ? 'disabled' : ''; ?>
             >
                 <span class="screen-reader-text"><?php echo $current_view === 'card' ? 'Switch to List View' : 'Switch to Card View'; ?></span>
                 <!-- List icon (3 lines) shows when target is list (current is card) -->
@@ -279,8 +494,106 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                 <svg class="icon icon-grid" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"></path></svg>
             </button>
         </div>
-        </form>
-        <?php if ($is_admin): ?>
+                </form>
+                <script>
+                // Mandatory adaptive per-page options: always recalc based on current view and grid columns
+                (function(){
+                    function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(fn, wait); }; }
+                    function isCardViewVisible(){
+                        var grid = document.getElementById('tpw-card-view');
+                        if (!grid) return false;
+                        var style = window.getComputedStyle(grid);
+                        return style && style.display !== 'none';
+                    }
+                    function calcColumns(){
+                        var grid = document.getElementById('tpw-card-view');
+                        if (!grid) return 0;
+                        var cards = grid.querySelectorAll('.member-card');
+                        if (!cards.length) return 0;
+                        var firstTop = cards[0].getBoundingClientRect().top;
+                        var cols = 0;
+                        for (var i=0;i<cards.length;i++){
+                            var rectTop = cards[i].getBoundingClientRect().top;
+                            if (Math.abs(rectTop - firstTop) < 2) cols++; else break;
+                        }
+                        return cols;
+                    }
+                    function getOptionsForList(){ return [10,25,50,100]; }
+                    function getOptionsForCols(cols){
+                        // Map exact column counts per acceptance criteria
+                        if (cols >= 4) return [8,16,24,48];
+                        if (cols === 3) return [9,15,21,30];
+                        if (cols === 2) return [6,12,18,24];
+                        // Fallback for <=1 or unknown: reasonable mobile set
+                        return [6,10,14,20];
+                    }
+                    function arraysEqual(a,b){ if (a.length!==b.length) return false; for(var i=0;i<a.length;i++){ if (a[i]!==b[i]) return false; } return true; }
+                                function rebuildSelect(sel, values, preserve){
+                                    var current = parseInt(sel.value, 10) || 0;
+                        while (sel.options.length) sel.remove(0);
+                        var found = false;
+                        values.forEach(function(v){
+                            var o = document.createElement('option'); o.value = String(v); o.textContent = String(v);
+                            if (preserve && current === v){ o.selected = true; found = true; }
+                            sel.add(o);
+                        });
+                                    if (preserve && !found){ sel.value = String(values[0]); }
+                                    return { before: current, after: parseInt(sel.value, 10) || 0 };
+                    }
+                    function readSelectValues(sel){ var out=[]; for(var i=0;i<sel.options.length;i++){ out.push(parseInt(sel.options[i].value,10)); } return out; }
+                    function adaptPerPage(){
+                        var sel = document.getElementById('tpw-filter-per-page');
+                        if (!sel) return;
+                        var cardVisible = isCardViewVisible();
+                        var targetValues;
+                        if (cardVisible){
+                            var cols = calcColumns();
+                            // If columns cannot be measured (e.g., no cards yet), guess based on container width
+                            if (!cols){
+                                var grid = document.getElementById('tpw-card-view');
+                                var w = grid ? grid.clientWidth : window.innerWidth;
+                                cols = (w >= 1200) ? 4 : (w >= 768 ? 3 : 2);
+                            }
+                            targetValues = getOptionsForCols(cols);
+                        } else {
+                            targetValues = getOptionsForList();
+                        }
+                                    var currentValues = readSelectValues(sel);
+                                    var changed = false;
+                                    var delta = { before: parseInt(sel.value,10)||0, after: parseInt(sel.value,10)||0 };
+                                    if (!arraysEqual(currentValues, targetValues)){
+                                        delta = rebuildSelect(sel, targetValues, true);
+                                        changed = (delta.before !== delta.after);
+                                    } else {
+                                        // Ensure selection remains valid; if not, default to first
+                                        var valid = targetValues.indexOf(parseInt(sel.value,10)) !== -1;
+                                        if (!valid) { sel.value = String(targetValues[0]); changed = true; delta.after = parseInt(sel.value,10)||0; }
+                                    }
+                                    // If selection changed due to adaptation, submit form to refresh results count
+                                    if (changed) {
+                                        var form = document.querySelector('.tpw-member-search-form');
+                                        if (form) form.submit();
+                                    }
+                    }
+                                var run = debounce(adaptPerPage, 80);
+                    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+                    window.addEventListener('resize', run);
+                                var toggle = document.getElementById('tpw-toggle-view-btn');
+                            if (toggle){ toggle.addEventListener('click', function(){ setTimeout(run, 150); }); }
+                            // When options change and selected value changes due to adaptation, submit the form to update results count
+                            var sel = document.getElementById('tpw-filter-per-page');
+                            function maybeSubmit(){
+                                if (!sel) return;
+                                // Trigger submit only if value changed programmatically and matches a defined option
+                                var form = document.querySelector('.tpw-member-search-form');
+                                if (form) { form.submit(); }
+                            }
+                            // Rebuild wrapper overrides selection and we set value; hook after each run
+                            var origRun = run;
+                            run = debounce(function(){ origRun(); maybeSubmit(); }, 0);
+                })();
+                </script>
+    <?php if ($is_admin || $adv_for_members): ?>
         <!-- Advanced Search Modal -->
         <div id="tpw-advanced-search-modal" class="tpw-dir-modal" hidden>
             <div class="tpw-dir-modal__dialog" style="max-width:720px;">
@@ -308,7 +621,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         ?>
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label><strong><?php echo esc_html($label); ?></strong></label>
-                                <input type="text" name="<?php echo esc_attr('adv_txt_'.$key_sane); ?>" value="<?php echo esc_attr($val); ?>" class="regular-text" />
+                                <input type="text" name="<?php echo esc_attr('adv_txt_'.$key_sane); ?>" value="<?php echo esc_attr($val); ?>" class="regular-text" data-field-key="<?php echo esc_attr($key_sane); ?>" />
                             </div>
                         <?php elseif ($stype === 'select'):
                                 $options = [];
@@ -344,7 +657,8 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         ?>
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label><strong><?php echo esc_html($label); ?></strong></label>
-                                <select name="<?php echo esc_attr('adv_sel_'.$key_sane); ?>">
+                                <?php $depends_on_adv = isset($conf['depends_on']) ? sanitize_key($conf['depends_on']) : ''; ?>
+                                <select name="<?php echo esc_attr('adv_sel_'.$key_sane); ?>" data-field-key="<?php echo esc_attr($key_sane); ?>"<?php echo $depends_on_adv ? ' data-depends-on="'.esc_attr($depends_on_adv).'" disabled' : ''; ?>>
                                     <option value="">— Any —</option>
                                     <?php foreach ($options as $opt): ?>
                                         <option value="<?php echo esc_attr($opt); ?>" <?php selected($val, $opt); ?>><?php echo esc_html($opt); ?></option>
@@ -360,9 +674,9 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label><strong><?php echo esc_html($label); ?></strong></label>
                                 <div style="display:flex; gap:8px; align-items:center;">
-                                    <input type="text" name="<?php echo esc_attr('adv_from_'.$key_sane); ?>" value="<?php echo esc_attr($from); ?>" placeholder="From" class="tpw-adv-date" style="width:120px;" />
+                                    <input type="text" name="<?php echo esc_attr('adv_from_'.$key_sane); ?>" value="<?php echo esc_attr($from); ?>" placeholder="From" class="tpw-adv-date" style="width:120px;" data-field-key="<?php echo esc_attr($key_sane); ?>" />
                                     <span>to</span>
-                                    <input type="text" name="<?php echo esc_attr('adv_to_'.$key_sane); ?>" value="<?php echo esc_attr($to); ?>" placeholder="To" class="tpw-adv-date" style="width:120px;" />
+                                    <input type="text" name="<?php echo esc_attr('adv_to_'.$key_sane); ?>" value="<?php echo esc_attr($to); ?>" placeholder="To" class="tpw-adv-date" style="width:120px;" data-field-key="<?php echo esc_attr($key_sane); ?>" />
                                 </div>
                             </div>
                         <?php elseif ($stype === 'has_value'):
@@ -371,7 +685,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         ?>
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label style="display:flex; align-items:center; gap:8px;">
-                                    <input type="checkbox" name="<?php echo esc_attr('has_'.$key_sane); ?>" value="1" <?php checked($checked); ?> />
+                                    <input type="checkbox" name="<?php echo esc_attr('has_'.$key_sane); ?>" value="1" <?php checked($checked); ?> data-field-key="<?php echo esc_attr($key_sane); ?>" />
                                     <span><strong><?php echo esc_html('Has ' . $label); ?></strong></span>
                                 </label>
                             </div>
@@ -382,7 +696,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         ?>
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label style="display:flex; align-items:center; gap:8px;">
-                                    <input type="checkbox" name="<?php echo esc_attr($key_sane); ?>" value="1" <?php checked($isChecked); ?> />
+                                    <input type="checkbox" name="<?php echo esc_attr($key_sane); ?>" value="1" <?php checked($isChecked); ?> data-field-key="<?php echo esc_attr($key_sane); ?>" />
                                     <span><strong><?php echo esc_html($label); ?></strong></span>
                                 </label>
                             </div>
@@ -432,6 +746,119 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                     }
                 });
             }
+        })();
+        </script>
+        <script>
+        // Dependency logic rewrite: listen on any select with data-field-key; update children on change; rebind per modal open
+        (function(){
+            const ajaxUrl = <?php echo json_encode( esc_url( admin_url('admin-ajax.php') ) ); ?>;
+
+            function clearChild(childSel){
+                if (!childSel) return;
+                // Preserve first placeholder option if exists, remove others
+                while (childSel.options.length > 1) childSel.remove(1);
+            }
+
+            function setNoOptions(childSel){
+                if (!childSel) return;
+                // Remove all then add single disabled message
+                while (childSel.options.length) childSel.remove(0);
+                childSel.add(new Option('No options found',''));
+                childSel.setAttribute('disabled','disabled');
+            }
+
+            function fetchAndPopulate(childSel, parentKey, parentVal){
+                const childKey = childSel.getAttribute('data-field-key');
+                if (!childKey) return;
+                // Preserve current selection before rebuilding
+                const prevSelected = (childSel.value || '').toString();
+                childSel.setAttribute('disabled','disabled');
+                clearChild(childSel);
+                // When parentVal is empty/'Any', we still fetch all child values
+                if (!parentVal || parentVal.toLowerCase() === 'any') {
+                    parentVal = ''; // backend treats blank as no filter
+                }
+                const fd = new FormData();
+                fd.append('action','tpw_member_dependent_options');
+                fd.append('field', childKey);
+                fd.append('depends_on_field', parentKey);
+                fd.append('depends_on_value', parentVal);
+                fetch(ajaxUrl, { method:'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data || !data.success || !data.data || !Array.isArray(data.data.options)) { setNoOptions(childSel); return; }
+                        const opts = data.data.options;
+                        if (opts.length === 0){ setNoOptions(childSel); return; }
+                        // Re-add placeholder first
+                        childSel.add(new Option('— Any —',''));
+                        opts.forEach(o => {
+                            if (o && typeof o.value !== 'undefined') {
+                                childSel.add(new Option(o.label, o.value));
+                            }
+                        });
+                        // Attempt to restore previous selection if still present
+                        if (prevSelected && prevSelected !== '') {
+                            childSel.value = prevSelected;
+                        }
+                        // Enable only if there is at least one real option beyond placeholder
+                        if (childSel.options.length > 1) {
+                            childSel.removeAttribute('disabled');
+                        } else {
+                            setNoOptions(childSel);
+                        }
+                    })
+                    .catch(() => { setNoOptions(childSel); });
+            }
+
+            function bindScope(scope){
+                if (!scope) return;
+                // For each parent select, listen for changes
+                const allSelects = scope.querySelectorAll('select[data-field-key]');
+                allSelects.forEach(sel => {
+                    sel.addEventListener('change', onParentChange);
+                });
+                // Initialize children based on current parent values
+                const childSelects = scope.querySelectorAll('select[data-depends-on]');
+                childSelects.forEach(child => {
+                    const parentKey = child.getAttribute('data-depends-on');
+                    if (!parentKey) return;
+                    const parentEl = scope.querySelector('select[data-field-key="'+parentKey+'"]');
+                    if (!parentEl) return;
+                    fetchAndPopulate(child, parentKey, parentEl.value.trim());
+                });
+            }
+
+            function onParentChange(e){
+                const parentSel = e.target;
+                if (!parentSel || !parentSel.matches('select[data-field-key]')) return;
+                const parentKey = parentSel.getAttribute('data-field-key');
+                let parentVal = parentSel.value.trim();
+                // Find child selects anywhere in document that depend on this parent within same logical scope (basic or modal)
+                // Determine scope: traverse up to advanced modal or basic search container
+                let scope = parentSel.closest('#tpw-advanced-search-modal, .tpw-basic-search');
+                if (!scope) scope = document; // fallback global
+                const childSelects = scope.querySelectorAll('select[data-depends-on="'+parentKey+'"]');
+                childSelects.forEach(child => {
+                    // Always fetch (blank parent returns all options)
+                    if (!parentVal || parentVal.toLowerCase() === 'any') parentVal = '';
+                    fetchAndPopulate(child, parentKey, parentVal);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){
+                // Bind for every basic search section (search text and field filters)
+                const basicScopes = document.querySelectorAll('.tpw-basic-search');
+                basicScopes.forEach(function(scope){ bindScope(scope); });
+                const advBtn = document.getElementById('open-advanced-search');
+                if (advBtn){
+                    advBtn.addEventListener('click', function(){
+                        const modal = document.getElementById('tpw-advanced-search-modal');
+                        if (!modal) return;
+                        // Delay to allow modal content injection (if rebuilt)
+                        setTimeout(() => { bindScope(modal); }, 50);
+                    });
+                }
+            });
         })();
         </script>
         <?php endif; ?>
@@ -514,13 +941,21 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
         </script>
 
     
-        <div class="tpw-table" id="tpw-list-view" style="<?php echo $current_view === 'card' ? 'display:none;' : ''; ?>">
+        <?php if ( $hide_initial ): ?>
+            <div class="tpw-info-box" style="margin:10px 0; padding:10px 12px; border:1px solid #c8e1ff; background:#f0f7ff; color:#1a3a5a; border-radius:6px;">
+                No members are shown by default. Please enter a search and click Search to view results.
+                <?php $show_all_url = esc_url( add_query_arg( 'show_all', '1', get_permalink() ) ); ?>
+                <div style="margin-top:6px;"><a class="tpw-btn tpw-btn-light" href="<?php echo $show_all_url; ?>">Show All</a></div>
+            </div>
+        <?php endif; ?>
+
+        <div class="tpw-table" id="tpw-list-view" style="<?php echo ($current_view === 'card' || $hide_initial) ? 'display:none;' : ''; ?>">
         <div class="tpw-table-header">
             <div class="tpw-table-cell">Name</div>
-            <?php if ( $is_admin || tpw_can_group_view_field('member','email') ): ?>
+            <?php if ( $is_admin || tpw_can_group_view_field($vis_group,'email') ): ?>
             <div class="tpw-table-cell">Email</div>
             <?php endif; ?>
-            <?php if ( $is_admin || tpw_can_group_view_field('member','mobile') || tpw_can_group_view_field('member','landline') ): ?>
+            <?php if ( $is_admin || tpw_can_group_view_field($vis_group,'mobile') || tpw_can_group_view_field($vis_group,'landline') ): ?>
             <div class="tpw-table-cell">Telephone</div>
             <?php endif; ?>
             <?php if ( $is_admin ): ?>
@@ -535,11 +970,11 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
             <div class="tpw-table-row"><div class="tpw-table-cell" colspan="4">No members found.</div></div>
         <?php else: ?>
             <?php foreach ( $members as $member ): ?>
-                <div class="tpw-table-row">
+                <div class="tpw-table-row" data-member-id="<?php echo (int)$member->id; ?>">
                     <div class="tpw-table-cell" data-label="Name">
-                        <a href="#" class="tpw-member-name-link" data-member-id="<?php echo (int)$member->id; ?>"><?php echo esc_html( $member->first_name . ' ' . $member->surname ); ?></a>
+                        <a href="#" class="tpw-member-name-link" data-member-id="<?php echo (int)$member->id; ?>"><?php echo esc_html( function_exists('tpw_members_get_display_name') ? tpw_members_get_display_name($member) : ( $member->first_name . ' ' . $member->surname ) ); ?></a>
                     </div>
-                    <?php if ( $is_admin || tpw_can_group_view_field('member','email') ): ?>
+                    <?php if ( $is_admin || tpw_can_group_view_field($vis_group,'email') ): ?>
                     <div class="tpw-table-cell" data-label="Email">
                         <?php if ( ! empty( $member->email ) ): ?>
                             <a
@@ -552,10 +987,10 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
-                    <?php if ( $is_admin || tpw_can_group_view_field('member','mobile') || tpw_can_group_view_field('member','landline') ): ?>
+                    <?php if ( $is_admin || tpw_can_group_view_field($vis_group,'mobile') || tpw_can_group_view_field($vis_group,'landline') ): ?>
                     <div class="tpw-table-cell" data-label="Telephone">
-                        <?php if ( !empty($member->mobile) && ( $is_admin || tpw_can_group_view_field('member','mobile') ) ) echo esc_html($member->mobile) . '<br>'; ?>
-                        <?php if ( !empty($member->landline) && ( $is_admin || tpw_can_group_view_field('member','landline') ) ) echo esc_html($member->landline); ?>
+                        <?php if ( !empty($member->mobile) && ( $is_admin || tpw_can_group_view_field($vis_group,'mobile') ) ) echo esc_html($member->mobile) . '<br>'; ?>
+                        <?php if ( !empty($member->landline) && ( $is_admin || tpw_can_group_view_field($vis_group,'landline') ) ) echo esc_html($member->landline); ?>
                     </div>
                     <?php endif; ?>
                     <?php if ( $is_admin ): ?>
@@ -577,13 +1012,13 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
     </div>
 
     <!-- Card View Grid -->
-    <div id="tpw-card-view" class="tpw-card-grid" style="<?php echo $current_view === 'card' ? '' : 'display:none;'; ?>">
+    <div id="tpw-card-view" class="tpw-card-grid" style="<?php echo ($current_view === 'card' && !$hide_initial) ? '' : 'display:none;'; ?>">
         <?php if ( empty( $members ) ): ?>
             <div>No members found.</div>
         <?php else: ?>
             <?php $use_photos = get_option('tpw_members_use_photos', '0') === '1'; ?>
             <?php foreach ( $members as $member ): ?>
-                <div class="member-card">
+                <div class="member-card" data-member-id="<?php echo (int)$member->id; ?>">
                     <?php if ( $use_photos ): ?>
                         <div class="member-card-media" aria-hidden="false">
                             <?php
@@ -613,10 +1048,10 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                         </div>
                     <?php endif; ?>
                     <div class="card-title">
-                        <a href="#" class="tpw-member-name-link" data-member-id="<?php echo (int)$member->id; ?>"><?php echo esc_html( $member->first_name . ' ' . $member->surname ); ?></a>
+                        <a href="#" class="tpw-member-name-link" data-member-id="<?php echo (int)$member->id; ?>"><?php echo esc_html( function_exists('tpw_members_get_display_name') ? tpw_members_get_display_name($member) : ( $member->first_name . ' ' . $member->surname ) ); ?></a>
                     </div>
                     <div class="card-content">
-                        <?php if ( ( $is_admin || tpw_can_group_view_field('member','email') ) && !empty($member->email) ): ?>
+                        <?php if ( ( $is_admin || tpw_can_group_view_field($vis_group,'email') ) && !empty($member->email) ): ?>
                             <div><strong>Email:</strong> <a href="#"
                                 class="tpw-member-email-link"
                                 data-member-id="<?php echo (int)$member->id; ?>"
@@ -624,7 +1059,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
                                 data-recipient-email="<?php echo esc_attr( $member->email ); ?>"
                             ><?php echo esc_html($member->email); ?></a></div>
                         <?php endif; ?>
-                        <?php if ( ( $is_admin || tpw_can_group_view_field('member','mobile') || tpw_can_group_view_field('member','landline') ) && ( !empty($member->mobile) || !empty($member->landline) ) ): ?>
+                        <?php if ( ( $is_admin || tpw_can_group_view_field($vis_group,'mobile') || tpw_can_group_view_field($vis_group,'landline') ) && ( !empty($member->mobile) || !empty($member->landline) ) ): ?>
                             <div><strong>Telephone:</strong> <?php echo esc_html( trim(($member->mobile ?? '') . ((($member->mobile ?? '') && ($member->landline ?? '')) ? ' / ' : '') . ($member->landline ?? '')) ); ?></div>
                         <?php endif; ?>
                         <?php if ( $is_admin ): ?>
@@ -645,22 +1080,28 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
     </div>
 
     <?php
-    $count_args = [ 'search' => $search_query ];
-    if ( ! empty($has_value_selected) ) { $count_args['has_value'] = $has_value_selected; }
-    if ( ! empty($adv_text) ) { $count_args['adv_text'] = $adv_text; }
-    if ( ! empty($adv_select) ) { $count_args['adv_select'] = $adv_select; }
+    if ( $hide_initial ) {
+        $total_members = 0;
+        $total_pages = 1;
+    } else {
+        $count_args = [ 'search' => $search_query ];
+        if ( ! empty($has_value_selected) ) { $count_args['has_value'] = $has_value_selected; }
+        if ( ! empty($adv_text) ) { $count_args['adv_text'] = $adv_text; }
+        if ( ! empty($adv_select) ) { $count_args['adv_select'] = $adv_select; }
     if ( ! empty($adv_date_range) ) { $count_args['adv_date_range'] = $adv_date_range; }
-    if ( ! $is_admin ) {
-        if ( class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'get_allowed_statuses') ) {
-            $count_args['status_in'] = TPW_Member_Access::get_allowed_statuses();
-        } else {
-            $count_args['status_in'] = TPW_Member_Access::ALLOWED_STATUSES;
+    if ( ! empty($adv_select_meta) ) { $count_args['adv_select_meta'] = $adv_select_meta; }
+        if ( ! $is_admin ) {
+            if ( class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'get_allowed_statuses') ) {
+                $count_args['status_in'] = TPW_Member_Access::get_allowed_statuses();
+            } else {
+                $count_args['status_in'] = TPW_Member_Access::ALLOWED_STATUSES;
+            }
         }
+        if ( $is_admin && $selected_status !== '' ) { $count_args['status'] = $selected_status; }
+        $total_members = $controller->get_total_members_count( $count_args );
+        $total_pages = max(1, (int) ceil($total_members / max(1, (int)$per_page)));
     }
-    if ( $is_admin && $selected_status !== '' ) { $count_args['status'] = $selected_status; }
-    $total_members = $controller->get_total_members_count( $count_args );
-    $total_pages = max(1, (int) ceil($total_members / $per_page));
-    if ($total_pages > 1):
+    if (!$hide_initial && $total_pages > 1):
         // Build pagination URLs preserving current filters on the same page permalink
         $base_url = get_permalink();
         $base_args = [
@@ -748,7 +1189,7 @@ $current_view = ( isset($_GET['view']) && sanitize_text_field($_GET['view']) ===
         <div id="tpw-member-details-modal" class="tpw-dir-modal" hidden>
             <div class="tpw-dir-modal__dialog">
                 <div class="tpw-dir-modal__header">
-                    <h3>Member Details</h3>
+                    <h3 style="font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, currentColor); margin:0;">Member Details</h3>
                     <button type="button" class="tpw-btn tpw-btn-light tpw-dir-modal-close">Close</button>
                 </div>
                 <div class="tpw-dir-modal__body" id="tpw-member-details-content">Loading...</div>

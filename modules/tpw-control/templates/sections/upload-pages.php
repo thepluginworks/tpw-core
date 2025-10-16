@@ -33,6 +33,7 @@ echo '<style>
 #tpw-upl-create-modal:target{display:block}
 #tpw-upl-vis-modal:target{display:block}
 #tpw-upl-addfile-modal:target{display:block}
+#tpw-upl-help-modal:target{display:block}
 .tpw-section{border:1px solid #ddd;border-radius:6px;padding:16px;margin:16px 0;background:#fff}
 .tpw-section legend{font-weight:600;padding:0 8px}
 .tpw-section .tpw-fieldset{margin-bottom:8px}
@@ -40,7 +41,15 @@ echo '<style>
 </style>';
 ?>
 
-<div class="tpw-upl-wrap">
+<div class="tpw-upl-wrap tpw-admin-ui">
+    <?php if ( isset($_GET['open']) && $_GET['open'] === 'add_file' ) : ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            var btn = document.querySelector('[data-tpw-open="#tpw-upl-addfile-modal"]');
+            if (btn) { btn.click(); }
+        });
+        </script>
+    <?php endif; ?>
     <div class="tpw-upl-head">
         <h2>Upload Pages</h2>
         <div>
@@ -161,6 +170,8 @@ echo '<style>
                         'media_buttons'   => true,
                         'drag_drop_upload'=> true,
                         'teeny'           => false,
+                        // Add our UI class so toolbar/buttons inherit TPW styles instead of the theme
+                        'editor_class'    => 'tpw-admin-ui',
                         'quicktags'       => true,
                         'tinymce'         => [
                             'toolbar1'          => 'formatselect bold italic underline bullist numlist alignleft aligncenter alignright link unlink removeformat',
@@ -217,39 +228,82 @@ echo '<style>
 
                 <div class="tpw-upl-actions" style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
                     <button class="tpw-btn tpw-btn-primary" type="submit">Save Page Details</button>
-                    <button class="tpw-btn tpw-btn-danger" type="submit" name="tpw_control_upload_pages_action" value="delete_page" onclick="return confirm('Delete this page and all its files?');">Delete Page</button>
+                    <?php $has_files = ! empty( $files ); ?>
+                    <button class="tpw-btn <?php echo $has_files ? 'tpw-btn-light' : 'tpw-btn-danger'; ?>" type="submit" name="tpw_control_upload_pages_action" value="delete_page" <?php echo $has_files ? 'disabled aria-disabled="true" title="No files must be attached before deleting this page."' : 'onclick="return confirm(\'Delete this page?\');"'; ?>>Delete Page</button>
                 </div>
             </fieldset>
         </form>
 
+        <?php $categories = TPW_Control_Upload_Pages::get_categories( (int)$page->id ); ?>
         <fieldset class="tpw-section tpw-upl-files">
             <legend>Files</legend>
             <div class="tpw-upl-actions" style="margin-bottom:8px">
                 <a href="#tpw-upl-addfile-modal" class="tpw-btn tpw-btn-primary" role="button" data-tpw-open="#tpw-upl-addfile-modal">Add File</a>
+                <a href="#tpw-upl-import-modal" class="tpw-btn tpw-btn-secondary" role="button" data-tpw-open="#tpw-upl-import-modal">Bulk Import (CSV + ZIP)</a>
             </div>
+            <?php
+            // Show import report if available
+            $report = null; $current_user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
+            if ( $current_user_id > 0 ) {
+                $tkey = 'tpw_upl_import_report_' . $current_user_id . '_' . (int) $page->id;
+                $rep = get_transient( $tkey );
+                if ( is_array( $rep ) ) { $report = $rep; delete_transient( $tkey ); }
+            }
+            if ( $report ) {
+                echo '<div class="notice" style="border:1px solid #ddd;background:#f7fbff;padding:10px;border-radius:6px;margin-bottom:10px">';
+                echo '<div style="font-weight:600;margin-bottom:6px">Bulk Import Report</div>';
+                echo '<div>Imported: ' . (int) ($report['success_count'] ?? 0) . ' file(s)';
+                if ( ! empty( $report['created_categories'] ) ) echo ' · Categories created: ' . (int) $report['created_categories'];
+                echo '</div>';
+                if ( ! empty( $report['warnings'] ) ) { echo '<ul style="margin:6px 0 0 18px; list-style:disc; color:#7a5;">'; foreach ( (array)$report['warnings'] as $w ) echo '<li>' . esc_html( (string) $w ) . '</li>'; echo '</ul>'; }
+                if ( ! empty( $report['errors'] ) ) { echo '<ul style="margin:6px 0 0 18px; list-style:disc; color:#b00020;">'; foreach ( (array)$report['errors'] as $e ) echo '<li>' . esc_html( (string) $e ) . '</li>'; echo '</ul>'; }
+                echo '</div>';
+            }
+            ?>
             <form method="post" id="tpw-upl-form-files">
                 <?php wp_nonce_field( 'tpw_control_upload_pages' ); ?>
                 <input type="hidden" name="tpw_control_upload_pages_action" value="update_files" />
                 <input type="hidden" name="upload_page_id" value="<?php echo (int)$page->id; ?>" />
+                <div class="tpw-upl-actions" style="margin:6px 0; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <select name="bulk_action" style="min-width:160px">
+                        <option value="">Bulk actions…</option>
+                        <option value="assign">Assign to Page…</option>
+                        <option value="unlink">Delete (move to Trash)</option>
+                        <!-- Permanent delete is available in the Trash panel only -->
+                    </select>
+                    <select name="target_page_id" style="min-width:220px">
+                        <option value="">— Select target page —</option>
+                        <?php foreach ( (array) TPW_Control_Upload_Pages::get_pages() as $pg ) echo '<option value="' . (int)$pg->id . '">' . esc_html( $pg->title ) . '</option>'; ?>
+                    </select>
+                    <input type="number" name="assign_year" placeholder="Year override (optional)" style="width:160px" />
+                    <select name="assign_category_mode" title="Category handling on assign">
+                        <option value="inherit">Inherit category</option>
+                        <option value="none">No category</option>
+                        <option value="general">General on target</option>
+                    </select>
+                    <button class="tpw-btn tpw-btn-light" type="submit" formaction="" onclick="this.form.tpw_control_upload_pages_action.value='bulk_files'">Apply</button>
+                </div>
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:24px"><input type="checkbox" onclick="document.querySelectorAll('#tpw-upl-files-tbody input[type=checkbox]').forEach(cb=>cb.checked=this.checked)" /></th>
                             <th style="width:30px"></th>
                             <th style="width:90px">Preview</th>
                             <th>Label</th>
+                            <th style="width:160px">Category</th>
                             <th style="width:110px">Year</th>
                             <th style="width:100px">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tpw-upl-files-tbody">
                         <?php foreach ( $files as $idx => $f ): 
-                            $url = $f->file_url;
+                            $url = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'file', 900, false ) : $f->file_url;
                             $thumb = $f->thumbnail_url;
                             $file_type = $f->file_type;
-                            $label = $f->label !== '' ? $f->label : basename( parse_url($url, PHP_URL_PATH) );
+                            $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
                             // Determine icon fallback
                             $icon = '';
-                            $ext = strtolower( pathinfo( parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION ) );
+                            $ext = strtolower( pathinfo( parse_url($f->file_url, PHP_URL_PATH), PATHINFO_EXTENSION ) );
                             $img_base = defined('TPW_CORE_URL') ? TPW_CORE_URL . 'assets/images/' : '';
                             if ( ! $thumb ) {
                                 if ( in_array( $ext, ['jpg','jpeg','png'], true ) ) {
@@ -268,19 +322,22 @@ echo '<style>
                             }
                             ?>
                             <tr data-file-id="<?php echo (int)$f->id; ?>">
+                                <td><input type="checkbox" name="selected_links[]" value="<?php echo (int)$f->id; ?>" /></td>
                                 <td class="tpw-upl-handle" title="Drag to reorder" style="cursor:move">&#9776;</td>
                                 <td>
                                     <?php if ( TPW_Control_UI::user_has_access( [ 'logged_in' => true, 'flags_any' => ['is_committee','is_admin'] ] ) ): ?>
                                         <a href="<?php echo esc_url( $url ); ?>" class="tpw-upl-preview" data-index="<?php echo (int)$idx; ?>" data-type="<?php echo esc_attr( $file_type ); ?>" data-label="<?php echo esc_attr( $label ); ?>">
                                             <?php if ( $thumb ): ?>
-                                                <img src="<?php echo esc_url( $thumb ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
+                                                <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
+                                                <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
                                             <?php else: ?>
                                                     <img src="<?php echo esc_url( $icon ); ?>" alt="" style="width:48px;height:48px" />
                                             <?php endif; ?>
                                         </a>
                                     <?php else: ?>
                                         <?php if ( $thumb ): ?>
-                                            <img src="<?php echo esc_url( $thumb ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
+                                            <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
+                                            <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
                                         <?php else: ?>
                                                 <img src="<?php echo esc_url( $icon ); ?>" alt="" style="width:48px;height:48px" />
                                         <?php endif; ?>
@@ -288,6 +345,14 @@ echo '<style>
                                 </td>
                                 <td>
                                     <input type="text" name="file_label[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->label ); ?>" />
+                                </td>
+                                <td>
+                                    <select name="file_category[<?php echo (int)$f->id; ?>]">
+                                        <option value="">— None —</option>
+                                        <?php foreach ( (array)$categories as $cat ): $sel = isset($f->category_id) && (int)$f->category_id === (int)$cat->category_id ? 'selected' : ''; ?>
+                                            <option value="<?php echo (int)$cat->category_id; ?>" <?php echo $sel; ?>><?php echo esc_html( $cat->category_name ); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </td>
                                 <td>
                                     <input class="tpw-upl-year" type="number" name="file_year[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->year ); ?>" />
@@ -306,6 +371,56 @@ echo '<style>
                     <button class="tpw-btn tpw-btn-secondary" type="submit">Save file changes</button>
                 </div>
             </form>
+
+            <?php
+            // Trash (soft-deleted links)
+            global $wpdb; $links_table = $wpdb->prefix . 'tpw_upload_pages_files'; $files_table = $wpdb->prefix . 'tpw_files';
+            $trashed = $wpdb->get_results( $wpdb->prepare( "SELECT l.*, f.file_type, f.file_url, f.thumbnail_url FROM {$links_table} l JOIN {$files_table} f ON f.file_id=l.file_id WHERE l.page_id=%d AND l.is_deleted=1 ORDER BY l.deleted_at DESC", (int)$page->id ) );
+            if ( ! empty( $trashed ) ): ?>
+            <div id="tpw-upl-trash-section" class="tpw-section" style="margin-top:16px">
+                <h4 style="margin:0 0 8px">Trash</h4>
+                <form method="post">
+                    <?php wp_nonce_field( 'tpw_control_upload_pages' ); ?>
+                    <input type="hidden" name="tpw_control_upload_pages_action" value="bulk_files" />
+                    <input type="hidden" name="upload_page_id" value="<?php echo (int)$page->id; ?>" />
+                    <div class="tpw-upl-actions" style="margin:6px 0; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <select name="bulk_action" style="min-width:160px">
+                            <option value="">Bulk actions…</option>
+                            <option value="restore">Restore</option>
+                            <option value="delete_permanent">Delete permanently</option>
+                        </select>
+                        <button class="tpw-btn tpw-btn-light" type="submit">Apply</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:24px">
+                                    <input type="checkbox" title="Select all" aria-label="Select all in Trash" onclick="(function(hd){var tbl=hd.closest('table');if(tbl){tbl.querySelectorAll('tbody input[type=checkbox]').forEach(function(cb){cb.checked=hd.checked;});}})(this);" />
+                                </th>
+                                <th>Label</th>
+                                <th style="width:120px">Deleted</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $trashed as $t ): ?>
+                                <tr>
+                                    <td><input type="checkbox" name="selected_links[]" value="<?php echo (int)$t->id; ?>" /></td>
+                                    <td><?php echo esc_html( $t->label ); ?></td>
+                                    <td><?php echo esc_html( $t->deleted_at ); ?></td>
+                                    <td>
+                                        <button class="tpw-btn tpw-btn-secondary" name="bulk_action" value="restore" type="submit" onclick="(function(btn){var row=btn.closest('tr');var table=btn.closest('table');if(table){table.querySelectorAll('tbody input[type=checkbox]').forEach(function(cb){cb.checked=false;});}var cb=row?row.querySelector('input[type=checkbox]'):null;if(cb){cb.checked=true;}})(this);">Restore</button>
+                                        <button class="tpw-btn tpw-btn-danger" name="bulk_action" value="delete_permanent" type="submit" style="margin-top:6px" onclick="(function(btn){var row=btn.closest('tr');var table=btn.closest('table');if(table){table.querySelectorAll('tbody input[type=checkbox]').forEach(function(cb){cb.checked=false;});}var cb=row?row.querySelector('input[type=checkbox]'):null;if(cb){cb.checked=true;}})(this); return confirm('Delete permanently? This cannot be undone.');">Delete</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+            <?php else: ?>
+            <div id="tpw-upl-trash-section"></div>
+            <?php endif; ?>
         </fieldset>
         
         <!-- Add File Modal -->
@@ -322,6 +437,15 @@ echo '<style>
                     <input type="hidden" name="upload_page_id" value="<?php echo (int)$page->id; ?>" />
                     <div class="tpw-fieldset"><input type="file" name="upload_files[]" multiple /></div>
                     <div class="tpw-fieldset"><input class="tpw-upl-year" type="number" name="upload_year" placeholder="Year" /></div>
+                    <div class="tpw-fieldset"><label>Category
+                        <select name="upload_category_id" class="tpw-upl-cat-select">
+                            <option value="">— None —</option>
+                            <?php foreach ( (array)$categories as $cat ): ?>
+                                <option value="<?php echo (int)$cat->category_id; ?>"><?php echo esc_html( $cat->category_name ); ?></option>
+                            <?php endforeach; ?>
+                        </select></label>
+                        <button type="button" class="tpw-btn tpw-btn-light" style="margin-left:8px" data-tpw-open="#tpw-upl-addcat-modal">Add Category</button>
+                    </div>
                     <div class="tpw-fieldset"><input type="text" name="upload_label" placeholder="Label (optional, defaults to filename)" style="min-width:240px" /></div>
                     <div id="tpw-upl-upload-feedback" style="display:none;margin-top:8px">
                         <div class="tpw-progress" style="margin-bottom:6px">
@@ -337,37 +461,102 @@ echo '<style>
                 </form>
             </div>
         </div>
+
+        <!-- Bulk Import Modal -->
+        <div id="tpw-upl-import-modal" class="tpw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;">
+            <div class="tpw-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tpw-upl-import-title" style="background:#fff;max-width:620px;margin:10vh auto;padding:16px;border-radius:6px;">
+                <div class="tpw-modal__header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 id="tpw-upl-import-title" style="margin:0">Bulk Import (CSV + ZIP)</h3>
+                    <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-import-modal">Close</a>
+                </div>
+                <div class="tpw-modal__body" style="margin-top:10px">
+                    <p class="description">Upload a ZIP archive containing your documents and a CSV manifest named <code>manifest.csv</code>.</p>
+                    <ul style="margin:6px 0 10px 18px; list-style:disc;">
+                        <li>manifest.csv columns (case-insensitive): <code>filename</code>, <code>label</code>, <code>year</code>, <code>category</code></li>
+                        <li>Files in the ZIP must match the <code>filename</code> values. Unreferenced files are reported but ignored.</li>
+                        <li>New categories in the CSV are created automatically for this Upload Page.</li>
+                        <li>Max file size per file respects your Upload Pages setting.</li>
+                    </ul>
+                    <?php
+                        $tpl_url = add_query_arg(
+                            [ 'action' => 'tpw_control_download_import_template', '_wpnonce' => wp_create_nonce( 'tpw_control_upload_pages' ) ],
+                            admin_url( 'admin-ajax.php' )
+                        );
+                        echo '<p><a class="tpw-btn tpw-btn-light" href="' . esc_url( $tpl_url ) . '" target="_blank" rel="noopener">Download Template CSV</a></p>';
+                    ?>
+                </div>
+                <form method="post" enctype="multipart/form-data" style="margin-top:8px">
+                    <?php wp_nonce_field( 'tpw_control_upload_pages' ); ?>
+                    <input type="hidden" name="tpw_control_upload_pages_action" value="bulk_import" />
+                    <input type="hidden" name="upload_page_id" value="<?php echo (int) $page->id; ?>" />
+                    <div class="tpw-fieldset"><label>ZIP file<br/><input type="file" name="bulk_zip" accept=".zip,application/zip" required /></label></div>
+                    <div class="tpw-upl-actions" style="margin-top:8px">
+                        <button class="tpw-btn tpw-btn-primary" type="submit">Run Import</button>
+                        <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-import-modal">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Add Category Modal -->
+        <div id="tpw-upl-addcat-modal" class="tpw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;">
+            <div class="tpw-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tpw-upl-addcat-title" style="background:#fff;max-width:480px;margin:12vh auto;padding:16px;border-radius:6px;">
+                <div class="tpw-modal__header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 id="tpw-upl-addcat-title" style="margin:0">Add Category</h3>
+                    <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-addcat-modal">Close</a>
+                </div>
+                <form method="post" id="tpw-upl-form-addcat" style="margin-top:12px">
+                    <?php wp_nonce_field( 'tpw_control_upload_pages' ); ?>
+                    <input type="hidden" name="tpw_control_upload_pages_action" value="add_category" />
+                    <input type="hidden" name="upload_page_id" value="<?php echo (int)$page->id; ?>" />
+                    <div class="tpw-fieldset">
+                        <label>Category name<br/>
+                            <input type="text" name="category_name" required placeholder="e.g. Policies" style="min-width:260px" />
+                        </label>
+                    </div>
+                    <div id="tpw-upl-addcat-error" style="display:none;color:#b00020;margin-top:4px"></div>
+                    <div class="tpw-upl-actions" style="margin-top:10px">
+                        <button class="tpw-btn tpw-btn-primary" type="submit">Add Category</button>
+                        <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-addcat-modal">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     <?php else: ?>
         <div class="tpw-upl-list">
-            <div style="margin-bottom:12px">
+            <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <a href="#tpw-upl-create-modal" class="tpw-btn tpw-btn-primary" role="button" data-tpw-open="#tpw-upl-create-modal">Create New Upload Page</a>
+                <a href="#tpw-upl-help-modal" class="tpw-btn tpw-btn-light" role="button" data-tpw-open="#tpw-upl-help-modal">Help / Shortcodes</a>
             </div>
+            <?php if ( isset($_GET['err']) && $_GET['err'] === 'has_files' ): ?>
+                <div class="notice notice-error" style="border:1px solid #cc0000;background:#fff3f3;padding:10px;border-radius:6px;margin-bottom:10px;">
+                    <p style="margin:0;">Cannot delete this Upload Page because it still has files attached. Remove all files first.</p>
+                </div>
+            <?php endif; ?>
             <?php
             // Pagination
+            $current_pg = isset($_GET['pg']) ? max(1, (int) $_GET['pg']) : 1;
             $all_pages = TPW_Control_Upload_Pages::get_pages();
             $total = is_array($all_pages) ? count($all_pages) : 0;
             $per_page = apply_filters( 'tpw_control/upload_pages_per_page', 10 );
-            $current_pg = isset($_GET['pg']) ? max(1, (int) $_GET['pg']) : 1;
             $offset = ($current_pg - 1) * $per_page;
             $pages = array_slice( (array)$all_pages, $offset, $per_page );
             $total_pages = $per_page > 0 ? (int) ceil( $total / $per_page ) : 1;
-            if ( empty( $pages ) ): ?>
+            if ( empty( $pages ) ):
+            ?>
                 <div class="tpw-empty-state">
                     <p>No Upload Pages yet.</p>
                     <p>Create your first page below to start adding files.</p>
                 </div>
             <?php else: ?>
-            <table class="widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Slug</th>
-                        <th>Files</th>
-                        <th>Visibility</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-container">
+                <div class="table-row table-head">
+                    <div class="table-cell" style="flex:2">Title</div>
+                    <div class="table-cell" style="flex:1">Slug</div>
+                    <div class="table-cell" style="flex:0 0 80px">Files</div>
+                    <div class="table-cell" style="flex:2">Visibility</div>
+                    <div class="table-cell" style="flex:0 0 180px">Actions</div>
+                </div>
                 <?php foreach ( $pages as $p ):
                     $file_count = count( TPW_Control_Upload_Pages::get_files( (int)$p->id ) );
                     $vis = json_decode( (string)$p->visibility, true ); if ( ! is_array($vis) ) $vis = [];
@@ -376,20 +565,26 @@ echo '<style>
                         if ( ! empty($vis[$k]) ) $vis_bits[] = $label;
                     }
                     if ( ! empty($vis['status']) && is_array($vis['status']) ) $vis_bits[] = 'Status(' . implode(', ', $vis['status']) . ')';
+                    $edit_url = add_query_arg( [ 'sub' => 'edit', 'upload_page_id' => (int)$p->id ], TPW_Control_UI::menu_url('upload-pages') );
+                    $can_delete = (int)$file_count === 0;
                 ?>
-                    <tr>
-                        <td><?php echo esc_html( $p->title ); ?></td>
-                        <td><?php echo esc_html( $p->slug ); ?></td>
-                        <td><?php echo (int) $file_count; ?></td>
-                        <td><?php echo esc_html( implode(' • ', $vis_bits ) ); ?></td>
-                        <td>
-                            <?php $edit_url = add_query_arg( [ 'sub' => 'edit', 'upload_page_id' => (int)$p->id ], TPW_Control_UI::menu_url('upload-pages') ); ?>
-                            <button type="button" class="tpw-btn tpw-btn-secondary tpw-nav-btn" data-href="<?php echo esc_url( $edit_url ); ?>">Edit</button>
-                        </td>
-                    </tr>
+                <div class="table-row">
+                    <div class="table-cell" style="flex:2"><?php echo esc_html( $p->title ); ?></div>
+                    <div class="table-cell" style="flex:1"><?php echo esc_html( $p->slug ); ?></div>
+                    <div class="table-cell" style="flex:0 0 80px"><?php echo (int) $file_count; ?></div>
+                    <div class="table-cell" style="flex:2"><?php echo esc_html( implode(' • ', $vis_bits ) ); ?></div>
+                    <div class="table-cell" style="flex:0 0 180px; gap:6px">
+                        <a class="tpw-btn tpw-btn-secondary" href="<?php echo esc_url( $edit_url ); ?>">Edit</a>
+                        <form method="post" style="display:inline">
+                            <?php wp_nonce_field( 'tpw_control_upload_pages' ); ?>
+                            <input type="hidden" name="tpw_control_upload_pages_action" value="delete_page" />
+                            <input type="hidden" name="upload_page_id" value="<?php echo (int)$p->id; ?>" />
+                            <button type="submit" class="tpw-btn <?php echo $can_delete ? 'tpw-btn-danger' : 'tpw-btn-light'; ?>" <?php echo $can_delete ? 'onclick="return confirm(\'Delete this page?\');"' : 'disabled aria-disabled="true" title="No files must be attached before deleting this page."'; ?>>Delete</button>
+                        </form>
+                    </div>
+                </div>
                 <?php endforeach; ?>
-                </tbody>
-            </table>
+            </div>
             <?php endif; ?>
 
             <?php if ( $total_pages > 1 ): ?>
@@ -446,6 +641,39 @@ echo '<style>
                             <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-create-modal">Cancel</a>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Help / Shortcodes Modal -->
+            <div id="tpw-upl-help-modal" class="tpw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;">
+                <div class="tpw-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tpw-upl-help-title" style="background:#fff;max-width:700px;margin:8vh auto;padding:16px;border-radius:6px;">
+                    <div class="tpw-modal__header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <h3 id="tpw-upl-help-title" style="margin:0">Upload Pages – Help & Shortcodes</h3>
+                        <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-help-modal">Close</a>
+                    </div>
+                    <div class="tpw-modal__body" style="margin-top:8px">
+                        <ol style="padding-left:18px; margin:0 0 10px 0;">
+                            <li style="margin-bottom:6px;">Create an Upload Page (title, optional slug/description, and visibility).</li>
+                            <li style="margin-bottom:6px;">Add one or more files to the page.</li>
+                            <li style="margin-bottom:6px;">Embed the Upload Page on your site using the shortcode below (Shortcode block), or click “Create New Linked Page” on the edit screen to auto-create a WordPress Page containing the shortcode.</li>
+                        </ol>
+                        <div style="background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:10px;margin:10px 0;">
+                            <div style="font-weight:600;margin-bottom:4px;">Shortcode</div>
+                            <code style="display:block;white-space:pre;">
+[tpw_upload_page slug="your-slug"]
+                            </code>
+                            <p class="description" style="margin:8px 0 0;">Replace <code>your-slug</code> with the slug of your Upload Page. The page layout (table, list, or cards) is controlled by the Upload Page settings.</p>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div style="font-weight:600;">Notes</div>
+                            <ul style="margin:6px 0 0 18px; list-style: disc;">
+                                <li>Direct file URLs are protected; all downloads are served securely with permission checks.</li>
+                                <li>Visibility options restrict who can access the files on the embedded page.</li>
+                                <li>You can manage and link a WordPress Page from the “Page Details” panel on the edit screen.</li>
+                                <li>You cannot delete an Upload Page while it still has files attached. Remove all files first, then delete the page.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -146,7 +146,7 @@ require_once TPW_CORE_PATH . 'modules/members/includes/admin-settings-tabs.php';
       <?php endforeach; ?>
     </div>
 
-    <p style="margin-top:12px;"><button type="submit" class="button button-primary">Save Visibility</button></p>
+    <p style="margin-top:12px;"><button type="submit" class="tpw-btn tpw-btn-primary">Save Visibility</button></p>
   </form>
 
   <script>

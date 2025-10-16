@@ -60,13 +60,17 @@ tr[data-custom="1"] {
 				<div class="tpw-table-cell">Field</div>
 				<div class="tpw-table-cell">Enabled</div>
 				<div class="tpw-table-cell">Label</div>
+				<div class="tpw-table-cell">Section</div>
 				<div class="tpw-table-cell">Field Type</div>
 				<div class="tpw-table-cell" style="display:none;">Sort Order</div>
 				<div class="tpw-table-cell">Searchable</div>
+				<div class="tpw-table-cell">Basic Search</div>
 				<div class="tpw-table-cell">Use in Conditions</div>
 				<div class="tpw-table-cell">Delete</div>
 			</div>
 				<?php
+				$__sections_map = get_option('tpw_member_field_sections', []);
+				if (!is_array($__sections_map)) { $__sections_map = []; }
 				// Merge and normalize core and custom fields into a single array
 				$all_fields = [];
 
@@ -144,6 +148,10 @@ tr[data-custom="1"] {
 						<input type="text" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][custom_label]" value="<?php echo esc_attr($field['custom_label']); ?>">
 					</div>
 					<div class="tpw-table-cell">
+						<?php $current_section = isset($__sections_map[$field['key']]) && $__sections_map[$field['key']] !== '' ? $__sections_map[$field['key']] : ''; ?>
+						<input type="text" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][section]" value="<?php echo esc_attr($current_section); ?>" placeholder="General" style="max-width:140px;">
+					</div>
+					<div class="tpw-table-cell">
 						<input type="text" value="<?php echo esc_attr($field['type'] ?? ($field['is_custom'] ? 'text' : 'core')); ?>" readonly style="width:100px; background:#f9f9f9;">
 					</div>
 					<div class="tpw-table-cell" style="display:none;">
@@ -158,7 +166,20 @@ tr[data-custom="1"] {
 						<label class="tpw-resp-label" style="display:inline-flex; align-items:center; gap:6px;">
 							<input type="checkbox" class="tpw-searchable-toggle" data-field-key="<?php echo esc_attr($field['key']); ?>" data-field-label="<?php echo esc_attr($field['custom_label']); ?>" <?php checked( $is_searchable ); ?> />
 							<span class="tpw-resp-text">Searchable</span>
-							<button type="button" class="button button-small tpw-search-config-btn" data-field-key="<?php echo esc_attr($field['key']); ?>" style="display: <?php echo $is_searchable ? 'inline-flex' : 'none'; ?>;" title="Edit search options">⚙️</button>
+							<button type="button" class="tpw-btn tpw-btn-light tpw-btn-sm tpw-search-config-btn" data-field-key="<?php echo esc_attr($field['key']); ?>" style="display: <?php echo $is_searchable ? 'inline-flex' : 'none'; ?>;" title="Edit search options">⚙️</button>
+						</label>
+					</div>
+					<?php
+					  // Determine current basic_search flag from DB config if available
+					  $basic_search_val = 0;
+					  if ( isset($field_config[$field['key']]) && isset($field_config[$field['key']]->basic_search) ) {
+					      $basic_search_val = (int) $field_config[$field['key']]->basic_search;
+					  }
+					?>
+					<div class="tpw-table-cell">
+						<label class="tpw-resp-label" style="display:inline-flex; align-items:center; gap:6px;">
+							<input type="checkbox" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][basic_search]" value="1" <?php checked( $basic_search_val, 1 ); ?> />
+							<span class="tpw-resp-text">Basic Search</span>
 						</label>
 					</div>
 					<div class="tpw-table-cell">
@@ -171,11 +192,11 @@ tr[data-custom="1"] {
 					<div class="tpw-table-cell">
 						<?php if ( $field['is_custom'] ): ?>
 							<?php if ( $field['in_use'] ): ?>
-								<button class="button" disabled title="This field is in use and cannot be deleted.">
+								<button class="tpw-btn tpw-btn-light tpw-btn-sm" disabled title="This field is in use and cannot be deleted.">
 									<span class="dashicons dashicons-trash"></span>
 								</button>
 							<?php else: ?>
-								<button class="button delete-button" type="submit" name="delete_custom_field[]" value="<?php echo esc_attr($field['key']); ?>" onclick="return confirm('Are you sure you want to delete this custom field? This action cannot be undone.');">
+								<button class="tpw-btn tpw-btn-danger tpw-btn-sm delete-button" type="submit" name="delete_custom_field[]" value="<?php echo esc_attr($field['key']); ?>" onclick="return confirm('Are you sure you want to delete this custom field? This action cannot be undone.');">
 									<span class="dashicons dashicons-trash"></span>
 								</button>
 							<?php endif; ?>
@@ -202,7 +223,7 @@ tr[data-custom="1"] {
 		</p>
 		<input type="hidden" id="new_meta_key" name="new_meta_key" readonly value="">
 
-		<p><button type="submit" class="button button-primary">Save Settings</button></p>
+	<p><button type="submit" class="tpw-btn tpw-btn-primary">Save Settings</button></p>
 	</form>
 
 <!-- Search Config Modal (moved outside the main form to avoid nested forms) -->
@@ -210,12 +231,13 @@ tr[data-custom="1"] {
 	<div class="tpw-dir-modal__dialog" style="max-width:520px;">
 		<div class="tpw-dir-modal__header">
 			<h3>Search Options</h3>
-			<button type="button" class="button tpw-dir-modal-close">Close</button>
+			<button type="button" class="tpw-btn tpw-btn-light tpw-dir-modal-close">Close</button>
 		</div>
 		<div class="tpw-dir-modal__body">
 			<form id="tpw-search-config-form">
 				<input type="hidden" name="field_key" id="tpw-search-field-key" value="">
 				<input type="hidden" name="label" id="tpw-search-field-label" value="">
+				<input type="hidden" name="depends_on" id="tpw-search-depends-on" value="">
 				<p>
 					<label for="tpw-search-type"><strong>Search Type</strong></label><br>
 					<select name="search_type" id="tpw-search-type">
@@ -225,6 +247,13 @@ tr[data-custom="1"] {
 						<option value="has_value">Has Value (not empty)</option>
 							<option value="checkbox">Checkbox</option>
 					</select>
+				</p>
+				<p id="tpw-search-dependency-wrap" style="display:none;">
+					<label for="tpw-depends-select"><strong>Depends on Field</strong></label><br>
+					<select id="tpw-depends-select" style="margin-bottom:8px; max-width:100%;">
+						<option value="">— None —</option>
+					</select>
+					<small class="description">Filters this field's options by the selected parent field's chosen value. One level only.</small>
 				</p>
 				<p>
 					<label style="display:inline-flex; align-items:center; gap:8px;">
@@ -242,9 +271,9 @@ tr[data-custom="1"] {
 					<textarea name="options" id="tpw-search-options" rows="5" style="width:100%;"></textarea>
 				</p>
 				<p class="description" id="tpw-search-help"></p>
-				<div style="margin-top:10px;">
-					<button type="submit" class="button button-primary">Save</button>
-					<button type="button" class="button tpw-search-cancel">Cancel</button>
+				<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+					<button type="submit" class="tpw-btn tpw-btn-primary">Save</button>
+					<button type="button" class="tpw-btn tpw-btn-light tpw-search-cancel">Cancel</button>
 				</div>
 			</form>
 		</div>
@@ -367,10 +396,86 @@ document.addEventListener('DOMContentLoaded', function () {
 			document.getElementById('tpw-search-options').value = (conf && conf.options && conf.options.length) ? conf.options.join('\n') : '';
 			document.getElementById('tpw-search-admin-only').checked = !!(conf && conf.admin_only);
 				if (optSourceEl) { optSourceEl.value = conf && conf.options_source ? conf.options_source : 'static'; }
+			// Dependency list: build choices of other searchable/basic-search fields excluding self
+			buildDependencyChoices(key, conf && conf.depends_on ? conf.depends_on : '');
+			syncDependencyVisibility();
+			if (conf && conf.depends_on) {
+				document.getElementById('tpw-search-depends-on').value = conf.depends_on;
+				document.getElementById('tpw-depends-select').value = conf.depends_on;
+			}
 			syncHelp();
 			openModal();
 		});
 	});
+
+	function buildDependencyChoices(currentKey, selected){
+		const wrap = document.getElementById('tpw-depends-select');
+		if (!wrap) return;
+		while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
+		wrap.appendChild(new Option('— None —',''));
+		// Collect candidates: searchable or basic_search enabled
+		const searchable = window.TPW_SEARCHABLE || {};
+		const basicMap = {};
+		document.querySelectorAll('input[type="checkbox"][name$="[basic_search]"]').forEach(function(cb){
+			if (cb.checked){
+				const fkey = cb.name.match(/\[(.*?)\]\[basic_search\]/); if (fkey && fkey[1]) basicMap[fkey[1]] = true;
+			}
+		});
+		const used = new Set();
+		Object.keys(searchable).forEach(function(k){ if (k!==currentKey) used.add(k); });
+		Object.keys(basicMap).forEach(function(k){ if (k!==currentKey) used.add(k); });
+		Array.from(used).sort().forEach(function(k){
+			const label = (searchable[k] && searchable[k].label) ? searchable[k].label : k;
+			wrap.appendChild(new Option(label, k));
+		});
+		if (selected) { wrap.value = selected; }
+	}
+
+	function syncDependencyVisibility(){
+		const type = document.getElementById('tpw-search-type').value;
+		const depWrap = document.getElementById('tpw-search-dependency-wrap');
+		if (!depWrap) return;
+		if (['select'].includes(type)) { // extend later for multi-select/autocomplete types
+			depWrap.style.display='';
+		} else {
+			depWrap.style.display='none';
+			document.getElementById('tpw-depends-select').value='';
+			document.getElementById('tpw-search-depends-on').value='';
+		}
+	}
+
+	document.getElementById('tpw-search-type').addEventListener('change', function(){
+		syncDependencyVisibility();
+		// If dependency selected and type becomes non-select, clear it
+	});
+
+	const dependsSelectEl = document.getElementById('tpw-depends-select');
+	if (dependsSelectEl){
+		dependsSelectEl.addEventListener('change', function(){
+			const currentKey = document.getElementById('tpw-search-field-key').value;
+			const chosen = this.value;
+			if (chosen === currentKey){
+				alert('A field cannot depend on itself.');
+				this.value='';
+			}
+			// Circular check: parent depends on child
+			if (chosen){
+				const searchable = window.TPW_SEARCHABLE || {};
+				if (searchable[chosen] && searchable[chosen].depends_on === currentKey){
+					alert('Circular dependency not allowed (parent already depends on child).');
+					this.value='';
+				}
+			}
+			document.getElementById('tpw-search-depends-on').value = this.value;
+			// Force dynamic source when dependency active
+			if (this.value && optSourceEl){
+				optSourceEl.value='dynamic';
+				optSourceEl.setAttribute('disabled','disabled');
+			} else if (optSourceEl) {
+				optSourceEl.removeAttribute('disabled');
+			}
+		});
+	}
 
 	// Submit modal
 	if (modal) {
@@ -381,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			const type = document.getElementById('tpw-search-type').value;
 			const options = document.getElementById('tpw-search-options').value;
 			const adminOnly = document.getElementById('tpw-search-admin-only').checked ? '1' : '0';
+			const dependsOn = document.getElementById('tpw-search-depends-on').value || '';
 			const formData = new FormData();
 			formData.append('action', 'tpw_member_save_search_config');
 			formData.append('_wpnonce', nonce);
@@ -390,6 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			formData.append('options', options);
 			formData.append('options_source', optSourceEl ? optSourceEl.value : 'static');
 			formData.append('admin_only', adminOnly);
+			formData.append('depends_on', dependsOn);
 			fetch(ajaxUrl, { method:'POST', body: formData })
 				.then(r=>r.json())
 				.then(data=>{

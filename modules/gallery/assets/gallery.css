@@ -1,0 +1,181 @@
+/* Gallery Admin Styles (Phase 4) */
+.tpw-admin-ui .tpw-card { background:#fff; padding:16px; margin-bottom:16px; border:1px solid #e5e7eb; border-radius:8px; }
+.tpw-admin-ui .tpw-grid { display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:8px 0 0; }
+.tpw-admin-ui .tpw-grid li { width:130px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; position:relative; overflow:hidden; padding:8px; gap:8px; }
+.tpw-admin-ui .tpw-grid li .tpw-thumb { width:100%; aspect-ratio:1/1; background:#eef2f7; border-radius:6px; overflow:hidden; display:block; }
+.tpw-admin-ui .tpw-grid li .tpw-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+/* Natural aspect mode for admin thumbnails (accurate focal preview) */
+.tpw-admin-ui .tpw-grid li .tpw-thumb.tpw-thumb--natural { aspect-ratio: auto; }
+.tpw-admin-ui .tpw-grid li .tpw-thumb.tpw-thumb--natural img { width:100%; height:auto; object-fit:initial; display:block; }
+.tpw-admin-ui .tpw-thumb-placeholder { width:100%; aspect-ratio:1/1; background:#eef2f7; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-weight:600; }
+.tpw-admin-ui .tpw-gallery-remove-image { align-self:stretch; }
+
+/* Ensure small action buttons fit and text is visible */
+.tpw-admin-ui .tpw-btn.tpw-btn-small { font-size: 0.7em; padding: 4px 6px; line-height: 1.2; }
+.tpw-admin-ui .tpw-gallery-remove-image { font-size: 0.7em; }
+.tpw-admin-ui .tpw-admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+
+/* Modal (scoped minimal styles) */
+html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
+.tpw-modal { position: fixed; inset: 0; z-index: 100000; display: none; }
+.tpw-modal[aria-hidden="true"] { display: none; }
+.tpw-modal__overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+.tpw-modal__content { position: relative; z-index: 1; max-width: 800px; margin: 6vh auto; background: #fff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+.tpw-modal__header { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+.tpw-modal__title { margin: 0; font-size: 1.2rem; }
+.tpw-modal__body { padding: 16px; max-height: 70vh; overflow: auto; }
+
+/* Focal editor modal */
+.tpw-focal-modal .tpw-modal__content { max-width: min(1000px, 96vw); }
+.tpw-focal-modal .tpw-focal-modal__imgwrap { position: relative; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; display:flex; justify-content:center; align-items:center; }
+.tpw-focal-modal .tpw-focal-modal__imgwrap img.tpw-focal-img { max-width: 100%; max-height: 62vh; height: auto; width: auto; display:block; }
+.tpw-focal-modal .tpw-focal-handle--lg { position: fixed; }
+
+/* Minimal dropdown for Add Images menu */
+.tpw-dropdown { position:absolute; top:100%; left:0; margin-top:6px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; box-shadow: 0 10px 20px rgba(0,0,0,.08); z-index:100001; min-width:220px; }
+.tpw-dropdown__item { display:block; width:100%; text-align:left; cursor:pointer; }
+.tpw-dropdown .tpw-dropdown__item.tpw-btn { justify-content:flex-start; width:100%; border-radius:0; border:0; background:transparent; color:inherit; padding:8px 10px; }
+.tpw-dropdown .tpw-dropdown__item.tpw-btn:hover,
+.tpw-dropdown .tpw-dropdown__item.tpw-btn:focus { background:#f3f4f6; filter:none; }
+.tpw-dropdown .tpw-dropdown__item + .tpw-dropdown__item { border-top:1px solid #e5e7eb; }
+
+/* Actions area: give Save Gallery more space */
+.tpw-admin-ui .tpw-actions { display:flex; gap:12px; align-items:center; justify-content:flex-start; margin-top:20px; padding-top:12px; border-top:1px solid #e5e7eb; }
+.tpw-admin-ui .tpw-actions .tpw-btn-primary { padding:10px 18px; min-width:180px; font-size:1rem; }
+.tpw-admin-ui .tpw-actions .tpw-btn { height:auto; }
+@media (max-width: 520px) {
+	.tpw-admin-ui .tpw-actions { flex-wrap:wrap; }
+	.tpw-admin-ui .tpw-actions .tpw-btn-primary { width:100%; }
+}
+
+/* Upload placeholder */
+.tpw-uploading { opacity: .6; position: relative; }
+.tpw-uploading .tpw-thumb::after { content: ' '; position:absolute; inset:0; background: rgba(255,255,255,.6); }
+.tpw-uploading .tpw-upload-label { font-size: 12px; color: #6b7280; }
+
+/* Categories modal controls */
+.tpw-cat-controls { display:flex; gap:8px; align-items:center; }
+.tpw-cat-controls #tpw-cat-name { max-width: 260px; }
+
+/* ==========================
+	 Public Gallery (Phase 8)
+	 ========================== */
+/* Container and headings (map both new and existing class names) */
+.tpw-gallery-public-block { margin: 18px 0 26px; }
+.tpw-gallery-title, .tpw-gallery-public-title { margin: 0 0 0.8rem; font-size: 1.6rem; }
+.tpw-gallery-description, .tpw-gallery-public-desc { margin: 0 0 1rem; color: #4b5563; }
+
+/* Grid: support both .tpw-gallery-grid and legacy .tpw-gallery-grid-public */
+.tpw-gallery-grid, .tpw-gallery-grid-public {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 1.25rem;
+	margin-top: 1.5rem;
+	list-style: none;
+	padding: 0;
+}
+
+/* Item card (grid): container plus a ratio-constrained anchor for the image */
+.tpw-gallery-item {
+	overflow: hidden;
+	border-radius: 10px;
+	background: #f8f8f8;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+	transition: transform .25s ease, box-shadow .25s ease;
+}
+.tpw-gallery-item > a { display:block; aspect-ratio: 3/2; overflow:hidden; border-radius: inherit; background: #f8f8f8; }
+.tpw-gallery-item:hover { transform: scale(1.02); box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
+
+/* Grid thumbnails: scoped image rules to avoid lightbox collisions */
+.tpw-gallery-grid .tpw-gallery-item img,
+.tpw-gallery-grid-public .tpw-gallery-item img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* Clamp focus to container bounds for stability across breakpoints */
+	object-position: clamp(0%, calc(var(--focus-x, 50) * 1%), 100%) clamp(0%, calc(var(--focus-y, 50) * 1%), 100%);
+}
+
+/* Portrait handling: moved to bottom for maximum priority */
+
+/* Captions (map to both class names) */
+.tpw-gallery-caption, .tpw-caption { font-size: .85rem; color: #555; text-align: center; margin-top: .4rem; opacity: 0.9; transition: opacity .2s ease; }
+.tpw-gallery-item:hover .tpw-gallery-caption,
+.tpw-gallery-item:hover .tpw-caption { opacity: 1; }
+
+/* Public categories toolbar (moved from lightbox.css) */
+.tpw-gallery-toolbar { margin-bottom: 14px; }
+.tpw-gallery-categories { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* Grid breakpoints for predictable resizing */
+@media (max-width: 900px) {
+	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}
+@media (max-width: 600px) {
+	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .8rem; }
+	.tpw-gallery-title, .tpw-gallery-public-title { font-size: 1.4rem; margin-bottom: .5rem; }
+	.tpw-gallery-description, .tpw-gallery-public-desc { font-size: .9rem; }
+	.tpw-gallery-caption, .tpw-caption { font-size: .75rem; }
+}
+
+/* --- Priority portrait rule to override all other image styles --- */
+.tpw-gallery-item.portrait img {
+	object-fit: contain !important;
+	object-position: 50% 50% !important;
+	height: 100% !important;
+	position: static !important;
+	background: #fafafa;
+	padding: 4px;
+}
+
+/* Public front-end: restore consistent cropped thumbnails */
+/* Match actual DOM: grid lives on .tpw-gallery-grid-public under the wrapper */
+.tpw-gallery-public .tpw-gallery-grid-public .tpw-gallery-item > a,
+.tpw-gallery-public .tpw-gallery .tpw-gallery-item > a { aspect-ratio: auto; width: 100%; }
+.tpw-gallery-public .tpw-gallery-grid-public .tpw-gallery-item img,
+.tpw-gallery-public .tpw-gallery .tpw-gallery-item img {
+	display: block;
+	width: 100%;
+	height: 240px !important;
+	object-fit: cover !important;
+	/* Focal point for landscapes */
+	object-position: clamp(0%, calc(var(--focus-x, 50) * 1%), 100%) clamp(0%, calc(var(--focus-y, 50) * 1%), 100%);
+	border-radius: var(--tpw-radius-md);
+}
+.tpw-gallery-public .tpw-gallery-grid-public .tpw-gallery-item.portrait img,
+.tpw-gallery-public .tpw-gallery .tpw-gallery-item.portrait img {
+	/* Portraits show full image, centered, within fixed height */
+	object-fit: contain !important;
+	object-position: 50% 50% !important;
+	height: 240px !important;
+	padding: 0 !important;
+	background: transparent !important;
+}
+
+/* Public grid container: ensure neat rows and consistent gaps */
+.tpw-gallery-public .tpw-gallery-grid-public {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 20px;
+	align-items: start;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* Public cards: stack thumbnail then caption */
+.tpw-gallery-public .tpw-gallery-grid-public .tpw-gallery-item,
+.tpw-gallery-public .tpw-gallery .tpw-gallery-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+/* Public responsive breakpoints */
+@media (max-width: 768px) {
+	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media (max-width: 480px) {
+	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: 1fr; gap: 12px; }
+}

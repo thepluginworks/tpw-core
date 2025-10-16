@@ -39,7 +39,7 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
                     <th><?php esc_html_e( 'Actions', 'tpw-core' ); ?></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tpw-system-pages-table-body">
                 <?php foreach ( $rows as $r ) :
                     $title = $r->title ?: $r->slug;
                     $slug  = $r->slug;
@@ -55,7 +55,7 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
                         $perm = get_permalink( $pid );
                     }
                 ?>
-                <tr>
+                <tr data-slug="<?php echo esc_attr( $slug ); ?>">
                     <td><?php echo esc_html( $title ); ?></td>
                     <td><code><?php echo esc_html( $slug ); ?></code></td>
                     <td>
@@ -94,21 +94,11 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
                         <?php endif; ?>
                     </td>
                     <td>
-                        <?php if ( $is_live ) : ?>
-                            <?php if ( $perm ) : ?>
-                                <a class="tpw-btn tpw-btn-secondary" href="<?php echo esc_url( $perm ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View', 'tpw-core' ); ?></a>
-                            <?php endif; ?>
-                            <?php if ( $page_obj ) : ?>
-                                <a class="tpw-btn tpw-btn-primary" href="<?php echo esc_url( get_edit_post_link( $pid, '' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Edit', 'tpw-core' ); ?></a>
-                            <?php endif; ?>
-                        <?php else : ?>
-                            <form method="post" action="<?php echo esc_url( $admin_post ); ?>" style="display:inline;">
-                                <?php wp_nonce_field( 'tpw_system_pages_action', 'tpw_sys_pages_nonce' ); ?>
-                                <input type="hidden" name="action" value="tpw_system_pages_action" />
-                                <input type="hidden" name="op" value="recreate" />
-                                <input type="hidden" name="slug" value="<?php echo esc_attr( $slug ); ?>" />
-                                <button type="submit" class="tpw-btn tpw-btn-primary" onclick="return confirm('<?php echo esc_js( sprintf( __( "Recreate the '%s' page?", 'tpw-core' ), $title ) ); ?>');"><?php esc_html_e( 'Recreate', 'tpw-core' ); ?></button>
-                            </form>
+                        <?php $ajax_nonce = wp_create_nonce( 'tpw_system_pages_ajax' ); ?>
+                        <button class="tpw-btn tpw-btn-secondary js-tpw-sp-unlink" data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>" data-slug="<?php echo esc_attr( $slug ); ?>"><?php esc_html_e( 'Unlink', 'tpw-core' ); ?></button>
+                        <button class="tpw-btn tpw-btn-primary js-tpw-sp-recreate" data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>" data-slug="<?php echo esc_attr( $slug ); ?>"><?php esc_html_e( 'Recreate', 'tpw-core' ); ?></button>
+                        <?php if ( $is_live && $perm ) : ?>
+                            <a class="tpw-btn" href="<?php echo esc_url( $perm ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View', 'tpw-core' ); ?></a>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -117,3 +107,47 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
         </table>
     <?php endif; ?>
 </div>
+
+<script>
+(function(){
+    function on(action, handler){ document.addEventListener(action, handler); }
+    function closest(el, sel){ while (el && el.nodeType===1) { if (el.matches(sel)) return el; el = el.parentElement; } return null; }
+    function ajax(url, data){
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            credentials: 'same-origin',
+            body: new URLSearchParams(data).toString()
+        }).then(function(r){ return r.json(); });
+    }
+    var tbody = document.getElementById('tpw-system-pages-table-body');
+    if (!tbody) return;
+    tbody.addEventListener('click', function(e){
+        var btn = closest(e.target, '.js-tpw-sp-unlink, .js-tpw-sp-recreate');
+        if (!btn) return;
+        e.preventDefault();
+        var slug = btn.getAttribute('data-slug');
+        var nonce = btn.getAttribute('data-nonce');
+        var op = btn.classList.contains('js-tpw-sp-unlink') ? 'unlink' : 'recreate';
+        if (op==='recreate' && !confirm('Recreate the page for slug \''+slug+'\'?')) return;
+        var row = closest(btn, 'tr[data-slug]');
+        var url = (window.ajaxurl || '<?php echo esc_js( admin_url('admin-ajax.php') ); ?>');
+        btn.disabled = true;
+        ajax(url, { action: op==='unlink' ? 'tpw_system_page_unlink' : 'tpw_system_page_recreate', slug: slug, nonce: nonce })
+            .then(function(res){
+                if (res && res.success && res.data && res.data.rowHtml) {
+                    var wrapper = document.createElement('tbody');
+                    wrapper.innerHTML = res.data.rowHtml.trim();
+                    var newRow = wrapper.querySelector('tr');
+                    if (row && newRow) {
+                        row.parentNode.replaceChild(newRow, row);
+                    }
+                } else {
+                    alert((res && res.data) ? (res.data.message || 'Operation failed') : 'Operation failed');
+                }
+            })
+            .catch(function(){ alert('Request failed'); })
+            .finally(function(){ btn.disabled = false; });
+    });
+})();
+</script>

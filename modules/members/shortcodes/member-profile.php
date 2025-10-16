@@ -80,6 +80,13 @@ add_shortcode('tpw_member_profile', function(){
         $is_meta = ! property_exists( $member, $key );
         $value = $is_meta ? ($meta[$key] ?? '') : ($member->$key ?? '');
 
+    // Skip empty, non-editable fields on the My Profile page to avoid showing blank rows
+    $is_editable = in_array( $key, $editable, true );
+    $is_empty_value = ( $value === null ) || ( is_string( $value ) && trim( $value ) === '' ) || ( is_array( $value ) && count( array_filter( $value, function($v){ return ! ( is_string($v) ? trim($v) === '' : $v === null ); } ) ) === 0 );
+    if ( ! $is_editable && $is_empty_value ) {
+      continue;
+    }
+
     // Hide WHI Updated field from the profile table when FlexiGolf active; show 'Last updated' under WHI instead
     if ( $key === 'whi_updated' && ( method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() ) ) {
       continue;
@@ -92,7 +99,7 @@ add_shortcode('tpw_member_profile', function(){
     if ( isset($f['type']) && $f['type'] === 'date' ) {
       $display_value = tpw_format_date( $value );
     }
-    echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
+  echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
     echo '  <div class="tpw-table-cell">';
     if ( in_array( $key, $editable, true ) ) {
   echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">Edit</button>';
@@ -113,7 +120,12 @@ add_shortcode('tpw_member_profile', function(){
       echo '<div class="tpw-table-row"><div class="tpw-table-cell"></div><div class="tpw-table-cell"><em>Last updated: ' . esc_html($disp ?: '—') . '</em></div><div class="tpw-table-cell"></div></div>';
     }
     }
-    echo '</div>';
+  echo '</div>';
+
+  // Insert point for additional profile sections (server-side). Downstream modules can hook here.
+  do_action( 'tpw_member_profile_after', $member );
+  // Also include a lightweight anchor to support compatibility moves via the_content.
+  echo '<!-- TPW_MEMBER_PROFILE_AFTER -->';
 
     // Modal markup
     ?>

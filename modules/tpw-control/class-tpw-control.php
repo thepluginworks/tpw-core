@@ -28,6 +28,10 @@ class TPW_Control {
         add_action( 'init', function(){
             if ( class_exists( 'TPW_Control_Upload_Pages' ) ) {
                 TPW_Control_Upload_Pages::ensure_tables();
+                // Ensure the protected uploads base exists and is blocked from direct web access
+                if ( method_exists( 'TPW_Control_Upload_Pages', 'ensure_protected_upload_base' ) ) {
+                    TPW_Control_Upload_Pages::ensure_protected_upload_base();
+                }
             } else {
                 // Lazy-load the class if not loaded yet
                 $path = __DIR__ . '/class-tpw-control-upload-pages.php';
@@ -35,6 +39,9 @@ class TPW_Control {
                     require_once $path;
                     if ( class_exists( 'TPW_Control_Upload_Pages' ) ) {
                         TPW_Control_Upload_Pages::ensure_tables();
+                        if ( method_exists( 'TPW_Control_Upload_Pages', 'ensure_protected_upload_base' ) ) {
+                            TPW_Control_Upload_Pages::ensure_protected_upload_base();
+                        }
                     }
                 }
             }
@@ -123,17 +130,28 @@ class TPW_Control {
             $btn_url  = TPW_CORE_URL . 'assets/css/tpw-buttons.css';
             $ui_file  = TPW_CORE_PATH . 'assets/css/tpw-ui.css';
             $ui_url   = TPW_CORE_URL . 'assets/css/tpw-ui.css';
+            $aui_file = TPW_CORE_PATH . 'assets/css/tpw-admin-ui.css';
+            $aui_url  = TPW_CORE_URL . 'assets/css/tpw-admin-ui.css';
             $btn_ver  = file_exists( $btn_file ) ? filemtime( $btn_file ) : '1.0.0';
             $ui_ver   = file_exists( $ui_file ) ? filemtime( $ui_file ) : '1.0.0';
+            $aui_ver  = file_exists( $aui_file ) ? filemtime( $aui_file ) : '1.0.0';
             wp_enqueue_style( 'tpw-buttons', $btn_url, [], $btn_ver );
             wp_enqueue_style( 'tpw-ui', $ui_url, [], $ui_ver );
+            // Admin UI stylesheet (scoped). This prevents theme overrides on editor toolbars and admin-like UI.
+            wp_enqueue_style( 'tpw-admin-ui', $aui_url, [], $aui_ver );
         }
 
-        // Module-specific assets
-        wp_enqueue_style( 'tpw-control', $base . 'assets/css/tpw-control.css', [], '1.0.0' );
-        // jQuery UI Sortable for drag-and-drop file sorting
-        wp_enqueue_script( 'jquery-ui-sortable' );
-        wp_enqueue_script( 'tpw-control', $base . 'assets/js/tpw-control.js', [ 'jquery','jquery-ui-sortable' ], '1.0.0', true );
+    // Module-specific assets with cache-busting versions
+    $css_path = dirname( __FILE__ ) . '/assets/css/tpw-control.css';
+    $js_path  = dirname( __FILE__ ) . '/assets/js/tpw-control.js';
+    $css_url  = $base . 'assets/css/tpw-control.css';
+    $js_url   = $base . 'assets/js/tpw-control.js';
+    $css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0';
+    $js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : '1.0.0';
+    wp_enqueue_style( 'tpw-control', $css_url, [], $css_ver );
+    // jQuery UI Sortable for drag-and-drop file/category sorting
+    wp_enqueue_script( 'jquery-ui-sortable' );
+    wp_enqueue_script( 'tpw-control', $js_url, [ 'jquery','jquery-ui-sortable' ], $js_ver, true );
         wp_localize_script( 'tpw-control', 'TPW_CONTROL', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'tpw_control' ),

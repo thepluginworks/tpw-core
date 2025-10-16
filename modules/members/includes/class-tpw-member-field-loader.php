@@ -91,8 +91,8 @@ class TPW_Member_Field_Loader {
             } ) );
         }
 
-        $core_fields = self::get_core_fields();
-        $enabled_fields = [];
+    $core_fields = self::get_core_fields();
+    $enabled_fields = [];
 
         // Default input types for known core fields (form rendering types)
         $core_default_types = [
@@ -108,6 +108,10 @@ class TPW_Member_Field_Loader {
             'cdh_id'               => 'text',
         ];
 
+        // Load optional section mapping stored in options (no schema change)
+        $sections_map = get_option('tpw_member_field_sections', []);
+        if (!is_array($sections_map)) { $sections_map = []; }
+
         foreach ( $results as $row ) {
             $is_core = array_key_exists( $row->field_key, $core_fields );
             $type = $row->field_type;
@@ -120,28 +124,18 @@ class TPW_Member_Field_Loader {
                 }
             }
 
+            // Prefer custom label when provided; otherwise fall back to core label if this is a core field
+            $label = !empty($row->custom_label)
+                ? $row->custom_label
+                : ( $is_core ? $core_fields[ $row->field_key ] : ucwords( str_replace( '_', ' ', $row->field_key ) ) );
+
             $enabled_fields[] = [
                 'key'        => $row->field_key,
-                'label'      => $row->custom_label,
-                'type'       => $type,
-                'is_core'    => $is_core,
-                'sort_order' => (int) $row->sort_order,
-            ];
-        }
-
-        // Ensure any core fields missing from settings are still exposed as enabled with sensible defaults
-        $present_keys = array_map( function($r){ return $r->field_key; }, (array) $results );
-        $order = count( $enabled_fields );
-        foreach ( $core_fields as $key => $label ) {
-            if ( in_array( $key, $present_keys, true ) ) continue;
-            $is_core = true;
-            $type = isset($core_default_types[$key]) ? $core_default_types[$key] : 'text';
-            $enabled_fields[] = [
-                'key'        => $key,
                 'label'      => $label,
                 'type'       => $type,
                 'is_core'    => $is_core,
-                'sort_order' => ++$order,
+                'sort_order' => (int) $row->sort_order,
+                'section'    => isset($sections_map[$row->field_key]) && $sections_map[$row->field_key] !== '' ? (string) $sections_map[$row->field_key] : 'General',
             ];
         }
 

@@ -34,6 +34,54 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             update_option( 'tpw_members_allow_deletion', isset($_POST['tpw_members_allow_deletion']) ? '1' : '0' );
             update_option( 'tpw_default_member_status', sanitize_text_field($_POST['tpw_default_member_status'] ?? 'Active') );
             update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
+            // New: enable Advanced Search modal for all members (non-admins)
+            update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
+            // New: Who can manage the Member Directory (admins_only | admins_committee)
+            $manage_access = isset($_POST['tpw_members_manage_access']) ? sanitize_key($_POST['tpw_members_manage_access']) : 'admins_only';
+            if (!in_array($manage_access, ['admins_only','admins_committee'], true)) { $manage_access = 'admins_only'; }
+            update_option( 'tpw_members_manage_access', $manage_access );
+            // New: default view (list|card)
+            $def_view = isset($_POST['tpw_members_default_view']) ? sanitize_text_field($_POST['tpw_members_default_view']) : 'list';
+            if ( $def_view !== 'card' ) { $def_view = 'list'; }
+            update_option( 'tpw_members_default_view', $def_view );
+            // New: default records for List view (per page); allow 0 to mean "hide until search"
+            $allowed_list_pp = [0,10,25,50,100];
+            $def_pp = isset($_POST['tpw_members_default_per_page']) ? (int) $_POST['tpw_members_default_per_page'] : 25;
+            if ( ! in_array( $def_pp, $allowed_list_pp, true ) ) { $def_pp = 25; }
+            update_option( 'tpw_members_default_per_page', $def_pp );
+
+            // New: default records for Card view (desktop - per page)
+            $allowed_card_pp = [0,8,16,24,48];
+            $def_pp_card = isset($_POST['tpw_members_default_per_page_card']) ? (int) $_POST['tpw_members_default_per_page_card'] : 24;
+            if ( ! in_array( $def_pp_card, $allowed_card_pp, true ) ) { $def_pp_card = 24; }
+            update_option( 'tpw_members_default_per_page_card', $def_pp_card );
+
+            // New: Member Name Display Format (stored in tpw_members_settings['name_format'])
+            $posted_settings = isset($_POST['tpw_members_settings']) && is_array($_POST['tpw_members_settings']) ? $_POST['tpw_members_settings'] : [];
+            $name_format = isset($posted_settings['name_format']) ? sanitize_key($posted_settings['name_format']) : '';
+            $allowed_formats = [
+                'surname_initials_first_paren',
+                'first_surname',
+                'surname_first',
+                'surname_first_initials_paren',
+                'title_first_surname',
+                'surname_title_initials',
+                'title_initials_surname',
+                'initials_surname',
+                'surname_initials',
+            ];
+            if ( $name_format !== '' && ! in_array($name_format, $allowed_formats, true) ) {
+                $name_format = 'surname_first';
+            }
+            $tpw_members_settings = get_option('tpw_members_settings', []);
+            if ( ! is_array($tpw_members_settings) ) { $tpw_members_settings = []; }
+            if ( $name_format !== '' ) {
+                $tpw_members_settings['name_format'] = $name_format;
+            } elseif ( empty($tpw_members_settings['name_format']) ) {
+                // Ensure a default exists
+                $tpw_members_settings['name_format'] = 'surname_first';
+            }
+            update_option('tpw_members_settings', $tpw_members_settings );
             $tpw_settings_saved = true;
         }
 
@@ -128,6 +176,26 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                     </label>
             </p>
 
+        <p>
+            <label>
+                <input type="checkbox" name="tpw_members_enable_advanced_search" value="1" <?php checked( get_option('tpw_members_enable_advanced_search', '0'), '1' ); ?> />
+                Enable Advanced Search for all members
+            </label>
+            <br>
+            <small class="description">When enabled, non-admin members see the Advanced Search button alongside any Basic Search fields.</small>
+        </p>
+
+            <p>
+                <label for="tpw_members_manage_access"><strong>Who can manage the Member Directory</strong></label><br>
+                <?php $manage_access = get_option('tpw_members_manage_access', 'admins_only'); ?>
+                <select name="tpw_members_manage_access" id="tpw_members_manage_access" style="width:auto; min-width: 220px; max-width: 320px;">
+                    <option value="admins_only" <?php selected( $manage_access, 'admins_only' ); ?>>Admins only</option>
+                    <option value="admins_committee" <?php selected( $manage_access, 'admins_committee' ); ?>>Admins and Committee</option>
+                </select>
+                <br>
+                <small class="description">Choose which group can manage member records and field settings. This only affects management rights — not directory visibility.</small>
+            </p>
+
             <p>
                     <label for="tpw_default_member_status"><strong>Default Member Status</strong></label><br>
                     <select name="tpw_default_member_status" id="tpw_default_member_status" style="width:auto; min-width: 220px; max-width: 320px;">
@@ -139,6 +207,61 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                             }
                             ?>
                     </select>
+            </p>
+
+            <hr>
+            <p>
+                <label for="tpw_members_default_view"><strong>Default Directory View</strong></label><br>
+                <?php $def_view = get_option('tpw_members_default_view', 'list'); ?>
+                <select name="tpw_members_default_view" id="tpw_members_default_view" style="width:auto; min-width: 220px; max-width: 320px;">
+                    <option value="list" <?php selected( $def_view, 'list' ); ?>>List</option>
+                    <option value="card" <?php selected( $def_view, 'card' ); ?>>Card</option>
+                </select>
+                <br>
+                <small class="description">Initial view used on the Members directory for everyone. Users can still toggle their own view.</small>
+            </p>
+
+            <p>
+                <label for="tpw_members_default_per_page"><strong>Default Records List View (per page)</strong></label><br>
+                <?php $def_pp = (int) get_option('tpw_members_default_per_page', 25); ?>
+                <select name="tpw_members_default_per_page" id="tpw_members_default_per_page" style="width:auto; min-width: 120px;">
+                    <?php foreach ( [0,10,25,50,100] as $opt ): ?>
+                        <option value="<?php echo (int)$opt; ?>" <?php selected($def_pp, $opt); ?>><?php echo (int)$opt; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <br>
+                <small class="description">Set how many members to show per page by default in List view. 0 hides the directory until a search is performed.</small>
+            </p>
+
+            <p>
+                <label for="tpw_members_default_per_page_card"><strong>Default Records in Card View (desktop - per page)</strong></label><br>
+                <?php $def_pp_card = (int) get_option('tpw_members_default_per_page_card', 24); ?>
+                <select name="tpw_members_default_per_page_card" id="tpw_members_default_per_page_card" style="width:auto; min-width: 120px;">
+                    <?php foreach ( [0,8,16,24,48] as $opt ): ?>
+                        <option value="<?php echo (int)$opt; ?>" <?php selected($def_pp_card, $opt); ?>><?php echo (int)$opt; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <br>
+                <small class="description">Used to seed Card view pagination on first load. The visible grid will adapt these to multiples of columns per row.</small>
+            </p>
+
+            <hr>
+            <p>
+                <label for="tpw_members_name_format"><strong>Member Name Display Format</strong></label><br>
+                <?php $tpw_members_settings = get_option('tpw_members_settings', []); $name_fmt = is_array($tpw_members_settings) && isset($tpw_members_settings['name_format']) ? $tpw_members_settings['name_format'] : 'surname_first'; ?>
+                <select name="tpw_members_settings[name_format]" id="tpw_members_name_format" style="width:auto; min-width: 320px; max-width: 520px;">
+                    <option value="surname_initials_first_paren" <?php selected( $name_fmt, 'surname_initials_first_paren' ); ?>>Surname, Initials (First Name)</option>
+                    <option value="first_surname" <?php selected( $name_fmt, 'first_surname' ); ?>>First Name Surname</option>
+                    <option value="surname_first" <?php selected( $name_fmt, 'surname_first' ); ?>>Surname, First Name</option>
+                    <option value="surname_first_initials_paren" <?php selected( $name_fmt, 'surname_first_initials_paren' ); ?>>Surname, First Name (Initials)</option>
+                    <option value="title_first_surname" <?php selected( $name_fmt, 'title_first_surname' ); ?>>Title, First Name Surname</option>
+                    <option value="surname_title_initials" <?php selected( $name_fmt, 'surname_title_initials' ); ?>>Surname, Title Initials</option>
+                    <option value="title_initials_surname" <?php selected( $name_fmt, 'title_initials_surname' ); ?>>Formal (Title Initials Surname)</option>
+                    <option value="initials_surname" <?php selected( $name_fmt, 'initials_surname' ); ?>>Initials Surname</option>
+                    <option value="surname_initials" <?php selected( $name_fmt, 'surname_initials' ); ?>>Surname Initials</option>
+                </select>
+                <br>
+                <small class="description">Default: Surname, First Name. This affects how names render in the Members list and card views.</small>
             </p>
         <?php elseif ( $current_tab === 'profile' ) : ?>
             <p>Select which fields members are allowed to edit on their profile.</p>
@@ -246,7 +369,7 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 <?php $ajax_url = admin_url('admin-ajax.php'); $nonce = wp_create_nonce('tpw_lookup_postcode'); ?>
                 <label for="tpw_postcode_test"><strong>Sample Postcode</strong></label><br>
                 <input type="text" id="tpw_postcode_test" value="SW1A 1AA" style="max-width:240px;">
-                <button type="button" class="button" id="tpw_postcode_test_btn">Test Lookup</button>
+                <button type="button" class="tpw-btn tpw-btn-secondary" id="tpw_postcode_test_btn">Test Lookup</button>
             </p>
             <div id="tpw_postcode_test_result" class="description"></div>
 
@@ -403,7 +526,7 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
         <?php endif; ?>
 
         <?php if ( $current_tab !== 'help' ) : ?>
-            <p><button type="submit" class="button button-primary">Save Settings</button></p>
+            <p><button type="submit" class="tpw-btn tpw-btn-primary">Save Settings</button></p>
             <?php if ( $tpw_settings_saved ) : ?><p><strong>Settings saved.</strong></p><?php endif; ?>
         <?php endif; ?>
     </form>

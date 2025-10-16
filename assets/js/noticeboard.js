@@ -7,6 +7,7 @@
   $(document).on('click','.tpw-notice-modal-close', function(){ closeModal(); });
 
   $(document).on('click', '.tpw-notice-add', function(){
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     $('#tpw-notice-form')[0].reset();
     $('input[name="notice_id"]').val('');
     setEditorContent('');
@@ -15,6 +16,7 @@
   });
 
   $(document).on('click', '.tpw-notice-edit', function(){
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     var $card = $(this).closest('.tpw-notice-card');
     var id = $card.data('id');
     // Prefill from DOM
@@ -29,6 +31,7 @@
   // Media picker
   $(document).on('click', '.tpw-pick-image', function(e){
     e.preventDefault();
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     var frame = wp.media({ title: 'Select Image', button: { text: 'Use this image' }, multiple: false });
     frame.on('select', function(){
       var attachment = frame.state().get('selection').first().toJSON();
@@ -40,6 +43,7 @@
 
   // Delete
   $(document).on('click', '.tpw-notice-delete', function(){
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     if (!confirm('Delete this notice?')) return;
     var $card = $(this).closest('.tpw-notice-card');
     var id = $card.data('id');
@@ -50,6 +54,7 @@
 
   // Duplicate
   $(document).on('click', '.tpw-notice-duplicate', function(){
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     var $card = $(this).closest('.tpw-notice-card');
     var id = $card.data('id');
     $.post(TPWNoticeboard.ajaxUrl, { action: 'tpw_notice_duplicate', notice_id: id, _wpnonce: TPWNoticeboard.nonces.duplicate }, function(resp){
@@ -60,9 +65,14 @@
   // Save
   $(document).on('submit', '#tpw-notice-form', function(e){
     e.preventDefault();
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     var data = $(this).serializeArray();
     var content = getEditorContent();
     data.push({ name: 'content', value: content });
+    // Ensure nonce is present for save
+    if (!data.some(function(p){ return p.name === '_wpnonce'; })) {
+      data.push({ name: '_wpnonce', value: TPWNoticeboard.nonces.save });
+    }
     $.post(TPWNoticeboard.ajaxUrl, data, function(resp){
       if (resp && resp.success){ location.reload(); } else { alert(resp.data && resp.data.message ? resp.data.message : 'Save failed'); }
     });
@@ -70,6 +80,7 @@
 
   // Inline Add Category
   $(document).on('click', '#tpw_add_category_btn', function(){
+    if (!TPWNoticeboard.caps || !TPWNoticeboard.caps.canManage) { return; }
     var name = $('#tpw_new_category_name').val().trim();
     if (!name) { $('.tpw-add-cat-msg').text('Please enter a category name.').css('color','#b91c1c'); return; }
     $('.tpw-add-cat-msg').text('');

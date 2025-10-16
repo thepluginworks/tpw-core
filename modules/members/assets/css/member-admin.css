@@ -359,6 +359,51 @@ form input[type="text"] {
 .tpw-member-form .form-actions {
   margin-top: 2rem;
 }
+
+/* Field sections (Edit form and Modal) */
+/* New card layout for modal sections */
+.tpw-section-card {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.tpw-section-card + .tpw-section-card { margin-top: 12px; }
+
+.tpw-section-title {
+  margin: 0 0 8px;
+  font-size: var(--tpw-h4-size, 1.125rem);
+  font-weight: var(--tpw-h4-weight, 600);
+  color: var(--tpw-h4-color, currentColor);
+  line-height: 1.25;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.tpw-section-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 2fr;
+  gap: 8px 14px; /* row gap, col gap */
+}
+@media (max-width: 700px) {
+  .tpw-section-grid { grid-template-columns: 1fr; }
+}
+
+.tpw-field { display: contents; }
+.tpw-field-label {
+  color: var(--tpw-muted-color, #6c7781);
+  text-align: right;
+  padding-right: 10px;
+}
+@media (max-width: 700px) {
+  .tpw-field-label { text-align: left; padding-right: 0; }
+}
+.tpw-field-value {
+  color: var(--tpw-text-color, #1d2327);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .tpw-table-row:hover {
   background-color: #fcf5f7;
 }
@@ -392,6 +437,14 @@ form input[type="text"] {
   background: #fff0f3;
   color: #c72048;
   border: 1px solid #c72048;
+}
+
+/* Members directory: Per page select should not be full width */
+.tpw-member-search-form #tpw-filter-per-page {
+  width: auto;
+  max-width: none;
+  min-width: 100px;
+  display: inline-block;
 }
 
 .tpw-table-cell.status-cell {
@@ -624,8 +677,8 @@ form input[type="text"] {
   text-decoration: none;
 }
 .tpw-action { color: #fff; border: 0; }
-.tpw-action-edit { background: #2d7ff9; }
-.tpw-action-edit:hover, .tpw-action-edit:focus { background: #3b82f6; }
+.tpw-action-edit { background: var(--tpw-action-edit, #2d7ff9); }
+.tpw-action-edit:hover, .tpw-action-edit:focus { background: var(--tpw-action-edit, #3b82f6); }
 .tpw-action-copy { background: #6c5ce7; }
 .tpw-action-delete { background: #e53935; }
 

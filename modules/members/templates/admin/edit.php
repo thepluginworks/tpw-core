@@ -12,8 +12,14 @@ $meta = TPW_Member_Meta::get_all_meta($member_id);
 
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 $fields = array_filter($fields, fn($field) => $field['key'] !== 'password_hash');
-usort($fields, function($a, $b) {
-    return $a['key'] === 'username' ? -1 : ($b['key'] === 'username' ? 1 : 0);
+// Ensure explicit sort by sort_order from settings
+usort($fields, function($a, $b){
+    $sa = isset($a['sort_order']) ? (int)$a['sort_order'] : PHP_INT_MAX;
+    $sb = isset($b['sort_order']) ? (int)$b['sort_order'] : PHP_INT_MAX;
+    if ($sa === $sb) {
+        return strcasecmp((string)$a['label'], (string)$b['label']);
+    }
+    return $sa <=> $sb;
 });
 
 if ( ! $member ) {
@@ -40,7 +46,17 @@ if ( ! $member ) {
 
         <?php 
         $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin'];
-        foreach ( $fields as $field ):
+        // Group by section after sorting
+        $grouped = [];
+        foreach ($fields as $f) {
+            $sec = isset($f['section']) && $f['section'] !== '' ? $f['section'] : 'General';
+            $grouped[$sec][] = $f;
+        }
+        foreach ( $grouped as $section_name => $section_fields ):
+        ?>
+            <fieldset class="tpw-section">
+                <legend class="tpw-section__legend"><?php echo esc_html($section_name); ?></legend>
+        <?php foreach ($section_fields as $field):
             if ( $field['key'] === 'user_id' ) {
                 continue;
             }
@@ -58,9 +74,15 @@ if ( ! $member ) {
             }
             ?>
             <div class="form-group">
-                <label for="<?php echo esc_attr($key); ?>">
-                    <?php echo esc_html($key === 'status' ? 'Member Status' : $field['label']); ?>
-                </label>
+                <?php
+                    $label_text = ($key === 'status') ? 'Member Status' : $field['label'];
+                    if ($key === 'username') { $label_text .= ' (cannot be changed)'; }
+                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin'], true);
+                    // For inline checkbox fields we'll render a combined label in the checkbox branches below
+                    if ( ! $inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
+                        echo '<label for="' . esc_attr($key) . '">' . esc_html($label_text) . '</label>';
+                    }
+                ?>
 
                 <?php
                 switch ( $field['type'] ) {
@@ -97,7 +119,14 @@ if ( ! $member ) {
 
                     case 'checkbox':
                         $checked = $value == '1' ? 'checked' : '';
-                        echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                        if ( $inline_checkbox ) {
+                            echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
+                                . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>'
+                                . '<label for="' . esc_attr($key) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
+                                . '</div>';
+                        } else {
+                            echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                        }
                         break;
 
                     case 'date':
@@ -133,7 +162,14 @@ if ( ! $member ) {
                             echo '</select>';
                         } elseif ( in_array( $key, $known_checkbox_fields ) ) {
                             $checked = $value == '1' ? 'checked' : '';
-                            echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                            if ( $inline_checkbox ) {
+                                echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
+                                    . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>'
+                                    . '<label for="' . esc_attr($key) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
+                                    . '</div>';
+                            } else {
+                                echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                            }
                         } else {
                             // Postcode field gets a Lookup button next to the input
                             if ( $key === 'postcode' ) {
@@ -146,7 +182,12 @@ if ( ! $member ) {
                                 echo '</div>';
                                 echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
                             } else {
-                                echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                                // Username is not editable on the Edit form
+                                if ( $key === 'username' ) {
+                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '" readonly aria-readonly="true">';
+                                } else {
+                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                                }
                             }
                             // If this is the WHI field and FlexiGolf is active, add a read-only last-updated note below it
                             if (
@@ -161,6 +202,8 @@ if ( ! $member ) {
                 }
                 ?>
             </div>
+        <?php endforeach; ?>
+            </fieldset>
         <?php endforeach; ?>
 
     <?php

@@ -233,6 +233,10 @@ class TPW_Member_Form_Handler {
 
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
+            // Do not allow username changes via Edit form
+            if ( $key === 'username' ) {
+                continue;
+            }
             if (isset($_POST[$key])) {
                 $value = sanitize_text_field($_POST[$key]);
             } else {

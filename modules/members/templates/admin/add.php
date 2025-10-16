@@ -1,13 +1,20 @@
 <?php
 
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
+// Ensure sort order matches tpw_field_settings.sort_order explicitly
+usort($fields, function($a, $b){
+    $sa = isset($a['sort_order']) ? (int)$a['sort_order'] : PHP_INT_MAX;
+    $sb = isset($b['sort_order']) ? (int)$b['sort_order'] : PHP_INT_MAX;
+    if ($sa === $sb) {
+        return strcasecmp((string)$a['label'], (string)$b['label']);
+    }
+    return $sa <=> $sb;
+});
 $settings = get_option( 'flexievent_settings', [] );
 $date_format = tpw_core_get_date_format();
 $time_format = tpw_core_get_time_format();
 $default_status = get_option('tpw_default_member_status', '');
-usort($fields, function($a, $b) {
-    return ($a['key'] === 'username') ? -1 : (($b['key'] === 'username') ? 1 : 0);
-});
+// Fields already come sorted by tpw_field_settings.sort_order. Do not reorder here.
 
 $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 ?>
@@ -19,13 +26,19 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 
         <?php foreach ( $fields as $field ): ?>
             <?php
-                if ( isset($field['is_enabled']) && $field['is_enabled'] == 0 ) continue;
+                // Only enabled fields are returned from loader. Extra guard in case of legacy data
+                if ( isset($field['is_enabled']) && (int)$field['is_enabled'] === 0 ) continue;
                 if ( in_array( $field['key'], $excluded_keys, true ) ) continue;
             ?>
             <div class="form-group">
-                <label for="<?php echo esc_attr($field['key']); ?>">
-                    <?php echo esc_html($field['key'] === 'status' ? 'Member Status' : $field['label']); ?>
-                </label>
+                <?php
+                $label_text = ($field['key'] === 'status') ? 'Member Status' : $field['label'];
+                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin'], true);
+                // For inline checkbox fields, we'll render a combined label wrapping the input in the checkbox case block
+                if ( ! $is_inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
+                    echo '<label for="' . esc_attr($field['key']) . '">' . esc_html($label_text) . '</label>';
+                }
+                ?>
 
                 <?php
                 // Force known tinyint fields to checkbox if type is not explicitly set
@@ -71,7 +84,14 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
                         break;
 
                     case 'checkbox':
-                        echo '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1">';
+                        if ( $is_inline_checkbox ) {
+                            echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
+                                . '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1">'
+                                . '<label for="' . esc_attr($field['key']) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
+                                . '</div>';
+                        } else {
+                            echo '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1">';
+                        }
                         echo '<div class="form-error" aria-live="polite"></div>';
                         break;
 

@@ -72,11 +72,32 @@ class TPW_Members_DB {
             is_enabled TINYINT(1) NOT NULL DEFAULT 1,
             custom_label VARCHAR(255) DEFAULT NULL,
             field_type VARCHAR(50) DEFAULT 'text',
+            basic_search TINYINT(1) NOT NULL DEFAULT 0,
             sort_order INT(11) UNSIGNED NOT NULL DEFAULT 0,
             UNIQUE KEY society_field (society_id, field_key),
             PRIMARY KEY  (id)
         ) $charset_collate;";
         dbDelta($sql_settings);
+
+        // Safety net: ensure the basic_search column exists on field settings table for upgrades
+        $fs_table = $wpdb->prefix . 'tpw_field_settings';
+        $has_basic_search = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'basic_search'",
+            $fs_table
+        ) );
+        if ( ! $has_basic_search ) {
+            // Silent fail on error to avoid fatal during activation on constrained environments
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN basic_search TINYINT(1) NOT NULL DEFAULT 0 AFTER field_type" );
+        }
+
+        // New dependency column (one-level parent) – minimal, nullable.
+        $has_depends_on = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'depends_on'",
+            $fs_table
+        ) );
+        if ( ! $has_depends_on ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN depends_on VARCHAR(100) NULL AFTER basic_search" );
+        }
 
         // New table: member field visibility per group
         $sql_visibility = "CREATE TABLE {$wpdb->prefix}tpw_member_field_visibility (
@@ -102,5 +123,15 @@ class TPW_Members_DB {
             KEY member_id_idx (member_id)
         ) $charset_collate;";
         dbDelta($sql_meta);
+
+        // Optional performance index for future dependency lookups on meta table (meta_key + meta_value)
+        $has_meta_kv_index = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND INDEX_NAME = 'meta_key_value'",
+            $table_name_meta
+        ) );
+        if ( ! $has_meta_kv_index ) {
+            // Best-effort – ignore errors silently
+            $wpdb->query( "ALTER TABLE {$table_name_meta} ADD INDEX meta_key_value (meta_key, meta_value(50))" );
+        }
     }
 }

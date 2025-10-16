@@ -11,6 +11,35 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Table: {$wpdb->prefix}tpw_system_pages
  */
 class TPW_Core_System_Pages {
+    /**
+     * When true, echo extra debug information during operations.
+     * Enabled via define('TPW_DEBUG_SYSTEM_PAGES', true);
+     */
+    protected static function debug_enabled() {
+        return ( defined('TPW_DEBUG_SYSTEM_PAGES') && TPW_DEBUG_SYSTEM_PAGES );
+    }
+
+    /** Parse shortcode tag name from a shortcode string like "[tpw-control]" */
+    protected static function parse_shortcode_tag( $shortcode ) {
+        if ( ! is_string( $shortcode ) ) return '';
+        if ( preg_match( '/\[(\w+)/', $shortcode, $m ) ) {
+            return strtolower( $m[1] );
+        }
+        return '';
+    }
+
+    /**
+     * Check if a content string contains a shortcode tag.
+     * Uses WP's has_shortcode when possible, falling back to regex.
+     */
+    protected static function content_has_shortcode_tag( $content, $tag ) {
+        if ( ! is_string( $content ) || '' === $content || '' === $tag ) return false;
+        if ( function_exists('has_shortcode') ) {
+            return has_shortcode( $content, $tag );
+        }
+        $pattern = '/\[' . preg_quote( $tag, '/' ) . '(?:\s|\])/i';
+        return (bool) preg_match( $pattern, $content );
+    }
 
     /**
      * Try to find an existing published WP Page matching the given slug or containing the shortcode.
@@ -30,21 +59,18 @@ class TPW_Core_System_Pages {
             }
         }
 
-        // Then: try to find a published page whose content contains the shortcode.
-        $needles = [];
+        // Then: try to find a published page whose content contains the shortcode tag (exact tag match)
         $shortcode = is_string( $shortcode ) ? trim( $shortcode ) : '';
-        if ( $shortcode !== '' ) {
-            $needles[] = $shortcode; // exact match (e.g., [tpw_member_profile])
-            if ( preg_match( '/\[(\w+)/', $shortcode, $m ) ) {
-                // Also search for the tag opening to match variations with attributes, e.g., [tpw_member_profile foo="bar"]
-                $tag = $m[1];
-                if ( $tag ) {
-                    $needles[] = '[' . $tag;
-                }
+        $tag = self::parse_shortcode_tag( $shortcode );
+        if ( $tag && function_exists('shortcode_exists') && ! shortcode_exists( $tag ) ) {
+            // Shortcode isn't registered; skip content scan to avoid false positives
+            if ( self::debug_enabled() && function_exists('error_log') ) {
+                error_log( '[TPW System Pages] Skipping content scan for slug ' . $slug . ' since shortcode tag [' . $tag . '] is not registered.' );
             }
+            return 0;
         }
 
-        if ( ! empty( $needles ) && class_exists( 'WP_Query' ) ) {
+        if ( $tag && class_exists( 'WP_Query' ) ) {
             $q = new WP_Query( [
                 'post_type'      => 'page',
                 'post_status'    => 'publish',
@@ -57,11 +83,9 @@ class TPW_Core_System_Pages {
                 foreach ( $q->posts as $pid ) {
                     $content = get_post_field( 'post_content', $pid );
                     if ( ! is_string( $content ) || $content === '' ) { continue; }
-                    foreach ( $needles as $n ) {
-                        if ( false !== strpos( $content, $n ) ) {
-                            wp_reset_postdata();
-                            return (int) $pid;
-                        }
+                    if ( self::content_has_shortcode_tag( $content, $tag ) ) {
+                        wp_reset_postdata();
+                        return (int) $pid;
                     }
                 }
             }
@@ -145,8 +169,21 @@ class TPW_Core_System_Pages {
 
         $existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE slug = %s", $slug ) );
         if ( $existing ) {
-            $ok = $wpdb->update( $table, $data, [ 'id' => (int) $existing->id ], [ '%s','%s','%s','%s','%d' ], [ '%d' ] );
-            $row_id = $ok !== false ? (int) $existing->id : 0;
+            // Do not allow a different plugin/shortcode to overwrite an existing slug
+            $same_plugin     = ( strtolower( (string) $existing->plugin ) === strtolower( (string) $data['plugin'] ) );
+            $same_shortcode  = ( trim( (string) $existing->shortcode ) === trim( (string) $data['shortcode'] ) );
+            if ( $same_plugin && $same_shortcode ) {
+                $ok = $wpdb->update( $table, $data, [ 'id' => (int) $existing->id ], [ '%s','%s','%s','%s','%d' ], [ '%d' ] );
+                $row_id = $ok !== false ? (int) $existing->id : 0;
+            } else {
+                // Keep existing row unchanged
+                if ( function_exists('error_log') && ( defined('WP_DEBUG') && WP_DEBUG ) ) {
+                    error_log( sprintf('[TPW System Pages] register_page("%s") ignored update because of plugin/shortcode mismatch. Existing plugin="%s" shortcode="%s"; incoming plugin="%s" shortcode="%s".',
+                        $slug, (string)$existing->plugin, (string)$existing->shortcode, (string)$data['plugin'], (string)$data['shortcode']
+                    ) );
+                }
+                $row_id = (int) $existing->id;
+            }
 
             // Auto-link an existing WP page if we aren't already linked
             if ( $row_id && ( (int) $existing->wp_page_id ) === 0 ) {
@@ -180,8 +217,33 @@ class TPW_Core_System_Pages {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_system_pages';
         $slug = sanitize_key( $slug );
-        $id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT wp_page_id FROM {$table} WHERE slug = %s", $slug ) );
-        return max( 0, $id );
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT id, wp_page_id, shortcode, title FROM {$table} WHERE slug = %s", $slug ) );
+        if ( ! $row ) return 0;
+
+        $pid = (int) $row->wp_page_id;
+        if ( $pid > 0 ) {
+            $p = get_post( $pid );
+            $ok = ( $p && 'page' === $p->post_type && 'trash' !== $p->post_status );
+
+            // Validate expected shortcode exists in content
+            $tag = self::parse_shortcode_tag( (string) $row->shortcode );
+            $has_sc = false;
+            if ( $ok ) {
+                $content = (string) get_post_field( 'post_content', $pid );
+                $has_sc = $tag ? self::content_has_shortcode_tag( $content, $tag ) : true;
+            }
+
+            if ( ! $ok || ! $has_sc ) {
+                if ( function_exists('error_log') && ( defined('WP_DEBUG') && WP_DEBUG ) ) {
+                    error_log( sprintf('[TPW System Pages] Self-heal: slug=%s linked to invalid page id=%d (ok=%s, shortcode=%s, has_sc=%s). Recreating...', $slug, $pid, $ok?'1':'0', (string)$row->shortcode, $has_sc?'1':'0') );
+                }
+                // Unlink and recreate
+                $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET wp_page_id = NULL WHERE id = %d", (int) $row->id ) );
+                return (int) self::ensure_page( $slug );
+            }
+        }
+
+        return max( 0, $pid );
     }
 
     /**
@@ -224,7 +286,7 @@ class TPW_Core_System_Pages {
             }
         }
 
-        if ( ! $needs_create ) return $pid;
+    if ( ! $needs_create ) return $pid;
 
         // Before creating, try to auto-link an existing page by slug or shortcode.
         $found_id = self::find_existing_page_id( $slug, (string) $row->shortcode );
@@ -249,6 +311,18 @@ class TPW_Core_System_Pages {
 
         $wpdb->update( $table, [ 'wp_page_id' => (int) $new_id ], [ 'id' => (int) $row->id ], [ '%d' ], [ '%d' ] );
         return (int) $new_id;
+    }
+
+    /**
+     * Explicitly unlink a slug from its wp_page_id
+     */
+    public static function unlink( $slug ) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'tpw_system_pages';
+        $slug = sanitize_key( $slug );
+        if ( '' === $slug ) return false;
+        $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET wp_page_id = NULL WHERE slug = %s", $slug ) );
+        return true;
     }
 
     /**
@@ -347,3 +421,115 @@ add_action( 'admin_post_tpw_system_pages_action', function(){
     wp_safe_redirect( $tab_url );
     exit;
 } );
+
+// AJAX: Unlink a system page mapping
+add_action( 'wp_ajax_tpw_system_page_unlink', function(){
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ), 403 );
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'tpw_system_pages_ajax' ) ) wp_send_json_error( __( 'Bad nonce', 'tpw-core' ), 400 );
+    $slug = isset($_POST['slug']) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
+    if ( ! $slug ) wp_send_json_error( __( 'Missing slug', 'tpw-core' ), 400 );
+    $ok = TPW_Core_System_Pages::unlink( $slug );
+    if ( ! $ok ) wp_send_json_error( __( 'Failed to unlink', 'tpw-core' ), 500 );
+
+    // Return updated row HTML
+    ob_start();
+    TPW_Core_System_Pages_Render::render_row_by_slug( $slug );
+    $html = ob_get_clean();
+    wp_send_json_success( [ 'rowHtml' => $html ] );
+} );
+
+// AJAX: Recreate a system page immediately
+add_action( 'wp_ajax_tpw_system_page_recreate', function(){
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ), 403 );
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'tpw_system_pages_ajax' ) ) wp_send_json_error( __( 'Bad nonce', 'tpw-core' ), 400 );
+    $slug = isset($_POST['slug']) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
+    if ( ! $slug ) wp_send_json_error( __( 'Missing slug', 'tpw-core' ), 400 );
+    // Unlink and recreate
+    TPW_Core_System_Pages::unlink( $slug );
+    $new = TPW_Core_System_Pages::ensure_page( $slug );
+    if ( $new <= 0 ) wp_send_json_error( __( 'Failed to recreate page', 'tpw-core' ), 500 );
+
+    ob_start();
+    TPW_Core_System_Pages_Render::render_row_by_slug( $slug );
+    $html = ob_get_clean();
+    wp_send_json_success( [ 'rowHtml' => $html ] );
+} );
+
+/**
+ * Lightweight helper to render a <tr> for a given slug, used by AJAX responses.
+ * Split out to avoid duplicating row rendering logic in multiple places.
+ */
+if ( ! class_exists( 'TPW_Core_System_Pages_Render' ) ) {
+class TPW_Core_System_Pages_Render {
+    public static function render_row_by_slug( $slug ) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'tpw_system_pages';
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE slug = %s", $slug ) );
+        if ( ! $row ) return;
+        $title = $row->title ?: $row->slug;
+        $slug  = $row->slug;
+        $pid   = (int) $row->wp_page_id;
+        $plugin = $row->plugin;
+        $required = (int) $row->required;
+
+        $page_obj = $pid ? get_post( $pid ) : null;
+        $is_live = false;
+        $perm = '';
+        if ( $page_obj && $page_obj->post_type === 'page' && $page_obj->post_status === 'publish' ) {
+            $is_live = true;
+            $perm = get_permalink( $pid );
+        }
+        $nonce = wp_create_nonce('tpw_system_pages_ajax');
+        ?>
+        <tr data-slug="<?php echo esc_attr($slug); ?>">
+            <td><?php echo esc_html( $title ); ?></td>
+            <td><code><?php echo esc_html( $slug ); ?></code></td>
+            <td>
+                <?php if ( $pid > 0 ) : ?>
+                    <div>
+                        <strong>#<?php echo (int) $pid; ?></strong>
+                        <?php if ( $perm ) : ?>
+                            <br /><a href="<?php echo esc_url( $perm ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $perm ); ?></a>
+                        <?php endif; ?>
+                    </div>
+                    <div style="margin-top:4px;">
+                        <?php if ( $perm ) : ?>
+                            <a class="button button-small" href="<?php echo esc_url( $perm ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View', 'tpw-core' ); ?></a>
+                        <?php endif; ?>
+                        <?php if ( $page_obj ) : ?>
+                            <a class="button button-small" href="<?php echo esc_url( get_edit_post_link( $pid, '' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Edit', 'tpw-core' ); ?></a>
+                        <?php endif; ?>
+                    </div>
+                <?php else : ?>
+                    <em><?php esc_html_e( 'Not linked', 'tpw-core' ); ?></em>
+                <?php endif; ?>
+            </td>
+            <td>
+                <?php if ( $is_live ) : ?>
+                    <span style="color:#008a20;">✅ <?php esc_html_e( 'Exists', 'tpw-core' ); ?></span>
+                <?php else : ?>
+                    <span style="color:#b52727;">❌ <?php esc_html_e( 'Missing', 'tpw-core' ); ?></span>
+                <?php endif; ?>
+            </td>
+            <td><?php echo esc_html( $plugin ); ?></td>
+            <td>
+                <?php if ( $required ) : ?>
+                    <span class="tpw-badge tpw-badge-required" style="background:#0b6cad;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;">Required</span>
+                <?php else : ?>
+                    <span class="tpw-badge" style="background:#e1e1e1;color:#333;padding:2px 6px;border-radius:4px;font-size:11px;">Optional</span>
+                <?php endif; ?>
+            </td>
+            <td>
+                <button class="tpw-btn tpw-btn-secondary js-tpw-sp-unlink" data-nonce="<?php echo esc_attr($nonce); ?>" data-slug="<?php echo esc_attr($slug); ?>"><?php esc_html_e('Unlink','tpw-core'); ?></button>
+                <button class="tpw-btn tpw-btn-primary js-tpw-sp-recreate" data-nonce="<?php echo esc_attr($nonce); ?>" data-slug="<?php echo esc_attr($slug); ?>"><?php esc_html_e('Recreate','tpw-core'); ?></button>
+                <?php if ( $is_live && $perm ) : ?>
+                    <a class="tpw-btn" href="<?php echo esc_url( $perm ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View', 'tpw-core' ); ?></a>
+                <?php endif; ?>
+            </td>
+        </tr>
+        <?php
+    }
+}
+}

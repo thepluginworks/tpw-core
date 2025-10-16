@@ -266,6 +266,35 @@ do_action( 'tpw_members_admin_form_after_save', string $context, int $member_id 
 ```
 
 Runs after core fields and meta are saved for both add and edit submissions, allowing you to persist any extra fields you rendered.
+## Members module activation and system pages
+
+- To enable the Members module UI from an add-on plugin, define the constant `TPW_MEMBERS_ACTIVE` as true as early as possible in your plugin bootstrap. Core provides a convenience helper:
+
+```php
+// Returns true when Members module is active
+tpw_members_module_enabled(): bool
+```
+
+- System Pages: Core registers the "My Profile" page under slug `my-profile` and shortcode `[tpw_member_profile]`. Add-on plugins can ensure this page exists by calling:
+
+```php
+TPW_Core_System_Pages::ensure_page( 'my-profile' );
+```
+
+- Add-on owned pages: If an add-on provides a front-end management UI for members (e.g. Lodge Meetings Manage Members), it should register its own System Page row so Core can manage the linked WP page. Example:
+
+```php
+TPW_Core_System_Pages::register_page( 'manage-members', [
+	'title'     => 'Manage Members',
+	'shortcode' => '[tpw_manage_members]',
+	'plugin'    => 'tpw-rsvp-lodge-meetings',
+	'required'  => 1,
+] );
+TPW_Core_System_Pages::ensure_page( 'manage-members' );
+```
+
+- Access control: Use `TPW_Member_Access` helpers to gate UI routes. Only admins or committee should access the Manage Members UI. Do not expose admin actions to regular members.
+
 
 ### Example: Player Home Clubs
 

@@ -4,6 +4,85 @@ class TPW_Member_CSV_Importer {
 
     private array $notices = [];
 
+    private function log_debug(string $message): void {
+        // Log to uploads/tpw_import_debug.log; fall back to error_log if not writable
+        $uploads = wp_upload_dir();
+        $file = trailingslashit($uploads['basedir']) . 'tpw_import_debug.log';
+        $line = '[' . date('Y-m-d H:i:s') . "] TPW_IMPORT: " . $message . "\n";
+        if ( is_writable( $uploads['basedir'] ) || ( file_exists($file) && is_writable($file) ) ) {
+            @error_log( $line, 3, $file );
+        } else {
+            // Fallback
+            error_log( $line );
+        }
+    }
+
+    private function save_custom_meta(int $member_id, array $member_data, array $core_fields, bool $is_update = false, string $row_info = '', bool $log_detail = false): void {
+        // Save non-core fields as meta (upsert). Empty strings are skipped (no delete on update).
+        global $wpdb;
+        $meta_count = 0;
+        if ( $log_detail ) {
+            $this->log_debug(( $is_update ? 'Updating' : 'Inserting' ) . " meta for member_id {$member_id} {$row_info}");
+        }
+        foreach ( $member_data as $key => $value ) {
+            if ( in_array( $key, $core_fields, true ) ) {
+                continue;
+            }
+            $meta_key = sanitize_key( (string) $key );
+            $meta_value = is_scalar($value) ? sanitize_text_field( (string) $value ) : '';
+            if ( $meta_key === '' ) { continue; }
+
+            // Determine existing value for detailed logs
+            $old_value = null;
+            $existed = false;
+            $table = $wpdb->prefix . 'tpw_member_meta';
+            $old_value = $wpdb->get_var( $wpdb->prepare(
+                "SELECT meta_value FROM {$table} WHERE member_id = %d AND meta_key = %s LIMIT 1",
+                $member_id,
+                $meta_key
+            ) );
+            $existed = ($old_value !== null);
+
+            if ( $meta_value === '' ) {
+                // Skip truly empty mapped fields; do not delete. Log skip in update mode when detailed logging is on.
+                if ( $log_detail ) {
+                    $this->log_debug( sprintf('Skipped meta (empty): member_id=%d, key=%s, old=%s %s', $member_id, $meta_key, (string) $old_value, $row_info) );
+                }
+                continue;
+            }
+
+            // Prefer helper for upsert semantics
+            if ( class_exists('TPW_Member_Meta') ) {
+                $ok = (bool) TPW_Member_Meta::save_meta( $member_id, $meta_key, $meta_value );
+            } else {
+                // Fallback direct upsert
+                $exists = (int) $wpdb->get_var( $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$table} WHERE member_id = %d AND meta_key = %s",
+                    $member_id,
+                    $meta_key
+                ) );
+                if ( $exists ) {
+                    $ok = (bool) $wpdb->update( $table, [ 'meta_value' => $meta_value ], [ 'member_id' => $member_id, 'meta_key' => $meta_key ] );
+                } else {
+                    $ok = (bool) $wpdb->insert( $table, [ 'member_id' => $member_id, 'meta_key' => $meta_key, 'meta_value' => $meta_value ] );
+                }
+            }
+            $meta_count++;
+            if ( $log_detail ) {
+                $action = $existed ? 'Updated' : 'Inserted';
+                $this->log_debug( sprintf( '%s meta: member_id=%d, key=%s, old=%s, new=%s %s', $action, $member_id, $meta_key, (string) $old_value, (string) $meta_value, $row_info ) );
+                if ( isset($ok) && ! $ok ) {
+                    $this->log_debug( 'DB error on meta upsert: ' . ( isset($wpdb->last_error) ? $wpdb->last_error : '(unknown)' ) );
+                }
+            }
+        }
+        if ( $meta_count === 0 ) {
+            if ( $log_detail ) {
+                $this->log_debug('No custom meta fields to process for this row. ' . $row_info);
+            }
+        }
+    }
+
     private function add_notice($message, $type = 'info') {
         $this->notices[] = ['type' => $type, 'message' => $message];
     }
@@ -270,7 +349,7 @@ class TPW_Member_CSV_Importer {
         $imported = 0;
         $import_summary = [];
 
-        foreach ( $rows as $row ) {
+        foreach ( $rows as $row_index => $row ) {
             $member_data = [];
             if ( empty($row) || count(array_filter($row)) === 0 ) {
                 error_log('⚠️ Skipping empty row');
@@ -299,6 +378,7 @@ class TPW_Member_CSV_Importer {
                         error_log('🟡 DRY RUN: Would UPDATE existing user and member for email: ' . $email);
                         continue;
                     }
+                    $this->log_debug('Matched existing WP user by email: ' . $email . ' (user_id ' . (int) $existing_user->ID . ')');
                     // Optionally update user's first/last name
                     $upd = [ 'ID' => $existing_user->ID ];
                     $has_name_change = false;
@@ -328,13 +408,24 @@ class TPW_Member_CSV_Importer {
                     ) );
                     if ( $existing_member_id > 0 ) {
                         // Update existing member
+                        $row_info = sprintf('(row=%d, username=%s)', $row_index + 2, $member_data['username'] ?? '');
+                        $this->log_debug('Updating existing tpw_members row id ' . $existing_member_id . ' for user_id ' . (int) $existing_user->ID . ' ' . $row_info);
                         $wpdb->update( $table, $set, [ 'id' => $existing_member_id ] );
+                        // Save custom fields to meta
+                        $this->log_debug('Member matched (update): member_id=' . $existing_member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) . ' ' . $row_info );
+                        $this->save_custom_meta( $existing_member_id, $member_data, $expected_fields, true, $row_info, true );
                         $imported++;
                         $import_summary[] = [ 'email' => $email, 'status' => '🛠️ Updated existing member (by email)' ];
                     } else {
                         // Insert new member row linked to the existing user
                         $set['user_id'] = (int) $existing_user->ID;
                         $wpdb->insert( $table, $set );
+                        $member_id = (int) $wpdb->insert_id;
+                        $this->log_debug('Inserted new tpw_members row id ' . $member_id . ' for existing user_id ' . (int) $existing_user->ID);
+                        // Save custom fields to meta
+                        $this->log_debug('Member matched (insert for existing WP user): member_id=' . $member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) );
+                        // Insert flow: keep detail logs off per requirement focus
+                        $this->save_custom_meta( $member_id, $member_data, $expected_fields, false, '', false );
                         $imported++;
                         $import_summary[] = [ 'email' => $email, 'status' => '✅ Inserted member (linked existing user)' ];
                     }
@@ -398,22 +489,12 @@ class TPW_Member_CSV_Importer {
                     } else {
                         $imported++;
                         $import_summary[] = [ 'email' => $email, 'status' => '✅ Imported' ];
-
-                        // Save custom fields into meta table
-                        $meta_table = $wpdb->prefix . 'tpw_member_meta';
-                        foreach ( $member_data as $key => $value ) {
-                            if ( ! in_array( $key, $expected_fields ) && ! empty( $key ) && ! empty( $value ) ) {
-                                if ( $is_dry_run ) {
-                                    error_log("🟡 DRY RUN: Would save custom meta: $key = $value for member_id $user_id");
-                                    continue;
-                                }
-                                $wpdb->insert( $meta_table, [
-                                    'member_id'  => $user_id,
-                                    'meta_key'   => sanitize_key( $key ),
-                                    'meta_value' => sanitize_text_field( $value )
-                                ] );
-                            }
-                        }
+                        $member_id = (int) $wpdb->insert_id;
+                        $this->log_debug('Inserted new tpw_members row id ' . $member_id . ' for new WP user_id ' . (int) $user_id);
+                        $this->log_debug('Member created: member_id=' . $member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) );
+                        // Save custom fields into meta table, using correct member_id
+                        // Insert flow: keep detail logs off per requirement focus
+                        $this->save_custom_meta( $member_id, $member_data, $expected_fields, false, '', false );
                     }
                 }
             } else {
@@ -454,7 +535,12 @@ class TPW_Member_CSV_Importer {
                     if ( $dedupe_action === 'skip' ) {
                         $import_summary[] = [ 'email' => '', 'status' => '⚠️ Skipped – Member exists (by username/name)' ];
                     } else {
+                        $row_info = sprintf('(row=%d, username=%s)', $row_index + 2, $member_data['username'] ?? '');
+                        $this->log_debug('Updating existing tpw_members row id ' . $existing_member_id . ' (no email flow) ' . $row_info);
                         $wpdb->update( $table, $data_set, [ 'id' => $existing_member_id ] );
+                        // Save custom fields to meta for this member
+                        $this->log_debug('Member matched (update, no email): member_id=' . $existing_member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) . ' ' . $row_info );
+                        $this->save_custom_meta( $existing_member_id, $member_data, $expected_fields, true, $row_info, true );
                         $imported++;
                         $import_summary[] = [ 'email' => '', 'status' => '🛠️ Updated existing member (no email)' ];
                     }
@@ -464,6 +550,12 @@ class TPW_Member_CSV_Importer {
                         error_log('❌ DB Insert (no email) failed. Error: ' . $wpdb->last_error);
                         error_log('❌ Data tried to insert: ' . print_r($data_set, true));
                     } else {
+                        $member_id = (int) $wpdb->insert_id;
+                        $this->log_debug('Inserted new tpw_members row id ' . $member_id . ' (no email flow)');
+                        // Save custom fields to meta
+                        $this->log_debug('Member created (no email): member_id=' . $member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) );
+                        // Insert flow: keep detail logs off per requirement focus
+                        $this->save_custom_meta( $member_id, $member_data, $expected_fields, false, '', false );
                         $imported++;
                         $import_summary[] = [ 'email' => '', 'status' => '✅ Imported (no WP user)' ];
                     }

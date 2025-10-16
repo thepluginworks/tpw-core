@@ -163,6 +163,41 @@ function tpw_core_is_plugin_admin_screen() {
 	return false;
 }
 
+// Front-end: ensure TPW button styles are available on key TPW pages (late so our rules can win by order when specificity ties)
+add_action( 'wp_enqueue_scripts', function(){
+    // Detect if we need TPW styles on the front-end
+    $is_fixtures_route = false;
+    $req_uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    if ( $req_uri && preg_match('#/fixtures-manage(/?|\?|$)#', $req_uri) ) {
+        $is_fixtures_route = true;
+    }
+
+    $has_shortcodes = false;
+    if ( is_singular() ) {
+        global $post; if ( $post ) {
+            $content = (string) ( $post->post_content ?? '' );
+            $shortcodes = [ 'tpw_manage_members', 'tpw_member_profile', 'tpw_member_login', 'tpw_noticeboard_list', 'tpw-control' ];
+            foreach ( $shortcodes as $sc ) {
+                if ( function_exists('has_shortcode') && has_shortcode( $content, $sc ) ) { $has_shortcodes = true; break; }
+            }
+        }
+    }
+
+    $should_enqueue = $has_shortcodes || $is_fixtures_route;
+    if ( ! $should_enqueue ) return;
+    if ( ! defined('TPW_CORE_PATH') || ! defined('TPW_CORE_URL') ) return;
+
+    // Base button system
+    $btn_file = TPW_CORE_PATH . 'assets/css/tpw-buttons.css';
+    $btn_url  = TPW_CORE_URL . 'assets/css/tpw-buttons.css';
+    $btn_ver  = file_exists( $btn_file ) ? filemtime( $btn_file ) : null;
+    if ( ! wp_style_is( 'tpw-buttons', 'enqueued' ) ) {
+        wp_enqueue_style( 'tpw-buttons', $btn_url, [], $btn_ver );
+    }
+
+    // Fixtures manage stylesheet is now owned by FlexiGolf; only ensure base buttons here.
+}, 100 );
+
 /**
  * Renders a consistent header block for TPW Core admin pages,
  * with optional notice message and customisation args.
@@ -229,6 +264,11 @@ if ( ! function_exists( 'tpw_core_get_ui_theme_defaults' ) ) {
             'btn_bg'       => '#0b6cad',
             'btn_text'     => '#ffffff',
             'accent_color' => '#2271b1',
+            // New typography defaults for .tpw-admin-ui scope
+            'font_weight'     => '600',
+            'text_transform'  => 'none',
+            'letter_spacing'  => 'normal',
+            'text_shadow'     => 'none',
         ];
     }
 }
@@ -263,6 +303,19 @@ if ( ! function_exists( 'tpw_core_build_ui_theme_style_attr' ) ) {
         }
         if ( ! empty( $ui['accent_color'] ) ) {
             $props[] = '--tpw-accent-color: ' . $ui['accent_color'];
+        }
+        // New tokens
+        if ( isset( $ui['font_weight'] ) && $ui['font_weight'] !== '' ) {
+            $props[] = '--tpw-font-weight: ' . $ui['font_weight'];
+        }
+        if ( isset( $ui['text_transform'] ) && $ui['text_transform'] !== '' ) {
+            $props[] = '--tpw-text-transform: ' . $ui['text_transform'];
+        }
+        if ( isset( $ui['letter_spacing'] ) && $ui['letter_spacing'] !== '' ) {
+            $props[] = '--tpw-letter-spacing: ' . $ui['letter_spacing'];
+        }
+        if ( isset( $ui['text_shadow'] ) && $ui['text_shadow'] !== '' ) {
+            $props[] = '--tpw-text-shadow: ' . $ui['text_shadow'];
         }
         return implode( '; ', $props );
     }

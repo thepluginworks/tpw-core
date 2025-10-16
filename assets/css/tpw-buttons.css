@@ -11,6 +11,8 @@
   --tpw-btn-dark: #343a40;
   --tpw-btn-text-light: #fff;
   --tpw-btn-text-dark: #000;
+  /* Action colours (module UIs) */
+  --tpw-action-edit: #2d7ff9;
   --tpw-btn-radius: 7px;
   --tpw-btn-padding: 4px 8px;
   --tpw-btn-font-size: 0.9rem;
@@ -23,11 +25,84 @@
   justify-content: center;
   gap: 0.5em;
   padding: var(--tpw-btn-padding);
+  height: var(--tpw-btn-height, auto);
   font-size: var(--tpw-btn-font-size);
-  line-height: 1.25;
+  font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"));
+  font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600));
+  text-transform: var(--tpw-text-transform, none);
+  letter-spacing: var(--tpw-letter-spacing, normal);
+  text-shadow: var(--tpw-text-shadow, none);
+  line-height: normal;
   border-radius: var(--tpw-btn-radius);
   border: 1px solid transparent;
-  background: var(--tpw-btn-secondary);
+  box-sizing: border-box;
+  vertical-align: middle;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease-in-out;
+}
+
+a.tpw-btn,
+a.tpw-btn.tpw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: var(--tpw-btn-padding);
+  height: var(--tpw-btn-height, auto);
+  font-size: var(--tpw-btn-font-size);
+  line-height: normal;
+  font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji")) !important;
+  font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600));
+  text-transform: var(--tpw-text-transform, none);
+  letter-spacing: var(--tpw-letter-spacing, normal);
+  text-shadow: var(--tpw-text-shadow, none);
+}
+/* Resets per element type */
+/* Native buttons/inputs often carry UA styles; neutralize and align with base */
+button.tpw-btn,
+input[type="button"].tpw-btn,
+input[type="reset"].tpw-btn,
+input[type="submit"].tpw-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  background: none; /* base .tpw-btn sets intended background */
+  border: 1px solid transparent; /* ensure consistent border model */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tpw-btn-padding);
+  height: var(--tpw-btn-height, auto);
+  border-radius: var(--tpw-btn-radius);
+  line-height: normal;
+  /* Reset UA styles then re-apply TPW typography explicitly */
+  font-size: var(--tpw-btn-font-size);
+  font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji")) !important;
+  font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600));
+}
+
+button.tpw-btn:hover,
+input[type="button"].tpw-btn:hover,
+input[type="reset"].tpw-btn:hover,
+input[type="submit"].tpw-btn:hover {
+  padding: var(--tpw-btn-padding);
+  height: var(--tpw-btn-height, auto);
+  border: 1px solid transparent;
+  border-radius: var(--tpw-btn-radius);
+  opacity:0.5;
+}
+
+/* Anchors: ensure link quirks are reset */
+a.tpw-btn {
+  text-decoration: none;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tpw-btn-padding);
+  border-radius: var(--tpw-btn-radius);
+  border: 1px solid transparent;
   color: var(--tpw-btn-text-light);
   text-decoration: none;
   cursor: pointer;
@@ -44,7 +119,8 @@
 }
 
 .tpw-btn:hover,
-.tpw-btn:focus {
+.tpw-btn:focus,
+.tpw-btn:focus-visible {
   text-decoration: none;
   filter: brightness(0.95);
 }
@@ -71,13 +147,34 @@
   background: var(--tpw-btn-primary);
   color: var(--tpw-btn-text-light);
 }
+button.tpw-btn.tpw-btn-primary,
+input[type="submit"].tpw-btn.tpw-btn-primary,
+input[type="button"].tpw-btn.tpw-btn-primary,
+input[type="reset"].tpw-btn.tpw-btn-primary {
+  background: var(--tpw-btn-primary);
+  color: var(--tpw-btn-text-light);
+}
 
 .tpw-btn-secondary {
   background: var(--tpw-btn-secondary);
   color: var(--tpw-btn-text-light);
 }
+button.tpw-btn.tpw-btn-secondary,
+input[type="submit"].tpw-btn.tpw-btn-secondary,
+input[type="button"].tpw-btn.tpw-btn-secondary,
+input[type="reset"].tpw-btn.tpw-btn-secondary {
+  background: var(--tpw-btn-secondary);
+  color: var(--tpw-btn-text-light);
+}
 
 .tpw-btn-danger {
+  background: var(--tpw-btn-danger);
+  color: var(--tpw-btn-text-light);
+}
+button.tpw-btn.tpw-btn-danger,
+input[type="submit"].tpw-btn.tpw-btn-danger,
+input[type="button"].tpw-btn.tpw-btn-danger,
+input[type="reset"].tpw-btn.tpw-btn-danger {
   background: var(--tpw-btn-danger);
   color: var(--tpw-btn-text-light);
 }
@@ -87,14 +184,41 @@
   color: var(--tpw-btn-text-dark);
   border-color: rgba(0,0,0,0.1);
 }
+button.tpw-btn.tpw-btn-light,
+input[type="submit"].tpw-btn.tpw-btn-light,
+input[type="button"].tpw-btn.tpw-btn-light,
+input[type="reset"].tpw-btn.tpw-btn-light {
+  background: var(--tpw-btn-light);
+  color: var(--tpw-btn-text-dark);
+  border-color: rgba(0,0,0,0.1);
+  padding: var(--tpw-btn-padding);
+}
 
 .tpw-btn-dark {
   background: var(--tpw-btn-dark);
   color: var(--tpw-btn-text-light);
 }
+button.tpw-btn.tpw-btn-dark,
+input[type="submit"].tpw-btn.tpw-btn-dark,
+input[type="button"].tpw-btn.tpw-btn-dark,
+input[type="reset"].tpw-btn.tpw-btn-dark {
+  background: var(--tpw-btn-dark);
+  color: var(--tpw-btn-text-light);
+}
+
+.tpw-btn-gallery {
+  font-size:0.7em;
+}
 
 /* Edit variant (neutral blue similar to WordPress admin) */
 .tpw-btn-edit {
+  background: var(--tpw-action-edit);
+  color: var(--tpw-btn-text-light);
+}
+button.tpw-btn.tpw-btn-edit,
+input[type="submit"].tpw-btn.tpw-btn-edit,
+input[type="button"].tpw-btn.tpw-btn-edit,
+input[type="reset"].tpw-btn.tpw-btn-edit {
   background: #007cba;
   color: var(--tpw-btn-text-light);
 }
@@ -127,81 +251,19 @@
   color: var(--tpw-btn-text-light);
 }
 
-/* Minor resets for native buttons and links using the class */
-button.tpw-btn {
-  border: none;
+
+/* Minimal Elementor override: enforce TPW typography tokens when Elementor sets button/link typography */
+.tpw-btn.tpw-btn {
+  /* Ensure TPW keeps its own typography and avoids Elementor overrides */
+  font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"));
+  font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600));
+  text-transform: var(--tpw-text-transform, none);
+  letter-spacing: var(--tpw-letter-spacing, normal);
+  text-shadow: var(--tpw-text-shadow, none);
 }
 
-a.tpw-btn {
-  text-decoration: none;
-}
-.page-content a.tpw-btn {
-  text-decoration: none;
-}
-
-/* Specificity bump: ensure native buttons using .tpw-btn are not overridden by broad resets */
-button.tpw-btn,
-input[type="button"].tpw-btn,
-input[type="submit"].tpw-btn {
-  border: 1px solid transparent;
-}
-
-button.tpw-btn.tpw-btn-primary,
-input[type="button"].tpw-btn.tpw-btn-primary,
-input[type="submit"].tpw-btn.tpw-btn-primary {
-  background: var(--tpw-btn-primary);
-  color: var(--tpw-btn-text-light);
-}
-
-button.tpw-btn.tpw-btn-secondary,
-input[type="button"].tpw-btn.tpw-btn-secondary,
-input[type="submit"].tpw-btn.tpw-btn-secondary {
-  background: var(--tpw-btn-secondary);
-  color: var(--tpw-btn-text-light);
-}
-
-button.tpw-btn.tpw-btn-danger,
-input[type="button"].tpw-btn.tpw-btn-danger,
-input[type="submit"].tpw-btn.tpw-btn-danger {
-  background: var(--tpw-btn-danger);
-  color: var(--tpw-btn-text-light);
-}
-
-button.tpw-btn.tpw-btn-light,
-input[type="button"].tpw-btn.tpw-btn-light,
-input[type="submit"].tpw-btn.tpw-btn-light {
-  background: var(--tpw-btn-light);
-  color: var(--tpw-btn-text-dark);
-  border-color: rgba(0,0,0,0.1);
-}
-
-button.tpw-btn.tpw-btn-dark,
-input[type="button"].tpw-btn.tpw-btn-dark,
-input[type="submit"].tpw-btn.tpw-btn-dark {
-  background: var(--tpw-btn-dark);
-  color: var(--tpw-btn-text-light);
-}
-
-button.tpw-btn.tpw-btn-outline,
-input[type="button"].tpw-btn.tpw-btn-outline,
-input[type="submit"].tpw-btn.tpw-btn-outline {
-  background: transparent;
-  color: var(--tpw-btn-dark);
-  border-color: currentColor;
-}
-
-/* Specificity bump: native buttons for Edit variant */
-button.tpw-btn.tpw-btn-edit,
-input[type="button"].tpw-btn.tpw-btn-edit,
-input[type="submit"].tpw-btn.tpw-btn-edit {
-  background: #007cba;
-  color: var(--tpw-btn-text-light);
-}
-button.tpw-btn.tpw-btn-edit:hover,
-button.tpw-btn.tpw-btn-edit:focus,
-input[type="button"].tpw-btn.tpw-btn-edit:hover,
-input[type="button"].tpw-btn.tpw-btn-edit:focus,
-input[type="submit"].tpw-btn.tpw-btn-edit:hover,
-input[type="submit"].tpw-btn.tpw-btn-edit:focus {
-  background: #006ba1;
+/* Hover/focus for outline variant */
+.tpw-btn-outline:hover,
+.tpw-btn-outline:focus {
+  background: rgba(0, 0, 0, 0.04);
 }

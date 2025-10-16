@@ -19,6 +19,10 @@ require_once TPW_CORE_PATH . 'includes/admin-functions.php';
 
 // Load System Pages manager early
 require_once TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages.php';
+// Load WP-CLI command if in CLI context (safe to include; will noop outside WP_CLI)
+if ( file_exists( TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages-cli.php' ) ) {
+    require_once TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages-cli.php';
+}
 
 // Register the Members "My Profile" page in the System Pages table (keeps existing logic intact)
 add_action( 'plugins_loaded', function() {
@@ -114,6 +118,11 @@ TPW_Email_Form::init();
 require_once TPW_CORE_PATH . 'modules/postcodes/class-tpw-postcode-helper.php';
 require_once TPW_CORE_PATH . 'modules/postcodes/postcode-ajax.php';
 
+// Gallery module (Phase 1 scaffold only: register in module registry, no UI)
+if ( file_exists( TPW_CORE_PATH . 'modules/gallery/gallery-loader.php' ) ) {
+    require_once TPW_CORE_PATH . 'modules/gallery/gallery-loader.php';
+}
+
 // Core Settings (member menu location & swapper)
 $__tpw_settings_file = TPW_CORE_PATH . 'includes/tpw-core-settings.php';
 if ( file_exists( $__tpw_settings_file ) ) {
@@ -167,8 +176,26 @@ function tpw_core_load_optional_modules() {
 // Register thank-you page endpoint
 add_action('init', function() {
     add_rewrite_rule('^rsvp-thank-you/?$', 'index.php?tpw_thank_you=1', 'top');
-    // Front-end fallback for My Profile page
-    add_rewrite_rule('^my-profile/?$', 'index.php?tpw_my_profile=1', 'top');
+
+    // Conditionally register the front-end fallback for My Profile only when a real page doesn't exist.
+    // This avoids hijacking a real Elementor page and prevents missing elementorFrontendConfig on /my-profile/.
+    $should_add_virtual = true;
+    $configured_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
+    if ( $configured_id > 0 ) {
+        $p = get_post( $configured_id );
+        if ( $p && 'page' === $p->post_type && 'publish' === $p->post_status ) {
+            $should_add_virtual = false;
+        }
+    } else {
+        $by_path = function_exists( 'get_page_by_path' ) ? get_page_by_path( 'my-profile' ) : null;
+        if ( $by_path && 'page' === $by_path->post_type && 'publish' === $by_path->post_status ) {
+            $should_add_virtual = false;
+        }
+    }
+
+    if ( $should_add_virtual ) {
+        add_rewrite_rule('^my-profile/?$', 'index.php?tpw_my_profile=1', 'top');
+    }
 });
 
 add_filter('query_vars', function($vars) {
@@ -234,6 +261,53 @@ add_action('template_redirect', function() {
         exit;
     }
     if (get_query_var('tpw_my_profile')) {
+        // Defensive: if a real, published Profile page exists, render it directly instead of the virtual route.
+        // This covers sites that still have stale rewrite rules pointing to tpw_my_profile.
+        $configured_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
+        if ( $configured_id > 0 ) {
+            $real = get_post( $configured_id );
+            if ( $real && 'page' === $real->post_type && 'publish' === $real->post_status ) {
+                // Prevent caching like we do for the virtual route
+                if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+                    define( 'DONOTCACHEPAGE', true );
+                }
+                nocache_headers();
+
+                global $wp_query, $post;
+                $post = $real;
+                // Prime the main query to the real page
+                $wp_query->posts = [ $post ];
+                $wp_query->post = $post;
+                $wp_query->post_count = 1;
+                $wp_query->is_page = true;
+                $wp_query->is_singular = true;
+                $wp_query->is_single = false;
+                $wp_query->is_home = false;
+                $wp_query->is_archive = false;
+                $wp_query->is_404 = false;
+                $wp_query->queried_object = $post;
+                $wp_query->queried_object_id = $post->ID;
+                setup_postdata( $post );
+
+                // Load the theme template normally for the real page
+                $candidates = [];
+                if ( ! empty( $post->post_name ) ) {
+                    $candidates[] = 'page-' . $post->post_name . '.php';
+                }
+                $candidates[] = 'page-' . (int) $post->ID . '.php';
+                $candidates[] = 'page.php';
+                $candidates[] = 'singular.php';
+                $candidates[] = 'index.php';
+                $template = locate_template( $candidates );
+                if ( ! $template ) {
+                    echo apply_filters('the_content', do_shortcode('[tpw_member_profile]') );
+                    exit;
+                }
+                include $template;
+                exit;
+            }
+        }
+
         // Render through the theme pipeline by creating a virtual page and replacing the main query
         global $wp_query, $post;
 
@@ -259,8 +333,12 @@ add_action('template_redirect', function() {
         $member = $controller->get_member_by_user_id( (int) $user->ID );
 
         if ( ! $member ) {
-            wp_safe_redirect( home_url('/') );
-            exit;
+            // Allow admins to preview the page even without a member record; the shortcode will show a helpful message.
+            if ( ! current_user_can('manage_options') ) {
+                wp_safe_redirect( home_url('/') );
+                exit;
+            }
+            // else proceed and let the shortcode output the notice
         }
 
         $allowed = true;
@@ -350,5 +428,15 @@ add_action('admin_init', function() {
     if ( ! $flag ) {
         flush_rewrite_rules(false);
         update_option('tpw_core_rewrite_flushed_v1', time());
+    }
+});
+
+// One-time flush v2 to remove the /my-profile/ virtual route when a real page exists and the rule was previously saved.
+add_action('admin_init', function() {
+    if ( ! current_user_can('manage_options') ) return;
+    $flag2 = get_option('tpw_core_rewrite_flushed_v2');
+    if ( ! $flag2 ) {
+        flush_rewrite_rules(false);
+        update_option('tpw_core_rewrite_flushed_v2', time());
     }
 });

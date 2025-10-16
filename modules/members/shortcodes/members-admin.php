@@ -9,6 +9,9 @@ require_once plugin_dir_path(__FILE__) . '../includes/class-tpw-member-ajax.php'
 require_once plugin_dir_path(__FILE__) . '../includes/class-tpw-member-access.php';
 
 add_action('wp_enqueue_scripts', function () {
+    if ( function_exists('tpw_members_module_enabled') && ! tpw_members_module_enabled() ) {
+        return;
+    }
     if (is_page() && has_shortcode(get_post()->post_content, 'tpw_manage_members')) {
         $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'list';
 
@@ -135,6 +138,9 @@ add_action('wp_enqueue_scripts', function () {
 
 // Init AJAX endpoints in all contexts where admin may load the page
 add_action('init', function(){
+    if ( function_exists('tpw_members_module_enabled') && ! tpw_members_module_enabled() ) {
+        return;
+    }
     if ( is_user_logged_in() ) {
         TPW_Member_Ajax::init();
     }
@@ -142,6 +148,9 @@ add_action('init', function(){
 
 // Stream CSV export for current filters when requested
 add_action('template_redirect', function(){
+    if ( function_exists('tpw_members_module_enabled') && ! tpw_members_module_enabled() ) {
+        return;
+    }
     // Must be on the manage members page (has the shortcode) and requesting export
     if ( ! is_page() ) return;
     global $post;
@@ -150,8 +159,16 @@ add_action('template_redirect', function(){
     $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
     if ( $action !== 'export_csv' ) return;
 
-    // Restrict to admins only
-    if ( ! TPW_Member_Access::is_admin_current() ) {
+    // Restrict to managers per setting: WP admins always; committee if enabled
+    $manage_setting = get_option('tpw_members_manage_access', 'admins_only');
+    $wp_admin = current_user_can('manage_options');
+    $is_committee = false;
+    if ( is_user_logged_in() ) {
+        $member_obj = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
+        $is_committee = $member_obj && ! empty($member_obj->is_committee) && (int)$member_obj->is_committee === 1;
+    }
+    $can_manage = $wp_admin || ( $manage_setting === 'admins_committee' && $is_committee );
+    if ( ! $can_manage ) {
         wp_die( 'Access denied.', 403 );
     }
 
@@ -290,10 +307,34 @@ add_action('template_redirect', function(){
 
 // Register shortcode to manage members (admin use only)
 add_shortcode('tpw_manage_members', function() {
-    $is_admin  = TPW_Member_Access::is_admin_current();
-    $is_member = TPW_Member_Access::is_member_current();
-    if ( ! $is_admin && ! $is_member ) {
-        return '<div class="tpw-error">Access Denied</div>';
+    // Only render when Members module is enabled
+    if ( function_exists('tpw_members_module_enabled') && ! tpw_members_module_enabled() ) {
+        return '';
+    }
+
+    // Determine management access per setting
+    $manage_setting = get_option('tpw_members_manage_access', 'admins_only');
+    $wp_admin = current_user_can('manage_options');
+    $is_admin  = TPW_Member_Access::is_admin_current(); // keeps WP admin override unless filtered off
+
+    // Committee flag (from linked member row)
+    $is_committee = false; $member_obj = null;
+    if ( function_exists('wp_get_current_user') && is_user_logged_in() ) {
+        $member_obj = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
+        $is_committee = $member_obj && ! empty($member_obj->is_committee) && (int)$member_obj->is_committee === 1;
+    }
+
+    // Management access:
+    // - Always allow WordPress admins (manage_options)
+    // - If setting allows, also allow committee members
+    $can_manage = $wp_admin || ( $manage_setting === 'admins_committee' && $is_committee );
+
+    // Directory eligibility: Active/Honorary/Life Member statuses
+    $can_view_directory = false;
+    if ( $member_obj ) {
+        $status_norm = strtolower( trim( (string) ($member_obj->status ?? '') ) );
+        $allowed = array_map('strtolower', TPW_Member_Access::get_allowed_statuses());
+        $can_view_directory = in_array( $status_norm, $allowed, true );
     }
 
     $inherit_global = function_exists('tpw_core_inherit_global_frontend_enabled') ? tpw_core_inherit_global_frontend_enabled() : false;
@@ -316,43 +357,57 @@ add_shortcode('tpw_manage_members', function() {
 
     $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'list';
 
-    // Members (non-admin) only see the list/directory
-    if ( ! $is_admin ) {
-        $action = 'list';
+    // If the user cannot manage and also isn't eligible to view, block entirely
+    if ( ! $can_manage && ! $can_view_directory ) {
+        return '<div class="tpw-error">Access Denied</div>';
     }
 
+    // Allow importer include when admin only
     if ($action === 'import_csv') {
         require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-csv-importer.php';
     }
 
+    // Normalize action based on capabilities
+    if ( ! $can_manage ) {
+        // Members (directory-only): force list view (read-only)
+        $action = 'list';
+    }
+
     switch ($action) {
         case 'add':
-            if ($is_admin) include TPW_CORE_PATH . 'modules/members/templates/admin/add.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/templates/admin/add.php';
             break;
 
         case 'edit_form':
-            include TPW_CORE_PATH . 'modules/members/templates/admin/edit.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/templates/admin/edit.php';
             break;
 
         case 'settings':
-            if ($is_admin) include TPW_CORE_PATH . 'modules/members/settings/member-settings.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/settings/member-settings.php';
             break;
 
         case 'field_settings':
-            if ($is_admin) include TPW_CORE_PATH . 'modules/members/settings/member-fields-settings.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/settings/member-fields-settings.php';
             break;
 
         case 'member-field-visibility':
-            if ($is_admin) include TPW_CORE_PATH . 'modules/members/settings/member-field-visibility.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/settings/member-field-visibility.php';
             break;
 
         case 'import_csv':
-            if ($is_admin) include TPW_CORE_PATH . 'modules/members/templates/admin/import-csv.php';
+            if ($can_manage) include TPW_CORE_PATH . 'modules/members/templates/admin/import-csv.php';
             break;
 
         default:
-            // Pass role flags to the list template via globals
-            $GLOBALS['tpw_members_is_admin'] = $is_admin;
+            // Pass capability flags to the list template via globals
+            $GLOBALS['tpw_members_is_admin'] = $can_manage; // treat can_manage as admin for UI controls
+            // Also pass directory group for field visibility checks
+            if ( $can_manage ) {
+                $GLOBALS['tpw_members_vis_group'] = 'admin';
+            } else {
+                // Non-managers: prefer committee group when applicable, else member
+                $GLOBALS['tpw_members_vis_group'] = $is_committee ? 'committee' : 'member';
+            }
             include TPW_CORE_PATH . 'modules/members/templates/admin/list.php';
             break;
     }

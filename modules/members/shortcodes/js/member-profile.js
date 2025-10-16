@@ -54,4 +54,30 @@
         $btn.prop('disabled', false).text('Confirm');
       });
   });
+
+  // Ensure external "Member Clubs" UI (if present) sits inside the profile container.
+  // Some sites render that UI outside the Elementor section (e.g., appended via filters).
+  // We defensively move its heading and form into .tpw-profile to keep it visually grouped.
+  $(function(){
+    var $profile = $('.tpw-profile').first();
+    if (!$profile.length) return;
+
+    // Look for a recognizable form block
+    var $clubsForm = $('.tpw-member-clubs-field').first();
+    if (!$clubsForm.length) return;
+
+    // If it's already inside the profile container, do nothing
+    if ($clubsForm.closest('.tpw-profile').length) return;
+
+    // Try to bring along a preceding heading (e.g., <h3>Member Clubs</h3>) if present
+    var $heading = $clubsForm.prev();
+    var $frag = $(document.createDocumentFragment());
+    if ($heading && $heading.length && /^H[1-6]$/.test(($heading.prop('tagName')||'').toUpperCase())) {
+      $frag.append($heading);
+    }
+    $frag.append($clubsForm);
+
+    // Append into the end of the profile container
+    $profile.append($frag);
+  });
 })(jQuery);
