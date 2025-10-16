@@ -128,14 +128,40 @@ class TPW_Member_Login_Shortcode {
 
         // Success
         self::reset_rate_limit();
+        // Priority 1: honour redirect_to param from request when present
+        $requested = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+        if ( is_string( $requested ) ) {
+            $requested = trim( (string) wp_unslash( $requested ) );
+        } else {
+            $requested = '';
+        }
+
+        if ( $requested !== '' ) {
+            // decode in case it was added with rawurlencode(), then sanitize
+            $target = esc_url_raw( rawurldecode( $requested ) );
+            if ( $target !== '' ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( '[TPW DEBUG] Member login redirect using redirect_to param: ' . $target );
+                }
+                wp_safe_redirect( $target );
+                exit;
+            }
+            // otherwise fall through to fallback handling
+        }
+
         /**
          * Filter the redirect URL after a successful member login.
+         * Falls back to the configured "Redirect After Login" option handled by core.
          *
          * @param string  $redirect_url The default redirect URL.
          * @param WP_User $user         The authenticated user object.
          */
-        $redirect_url = apply_filters('tpw_member_login_redirect', home_url(), $signon);
-        wp_safe_redirect($redirect_url);
+        $redirect_url = apply_filters( 'tpw_member_login_redirect', home_url(), $signon );
+        $target = esc_url_raw( $redirect_url );
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( '[TPW DEBUG] Member login redirect using fallback destination: ' . $target );
+        }
+        wp_safe_redirect( $target );
         exit;
     }
 

@@ -11,6 +11,13 @@
   <form method="post" class="tpw-login-form">
     <?php wp_nonce_field('tpw_member_login', 'tpw_member_login_nonce'); ?>
     <input type="hidden" name="tpw_member_login_action" value="login" />
+    <?php
+      // Preserve redirect_to from the query string if present so it survives POST
+      $redirect_qs = isset($_GET['redirect_to']) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : '';
+      if ( $redirect_qs !== '' ) :
+    ?>
+      <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_qs ); ?>" />
+    <?php endif; ?>
 
     <div class="tpw-field">
       <label for="tpw-login">Email or Username</label>

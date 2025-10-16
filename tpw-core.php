@@ -116,3 +116,51 @@ add_filter( 'tpw_member_login_redirect', function( $url, $user ) {
     // Fallback: site home
     return home_url();
 }, 50, 2 );
+
+// Core login URL resolver: plugins can override via filter priority; core provides sane defaults.
+// Contract:
+// apply_filters( 'tpw_core/login_url', string $url, string $redirect_to ) => string URL
+add_filter( 'tpw_core/login_url', function( $url, $redirect_to = '' ) {
+    // Honour existing plugin/site overrides
+    if ( is_string( $url ) && $url !== '' ) {
+        return $url;
+    }
+    // 1) Check the configured Default Login Page first
+    $page_id = (int) get_option( 'tpw_core_default_login_page', 0 );
+    if ( $page_id > 0 ) {
+        $p = get_post( $page_id );
+        if ( $p && 'page' === $p->post_type && 'publish' === $p->post_status ) {
+            $permalink = get_permalink( $p );
+            if ( $permalink ) {
+                if ( $redirect_to !== '' ) {
+                    $permalink = add_query_arg( 'redirect_to', rawurlencode( $redirect_to ), $permalink );
+                }
+                return $permalink;
+            }
+        }
+    }
+
+    // 2) Fall back to the registered System Page 'member-login' (front-end form) if available
+    $login_url = '';
+    if ( class_exists( 'TPW_Core_System_Pages' ) ) {
+        $login_url = TPW_Core_System_Pages::get_permalink( 'member-login' );
+        if ( $login_url ) {
+            if ( $redirect_to !== '' ) {
+                $login_url = add_query_arg( 'redirect_to', rawurlencode( $redirect_to ), $login_url );
+            }
+            return $login_url;
+        }
+    }
+
+    // 3) Legacy/site fallback: a conventional front-end path, else WP login
+    $legacy = site_url( '/member-login/' );
+    if ( is_string( $legacy ) && $legacy !== '' ) {
+        if ( $redirect_to !== '' ) {
+            $legacy = add_query_arg( 'redirect_to', rawurlencode( $redirect_to ), $legacy );
+        }
+        return $legacy;
+    }
+
+    // 4) Final fallback: wp-login.php
+    return wp_login_url( $redirect_to );
+}, 10, 2 );

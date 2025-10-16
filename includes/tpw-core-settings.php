@@ -207,12 +207,30 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
     function tpw_core_render_features_tab() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         // Ensure the option exists and is registered
-        $selected = (int) get_option( 'tpw_login_redirect_page_id', 0 );
+        $selected_redirect = (int) get_option( 'tpw_login_redirect_page_id', 0 );
+        $selected_login    = (int) get_option( 'tpw_core_default_login_page', 0 );
         ?>
         <form method="post" action="options.php">
             <?php settings_fields( 'tpw_core_settings' ); ?>
             <table class="form-table" role="presentation">
                 <tbody>
+                    <tr>
+                        <th scope="row"><label for="tpw_core_default_login_page"><?php esc_html_e( 'Default Login Page', 'tpw-core' ); ?></label></th>
+                        <td>
+                            <?php
+                            echo wp_dropdown_pages( [
+                                'name'              => 'tpw_core_default_login_page',
+                                'id'                => 'tpw_core_default_login_page',
+                                'selected'          => $selected_login,
+                                'show_option_none'  => '— Use TPW default —',
+                                'option_none_value' => '0',
+                                'echo'              => 0,
+                                'post_status'       => 'publish',
+                            ] ) ?: '<em>' . esc_html__( 'No published pages found.', 'tpw-core' ) . '</em>';
+                            ?>
+                            <p class="description"><?php esc_html_e( 'Select the page members should be redirected to when login is required. Used by FlexiEvent and other TPW modules.', 'tpw-core' ); ?></p>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="tpw_login_redirect_page_id"><?php esc_html_e( 'Redirect After Login', 'tpw-core' ); ?></label></th>
                         <td>
@@ -220,7 +238,7 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
                             echo wp_dropdown_pages( [
                                 'name'              => 'tpw_login_redirect_page_id',
                                 'id'                => 'tpw_login_redirect_page_id',
-                                'selected'          => $selected,
+                                'selected'          => $selected_redirect,
                                 'show_option_none'  => '— No redirect (default) —',
                                 'option_none_value' => '0',
                                 'echo'              => 0,
@@ -1145,6 +1163,18 @@ add_action( 'admin_init', function () {
 
     // Register login redirect page option
     register_setting( 'tpw_core_settings', 'tpw_login_redirect_page_id', [
+        'type'              => 'integer',
+        'sanitize_callback' => function( $val ) {
+            $id = (int) $val;
+            if ( $id <= 0 ) return 0;
+            $status = get_post_status( $id );
+            return ( $status === 'publish' ) ? $id : 0;
+        },
+        'default'           => 0,
+    ] );
+
+    // Register default login page option
+    register_setting( 'tpw_core_settings', 'tpw_core_default_login_page', [
         'type'              => 'integer',
         'sanitize_callback' => function( $val ) {
             $id = (int) $val;

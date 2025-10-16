@@ -235,16 +235,9 @@ add_action('template_redirect', function() {
                 // Require login for access
                 if ( ! is_user_logged_in() ) {
                     $redirect_to = get_permalink( $post );
-                    $login_url = '';
-                    if ( class_exists( 'TPW_Core_System_Pages' ) ) {
-                        // Use the front-end login page if registered
-                        $login_url = TPW_Core_System_Pages::get_permalink( 'member-login' );
-                        if ( $login_url ) {
-                            $login_url = add_query_arg( 'redirect_to', rawurlencode( $redirect_to ), $login_url );
-                        }
-                    }
-                    if ( empty( $login_url ) ) {
-                        // Fallback to WP login URL
+                    // Resolve via central filter so plugins/sites can override
+                    $login_url = apply_filters( 'tpw_core/login_url', '', $redirect_to );
+                    if ( ! is_string( $login_url ) || $login_url === '' ) {
                         $login_url = wp_login_url( $redirect_to );
                     }
                     wp_safe_redirect( $login_url );
