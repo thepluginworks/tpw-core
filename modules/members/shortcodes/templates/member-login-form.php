@@ -8,14 +8,49 @@
     </div>
   <?php endif; ?>
 
-  <form method="post" class="tpw-login-form">
-    <?php wp_nonce_field('tpw_member_login', 'tpw_member_login_nonce'); ?>
+  <?php
+    // Compute redirect_to from the query string once so both forms can use it
+    $redirect_qs = isset($_GET['redirect_to']) ? (string) wp_unslash( $_GET['redirect_to'] ) : '';
+  ?>
+
+  <?php
+    // If arriving via reset link (action=rp), show the set new password form instead of login/reset-request
+    $is_rp = isset($_GET['action']) && $_GET['action'] === 'rp' && isset($_GET['key']) && isset($_GET['login']);
+  ?>
+
+  <?php if ( $is_rp ) :
+      $key   = isset($_GET['key']) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+      $login = isset($_GET['login']) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : '';
+  ?>
+    <form method="post" class="tpw-set-password-form" action="<?php echo esc_url( $data['action_url'] ?? '' ); ?>">
+      <?php wp_nonce_field('tpw_member_do_reset', 'tpw_member_do_reset_nonce', false, true); ?>
+      <input type="hidden" name="tpw_member_login_action" value="do_reset" />
+      <input type="hidden" name="key" value="<?php echo esc_attr( $key ); ?>" />
+      <input type="hidden" name="login" value="<?php echo esc_attr( $login ); ?>" />
+      <?php if ( ! empty( $redirect_qs ) ) : ?>
+        <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_qs ); ?>" />
+      <?php endif; ?>
+
+      <div class="tpw-field">
+        <label for="tpw-pass1">New password</label>
+        <input type="password" id="tpw-pass1" name="pass1" autocomplete="new-password" required />
+      </div>
+      <div class="tpw-field">
+        <label for="tpw-pass2">Confirm new password</label>
+        <input type="password" id="tpw-pass2" name="pass2" autocomplete="new-password" required />
+      </div>
+
+      <div class="tpw-actions">
+        <button type="submit" class="tpw-btn tpw-btn-primary">Set new password</button>
+      </div>
+    </form>
+
+  <?php else : ?>
+
+  <form method="post" class="tpw-login-form" action="<?php echo esc_url( $data['action_url'] ?? '' ); ?>">
+    <?php wp_nonce_field('tpw_member_login', 'tpw_member_login_nonce', false, true); ?>
     <input type="hidden" name="tpw_member_login_action" value="login" />
-    <?php
-      // Preserve redirect_to from the query string if present so it survives POST
-      $redirect_qs = isset($_GET['redirect_to']) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : '';
-      if ( $redirect_qs !== '' ) :
-    ?>
+    <?php if ( $redirect_qs !== '' ) : ?>
       <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_qs ); ?>" />
     <?php endif; ?>
 
@@ -52,9 +87,17 @@
     </div>
   </form>
 
-  <form method="post" class="tpw-reset-form" style="display:none">
-    <?php wp_nonce_field('tpw_member_reset', 'tpw_member_reset_nonce'); ?>
+  <form method="post" class="tpw-reset-form" style="display:none" action="<?php echo esc_url( $data['action_url'] ?? '' ); ?>">
+    <?php 
+      // Our plugin-specific nonce
+      wp_nonce_field('tpw_member_reset', 'tpw_member_reset_nonce', false, true);
+      // Also include WordPress core lostpassword nonce for broader compatibility
+      wp_nonce_field('lostpassword');
+    ?>
     <input type="hidden" name="tpw_member_login_action" value="reset" />
+    <?php if ( ! empty( $redirect_qs ) ) : ?>
+      <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_qs ); ?>" />
+    <?php endif; ?>
 
     <div class="tpw-field">
       <label for="tpw-identifier">Email or Username</label>
@@ -66,4 +109,5 @@
       <a href="#" class="tpw-back-to-login" data-toggle="tpw-login-form">Back to login</a>
     </div>
   </form>
+  <?php endif; ?>
 </div>

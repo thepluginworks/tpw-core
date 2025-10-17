@@ -9,7 +9,12 @@ class TPW_Member_Login_Shortcode {
         }
         add_shortcode('tpw_member_login', [__CLASS__, 'render_shortcode']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'maybe_enqueue_assets']);
+        // Ensure pages rendering the login form are not cached (prevents stale/invalid nonces)
+        add_action('send_headers', [__CLASS__, 'maybe_disable_cache']);
         add_action('template_redirect', [__CLASS__, 'maybe_handle_post']);
+
+    // Rewrite password reset links in emails to point to front-end /member-login/
+    add_filter('retrieve_password_message', [__CLASS__, 'filter_reset_email_message'], 10, 4);
 
         // Filters for customization
         add_filter('tpw_member_login_messages', [__CLASS__, 'identity'], 10, 1);
@@ -29,9 +34,33 @@ class TPW_Member_Login_Shortcode {
         if (!is_singular()) return;
         global $post; if (!$post) return;
         if (has_shortcode($post->post_content, 'tpw_member_login')) {
+            // Signal common cache plugins to bypass caching this page as early as possible
+            if (!defined('DONOTCACHEPAGE')) {
+                define('DONOTCACHEPAGE', true);
+            }
             $base = TPW_CORE_URL . 'modules/members/shortcodes/';
             wp_enqueue_style('tpw-member-login', $base . 'css/member-login.css', [], '1.0');
             wp_enqueue_script('tpw-member-login', $base . 'js/member-login.js', ['jquery'], '1.0', true);
+        }
+    }
+
+    /**
+     * Send no-cache headers on pages that include the member login shortcode to avoid
+     * caches serving a stale page with expired nonces, especially when a redirect_to
+     * query parameter is present.
+     */
+    public static function maybe_disable_cache() {
+        if (!is_singular()) return;
+        global $post; if (!$post) return;
+        if (has_shortcode($post->post_content, 'tpw_member_login')) {
+            // Signal common cache plugins to bypass caching this page
+            if (!defined('DONOTCACHEPAGE')) {
+                define('DONOTCACHEPAGE', true);
+            }
+            if (!headers_sent()) {
+                // Core helper to send appropriate no-cache headers
+                nocache_headers();
+            }
         }
     }
 
@@ -44,6 +73,8 @@ class TPW_Member_Login_Shortcode {
             self::handle_login_post();
         } elseif ($action === 'reset') {
             self::handle_reset_post();
+        } elseif ($action === 'do_reset') {
+            self::handle_do_reset_post();
         }
     }
 
@@ -166,14 +197,24 @@ class TPW_Member_Login_Shortcode {
     }
 
     private static function handle_reset_post() {
-        if (!isset($_POST['tpw_member_reset_nonce']) || !wp_verify_nonce($_POST['tpw_member_reset_nonce'], 'tpw_member_reset')) {
-            wp_die(__('Security check failed.', 'tpw-core'));
+        $nonce_ok = false;
+        // Primary: our plugin-specific nonce
+        if ( isset($_POST['tpw_member_reset_nonce']) && wp_verify_nonce( $_POST['tpw_member_reset_nonce'], 'tpw_member_reset' ) ) {
+            $nonce_ok = true;
+        }
+        // Fallback: WordPress core 'lostpassword' nonce used on wp-login.php
+        if ( ! $nonce_ok && isset($_POST['_wpnonce']) && wp_verify_nonce( $_POST['_wpnonce'], 'lostpassword' ) ) {
+            $nonce_ok = true;
+        }
+        if ( ! $nonce_ok ) {
+            self::store_message('reset_error', __('Security check failed. Please refresh the page and try again.', 'tpw-core'));
+            self::redirect_back_preserving_redirect();
         }
 
         $identifier = sanitize_text_field($_POST['identifier'] ?? '');
         if ($identifier === '') {
             self::store_message('reset_error', __('Please enter your email or username.', 'tpw-core'));
-            return;
+            self::redirect_back_preserving_redirect();
         }
 
         // Map email to login if needed
@@ -184,7 +225,7 @@ class TPW_Member_Login_Shortcode {
         }
         if (!$user) {
             self::store_message('reset_error', __('We could not find that account.', 'tpw-core'));
-            return;
+            self::redirect_back_preserving_redirect();
         }
 
         // Trigger WordPress password reset flow
@@ -195,6 +236,167 @@ class TPW_Member_Login_Shortcode {
             $message = is_wp_error($result) ? $result->get_error_message() : __('Password reset failed. Please try again later.', 'tpw-core');
             self::store_message('reset_error', $message);
         }
+        self::redirect_back_preserving_redirect();
+    }
+
+    private static function handle_do_reset_post() {
+        // Nonce
+        $nonce_ok = isset($_POST['tpw_member_do_reset_nonce']) && wp_verify_nonce($_POST['tpw_member_do_reset_nonce'], 'tpw_member_do_reset');
+        if ( ! $nonce_ok ) {
+            self::store_message('reset_error', __('Security check failed. Please refresh the page and try again.', 'tpw-core'));
+            $k = sanitize_text_field($_POST['key'] ?? '');
+            $l = sanitize_text_field($_POST['login'] ?? '');
+            self::redirect_back_to_rp($k, $l);
+        }
+
+        $key   = sanitize_text_field($_POST['key'] ?? '');
+        $login = sanitize_text_field($_POST['login'] ?? '');
+        $pass1 = (string) ($_POST['pass1'] ?? '');
+        $pass2 = (string) ($_POST['pass2'] ?? '');
+
+        if ($key === '' || $login === '') {
+            self::store_message('reset_error', __('Invalid reset link. Please request a new password reset.', 'tpw-core'));
+            self::redirect_back_preserving_redirect();
+        }
+        if ($pass1 === '' || $pass2 === '') {
+            self::store_message('reset_error', __('Please enter your new password twice.', 'tpw-core'));
+            self::redirect_back_to_rp($key, $login);
+        }
+        if ($pass1 !== $pass2) {
+            self::store_message('reset_error', __('Passwords do not match.', 'tpw-core'));
+            self::redirect_back_to_rp($key, $login);
+        }
+
+        // Validate the reset key
+        $user = check_password_reset_key($key, $login);
+        if (is_wp_error($user)) {
+            self::store_message('reset_error', $user->get_error_message());
+            self::redirect_back_preserving_redirect();
+        }
+
+        // Set the new password
+        reset_password($user, $pass1);
+        self::store_message('reset_success', __('Your password has been reset. You can now log in.', 'tpw-core'));
+
+        // After successful reset: send the user to the front-end login page, preserving redirect_to.
+        $member_login_url = '';
+        if ( class_exists('TPW_Core_System_Pages') && method_exists('TPW_Core_System_Pages', 'get_permalink') ) {
+            $ml = TPW_Core_System_Pages::get_permalink( 'member-login' );
+            if ( is_string($ml) && $ml !== '' ) $member_login_url = $ml;
+        }
+        if ( $member_login_url === '' ) {
+            $member_login_url = site_url( '/member-login/' );
+        }
+
+        $requested = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+        if ( is_string( $requested ) ) {
+            $requested = trim( (string) wp_unslash( $requested ) );
+        } else {
+            $requested = '';
+        }
+        if ( $requested !== '' ) {
+            $member_login_url = add_query_arg( 'redirect_to', $requested, $member_login_url );
+        }
+        wp_safe_redirect( esc_url_raw( $member_login_url ) );
+        exit;
+    }
+
+    /**
+     * Adjust the password reset email so links point to the front-end /member-login/ page,
+     * preserving the action=rp, key, login, and any redirect_to provided at request-time.
+     */
+    public static function filter_reset_email_message( $message, $key, $user_login, $user_data ) {
+        // Determine the front-end member login URL
+        $member_login_url = '';
+        if ( class_exists('TPW_Core_System_Pages') && method_exists('TPW_Core_System_Pages', 'get_permalink') ) {
+            $ml = TPW_Core_System_Pages::get_permalink( 'member-login' );
+            if ( is_string($ml) && $ml !== '' ) $member_login_url = $ml;
+        }
+        if ( $member_login_url === '' ) {
+            $member_login_url = site_url( '/member-login/' );
+        }
+
+        // Preserve redirect_to if provided during the request that triggered this email
+        $redirect_to = isset($_REQUEST['redirect_to']) ? (string) wp_unslash( $_REQUEST['redirect_to'] ) : '';
+        $redirect_to = is_string($redirect_to) ? trim($redirect_to) : '';
+
+        // Build our replacement link
+        $new_url = add_query_arg( [
+            'action' => 'rp',
+            'key'    => (string) $key,
+            'login'  => (string) $user_login,
+        ], $member_login_url );
+        if ( $redirect_to !== '' ) {
+            $new_url = add_query_arg( 'redirect_to', $redirect_to, $new_url );
+        }
+
+        // Try to detect and replace the original wp-login.php reset URL if present
+        $replaced = false;
+        if ( is_string( $message ) && $message !== '' ) {
+            if ( preg_match_all( '#https?://[^\s\"\']+/wp-login\.php\?[^\s\"\']*#i', $message, $m ) ) {
+                foreach ( $m[0] as $found ) {
+                    // Only replace links that include action=rp
+                    if ( false !== stripos( $found, 'action=rp' ) ) {
+                        // Parse to ensure we preserve key/login if needed (fallback)
+                        $parts = wp_parse_url( $found );
+                        if ( isset($parts['query']) ) {
+                            parse_str( $parts['query'], $qs );
+                            if ( empty($qs['key']) ) { /* keep $key */ }
+                            if ( empty($qs['login']) ) { /* keep $user_login */ }
+                        }
+                        $message = str_replace( $found, $new_url, $message );
+                        $replaced = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ( ! $replaced ) {
+            // If we didn't find the default link, append our link clearly so users get the correct destination
+            $message .= "\n\n" . sprintf( __( 'Reset your password: %s', 'tpw-core' ), $new_url );
+        }
+        return $message;
+    }
+
+    /**
+     * Redirect back to the current page using PRG pattern, preserving redirect_to param if available.
+     */
+    private static function redirect_back_preserving_redirect() {
+        $target = function_exists('get_permalink') ? get_permalink() : home_url('/');
+        $requested = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+        if ( is_string( $requested ) ) {
+            $requested = trim( (string) wp_unslash( $requested ) );
+        } else {
+            $requested = '';
+        }
+        if ( $requested !== '' ) {
+            $target = add_query_arg( 'redirect_to', $requested, $target );
+        }
+        wp_safe_redirect( $target );
+        exit;
+    }
+
+    /**
+     * Redirect back to the rp (set new password) state, preserving key/login and redirect_to.
+     */
+    private static function redirect_back_to_rp( $key, $login ) {
+        $target = function_exists('get_permalink') ? get_permalink() : home_url('/');
+        $args = [ 'action' => 'rp' ];
+        if ( is_string($key) && $key !== '' )  { $args['key'] = $key; }
+        if ( is_string($login) && $login !== '' ) { $args['login'] = $login; }
+        $requested = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+        if ( is_string( $requested ) ) {
+            $requested = trim( (string) wp_unslash( $requested ) );
+        } else {
+            $requested = '';
+        }
+        if ( $requested !== '' ) {
+            $args['redirect_to'] = $requested;
+        }
+        $target = add_query_arg( $args, $target );
+        wp_safe_redirect( $target );
+        exit;
     }
 
     private static function store_message($type, $text) {
@@ -216,9 +418,12 @@ class TPW_Member_Login_Shortcode {
         $template = TPW_CORE_PATH . 'modules/members/shortcodes/templates/member-login-form.php';
         if (file_exists($template)) {
             $redirect = apply_filters('tpw_member_login_redirect', home_url(), wp_get_current_user());
+            // Canonical action URL for forms (avoid posting to a query-string URL like ?redirect_to=...)
+            $action_url = function_exists('get_permalink') ? get_permalink() : home_url('/');
             $data = [
                 'messages' => $messages,
                 'redirect' => $redirect,
+                'action_url' => $action_url,
             ];
             include $template;
         } else {
