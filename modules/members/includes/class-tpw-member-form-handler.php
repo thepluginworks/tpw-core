@@ -28,15 +28,25 @@ class TPW_Member_Form_Handler {
             return;
         }
 
-        $core_fields = TPW_Member_Field_Loader::get_core_fields();
         $enabled_fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 
         $core_data = [];
         $meta_data = [];
 
+        // Core boolean flags that should always be normalized to 0/1
+        $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin' ];
+
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
-            $value = isset($_POST[$key]) ? sanitize_text_field($_POST[$key]) : '';
+            // Always unslash data from superglobals before sanitizing to avoid saving backslashes
+            $raw   = isset($_POST[$key]) ? wp_unslash($_POST[$key]) : '';
+            $value = ($raw !== '') ? sanitize_text_field($raw) : '';
+
+            // Normalize core checkbox flags to explicit 0/1 so unchecked persists as 0
+            if ( $field['is_core'] && ( ($field['type'] ?? '') === 'checkbox' || in_array( $key, $known_core_checkboxes, true ) ) ) {
+                $core_data[$key] = isset($_POST[$key]) ? 1 : 0;
+                continue;
+            }
 
             if ( $field['is_core'] ) {
                 // Prevent overwriting user_id with empty string or NULL
@@ -60,8 +70,8 @@ class TPW_Member_Form_Handler {
         }
 
         // Fallback in case username or email are not enabled fields
-        $core_data['username'] = $core_data['username'] ?? sanitize_user($_POST['username'] ?? '');
-        $core_data['email'] = $core_data['email'] ?? sanitize_email($_POST['email'] ?? '');
+    $core_data['username'] = $core_data['username'] ?? sanitize_user( isset($_POST['username']) ? wp_unslash($_POST['username']) : '' );
+    $core_data['email'] = $core_data['email'] ?? sanitize_email( isset($_POST['email']) ? wp_unslash($_POST['email']) : '' );
 
         error_log('[TPW DEBUG] handle_add_form() triggered');
         if ( empty($core_data['username']) || empty($core_data['email']) ) {
@@ -217,11 +227,13 @@ class TPW_Member_Form_Handler {
             wp_die( __( 'Invalid member ID.', 'tpw-core' ) );
         }
 
-        $core_fields = TPW_Member_Field_Loader::get_core_fields();
         $enabled_fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 
         $core_data = [];
         $meta_data = [];
+
+    // Core boolean flags that should always be normalized to 0/1
+    $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin' ];
 
         // Ensure these IDs are preserved even if not part of enabled fields
         $core_data['user_id'] = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
@@ -238,8 +250,16 @@ class TPW_Member_Form_Handler {
                 continue;
             }
             if (isset($_POST[$key])) {
-                $value = sanitize_text_field($_POST[$key]);
+                // Unslash before sanitizing to prevent persisted backslashes
+                $raw   = wp_unslash($_POST[$key]);
+                $value = sanitize_text_field($raw);
             } else {
+                $value = null;
+            }
+
+            // Normalize core checkbox flags to explicit 0/1 so unchecked persists as 0
+            if ( $field['is_core'] && ( ($field['type'] ?? '') === 'checkbox' || in_array( $key, $known_core_checkboxes, true ) ) ) {
+                $core_data[$key] = isset($_POST[$key]) ? 1 : 0;
                 continue;
             }
 
@@ -251,9 +271,13 @@ class TPW_Member_Form_Handler {
                 if ( ($field['type'] ?? '') === 'date' && $value !== '' ) {
                     $value = self::normalize_date_ddmmyyyy_to_mysql($value);
                 }
-                $core_data[$key] = $value;
+                if ($value !== null) {
+                    $core_data[$key] = $value;
+                }
             } else {
-                $meta_data[$key] = $value ?? '';
+                if ($value !== null) {
+                    $meta_data[$key] = $value ?? '';
+                }
             }
         }
 
