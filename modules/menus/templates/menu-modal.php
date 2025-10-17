@@ -53,7 +53,7 @@ if ( function_exists( 'tpw_core_flag_need_ui_assets' ) ) {
 ?>
 
 <button type="button"
-        class="tpw-menu-modal-trigger"
+        class="tpw-btn tpw-btn-secondary tpw-menu-modal-trigger"
         data-tpw-open="#<?php echo esc_attr( $modal_id ); ?>">
     <?php echo esc_html( $btn_label ); ?>
 </button>
