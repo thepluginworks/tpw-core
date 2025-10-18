@@ -405,7 +405,12 @@ $current_view = $initial_view;
                             $opts = $options_inline;
                         }
                     ?>
-                        <select name="<?php echo esc_attr('adv_sel_'.$bk); ?>" data-field-key="<?php echo esc_attr($bk); ?>"<?php echo $depends_on_inline ? ' data-depends-on="'.esc_attr($depends_on_inline).'" disabled' : ''; ?>>
+                        <?php
+                            // Only disable dependent child selects if no preselected value exists
+                            $is_child_dep = !empty($depends_on_inline);
+                            $disable_child_attr = ($is_child_dep && $val_select === '') ? ' disabled' : '';
+                        ?>
+                        <select name="<?php echo esc_attr('adv_sel_'.$bk); ?>" data-field-key="<?php echo esc_attr($bk); ?>"<?php echo $is_child_dep ? ' data-depends-on="'.esc_attr($depends_on_inline).'"' : ''; ?><?php echo $disable_child_attr; ?>>
                             <option value="">— Any —</option>
                             <?php foreach ($opts as $opt): ?>
                                 <option value="<?php echo esc_attr($opt); ?>" <?php selected($val_select, (string)$opt); ?>><?php echo esc_html($opt); ?></option>
@@ -541,6 +546,8 @@ $current_view = $initial_view;
                                     return { before: current, after: parseInt(sel.value, 10) || 0 };
                     }
                     function readSelectValues(sel){ var out=[]; for(var i=0;i<sel.options.length;i++){ out.push(parseInt(sel.options[i].value,10)); } return out; }
+                    var hasSubmittedAdapt = false; // prevent multiple rapid submits
+                    var isInitialLoad = true; // do not submit on first render
                     function adaptPerPage(){
                         var sel = document.getElementById('tpw-filter-per-page');
                         if (!sel) return;
@@ -570,13 +577,26 @@ $current_view = $initial_view;
                                         if (!valid) { sel.value = String(targetValues[0]); changed = true; delta.after = parseInt(sel.value,10)||0; }
                                     }
                                     // If selection changed due to adaptation, submit form to refresh results count
-                                    if (changed) {
+                                    if (changed && !hasSubmittedAdapt && !isInitialLoad) {
+                                        hasSubmittedAdapt = true;
                                         var form = document.querySelector('.tpw-member-search-form');
                                         if (form) form.submit();
                                     }
                     }
                                 var run = debounce(adaptPerPage, 80);
-                    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+                    // Do not auto-submit on initial load; just recalc options silently
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', function(){
+                            run();
+                            hasSubmittedAdapt = false;
+                            // flip initial flag after a tick so dependent dropdowns can initialize
+                            setTimeout(function(){ isInitialLoad = false; }, 250);
+                        });
+                    } else {
+                        run();
+                        hasSubmittedAdapt = false;
+                        setTimeout(function(){ isInitialLoad = false; }, 250);
+                    }
                     window.addEventListener('resize', run);
                                 var toggle = document.getElementById('tpw-toggle-view-btn');
                             if (toggle){ toggle.addEventListener('click', function(){ setTimeout(run, 150); }); }
@@ -584,9 +604,10 @@ $current_view = $initial_view;
                             var sel = document.getElementById('tpw-filter-per-page');
                             function maybeSubmit(){
                                 if (!sel) return;
+                                if (hasSubmittedAdapt) return;
                                 // Trigger submit only if value changed programmatically and matches a defined option
                                 var form = document.querySelector('.tpw-member-search-form');
-                                if (form) { form.submit(); }
+                                if (form) { if (!isInitialLoad) { hasSubmittedAdapt = true; form.submit(); } }
                             }
                             // Rebuild wrapper overrides selection and we set value; hook after each run
                             var origRun = run;
@@ -658,7 +679,12 @@ $current_view = $initial_view;
                             <div class="tpw-adv-row" style="display:flex; flex-direction:column; gap:6px;">
                                 <label><strong><?php echo esc_html($label); ?></strong></label>
                                 <?php $depends_on_adv = isset($conf['depends_on']) ? sanitize_key($conf['depends_on']) : ''; ?>
-                                <select name="<?php echo esc_attr('adv_sel_'.$key_sane); ?>" data-field-key="<?php echo esc_attr($key_sane); ?>"<?php echo $depends_on_adv ? ' data-depends-on="'.esc_attr($depends_on_adv).'" disabled' : ''; ?>>
+                                <?php
+                                    // Only disable dependent child selects if no preselected value exists
+                                    $is_child_adv = !empty($depends_on_adv);
+                                    $disable_child_adv_attr = ($is_child_adv && $val === '') ? ' disabled' : '';
+                                ?>
+                                <select name="<?php echo esc_attr('adv_sel_'.$key_sane); ?>" data-field-key="<?php echo esc_attr($key_sane); ?>"<?php echo $is_child_adv ? ' data-depends-on="'.esc_attr($depends_on_adv).'"' : ''; ?><?php echo $disable_child_adv_attr; ?>>
                                     <option value="">— Any —</option>
                                     <?php foreach ($options as $opt): ?>
                                         <option value="<?php echo esc_attr($opt); ?>" <?php selected($val, $opt); ?>><?php echo esc_html($opt); ?></option>
@@ -858,6 +884,24 @@ $current_view = $initial_view;
                         setTimeout(() => { bindScope(modal); }, 50);
                     });
                 }
+
+                // Ensure dependent selects with a chosen value are enabled on submit so values are included
+                try {
+                    var mainForm = document.querySelector('.tpw-member-search-form');
+                    if (mainForm){
+                        mainForm.addEventListener('submit', function(){
+                            var sels = mainForm.querySelectorAll('select[data-depends-on]');
+                            sels.forEach(function(s){ if (s.hasAttribute('disabled') && s.value && s.value !== '') { s.removeAttribute('disabled'); } });
+                        });
+                    }
+                    var advForm = document.getElementById('tpw-advanced-search-form');
+                    if (advForm){
+                        advForm.addEventListener('submit', function(){
+                            var sels = advForm.querySelectorAll('select[data-depends-on]');
+                            sels.forEach(function(s){ if (s.hasAttribute('disabled') && s.value && s.value !== '') { s.removeAttribute('disabled'); } });
+                        });
+                    }
+                } catch(e){}
             });
         })();
         </script>
