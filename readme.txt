@@ -2,8 +2,9 @@
 Contributors: thepluginworks
 Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
-Tested up to: 6.5
-Stable tag: 0.3.1
+Tested up to: 6.6
+Requires PHP: 7.4
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,7 +52,8 @@ Yes. You can enable and configure methods like Bank Transfer and Cheque under TP
 == Changelog ==
 
 = 1.0.0 =
-* Initial release.
+* Initial stable public release.
 * RSVP, guest, and payment table logic.
 * Thank you page endpoint and shortcode.
 * BACS and cheque method support.
+* WooCommerce compatibility (HPOS declare).

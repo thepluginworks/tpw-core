@@ -1,0 +1,16 @@
+# Files to exclude when packaging for WordPress.org or release zips
+/.github
+/.vscode
+/tests
+/docs
+/ai-session.md
+/RELEASE.md
+/.git
+/.gitignore
+/*.yml
+/*.yaml
+/*.xml
+/*.dist
+/*.md
+/composer.*
+/phpunit.*

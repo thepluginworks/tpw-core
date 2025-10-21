@@ -1,13 +1,22 @@
 <?php
 /**
  * Plugin Name: TPW Core
+ * Plugin URI: https://thepluginworks.com/
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
  * Author: ThePluginWorks
- * Version: 0.3.4
+ * Author URI: https://thepluginworks.com/
+ * Version: 1.0.0
+ * Text Domain: tpw-core
+ * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
+}
+
+// Define plugin version constant
+if ( ! defined( 'TPW_CORE_VERSION' ) ) {
+    define( 'TPW_CORE_VERSION', '1.0.0' );
 }
 
 // Freemius SDK integration
@@ -17,6 +26,11 @@ tpw_core_fs(); // Explicitly initialize the Freemius SDK
 // Define paths
 define( 'TPW_CORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'TPW_CORE_URL', plugin_dir_url( __FILE__ ) );
+
+// Load plugin textdomain for translations
+add_action( 'init', function() {
+    load_plugin_textdomain( 'tpw-core', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
 
 // Autoload includes
 require_once TPW_CORE_PATH . 'includes/tpw-core-loader.php';

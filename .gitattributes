@@ -1,0 +1,17 @@
+# Exclude development files from export (GitHub release source zip)
+/.github export-ignore
+/.vscode export-ignore
+/tests export-ignore
+/docs export-ignore
+/ai-session.md export-ignore
+/RELEASE.md export-ignore
+/*.yml export-ignore
+/*.yaml export-ignore
+/*.xml export-ignore
+/*.dist export-ignore
+/*.md export-ignore
+/composer.* export-ignore
+/phpunit.* export-ignore
+
+# Keep vendor for production (contains SDKs like Square)
+# Note: Do NOT mark vendor as export-ignore
