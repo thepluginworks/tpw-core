@@ -21,6 +21,10 @@ define( 'TPW_CORE_URL', plugin_dir_url( __FILE__ ) );
 // Autoload includes
 require_once TPW_CORE_PATH . 'includes/tpw-core-loader.php';
 require_once TPW_CORE_PATH . 'includes/emails.php';
+// Cache-control: load early and hook send_headers at priority 0
+add_action( 'plugins_loaded', function() {
+    require_once TPW_CORE_PATH . 'includes/class-tpw-core-cache-control.php';
+}, 0 );
 
 // Activation hook
 register_activation_hook( __FILE__, 'tpw_core_activate' );
