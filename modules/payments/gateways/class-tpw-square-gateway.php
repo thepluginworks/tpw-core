@@ -47,8 +47,16 @@ class TPW_Square_Gateway {
             ]
         );
 
+        // Apply unified surcharge before building the Money object
+        if (class_exists('TPW_Core_Payments')) {
+            $calc = TPW_Core_Payments::tpw_core_calculate_payable_total((float) ($args['amount'] ?? 0), 'square');
+            $charge_amount = (float) $calc['total_with_surcharge'];
+        } else {
+            $charge_amount = (float) ($args['amount'] ?? 0);
+        }
+
         $money = new Money([
-            'amount' => (int) round($args['amount'] * 100),
+            'amount' => (int) round($charge_amount * 100),
             'currency' => 'GBP'
         ]);
 

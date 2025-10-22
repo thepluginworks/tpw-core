@@ -68,11 +68,18 @@ class TPW_Gateway_WooCommerce {
         } else {
             $amount = floatval($amount);
         }
+        // Apply unified surcharge after all external overrides and before fee creation
+        if (class_exists('TPW_Core_Payments')) {
+            $calc = TPW_Core_Payments::tpw_core_calculate_payable_total($amount, 'woocommerce');
+            $amount_with_surcharge = (float) $calc['total_with_surcharge'];
+        } else {
+            $amount_with_surcharge = $amount;
+        }
 
-        $fee = new WC_Order_Item_Fee();
+    $fee = new WC_Order_Item_Fee();
         $fee->set_name('RSVP Payment');
-        $fee->set_amount($amount);
-        $fee->set_total($amount);
+    $fee->set_amount($amount_with_surcharge);
+    $fee->set_total($amount_with_surcharge);
         $fee->set_tax_status('none'); // Ensure no tax blocking
         $order->add_item($fee);
 
@@ -84,8 +91,9 @@ class TPW_Gateway_WooCommerce {
             $order->update_meta_data('tpw_rsvp_payment_id', intval($tpw_payment_id));
             unset($_SESSION['tpw_rsvp_payment_id']);
         }
-        $order->update_meta_data('tpw_payment_method', 'woocommerce');
-        $order->update_meta_data('tpw_rsvp_amount', $amount);
+    $order->update_meta_data('tpw_payment_method', 'woocommerce');
+    // Store surcharge-inclusive amount for confirmation consistency
+    $order->update_meta_data('tpw_rsvp_amount', $amount_with_surcharge);
 
         if ($origin_plugin === 'tpw-rsvp-lodge-meetings') {
             $order->update_meta_data('_order_attribution_source', 'RSVP Checkout');

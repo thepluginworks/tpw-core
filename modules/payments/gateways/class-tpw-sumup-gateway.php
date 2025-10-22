@@ -18,6 +18,11 @@ class TPW_SumUp_Gateway {
     public function create_checkout($amount, $email, $return_url, $currency = 'GBP') {
         $endpoint = 'https://api.sumup.com/v0.1/checkouts';
 
+        // Apply unified surcharge before formatting
+        if (class_exists('TPW_Core_Payments')) {
+            $calc = TPW_Core_Payments::tpw_core_calculate_payable_total((float) $amount, 'sumup');
+            $amount = $calc['total_with_surcharge'];
+        }
         // Ensure $amount is a string formatted with two decimals
         $amount = number_format((float) $amount, 2, '.', '');
 

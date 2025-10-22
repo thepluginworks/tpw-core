@@ -3,6 +3,36 @@
 class TPW_Core_Payments {
 
     /**
+     * Calculate payable total including surcharge for a given payment method.
+     *
+     * No side-effects: only reads options and returns computed values.
+     *
+     * @param float  $amount Base amount before surcharge.
+     * @param string $method Payment method slug (e.g., 'woocommerce','square','sumup','bacs','cheque','cash').
+     * @return array{base_amount:float,surcharge_amount:float,total_with_surcharge:float}
+     */
+    public static function tpw_core_calculate_payable_total( $amount, $method ) {
+        $base = (float) $amount;
+        $method = is_string($method) ? strtolower(trim($method)) : '';
+
+        // Read per-method surcharge configuration from options; default to 0.
+        $percent = (float) get_option( 'tpw_surcharge_' . $method . '_percent', 0 );
+        $fixed   = (float) get_option( 'tpw_surcharge_' . $method . '_fixed', 0 );
+
+        if ( $percent < 0 ) { $percent = 0; }
+        if ( $fixed < 0 ) { $fixed = 0; }
+
+        $surcharge = ($base * ($percent / 100.0)) + $fixed;
+        $total     = $base + $surcharge;
+
+        return [
+            'base_amount'           => $base,
+            'surcharge_amount'      => $surcharge,
+            'total_with_surcharge'  => $total,
+        ];
+    }
+
+    /**
      * Create a new payment entry in the tpw_rsvp_payments table.
      *
      * @param array $args {
@@ -103,6 +133,12 @@ class TPW_Core_Payments {
             if ($existing) {
                 return ['success' => false, 'error' => 'Duplicate payment exists'];
             }
+        }
+
+        // Apply surcharge for offline methods only (BACS, Cheque, Cash) right before persisting.
+        if ( isset($data['payment_method']) && in_array($data['payment_method'], ['bacs','cheque','cash'], true) ) {
+            $calc = self::tpw_core_calculate_payable_total( (float) $data['amount'], $data['payment_method'] );
+            $data['amount'] = $calc['total_with_surcharge'];
         }
 
         error_log('[TPW DEBUG] Inserting payment with data: ' . print_r([

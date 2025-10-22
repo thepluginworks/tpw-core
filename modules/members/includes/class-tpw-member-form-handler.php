@@ -1,6 +1,49 @@
 <?php
 
 class TPW_Member_Form_Handler {
+    /**
+     * Determine if the current user is allowed to manage members.
+     * Aligns with AJAX permissions (admins always, optionally committee based on setting).
+     */
+    protected static function user_can_manage() {
+        // WP admins always allowed
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+        // Optional: allow committee members to manage if setting enabled
+        $setting = get_option( 'tpw_members_manage_access', 'admins_only' );
+        if ( $setting === 'admins_committee' && is_user_logged_in() ) {
+            if ( ! class_exists( 'TPW_Member_Access' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+            }
+            $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
+            if ( $m && ! empty( $m->is_committee ) && (int) $m->is_committee === 1 ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the current request is within the Manage Members page context.
+     * Uses presence of the [tpw_manage_members] shortcode on the current page content
+     * instead of relying on a hardcoded slug.
+     */
+    protected static function is_manage_members_context() {
+        if ( function_exists('is_page') && ! is_page() ) {
+            return false;
+        }
+        global $post;
+        if ( ! $post || ! isset( $post->post_content ) ) {
+            return false;
+        }
+        $content = (string) $post->post_content;
+        if ( function_exists( 'has_shortcode' ) ) {
+            return has_shortcode( $content, 'tpw_manage_members' );
+        }
+        // Fallback: simple substring check if has_shortcode is not available
+        return ( strpos( $content, '[tpw_manage_members' ) !== false );
+    }
 
     protected static function normalize_status( $status ) {
         $map = [
@@ -21,11 +64,13 @@ class TPW_Member_Form_Handler {
 
     public static function handle_add_form() {
         if ( ! isset($_POST['tpw_add_member_nonce']) || ! wp_verify_nonce($_POST['tpw_add_member_nonce'], 'tpw_add_member_action') ) {
-            return;
+            error_log('[TPW Members] Add form blocked: invalid or missing nonce.');
+            wp_die( 'Invalid or expired form submission. Please refresh the page and try again.', 403 );
         }
 
-        if ( ! current_user_can('manage_options') ) {
-            return;
+        if ( ! self::user_can_manage() ) {
+            error_log('[TPW Members] Add form blocked: insufficient capabilities for current user.');
+            wp_die( 'You do not have permission to perform this action.', 403 );
         }
 
         $enabled_fields = TPW_Member_Field_Loader::get_all_enabled_fields();
@@ -215,11 +260,13 @@ class TPW_Member_Form_Handler {
     }
     public static function handle_edit_form() {
         if ( ! isset($_POST['tpw_edit_member_nonce']) || ! wp_verify_nonce($_POST['tpw_edit_member_nonce'], 'tpw_edit_member_action') ) {
-            return;
+            error_log('[TPW Members] Edit form blocked: invalid or missing nonce.');
+            wp_die( 'Invalid or expired form submission. Please refresh the page and try again.', 403 );
         }
 
-        if ( ! current_user_can('manage_options') ) {
-            return;
+        if ( ! self::user_can_manage() ) {
+            error_log('[TPW Members] Edit form blocked: insufficient capabilities for current user.');
+            wp_die( 'You do not have permission to perform this action.', 403 );
         }
 
         $member_id = isset($_POST['member_id']) ? intval($_POST['member_id']) : 0;
@@ -484,14 +531,13 @@ class TPW_Member_Form_Handler {
     }
     public static function handle_delete_request() {
         if (
-            ! is_page('manage-members') ||
             ! isset($_GET['action'], $_GET['id']) ||
             $_GET['action'] !== 'delete'
         ) {
             return;
         }
 
-        if ( ! current_user_can('manage_options') ) {
+        if ( ! self::user_can_manage() ) {
             return;
         }
 
@@ -528,27 +574,25 @@ class TPW_Member_Form_Handler {
         exit;
     }
     public static function maybe_handle_edit_form() {
+        // Route edit handling dynamically by detecting the presence of the edit nonce
         if (
-            is_page('manage-members') &&
-            isset($_GET['action']) &&
-            $_GET['action'] === 'edit_form' &&
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
-            isset($_POST['tpw_edit_member_nonce']) &&
-            wp_verify_nonce($_POST['tpw_edit_member_nonce'], 'tpw_edit_member_action')
+            self::is_manage_members_context() &&
+            isset($_POST['tpw_edit_member_nonce'])
         ) {
+            // Let handle_edit_form() perform nonce/cap checks and detailed validation
             self::handle_edit_form();
         }
     }
     public static function maybe_handle_add_form() {
+        // Route add handling dynamically by detecting the presence of the add nonce
         if (
-            is_page('manage-members') &&
-            isset($_GET['action']) &&
-            $_GET['action'] === 'add' &&
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
-            isset($_POST['tpw_add_member_nonce']) &&
-            wp_verify_nonce($_POST['tpw_add_member_nonce'], 'tpw_add_member_action')
+            self::is_manage_members_context() &&
+            isset($_POST['tpw_add_member_nonce'])
         ) {
-            error_log('[TPW DEBUG] maybe_handle_add_form() passed all checks');
+            error_log('[TPW DEBUG] maybe_handle_add_form() detected add nonce and context');
+            // Let handle_add_form() perform nonce/cap checks and detailed validation
             self::handle_add_form();
         }
     }

@@ -20,17 +20,45 @@ class TPW_Cash_Settings {
 
     public function register_cash_settings() {
         register_setting('tpw_cash_settings_group', 'tpw_cash_message');
+        // Surcharge fields
+        register_setting('tpw_cash_settings_group', 'tpw_surcharge_cash_percent', [
+            'sanitize_callback' => [$this, 'sanitize_surcharge_value']
+        ]);
+        register_setting('tpw_cash_settings_group', 'tpw_surcharge_cash_fixed', [
+            'sanitize_callback' => [$this, 'sanitize_surcharge_value']
+        ]);
+    }
+
+    public function sanitize_surcharge_value($val) {
+        $v = floatval($val);
+        if ($v < 0) { $v = 0; }
+        return round($v, 2);
     }
 
     public function render_cash_settings_page() {
         ?>
     <div class="tpw-admin-ui"><div class="wrap">
             <h1>Cash Payment Settings</h1>
+            <?php if ( isset($_GET['settings-updated']) && $_GET['settings-updated'] ) : ?>
+                <div class="notice notice-success is-dismissible"><p>Surcharge settings updated successfully.</p></div>
+            <?php endif; ?>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('tpw_cash_settings_group');
                 do_settings_sections('tpw_cash_settings_group');
                 $message = get_option('tpw_cash_message', '');
+                // Determine currency symbol from Core settings or fallback
+                $currency_symbol = '£';
+                if ( function_exists('tpw_core_get_currency_symbol') ) {
+                    $currency_symbol = tpw_core_get_currency_symbol();
+                } else {
+                    $flex = get_option('flexievent_settings', []);
+                    if ( is_array($flex) && ! empty($flex['currency_symbol']) ) {
+                        $currency_symbol = $flex['currency_symbol'];
+                    } else {
+                        $currency_symbol = get_option('tpw_currency_symbol', '£');
+                    }
+                }
                 ?>
                 <table class="form-table">
                     <tr valign="top">
@@ -38,6 +66,18 @@ class TPW_Cash_Settings {
                         <td>
                             <textarea name="tpw_cash_message" id="tpw_cash_message" rows="6" class="large-text"><?php echo esc_textarea($message); ?></textarea>
                             <p class="description">This message will be shown on the checkout, thank you page, and confirmation email.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_surcharge_cash_percent">Surcharge (%)</label></th>
+                        <td>
+                            <input type="number" name="tpw_surcharge_cash_percent" id="tpw_surcharge_cash_percent" step="0.01" min="0" value="<?php echo esc_attr( get_option('tpw_surcharge_cash_percent', 0) ); ?>" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_surcharge_cash_fixed"><?php printf( esc_html__( 'Fixed (%s)', 'tpw-core' ), esc_html( $currency_symbol ) ); ?></label></th>
+                        <td>
+                            <input type="number" name="tpw_surcharge_cash_fixed" id="tpw_surcharge_cash_fixed" step="0.01" min="0" value="<?php echo esc_attr( get_option('tpw_surcharge_cash_fixed', 0) ); ?>" />
                         </td>
                     </tr>
                 </table>

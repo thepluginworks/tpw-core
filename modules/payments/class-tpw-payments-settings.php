@@ -43,6 +43,13 @@ class TPW_Payments_Settings {
         register_setting('tpw_payment_settings', 'tpw_square_access_token');
         register_setting('tpw_payment_settings', 'tpw_square_location_id');
         register_setting('tpw_payment_settings', 'tpw_square_sandbox_mode');
+        // Square surcharge fields
+        register_setting('tpw_payment_settings', 'tpw_surcharge_square_percent', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_surcharge_value']
+        ]);
+        register_setting('tpw_payment_settings', 'tpw_surcharge_square_fixed', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_surcharge_value']
+        ]);
     }
 
     public static function render_page() {
@@ -51,6 +58,12 @@ class TPW_Payments_Settings {
 
     public static function render_square_page() {
         include plugin_dir_path(__FILE__) . '/views/square-settings-page.php';
+    }
+
+    public static function sanitize_surcharge_value($val) {
+        $v = floatval($val);
+        if ($v < 0) { $v = 0; }
+        return round($v, 2);
     }
 }
 

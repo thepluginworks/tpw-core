@@ -81,6 +81,25 @@ class TPW_Core_Activator {
 
         update_option( 'flexievent_settings', $settings );
 
+        // Seed default surcharge options (percent and fixed) for all supported methods
+        try {
+            $methods = [ 'woocommerce', 'square', 'sumup', 'bacs', 'cheque', 'cash' ];
+            foreach ( $methods as $m ) {
+                $k_percent = 'tpw_surcharge_' . $m . '_percent';
+                $k_fixed   = 'tpw_surcharge_' . $m . '_fixed';
+                if ( false === get_option( $k_percent, false ) ) {
+                    add_option( $k_percent, 0 );
+                }
+                if ( false === get_option( $k_fixed, false ) ) {
+                    add_option( $k_fixed, 0 );
+                }
+            }
+        } catch ( \Throwable $e ) {
+            if ( function_exists( 'error_log' ) ) {
+                error_log( 'TPW Core activation: surcharge defaults setup skipped - ' . $e->getMessage() );
+            }
+        }
+
         // Migrate legacy option 'tpw_member_viewable_fields' to new visibility table
         try {
             global $wpdb;
