@@ -32,6 +32,9 @@ add_action( 'init', function() {
     load_plugin_textdomain( 'tpw-core', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 } );
 
+// Load System Pages scaffold
+require_once TPW_CORE_PATH . 'includes/class-tpw-core-system-pages.php';
+
 // Autoload includes
 require_once TPW_CORE_PATH . 'includes/tpw-core-loader.php';
 require_once TPW_CORE_PATH . 'includes/emails.php';

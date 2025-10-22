@@ -297,7 +297,6 @@ class TPW_Core_Activator {
             }
         }
 
-        require_once TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages.php';
         if ( class_exists( 'TPW_Core_System_Pages' ) ) {
             TPW_Core_System_Pages::ensure_tables();
             // Ensure key system pages exist
