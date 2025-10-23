@@ -346,9 +346,9 @@ add_shortcode('tpw_manage_members', function() {
         $msg = sanitize_text_field( $_GET['msg'] );
         $text = '';
         if ( $msg === 'photo_deleted' ) {
-            $text = 'Member photo deleted.';
+            $text = esc_html__( 'Member photo deleted.', 'tpw-core' );
         } elseif ( $msg === 'photo_replaced' ) {
-            $text = 'Member photo updated.';
+            $text = esc_html__( 'Member photo updated.', 'tpw-core' );
         }
         if ( $text !== '' ) {
             echo '<div class="notice notice-success" style="margin:10px 0;"><p>' . esc_html($text) . '</p></div>';
@@ -359,7 +359,7 @@ add_shortcode('tpw_manage_members', function() {
 
     // If the user cannot manage and also isn't eligible to view, block entirely
     if ( ! $can_manage && ! $can_view_directory ) {
-        return '<div class="tpw-error">Access Denied</div>';
+        return '<div class="tpw-error">' . esc_html__( 'Access Denied', 'tpw-core' ) . '</div>';
     }
 
     // Allow importer include when admin only

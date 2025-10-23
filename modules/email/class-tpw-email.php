@@ -2,6 +2,10 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class TPW_Email {
+    // Security hygiene: In wrap_html(), the variables $logo_html, $title_html, and $body
+    // are constructed from sanitized sources (logo src via esc_url/esc_attr, title via esc_html,
+    // and message body via wp_kses_post + wpautop). They are therefore safe to echo in the
+    // template block without additional escaping.
     /**
      * Send an HTML email with optional attachments and optional copy to sender.
      *

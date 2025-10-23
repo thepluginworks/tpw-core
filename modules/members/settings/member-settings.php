@@ -139,20 +139,20 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
 ?>
 <div class="tpw-member-settings">
     <div class="tpw-settings-card">
-        <h2>Member Settings</h2>
+    <h2><?php echo esc_html__( 'Member Settings', 'tpw-core' ); ?></h2>
         <?php tpw_members_render_settings_tabs( $current_tab ); ?>
         <h3>
             <?php
             if ( $current_tab === 'general' ) {
-                echo 'General Settings';
+                echo esc_html__( 'General Settings', 'tpw-core' );
             } elseif ( $current_tab === 'profile' ) {
-                echo 'Member Profile';
+                echo esc_html__( 'Member Profile', 'tpw-core' );
             } elseif ( $current_tab === 'postcodes' ) {
-                echo 'Postcode Lookup';
+                echo esc_html__( 'Postcode Lookup', 'tpw-core' );
             } elseif ( $current_tab === 'help' ) {
-                echo 'Help';
+                echo esc_html__( 'Help', 'tpw-core' );
             } else {
-                echo 'Member Settings';
+                echo esc_html__( 'Member Settings', 'tpw-core' );
             }
             ?>
         </h3>

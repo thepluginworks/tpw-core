@@ -543,7 +543,7 @@ class TPW_Member_Form_Handler {
 
         $member_id = intval($_GET['id']);
         if ( ! $member_id ) {
-            echo '<div class="tpw-error">Invalid member ID.</div>';
+            echo '<div class="tpw-error">' . esc_html__( 'Invalid member ID.', 'tpw-core' ) . '</div>';
             return;
         }
 
@@ -551,7 +551,7 @@ class TPW_Member_Form_Handler {
         $member = $controller->get_member($member_id);
 
         if ( ! $member ) {
-            echo '<div class="tpw-error">Member not found.</div>';
+            echo '<div class="tpw-error">' . esc_html__( 'Member not found.', 'tpw-core' ) . '</div>';
             return;
         }
 

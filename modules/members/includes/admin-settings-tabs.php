@@ -27,13 +27,13 @@ if ( ! function_exists( 'tpw_members_render_settings_tabs' ) ) {
 		$GLOBALS['base_url_for_tpw_tabs'] = $base_url;
 		$GLOBALS['active_tab_for_tpw_tabs'] = $active;
 
-		echo '<h3 class="tpw-tabs">';
-		echo $mk('General', 'general', [ 'action' => 'settings', 'tab' => 'general' ]);
-		echo $mk('Field Settings', 'field_settings', [ 'action' => 'field_settings' ]);
-		echo $mk('Directory Field Visibility', 'visibility', [ 'action' => 'member-field-visibility' ]);
-		echo $mk('Member Profile', 'profile', [ 'action' => 'settings', 'tab' => 'profile' ]);
-		echo $mk('Postcodes', 'postcodes', [ 'action' => 'settings', 'tab' => 'postcodes' ]);
-		echo $mk('Help', 'help', [ 'action' => 'settings', 'tab' => 'help' ]);
-		echo '</h3>';
+	echo '<h3 class="tpw-tabs">';
+	echo $mk( __( 'General', 'tpw-core' ), 'general', [ 'action' => 'settings', 'tab' => 'general' ] );
+	echo $mk( __( 'Field Settings', 'tpw-core' ), 'field_settings', [ 'action' => 'field_settings' ] );
+	echo $mk( __( 'Directory Field Visibility', 'tpw-core' ), 'visibility', [ 'action' => 'member-field-visibility' ] );
+	echo $mk( __( 'Member Profile', 'tpw-core' ), 'profile', [ 'action' => 'settings', 'tab' => 'profile' ] );
+	echo $mk( __( 'Postcodes', 'tpw-core' ), 'postcodes', [ 'action' => 'settings', 'tab' => 'postcodes' ] );
+	echo $mk( __( 'Help', 'tpw-core' ), 'help', [ 'action' => 'settings', 'tab' => 'help' ] );
+	echo '</h3>';
 	}
 }

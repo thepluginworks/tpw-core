@@ -51,10 +51,10 @@ add_shortcode('tpw_member_profile', function(){
 
     ob_start();
     echo '<div class="tpw-profile">';
-    echo '<h2>My Profile</h2>';
+  echo '<h2>' . esc_html__( 'My Profile', 'tpw-core' ) . '</h2>';
 
     echo '<div class="tpw-table">';
-    echo '  <div class="tpw-table-header"><div class="tpw-table-cell">Field</div><div class="tpw-table-cell">Value</div><div class="tpw-table-cell">&nbsp;</div></div>';
+  echo '  <div class="tpw-table-header"><div class="tpw-table-cell">' . esc_html__( 'Field', 'tpw-core' ) . '</div><div class="tpw-table-cell">' . esc_html__( 'Value', 'tpw-core' ) . '</div><div class="tpw-table-cell">&nbsp;</div></div>';
 
     if ( empty($viewable) ) {
       // When no viewable fields are configured, show no rows and display a simple note.
@@ -102,7 +102,7 @@ add_shortcode('tpw_member_profile', function(){
   echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
     echo '  <div class="tpw-table-cell">';
     if ( in_array( $key, $editable, true ) ) {
-  echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">Edit</button>';
+  echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">' . esc_html__( 'Edit', 'tpw-core' ) . '</button>';
     } else {
       echo '&nbsp;';
     }
@@ -117,7 +117,7 @@ add_shortcode('tpw_member_profile', function(){
     ) {
       $raw = (string) ($member->whi_updated ?? '');
       $disp = $raw !== '' ? tpw_format_date( $raw ) : '';
-      echo '<div class="tpw-table-row"><div class="tpw-table-cell"></div><div class="tpw-table-cell"><em>Last updated: ' . esc_html($disp ?: '—') . '</em></div><div class="tpw-table-cell"></div></div>';
+      echo '<div class="tpw-table-row"><div class="tpw-table-cell"></div><div class="tpw-table-cell"><em>' . esc_html__( 'Last updated:', 'tpw-core' ) . ' ' . esc_html($disp ?: '—') . '</em></div><div class="tpw-table-cell"></div></div>';
     }
     }
   echo '</div>';
@@ -157,7 +157,7 @@ add_shortcode('tpw_member_profile', function(){
     // Enqueue and localize assets
     $handle = 'tpw-member-profile';
     wp_enqueue_script( $handle, plugins_url('js/member-profile.js', __FILE__), ['jquery'], filemtime( plugin_dir_path(__FILE__) . 'js/member-profile.js' ), true );
-    wp_localize_script( $handle, 'TPW_MEMBER_PROFILE', [
+  wp_localize_script( $handle, 'TPW_MEMBER_PROFILE', [
         'nonce'   => wp_create_nonce('tpw_member_profile_update'),
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],

@@ -67,6 +67,25 @@ Security notes
 
 
 
+## AJAX handlers — required security pattern
+
+When adding new AJAX endpoints in TPW Core or related plugins, follow this pattern consistently:
+
+- Verify nonce with `check_ajax_referer( 'your_action_nonce' )` at the top of the handler. For GET-only endpoints, use `check_ajax_referer( 'your_action_nonce', 'nonce' )` to read a named parameter.
+- Check permissions before doing anything: use `current_user_can( 'manage_options' )` or a module-specific gate (e.g., TPW_Member_Access flags). Fail fast if unauthorized.
+- Sanitize every input. Prefer specific sanitizers:
+	- `sanitize_text_field()` for short text
+	- `sanitize_email()`, `sanitize_key()`, `absint()` etc. where appropriate
+	- `wp_kses_post()` for limited HTML, and `wp_unslash()` when reading from `$_POST`
+- Return JSON using the standard helpers only:
+	- `wp_send_json_success( $data )` on success
+	- `wp_send_json_error( $message_or_data )` on failures
+
+Notes:
+- Never echo raw output in AJAX; always terminate with one of the helpers above (they call `wp_die()` for you).
+- Document the expected parameters and required capability in code comments near the handler.
+
+
 
 ## Accessing Payment Settings
 

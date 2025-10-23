@@ -155,7 +155,7 @@ class TPW_Member_CSV_Importer {
         }
 
         if ( empty( $csv_data ) || count( $csv_data ) < 2 ) {
-            echo '<div class="notice notice-warning"><p>No data found in CSV file.</p></div>';
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'No data found in CSV file.', 'tpw-core' ) . '</p></div>';
             return;
         }
 
@@ -163,8 +163,8 @@ class TPW_Member_CSV_Importer {
         wp_nonce_field('tpw_csv_upload', 'tpw_csv_nonce');
         echo '<input type="hidden" name="csv_uploaded" value="1">';
         echo '<input type="hidden" name="temp_csv_file" value="' . esc_attr($temp_file) . '">';
-        echo '<h2>Map CSV Columns to Member Fields</h2>';
-        echo '<h3>Preview CSV Data</h3>';
+    echo '<h2>' . esc_html__( 'Map CSV Columns to Member Fields', 'tpw-core' ) . '</h2>';
+    echo '<h3>' . esc_html__( 'Preview CSV Data', 'tpw-core' ) . '</h3>';
         echo '<div style="max-height: 300px; overflow: auto; border: 1px solid #ccc; margin-bottom: 1em;">';
         echo '<table class="widefat" style="min-width: 1000px;"><thead><tr>';
         foreach ($headers as $header) {
@@ -180,8 +180,8 @@ class TPW_Member_CSV_Importer {
         }
         echo '</tbody></table>';
         echo '</div>';
-        echo '<table class="widefat fixed">';
-        echo '<thead><tr><th>CSV Column</th><th>Map To Field</th></tr></thead><tbody>';
+    echo '<table class="widefat fixed">';
+    echo '<thead><tr><th>' . esc_html__( 'CSV Column', 'tpw-core' ) . '</th><th>' . esc_html__( 'Map To Field', 'tpw-core' ) . '</th></tr></thead><tbody>';
 
         global $wpdb;
         $fields_table = $wpdb->prefix . 'tpw_field_settings';
@@ -212,7 +212,7 @@ class TPW_Member_CSV_Importer {
             echo '<td>';
             $last_map = get_transient('tpw_last_csv_mapping_' . get_current_user_id());
             echo '<select name="field_map[' . $index . ']">';
-            echo '<option value="">-- Select Field --</option>';
+            echo '<option value="">' . esc_html__( '-- Select Field --', 'tpw-core' ) . '</option>';
 
             foreach ( $fields as $field ) {
                 $locked_fields = ['username', 'first_name', 'surname', 'status'];
@@ -237,15 +237,15 @@ class TPW_Member_CSV_Importer {
         echo '</tbody></table>';
     // Dedupe behavior controls
     echo '<p style="margin-top:12px;">';
-    echo '<strong>On duplicate users:</strong><br>';
-    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="dedupe_action" value="skip" checked> Skip record if user exists (default)</label>';
-    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="dedupe_action" value="update"> Update user if exists</label>';
-    echo '<span class="description">Duplicates are detected by email. For rows without email, username is used (fallback to matching First Name + Surname).</span>';
+    echo '<strong>' . esc_html__( 'On duplicate users:', 'tpw-core' ) . '</strong><br>';
+    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="dedupe_action" value="skip" checked> ' . esc_html__( 'Skip record if user exists (default)', 'tpw-core' ) . '</label>';
+    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="dedupe_action" value="update"> ' . esc_html__( 'Update user if exists', 'tpw-core' ) . '</label>';
+    echo '<span class="description">' . esc_html__( 'Duplicates are detected by email. For rows without email, username is used (fallback to matching First Name + Surname).', 'tpw-core' ) . '</span>';
     echo '</p>';
         echo '<p>';
-        echo '<label><input type="checkbox" name="dry_run" value="1"> Simulation mode – don’t actually import</label>';
+        echo '<label><input type="checkbox" name="dry_run" value="1"> ' . esc_html__( 'Simulation mode – don’t actually import', 'tpw-core' ) . '</label>';
         echo '</p>';
-        echo '<p><button type="submit" class="button button-primary">Import Members</button></p>';
+        echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Import Members', 'tpw-core' ) . '</button></p>';
         echo '</form>';
 
         $this->render_notices();
@@ -253,10 +253,10 @@ class TPW_Member_CSV_Importer {
 
     public function process_mapped_import() {
         if ( ! isset($_POST['tpw_csv_nonce']) || ! wp_verify_nonce($_POST['tpw_csv_nonce'], 'tpw_csv_upload') ) {
-            echo '<div class="notice notice-error"><p>Security check failed. Please reload the page and try again.</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'Security check failed. Please reload the page and try again.', 'tpw-core' ) . '</p></div>';
             return;
         }
-        echo '<div class="notice notice-info"><p>Starting import process...</p></div>';
+        echo '<div class="notice notice-info"><p>' . esc_html__( 'Starting import process...', 'tpw-core' ) . '</p></div>';
 
         $is_dry_run = isset($_POST['dry_run']) && $_POST['dry_run'] === '1';
         $dedupe_action = (isset($_POST['dedupe_action']) && $_POST['dedupe_action'] === 'update') ? 'update' : 'skip';
@@ -270,18 +270,18 @@ class TPW_Member_CSV_Importer {
             error_log('field_map present: ' . (isset($_POST['field_map']) ? 'yes' : 'no'));
             error_log('temp_csv_file present: ' . (isset($_POST['temp_csv_file']) ? 'yes' : 'no'));
             error_log('temp_csv_file exists: ' . (file_exists($_POST['temp_csv_file']) ? 'yes' : 'no'));
-            echo '<div class="notice notice-error"><p>CSV file not found or upload expired. Please try again.</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'CSV file not found or upload expired. Please try again.', 'tpw-core' ) . '</p></div>';
             return;
         }
 
         $file = $_POST['temp_csv_file'];
         if (!is_readable($file)) {
-            echo '<div class="notice notice-error"><p>CSV file is not readable.</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'CSV file is not readable.', 'tpw-core' ) . '</p></div>';
             error_log('CSV file is not readable at: ' . $file);
             return;
         }
         if ( ! is_readable( $file ) ) {
-            echo '<div class="notice notice-error"><p>Unable to read the CSV file.</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'Unable to read the CSV file.', 'tpw-core' ) . '</p></div>';
             error_log('CSV file not readable: ' . $file);
             return;
         }
@@ -333,7 +333,7 @@ class TPW_Member_CSV_Importer {
         @unlink( $file );
 
         if ( empty( $csv_data ) || count( $csv_data ) < 2 ) {
-            echo '<div class="notice notice-warning"><p>No data found in CSV file.</p></div>';
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'No data found in CSV file.', 'tpw-core' ) . '</p></div>';
             return;
         }
 
@@ -563,10 +563,10 @@ class TPW_Member_CSV_Importer {
             }
         }
 
-        echo '<div class="notice notice-success"><p>Imported ' . $imported . ' members successfully.</p></div>';
+        echo '<div class="notice notice-success"><p>' . sprintf( esc_html__( 'Imported %d members successfully.', 'tpw-core' ), (int) $imported ) . '</p></div>';
         if ( ! empty($import_summary) ) {
-            echo '<h3>Import Summary</h3>';
-            echo '<table class="widefat"><thead><tr><th>Email</th><th>Status</th></tr></thead><tbody>';
+            echo '<h3>' . esc_html__( 'Import Summary', 'tpw-core' ) . '</h3>';
+            echo '<table class="widefat"><thead><tr><th>' . esc_html__( 'Email', 'tpw-core' ) . '</th><th>' . esc_html__( 'Status', 'tpw-core' ) . '</th></tr></thead><tbody>';
             foreach ($import_summary as $summary) {
                 echo '<tr>';
                 echo '<td>' . esc_html($summary['email']) . '</td>';
@@ -583,19 +583,19 @@ class TPW_Member_CSV_Importer {
     }
 
     private function render_upload_form() {
-        echo '<h2>Import Members from CSV</h2>';
+    echo '<h2>' . esc_html__( 'Import Members from CSV', 'tpw-core' ) . '</h2>';
         echo '<form method="post" enctype="multipart/form-data">';
         wp_nonce_field('tpw_csv_upload', 'tpw_csv_nonce');
         echo '<p>';
-        echo '<label for="csv_file">Choose CSV File:</label><br>';
+    echo '<label for="csv_file">' . esc_html__( 'Choose CSV File:', 'tpw-core' ) . '</label><br>';
         echo '<input type="file" name="csv_file" id="csv_file" required>';
         echo '</p>';
         echo '<p>';
-        echo '<label><input type="checkbox" name="has_headers" checked> First row contains column headers</label>';
+    echo '<label><input type="checkbox" name="has_headers" checked> ' . esc_html__( 'First row contains column headers', 'tpw-core' ) . '</label>';
         echo '</p>';
-        echo '<p><button type="submit" class="button button-primary">Upload and Continue</button></p>';
+    echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Upload and Continue', 'tpw-core' ) . '</button></p>';
         echo '<p>';
-        echo '<a href="' . esc_url( plugins_url( 'modules/members/assets/sample-members-template.csv', TPW_CORE_FILE ) ) . '" class="button">Download Sample CSV Template</a>';
+    echo '<a href="' . esc_url( plugins_url( 'modules/members/assets/sample-members-template.csv', TPW_CORE_FILE ) ) . '" class="button">' . esc_html__( 'Download Sample CSV Template', 'tpw-core' ) . '</a>';
         echo '</p>';
         echo '</form>';
     }

@@ -56,7 +56,7 @@ class TPW_Core_Create_Menu {
         if (class_exists('TPW_Menus_Admin')) {
             TPW_Menus_Admin::render_menu_page();
         } else {
-            echo 'Dining menu admin class not found.';
+            echo esc_html__( 'Dining menu admin class not found.', 'tpw-core' );
         }
     }
 }
