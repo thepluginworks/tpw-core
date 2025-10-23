@@ -211,7 +211,7 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
 
         /**
          * Return a list of all known system pages with basic details.
-         * Each item: (object){ slug, title, wp_page_id }
+         * Each item: (object){ slug, title, wp_page_id, plugin, required }
          * @return array<int,object>
          */
         public static function get_all() {
@@ -224,6 +224,8 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
                     'slug'       => (string) $slug,
                     'title'      => (string) ( $def['title'] ?? ucwords( str_replace( '-', ' ', $slug ) ) ),
                     'wp_page_id' => (int) $pid,
+                    'plugin'     => (string) ( $def['plugin'] ?? '' ),
+                    'required'   => (int) ( $def['required'] ?? 0 ),
                 ];
             }
             return $out;
