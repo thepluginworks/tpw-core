@@ -66,7 +66,7 @@ if ( function_exists( 'tpw_core_flag_need_ui_assets' ) ) {
             <h2 id="<?php echo esc_attr( $modal_id ); ?>-title" class="tpw-modal__title">
                 <?php echo esc_html( $title ); ?>
             </h2>
-            <button type="button" class="tpw-modal__close" aria-label="<?php esc_attr_e('Close menu', 'tpw-core'); ?>" data-tpw-close>&times;</button>
+            <button type="button" class="tpw-modal__close tpw-btn tpw-btn-secondary" aria-label="<?php esc_attr_e( 'Close', 'tpw-core' ); ?>" data-tpw-close><?php esc_html_e( 'Close', 'tpw-core' ); ?></button>
         </header>
 
         <?php if ( ! empty( $menu['description'] ) ) : ?>
@@ -116,8 +116,6 @@ if ( function_exists( 'tpw_core_flag_need_ui_assets' ) ) {
             <?php endforeach; ?>
         </div>
 
-        <footer class="tpw-modal__footer">
-            <button type="button" class="button" data-tpw-close><?php esc_html_e( 'Close', 'tpw-core' ); ?></button>
-        </footer>
+        
     </div>
 </div>

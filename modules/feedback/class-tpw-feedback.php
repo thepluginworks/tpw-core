@@ -197,7 +197,7 @@ if ( ! class_exists( 'TPW_Feedback' ) ) {
                     </fieldset>
 
                     <div class="tpw-actions">
-                        <button type="submit" class="button button-primary"><?php echo esc_html( $labels['submit'] ); ?></button>
+                        <button type="submit" class="tpw-btn tpw-btn-primary"><?php echo esc_html( $labels['submit'] ); ?></button>
                         <span class="tpw-feedback-status" aria-live="polite"></span>
                     </div>
                 </form>
