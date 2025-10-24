@@ -127,6 +127,63 @@ add_shortcode('tpw_member_profile', function(){
   // Also include a lightweight anchor to support compatibility moves via the_content.
   echo '<!-- TPW_MEMBER_PROFILE_AFTER -->';
 
+  // Member Photo section (settings-controlled)
+  $photos_enabled = get_option('tpw_members_use_photos', '0') === '1';
+  $photo_mode = get_option( 'tpw_member_profile_photo_mode', 'view' );
+  if ( $photos_enabled ) {
+    // Resolve current photo URL when present
+    $photo_url = '';
+    $rel = isset($member->member_photo) ? trim( (string) $member->member_photo ) : '';
+    if ( $rel !== '' ) {
+      if ( preg_match('#^https?://#i', $rel) ) {
+        $photo_url = $rel;
+      } else {
+        $uploads = wp_get_upload_dir();
+        if ( ! empty($uploads['baseurl']) ) {
+          $photo_url = rtrim($uploads['baseurl'], '/') . '/' . ltrim($rel, '/');
+        }
+      }
+    }
+    echo '<div class="tpw-section" style="margin-top:16px;">';
+    echo '  <fieldset class="tpw-section">';
+    echo '    <legend class="tpw-section__legend">' . esc_html__( 'Member Photo', 'tpw-core' ) . '</legend>';
+
+    if ( $photo_mode === 'edit' ) {
+      // Editable layout mirrors admin edit form
+      echo '<div class="form-group">';
+      echo '  <label for="tpw-member-photo-input"><strong>' . esc_html__('Upload Member Photo','tpw-core') . '</strong></label>';
+      echo '  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+      echo '    <input type="file" id="tpw-member-photo-input" accept=".jpg,.jpeg,.png" style="display:none;">';
+      echo '    <button type="button" class="tpw-btn tpw-btn-light" id="tpw-member-photo-choose">' . esc_html__('Choose file','tpw-core') . '</button>';
+      echo '    <span id="tpw-member-photo-filename" style="color:#555;">' . esc_html__('No file chosen','tpw-core') . '</span>';
+      echo '  </div>';
+      echo '  <p class="description" style="margin-top:6px;">' . esc_html__('Recommended size: 300x300px. Max file size: 2MB.','tpw-core') . '</p>';
+      echo '  <div style="margin:8px 0; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">';
+      if ( $photo_url ) {
+        echo '    <img id="tpw-member-photo-current" src="' . esc_url($photo_url) . '" alt="" style="width:100px;height:100px;object-fit:cover;border-radius:8px;" />';
+      } else {
+        echo '    <img id="tpw-member-photo-current" src="" alt="" style="display:none;width:100px;height:100px;object-fit:cover;border-radius:8px;" />';
+      }
+      echo '    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">';
+      echo '      <button type="button" class="tpw-btn tpw-btn-danger" id="tpw-member-photo-delete-btn">' . esc_html__('Delete','tpw-core') . '</button>';
+      echo '      <button type="button" class="tpw-btn tpw-btn-secondary" id="tpw-member-photo-replace-btn">' . esc_html__('Replace','tpw-core') . '</button>';
+      echo '    </div>';
+      echo '  </div>';
+      echo '  <div id="tpw-member-photo-error" style="display:none; font-size:12px; color:#b45309; background:#fff7ed; border:1px solid #fed7aa; padding:6px 8px; border-radius:4px; margin-top:6px;"></div>';
+      echo '</div>';
+    } else {
+      // View-only mode: show image when available
+      if ( $photo_url ) {
+        echo '<img src="' . esc_url($photo_url) . '" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:10px;" />';
+      } else {
+        echo '<p class="description">' . esc_html__('No photo uploaded yet.','tpw-core') . '</p>';
+      }
+    }
+
+    echo '  </fieldset>';
+    echo '</div>';
+  }
+
     // Modal markup
     ?>
     <div id="tpw-profile-modal" class="tpw-dir-modal" hidden>
@@ -163,6 +220,100 @@ add_shortcode('tpw_member_profile', function(){
         'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],
     ] );
     wp_enqueue_style( 'tpw-member-admin-style', plugins_url('../assets/css/member-admin.css', __FILE__), [], filemtime( plugin_dir_path(__FILE__) . '../assets/css/member-admin.css' ) );
+
+  // Inline JS for photo actions in edit mode (re-uses self-edit nonce)
+  if ( $photos_enabled && $photo_mode === 'edit' ) {
+    ?>
+    <script>
+    (function(){
+      var AJAX_URL = <?php echo json_encode( admin_url('admin-ajax.php') ); ?>;
+      var NONCE = <?php echo json_encode( wp_create_nonce('tpw_member_profile_update') ); ?>;
+      var chooseBtn = document.getElementById('tpw-member-photo-choose');
+      var fileInput = document.getElementById('tpw-member-photo-input');
+      var fileNameEl = document.getElementById('tpw-member-photo-filename');
+      var deleteBtn = document.getElementById('tpw-member-photo-delete-btn');
+      var replaceBtn = document.getElementById('tpw-member-photo-replace-btn');
+      var currentImg = document.getElementById('tpw-member-photo-current');
+      var errorBox = document.getElementById('tpw-member-photo-error');
+      if (chooseBtn && fileInput) chooseBtn.addEventListener('click', function(){ fileInput.click(); });
+      if (replaceBtn && fileInput) replaceBtn.addEventListener('click', function(){ fileInput.click(); });
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(){
+          setBusy(true, 'Deleting…');
+          var fd = new FormData();
+          fd.append('action','tpw_member_profile_photo_delete');
+          fd.append('_wpnonce', NONCE);
+          fetch(AJAX_URL, { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (!data || !data.success) throw new Error((data && data.data && data.data.message) || 'Delete failed');
+            if (currentImg) { currentImg.style.display = 'none'; currentImg.removeAttribute('src'); }
+            if (fileInput) fileInput.value = '';
+            if (fileNameEl) fileNameEl.textContent = 'No file chosen';
+            hideErr();
+          })
+          .catch(function(err){ showErr(err && err.message ? err.message : 'Delete failed'); })
+          .finally(function(){ setBusy(false); });
+        });
+      }
+      if (fileInput) {
+        fileInput.addEventListener('change', function(){
+          if (fileNameEl) fileNameEl.textContent = (fileInput.files && fileInput.files[0]) ? fileInput.files[0].name : 'No file chosen';
+          if (!fileInput.files || !fileInput.files[0]) return;
+          var file = fileInput.files[0];
+          const TWO_MB = 2*1024*1024;
+          (file.size > TWO_MB ? (showErr('Image exceeds 2MB (' + mb(file.size) + '). Attempting to compress…'), compress(file, TWO_MB)) : Promise.resolve(file))
+          .then(function(f){
+            if (!f) throw new Error('Image exceeds 2MB and could not be compressed automatically. Please choose a smaller image.');
+            if (f !== file) {
+              var dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files; file = f;
+              if (fileNameEl) fileNameEl.textContent = f.name + ' (compressed)';
+            }
+            hideErr(); setBusy(true, 'Uploading…');
+            var fd = new FormData();
+            fd.append('action','tpw_member_profile_photo_replace');
+            fd.append('_wpnonce', NONCE);
+            fd.append('photo', file, file.name);
+            return fetch(AJAX_URL, { method:'POST', body: fd, credentials:'same-origin' });
+          })
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (!data || !data.success || !data.data || !data.data.url) throw new Error((data && data.data && data.data.message) || 'Upload failed');
+            if (currentImg) { currentImg.src = data.data.url; currentImg.style.display=''; }
+            if (fileNameEl) fileNameEl.textContent = 'Uploaded';
+            fileInput.value = '';
+            hideErr();
+          })
+          .catch(function(err){ showErr(err && err.message ? err.message : 'Upload failed'); })
+          .finally(function(){ setBusy(false); });
+        });
+      }
+      function mb(b){ return (b/1024/1024).toFixed(2)+'MB'; }
+      function showErr(m){ if(!errorBox) return; errorBox.textContent = m; errorBox.style.display='block'; }
+      function hideErr(){ if(!errorBox) return; errorBox.textContent = ''; errorBox.style.display='none'; }
+      function setBusy(b, label){ try {
+        if (replaceBtn){ replaceBtn.disabled = !!b; if(label && b){ replaceBtn.dataset.prevText = replaceBtn.textContent; replaceBtn.textContent = label; } else if (!b && replaceBtn.dataset.prevText){ replaceBtn.textContent = replaceBtn.dataset.prevText; delete replaceBtn.dataset.prevText; } }
+        if (deleteBtn){ deleteBtn.disabled = !!b; if(label && b){ deleteBtn.dataset.prevText = deleteBtn.textContent; deleteBtn.textContent = label; } else if (!b && deleteBtn.dataset.prevText){ deleteBtn.textContent = deleteBtn.dataset.prevText; delete deleteBtn.dataset.prevText; } }
+        if (chooseBtn){ chooseBtn.disabled = !!b; }
+      } catch(e){} }
+      async function compress(file, maxBytes){
+        try{
+          const img = await loadBitmap(file);
+          const dims = fit(img.width, img.height, 500, 500);
+          const c = document.createElement('canvas'); c.width=dims.w; c.height=dims.h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,dims.w,dims.h);
+          for (let q of [0.8,0.7,0.6,0.5]){ const blob = await toBlob(c,'image/jpeg',q); if (blob && blob.size <= maxBytes) return new File([blob], rename(file.name), {type:'image/jpeg'}); }
+          const last = await toBlob(c,'image/jpeg',0.5); if (last) return new File([last], rename(file.name), {type:'image/jpeg'});
+        }catch(e){}
+        return null;
+      }
+      function rename(name){ return name.replace(/\.[^.]+$/, '') + '-compressed.jpg'; }
+      function fit(w,h,maxW,maxH){ var r=Math.min(maxW/w,maxH/h,1); return {w:Math.round(w*r), h:Math.round(h*r)}; }
+      function loadBitmap(file){ if ('createImageBitmap' in window) return createImageBitmap(file); return new Promise(function(res,rej){ var img=new Image(); img.onload=function(){res(img)}; img.onerror=rej; var rd=new FileReader(); rd.onload=function(){ img.src=rd.result; }; rd.onerror=rej; rd.readAsDataURL(file); }); }
+      function toBlob(canvas,type,q){ return new Promise(function(res){ if(canvas.toBlob){ canvas.toBlob(function(b){res(b);}, type, q); } else { var dataUrl=canvas.toDataURL(type,q); var parts=dataUrl.split(','); var byte=atob(parts[1]||''); var ab=new ArrayBuffer(byte.length); var ia=new Uint8Array(ab); for(var i=0;i<byte.length;i++){ ia[i]=byte.charCodeAt(i); } res(new Blob([ab],{type:type})); } }); }
+    })();
+    </script>
+    <?php
+  }
 
     return ob_get_clean();
 });

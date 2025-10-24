@@ -10,6 +10,9 @@ class TPW_Member_Ajax {
         // Photo management (admin only) for immediate actions on edit form
         add_action( 'wp_ajax_tpw_member_photo_delete', [ __CLASS__, 'photo_delete' ] );
         add_action( 'wp_ajax_tpw_member_photo_replace', [ __CLASS__, 'photo_replace' ] );
+    // Photo management for members on their own profile (respects profile photo mode)
+    add_action( 'wp_ajax_tpw_member_profile_photo_delete', [ __CLASS__, 'profile_photo_delete' ] );
+    add_action( 'wp_ajax_tpw_member_profile_photo_replace', [ __CLASS__, 'profile_photo_replace' ] );
         // Admin settings: searchable fields
         add_action( 'wp_ajax_tpw_member_toggle_searchable', [ __CLASS__, 'toggle_searchable' ] );
         add_action( 'wp_ajax_tpw_member_save_search_config', [ __CLASS__, 'save_search_config' ] );
@@ -767,6 +770,162 @@ class TPW_Member_Ajax {
                 }
             }
             wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);
+        }
+
+        /**
+         * Member self-service: delete own photo.
+         * Nonce: tpw_member_profile_update (same as other self-edits)
+         */
+        public static function profile_photo_delete() {
+            if ( ! is_user_logged_in() ) {
+                wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
+            }
+            // Respect global photos toggle and per-profile photo mode
+            if ( get_option('tpw_members_use_photos', '0') !== '1' ) {
+                wp_send_json_error( [ 'message' => 'Photos are disabled' ], 403 );
+            }
+            $mode = get_option( 'tpw_member_profile_photo_mode', 'view' );
+            if ( $mode !== 'edit' ) {
+                wp_send_json_error( [ 'message' => 'Editing photo is disabled' ], 403 );
+            }
+
+            $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
+            if ( ! wp_verify_nonce( $nonce, 'tpw_member_profile_update' ) ) {
+                wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
+            }
+
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+            $user = wp_get_current_user();
+            $controller = new TPW_Member_Controller();
+            $m = $controller->get_member_by_user_id( (int) $user->ID );
+            if ( ! $m ) {
+                wp_send_json_error( [ 'message' => 'Member not found' ], 404 );
+            }
+
+            $rel = isset($m->member_photo) ? trim((string)$m->member_photo) : '';
+            $deleted = false;
+            if ( $rel !== '' ) {
+                $uploads = wp_get_upload_dir();
+                $base = trailingslashit( $uploads['basedir'] );
+                $old_full = wp_normalize_path( $base . ltrim( $rel, '/' ) );
+                $base_norm = wp_normalize_path( $base );
+                if ( strpos( $old_full, $base_norm ) === 0 && file_exists( $old_full ) ) {
+                    $deleted = @unlink( $old_full );
+                }
+            }
+            // Clear DB regardless
+            $ok = (bool) $controller->update_member( (int) $m->id, [ 'member_photo' => '' ] );
+            if ( ! $ok ) {
+                wp_send_json_error( [ 'message' => 'Failed to update member' ], 500 );
+            }
+            wp_send_json_success( [ 'deleted' => (bool) $deleted ] );
+        }
+
+        /**
+         * Member self-service: replace own photo with uploaded file.
+         * Expects: file field 'photo'. Nonce: tpw_member_profile_update
+         */
+        public static function profile_photo_replace() {
+            if ( ! is_user_logged_in() ) {
+                wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
+            }
+            if ( get_option('tpw_members_use_photos', '0') !== '1' ) {
+                wp_send_json_error( [ 'message' => 'Photos are disabled' ], 403 );
+            }
+            $mode = get_option( 'tpw_member_profile_photo_mode', 'view' );
+            if ( $mode !== 'edit' ) {
+                wp_send_json_error( [ 'message' => 'Editing photo is disabled' ], 403 );
+            }
+
+            $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
+            if ( ! wp_verify_nonce( $nonce, 'tpw_member_profile_update' ) ) {
+                wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
+            }
+
+            if ( ! isset($_FILES['photo']) || ! is_array($_FILES['photo']) || empty($_FILES['photo']['name']) ) {
+                wp_send_json_error( [ 'message' => 'Missing photo' ], 400 );
+            }
+            $file = $_FILES['photo'];
+            $max_bytes = 2 * 1024 * 1024; // 2MB
+            if ( (int) $file['size'] > $max_bytes ) {
+                wp_send_json_error( [ 'message' => 'Uploaded photo exceeds 2MB.' ], 400 );
+            }
+            $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+            if ( ! in_array( $ext, [ 'jpg', 'jpeg', 'png' ], true ) ) {
+                wp_send_json_error( [ 'message' => 'Invalid file type. Allowed: JPG, JPEG, PNG.' ], 400 );
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+
+            $overrides = [ 'test_form' => false, 'mimes' => [ 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png' ] ];
+            $uploaded = wp_handle_upload( $file, $overrides );
+            if ( isset( $uploaded['error'] ) ) {
+                wp_send_json_error( [ 'message' => 'Photo upload failed: ' . $uploaded['error'] ], 400 );
+            }
+            $source_path = $uploaded['file'] ?? '';
+            if ( ! $source_path || ! file_exists( $source_path ) ) {
+                wp_send_json_error( [ 'message' => 'Uploaded file missing.' ], 500 );
+            }
+
+            $uploads = wp_get_upload_dir();
+            $target_dir = trailingslashit( $uploads['basedir'] ) . 'tpw-members/photos/';
+            if ( ! wp_mkdir_p( $target_dir ) ) {
+                @unlink( $source_path );
+                wp_send_json_error( [ 'message' => 'Failed to create photo directory.' ], 500 );
+            }
+            $base_name = sanitize_file_name( pathinfo( $file['name'], PATHINFO_FILENAME ) );
+            $use_ext   = ( $ext === 'jpeg' ) ? 'jpg' : $ext;
+            $target_filename = wp_unique_filename( $target_dir, $base_name . '.' . $use_ext );
+            $target_path = trailingslashit( $target_dir ) . $target_filename;
+
+            // Resize/compress similar to admin
+            $editor = wp_get_image_editor( $source_path );
+            if ( ! is_wp_error( $editor ) ) {
+                $editor->resize( 500, 500, false );
+                if ( in_array( $use_ext, [ 'jpg', 'jpeg' ], true ) && method_exists( $editor, 'set_quality' ) ) {
+                    $editor->set_quality( 75 );
+                }
+                $saved = $editor->save( $target_path );
+                if ( is_wp_error( $saved ) || empty( $saved['path'] ) ) {
+                    copy( $source_path, $target_path );
+                }
+            } else {
+                copy( $source_path, $target_path );
+            }
+            @unlink( $source_path );
+
+            $relative = 'tpw-members/photos/' . $target_filename;
+
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+            $controller = new TPW_Member_Controller();
+            $user = wp_get_current_user();
+            $m = $controller->get_member_by_user_id( (int) $user->ID );
+            if ( ! $m ) {
+                // Clean up file
+                @unlink( $target_path );
+                wp_send_json_error( [ 'message' => 'Member not found' ], 404 );
+            }
+            $prev_rel = isset( $m->member_photo ) ? trim( (string) $m->member_photo ) : '';
+            $ok = (bool) $controller->update_member( (int) $m->id, [ 'member_photo' => $relative ] );
+            if ( ! $ok ) {
+                // Cleanup the new file if DB update failed
+                $full_new = wp_normalize_path( trailingslashit( $uploads['basedir'] ) . $relative );
+                if ( file_exists( $full_new ) ) { @unlink( $full_new ); }
+                wp_send_json_error( [ 'message' => 'Failed to update member.' ], 500 );
+            }
+            if ( $prev_rel ) {
+                $base = trailingslashit( $uploads['basedir'] );
+                $old_full = wp_normalize_path( $base . ltrim( $prev_rel, '/' ) );
+                $base_norm = wp_normalize_path( $base );
+                if ( strpos( $old_full, $base_norm ) === 0 && file_exists( $old_full ) ) {
+                    @unlink( $old_full );
+                }
+            }
+            $abs_url = rtrim( $uploads['baseurl'], '/' ) . '/' . ltrim( $relative, '/' );
+            $abs_url = add_query_arg( 't', time(), $abs_url );
+            wp_send_json_success( [ 'url' => $abs_url, 'rel' => $relative ] );
         }
 
         /**

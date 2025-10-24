@@ -98,6 +98,12 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             // Save viewable-by-member fields
             $viewable = isset($_POST['tpw_member_viewable_fields']) && is_array($_POST['tpw_member_viewable_fields']) ? array_map('sanitize_text_field', $_POST['tpw_member_viewable_fields']) : [];
             update_option( 'tpw_member_viewable_fields', $viewable );
+            // New: Member profile photo edit toggle (view|edit)
+            if ( isset($_POST['tpw_member_profile_photo_mode']) ) {
+                $mode = sanitize_key( $_POST['tpw_member_profile_photo_mode'] );
+                if ( ! in_array( $mode, [ 'view', 'edit' ], true ) ) { $mode = 'view'; }
+                update_option( 'tpw_member_profile_photo_mode', $mode );
+            }
             if ( isset($_POST['tpw_member_profile_page_id']) ) {
                 $profile_page_id = (int) $_POST['tpw_member_profile_page_id'];
                 update_option( 'tpw_member_profile_page_id', $profile_page_id );
@@ -325,6 +331,17 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 </div>
                 <?php endforeach; ?>
             </div>
+
+            <p style="margin-top:16px;">
+                <label for="tpw_member_profile_photo_mode"><strong>Allow Members to View and Edit Photo</strong></label><br>
+                <?php $photo_mode = get_option( 'tpw_member_profile_photo_mode', 'view' ); ?>
+                <select name="tpw_member_profile_photo_mode" id="tpw_member_profile_photo_mode" style="width:auto; min-width: 220px; max-width: 320px;">
+                    <option value="view" <?php selected( $photo_mode, 'view' ); ?>>View only (default)</option>
+                    <option value="edit" <?php selected( $photo_mode, 'edit' ); ?>>View and Edit</option>
+                </select>
+                <br>
+                <small class="description">Controls whether members can change their own profile photo on the Member Profile page.</small>
+            </p>
 
             <p style="margin-top:12px;">
                 <label for="tpw_member_profile_page_id"><strong>Profile Page</strong> (select a page that contains the [tpw_member_profile] shortcode)</label><br>
