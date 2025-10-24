@@ -12,6 +12,8 @@ All notable changes to TPW Core will be documented in this file.
 - Postcode lookup AJAX with nonce verification.
 - Thank You page shortcode and templates.
 
+Security: Added global no-cache safeguard for /manage-members/ admin views to prevent stale nonces.
+
 ---
 
 For earlier internal versions and development notes, see `RELEASE.md`.

@@ -373,6 +373,18 @@ add_shortcode('tpw_manage_members', function() {
         $action = 'list';
     }
 
+    // Lightweight no-cache safeguard for admin‑like front-end views served by /manage-members/
+    // Prevents cached pages from serving stale nonces which cause silent save failures.
+    // Applies only when the current user can manage members and is viewing an admin-type action.
+    if ( $can_manage && in_array( $action, [ 'settings', 'field_settings', 'member-field-visibility', 'add', 'edit_form', 'import_csv' ], true ) ) {
+        if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+            define( 'DONOTCACHEPAGE', true );
+        }
+        if ( function_exists( 'nocache_headers' ) ) {
+            nocache_headers();
+        }
+    }
+
     switch ($action) {
         case 'add':
             if ($can_manage) include TPW_CORE_PATH . 'modules/members/templates/admin/add.php';
