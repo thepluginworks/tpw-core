@@ -36,6 +36,11 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
             // New: enable Advanced Search modal for all members (non-admins)
             update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
+            // New: Member Profile Change Notification Email (single site option)
+            if ( isset($_POST['tpw_member_change_notify_email']) ) {
+                $email = sanitize_email( wp_unslash( $_POST['tpw_member_change_notify_email'] ) );
+                update_option( 'tpw_member_change_notify_email', $email );
+            }
             // New: Who can manage the Member Directory (admins_only | admins_committee)
             $manage_access = isset($_POST['tpw_members_manage_access']) ? sanitize_key($_POST['tpw_members_manage_access']) : 'admins_only';
             if (!in_array($manage_access, ['admins_only','admins_committee'], true)) { $manage_access = 'admins_only'; }
@@ -207,6 +212,15 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                             }
                             ?>
                     </select>
+            </p>
+
+            <hr>
+            <p>
+                <label for="tpw_member_change_notify_email"><strong>Member Profile Change Notification Email</strong></label><br>
+                <?php $notify_email = get_option('tpw_member_change_notify_email', ''); ?>
+                <input type="email" name="tpw_member_change_notify_email" id="tpw_member_change_notify_email" value="<?php echo esc_attr( $notify_email ); ?>" style="max-width:420px; width:100%;" placeholder="name@example.com">
+                <br>
+                <small class="description">This email address will be notified whenever a member updates their own profile.</small>
             </p>
 
             <hr>

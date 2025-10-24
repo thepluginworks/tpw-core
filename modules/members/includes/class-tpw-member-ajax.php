@@ -672,6 +672,13 @@ class TPW_Member_Ajax {
 
             // Decide whether field is core column or meta
             $is_core = property_exists( $member, $field_key );
+            // Capture previous value for notification diff
+            $old_value = '';
+            if ( $is_core ) {
+                $old_value = isset( $member->$field_key ) ? (string) $member->$field_key : '';
+            } else {
+                $old_value = (string) TPW_Member_Meta::get_meta( (int) $member->id, $field_key );
+            }
             $ok = false;
             if ( $is_core ) {
                 // Minimal sanitize for known types
@@ -692,6 +699,72 @@ class TPW_Member_Ajax {
 
             if ( ! $ok ) {
                 wp_send_json_error(['message'=>'Failed to save'], 500);
+            }
+
+            // After successful save, trigger notification if configured and if value actually changed
+            $notify_to = get_option( 'tpw_member_change_notify_email', '' );
+            if ( is_string($notify_to) ) { $notify_to = trim( $notify_to ); }
+            if ( $notify_to !== '' && is_email( $notify_to ) ) {
+                $new_value = is_string($field_value) ? (string) $field_value : (string) wp_json_encode( $field_value );
+                // Normalize whitespace for comparison
+                if ( trim( (string) $old_value ) !== trim( (string) $new_value ) ) {
+                    // Prepare safe headers and message
+                    if ( ! defined( 'DONOTCACHEPAGE' ) ) { define( 'DONOTCACHEPAGE', true ); }
+                    if ( function_exists( 'nocache_headers' ) ) { nocache_headers(); }
+
+                    // Resolve field label
+                    if ( ! class_exists( 'TPW_Member_Field_Loader' ) ) {
+                        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-field-loader.php';
+                    }
+                    $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
+                    $label = $field_key;
+                    foreach ( (array) $fields as $f ) {
+                        if ( isset($f['key']) && $f['key'] === $field_key ) { $label = (string) ($f['label'] ?? $field_key); break; }
+                    }
+
+                    // Member name and profile URL
+                    $first = isset($member->first_name) ? (string) $member->first_name : '';
+                    $last  = isset($member->surname) ? (string) $member->surname : '';
+                    $member_name = trim( $first . ' ' . $last );
+                    $profile_url = '';
+                    $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
+                    if ( $profile_page_id > 0 ) {
+                        $profile_url = get_permalink( $profile_page_id );
+                    }
+
+                    // Formats
+                    $settings = get_option( 'flexievent_settings', [] );
+                    $date_format = isset($settings['date_format']) ? (string) $settings['date_format'] : 'd-m-Y';
+                    $time_format = isset($settings['time_format']) ? (string) $settings['time_format'] : 'H:i';
+                    $stamp = date_i18n( $date_format . ' ' . $time_format, current_time('timestamp') );
+
+                    // Site name for subject
+                    $site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+                    $subject = sprintf( '[%s] Profile Updated by %s', $site_name, $member_name !== '' ? $member_name : 'Member' );
+
+                    // Build plain-text body with minimal escaping
+                    $line_field = sprintf( '%s: %s  %s', $label, wp_strip_all_tags( (string) $old_value ), wp_strip_all_tags( (string) $new_value ) );
+                    $body_lines = [];
+                    $body_lines[] = sprintf( 'The following profile details were updated by %s on %s:', $member_name !== '' ? $member_name : 'a member', $stamp );
+                    $body_lines[] = '';
+                    $body_lines[] = 'Field: Old → New';
+                    $body_lines[] = $label . ': ' . wp_strip_all_tags( (string) $old_value ) . ' → ' . wp_strip_all_tags( (string) $new_value );
+                    $body_lines[] = '';
+                    if ( $profile_url ) {
+                        $body_lines[] = 'View member: ' . $profile_url;
+                    }
+                    $body = implode( "\n", $body_lines );
+
+                    $headers = [ 'Content-Type: text/plain; charset=UTF-8' ];
+                    // Helpful Reply-To: route replies to the member
+                    $member_email = isset($member->email) ? sanitize_email( (string) $member->email ) : '';
+                    if ( is_email( $member_email ) ) {
+                        $headers[] = 'Reply-To: ' . ( $member_name !== '' ? $member_name : 'Member' ) . ' <' . $member_email . '>';
+                    }
+
+                    // Send and ignore failures silently (log if desired)
+                    @wp_mail( $notify_to, $subject, $body, $headers );
+                }
             }
             wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);
         }
