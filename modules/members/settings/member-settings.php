@@ -342,9 +342,9 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 <br>
                 <small class="description">Controls whether members can change their own profile photo on the Member Profile page.</small>
             </p>
-
+        
             <p style="margin-top:12px;">
-                <label for="tpw_member_profile_page_id"><strong>Profile Page</strong> (select a page that contains the <code>[tpw_member_profile]</code> shortcode)</label><br>
+                <label for="tpw_member_profile_page_id"><strong>Profile Page</strong> (select a page that contains the 'tpw_member_profile' shortcode)</label><br>
                 <?php
                     wp_dropdown_pages([
                         'name'              => 'tpw_member_profile_page_id',
@@ -355,6 +355,7 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                     ]);
                 ?>
             </p>
+          
 
         <?php elseif ( $current_tab === 'postcodes' ) : ?>
             <?php $pc = get_option( 'tpw_postcode_settings', [] );
