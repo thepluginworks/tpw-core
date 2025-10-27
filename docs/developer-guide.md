@@ -48,18 +48,12 @@ $result = TPW_Email::send_email(
 );
 ```
 
-Attachments
-
-- Allowed: PDF, DOCX, JPG, PNG
 - Max size: 5MB each
 - Use `TPW_Email::validate_attachments( $_FILES['attachments'] )` to validate and move uploads to a temp directory; pass resulting file paths to `send_email()`.
 
-Hooks
 
 - `tpw_email/log` — Action to receive email log details (direction, to/from, subject, attachments, sent). Use to integrate with audit logs.
 - `tpw_email/require_login` — Filter to relax or enforce login requirement for sending (default true).
-
-Security notes
 
 - Nonces (`tpw_email_send`) protect submissions.
 - Sanitization is applied to all fields.
@@ -67,9 +61,6 @@ Security notes
 
 
 
-## AJAX handlers — required security pattern
-
-When adding new AJAX endpoints in TPW Core or related plugins, follow this pattern consistently:
 
 - Verify nonce with `check_ajax_referer( 'your_action_nonce' )` at the top of the handler. For GET-only endpoints, use `check_ajax_referer( 'your_action_nonce', 'nonce' )` to read a named parameter.
 - Check permissions before doing anything: use `current_user_can( 'manage_options' )` or a module-specific gate (e.g., TPW_Member_Access flags). Fail fast if unauthorized.
@@ -142,9 +133,6 @@ $email_settings = TPW_Core_Email_Settings::get();
 ```php
 // Provide only the keys you want to change; they will be merged and validated
 $saved = TPW_Core_Email_Settings::update([
-	'enable_throttling'      => true,
-	'max_emails_per_minute'  => 120,
-	'default_logo_url'       => 'https://example.com/logo.png',
 ]);
 ```
 
