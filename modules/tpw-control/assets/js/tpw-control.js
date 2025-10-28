@@ -329,11 +329,42 @@
         var currentIndex = -1;
         var currentHref = '';
         var currentScale = 1;
+        var currentPage = null; // scope navigation to the clicked Upload Page instance
+
+        function getScopedItems(){
+            var $all = $('.tpw-upl-preview');
+            if (currentPage == null) return $all;
+            return $all.filter(function(){
+                var $wrap = $(this).closest('.tpw-upload-page');
+                return $wrap.length && String($wrap.data('page')) === String(currentPage);
+            });
+        }
+
+        function getUniqueIndices($items){
+            var seen = [];
+            $items.each(function(){
+                var i = parseInt($(this).data('index'), 10);
+                if (!isNaN(i) && seen.indexOf(i) === -1) seen.push(i);
+            });
+            seen.sort(function(a,b){ return a-b; });
+            return seen;
+        }
+
         function showItem(index){
-            var $items = $('.tpw-upl-preview');
-            if (index < 0 || index >= $items.length) return;
+            var $items = getScopedItems();
+            if (!$items.length) return;
+            // Prefer selecting by data-index to avoid duplicates/sync issues
+            var $a = $items.filter('[data-index="' + index + '"]').first();
+            if (!$a.length) {
+                // Fallback to positional lookup within unique indices set
+                var uniq = getUniqueIndices($items);
+                var pos = uniq.indexOf(index);
+                if (pos < 0 || pos >= uniq.length) return;
+                var targetDataIndex = uniq[pos];
+                $a = $items.filter('[data-index="' + targetDataIndex + '"]').first();
+                if (!$a.length) return;
+            }
             currentIndex = index;
-            var $a = $($items[index]);
             var href = $a.attr('href');
             currentHref = href;
             var type = ($a.data('type') || '').toString();
@@ -370,12 +401,32 @@
         $(document).on('click', '.tpw-upl-preview', function(e){
             e.preventDefault();
             var idx = parseInt($(this).data('index'), 10);
+            var $wrap = $(this).closest('.tpw-upload-page');
+            currentPage = $wrap.length ? ($wrap.data('page') || null) : null;
             if (!isNaN(idx)) showItem(idx);
         });
         $(document).on('click', '.tpw-lightbox-close', function(e){ $('#tpw-lightbox').hide(); });
-        $(document).on('click', '.tpw-lightbox-prev', function(e){ showItem(currentIndex - 1); });
-        $(document).on('click', '.tpw-lightbox-next', function(e){ showItem(currentIndex + 1); });
-        $(document).on('keydown', function(e){ if ($('#tpw-lightbox').is(':visible')) { if (e.key === 'ArrowLeft') showItem(currentIndex-1); else if (e.key === 'ArrowRight') showItem(currentIndex+1); else if (e.key === 'Escape') $('#tpw-lightbox').hide(); }});
+        $(document).on('click', '.tpw-lightbox-prev', function(e){
+            var $items = getScopedItems();
+            var uniq = getUniqueIndices($items);
+            var pos = uniq.indexOf(currentIndex);
+            if (pos > 0) showItem(uniq[pos - 1]);
+        });
+        $(document).on('click', '.tpw-lightbox-next', function(e){
+            var $items = getScopedItems();
+            var uniq = getUniqueIndices($items);
+            var pos = uniq.indexOf(currentIndex);
+            if (pos >= 0 && pos < uniq.length - 1) showItem(uniq[pos + 1]);
+        });
+        $(document).on('keydown', function(e){
+            if (!$('#tpw-lightbox').is(':visible')) return;
+            var $items = getScopedItems();
+            var uniq = getUniqueIndices($items);
+            var pos = uniq.indexOf(currentIndex);
+            if (e.key === 'ArrowLeft' && pos > 0) { showItem(uniq[pos - 1]); }
+            else if (e.key === 'ArrowRight' && pos >= 0 && pos < uniq.length - 1) { showItem(uniq[pos + 1]); }
+            else if (e.key === 'Escape') { $('#tpw-lightbox').hide(); }
+        });
 
         // Zoom controls (applies to media element if present)
         function applyZoom(){

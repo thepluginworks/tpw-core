@@ -1865,11 +1865,10 @@ class TPW_Control_Upload_Pages {
                         $url = self::build_served_url( (int)$f->id, 'file', 900, false );
                         $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
                         $icon = self::get_file_icon_url( $f->file_url, $f->file_type );
-                        $a = '<a class="tpw-upl-preview" data-index="' . (int)$idx . '" data-type="' . esc_attr( $f->file_type ) . '" data-label="' . esc_attr( $label ) . '" href="' . esc_url( $url ) . '">';
-                        $link = $a . esc_html( $label ) . '</a>';
-                        $thumb = $icon ? ($a . '<img src="' . esc_url( $icon ) . '" alt="" class="tpw-file-icon" />' . '</a> ') : '';
+                        $inner = ( $icon ? ( '<img src="' . esc_url( $icon ) . '" alt="" class="tpw-file-icon" /> ' ) : '' ) . esc_html( $label );
+                        $link = '<a class="tpw-upl-preview" data-index="' . (int)$idx . '" data-type="' . esc_attr( $f->file_type ) . '" data-label="' . esc_attr( $label ) . '" href="' . esc_url( $url ) . '">' . $inner . '</a>';
                         echo '<div class="table-row">';
-                        echo '<div class="table-cell">' . $thumb . $link . '</div>';
+                        echo '<div class="table-cell">' . $link . '</div>';
                         echo '</div>';
                         $idx++;
                     }
@@ -1897,10 +1896,9 @@ class TPW_Control_Upload_Pages {
                         $url = self::build_served_url( (int)$f->id, 'file', 900, false );
                         $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
                         $icon = self::get_file_icon_url( $f->file_url, $f->file_type );
-                        $a = '<a class="tpw-upl-preview" data-index="' . (int)$idx . '" data-type="' . esc_attr( $f->file_type ) . '" data-label="' . esc_attr( $label ) . '" href="' . esc_url( $url ) . '">';
-                        $link = $a . esc_html( $label ) . '</a>';
-                        $thumb = $icon ? ($a . '<img src="' . esc_url( $icon ) . '" alt="" class="tpw-file-icon" />' . '</a> ') : '';
-                        echo '<li>' . $thumb . '<span class="tpw-file-label">' . $link . '</span></li>';
+                        $inner = ( $icon ? ( '<img src="' . esc_url( $icon ) . '" alt="" class="tpw-file-icon" /> ' ) : '' ) . '<span class="tpw-file-label">' . esc_html( $label ) . '</span>';
+                        $link = '<a class="tpw-upl-preview" data-index="' . (int)$idx . '" data-type="' . esc_attr( $f->file_type ) . '" data-label="' . esc_attr( $label ) . '" href="' . esc_url( $url ) . '">' . $inner . '</a>';
+                        echo '<li>' . $link . '</li>';
                         $idx++;
                     }
                     echo '</ul>';
@@ -2139,6 +2137,8 @@ class TPW_Control_Upload_Pages {
         $flags = array_values( array_filter( $flags, function( $f ) { return $f !== 'is_admin'; } ) );
         if ( ! empty( $flags ) ) $out['flags_any'] = $flags;
         if ( ! empty( $vis['status'] ) && is_array( $vis['status'] ) ) $out['allowed_statuses'] = $vis['status'];
+        // Combine flags and statuses using OR semantics for Upload Pages: any tick gives access
+        $out['combine'] = 'or';
         if ( empty( $out ) ) $out['flags_any'] = ['is_admin'];
         return $out;
     }

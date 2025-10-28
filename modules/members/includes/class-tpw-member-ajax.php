@@ -1,6 +1,21 @@
 <?php
 
+/**
+ * AJAX endpoints for the TPW Members module.
+ *
+ * Registers secured AJAX handlers for admin management (search, create, photo
+ * operations) and member self‑service endpoints (profile update, photo edit).
+ * All endpoints enforce nonces and capabilities.
+ *
+ * @since 1.0.0
+ */
 class TPW_Member_Ajax {
+    /**
+     * Register AJAX actions for admin and member endpoints.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function init() {
         add_action( 'wp_ajax_tpw_member_search_users', [ __CLASS__, 'search_users' ] );
         add_action( 'wp_ajax_tpw_member_create_from_user', [ __CLASS__, 'create_from_user' ] );
@@ -21,6 +36,12 @@ class TPW_Member_Ajax {
         add_action( 'wp_ajax_nopriv_tpw_member_dependent_options', [ __CLASS__, 'dependent_options' ] );
     }
 
+    /**
+     * Whether the current user can manage members (admin or committee per setting).
+     *
+     * @since 1.0.0
+     * @return bool
+     */
     protected static function user_can_manage() {
         // Managers: WP admins always; optionally committee based on setting
         $wp_admin = current_user_can( 'manage_options' );
@@ -36,6 +57,13 @@ class TPW_Member_Ajax {
         return false;
     }
 
+    /**
+     * Verify manage capability and a specific nonce for admin endpoints.
+     *
+     * @since 1.0.0
+     * @param string $action Nonce action key
+     * @return void Sends JSON error and exits on failure
+     */
     protected static function check_caps_and_nonce( $action ) {
         if ( ! self::user_can_manage() ) {
             wp_send_json_error( [ 'message' => 'Unauthorized' ], 403 );
@@ -330,6 +358,14 @@ class TPW_Member_Ajax {
         wp_send_json_success( [ 'options' => $options ] );
     }
 
+    /**
+     * Search WordPress users not already linked to TPW members.
+     *
+     * Nonce: tpw_member_create_nonce
+     *
+     * @since 1.0.0
+     * @return void JSON { results: [...] }
+     */
     public static function search_users() {
         self::check_caps_and_nonce( 'tpw_member_create_nonce' );
 
@@ -376,6 +412,12 @@ class TPW_Member_Ajax {
         wp_send_json_success( [ 'results' => $users ] );
     }
 
+    /**
+     * Resolve a default society_id for created members.
+     *
+     * @since 1.0.0
+     * @return int
+     */
     protected static function resolve_society_id() {
         global $wpdb;
         // Prefer an option if exists
@@ -387,6 +429,14 @@ class TPW_Member_Ajax {
         return $sid > 0 ? $sid : 0;
     }
 
+    /**
+     * Create a TPW member row from an existing WP user.
+     *
+     * Nonce: tpw_member_create_nonce
+     *
+     * @since 1.0.0
+     * @return void JSON { member_id }
+     */
     public static function create_from_user() {
         self::check_caps_and_nonce( 'tpw_member_create_nonce' );
 
@@ -438,7 +488,13 @@ class TPW_Member_Ajax {
         wp_send_json_success( [ 'member_id' => (int) $member_id ] );
     }
 
-        protected static function member_or_admin_required() {
+    /**
+     * Gate for endpoints that accept admins or valid members.
+     *
+     * @since 1.0.0
+     * @return void Sends JSON error and exits on failure
+     */
+    protected static function member_or_admin_required() {
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
                 $is_admin  = TPW_Member_Access::is_admin_current();
                 $is_member = TPW_Member_Access::is_member_current();
@@ -447,7 +503,15 @@ class TPW_Member_Ajax {
                 }
         }
 
-        public static function get_details() {
+    /**
+     * Return safe HTML for a member details modal.
+     *
+     * Nonce: tpw_member_create_nonce
+     *
+     * @since 1.0.0
+     * @return void JSON { html, requested_id, returned_id }
+     */
+    public static function get_details() {
                 self::member_or_admin_required();
                 $requested_id = isset($_POST['member_id']) ? (int) $_POST['member_id'] : 0;
                 if ( $requested_id <= 0 ) wp_send_json_error(['message'=>'Invalid member_id','requested_id'=>$requested_id,'code'=>'invalid_member_id'],400);
@@ -585,7 +649,16 @@ class TPW_Member_Ajax {
         wp_send_json_success(['html' => $html, 'requested_id'=>$requested_id, 'returned_id'=>(int)$m->id]);
         }
 
-        public static function send_email() {
+    /**
+     * Send an email to a member on behalf of the current user.
+     *
+     * Filter: tpw_members/mail_from_header to override From header.
+     * Nonce: tpw_member_create_nonce
+     *
+     * @since 1.0.0
+     * @return void JSON { message }
+     */
+    public static function send_email() {
             self::member_or_admin_required();
             // Verify nonce shared with directory JS
             $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
@@ -629,7 +702,19 @@ class TPW_Member_Ajax {
             wp_send_json_success(['message'=>'Sent']);
         }
 
-        public static function profile_update() {
+    /**
+     * Member self‑service: update a single editable profile field.
+     *
+     * Filters:
+     * - tpw_members/wp_admin_can_view_profile
+     * - tpw_members/profile_allow_all_statuses
+     *
+     * Nonce: tpw_member_profile_update
+     *
+     * @since 1.0.0
+     * @return void JSON { message, field_key }
+     */
+    public static function profile_update() {
             // Members can update allowed fields; admins too
             if ( ! is_user_logged_in() ) {
                 wp_send_json_error(['message' => 'Access denied'], 403);

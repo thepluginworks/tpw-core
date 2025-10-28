@@ -143,6 +143,8 @@ if (empty($visibility)) {
     // Default to admin-only if not specified
     $visibility['flags_any'] = ['is_admin'];
 }
+// For Upload Pages, combine role flags and statuses with OR semantics
+$visibility['combine'] = 'or';
 
 // Permission check
 if (!class_exists('TPW_Control_UI') || !TPW_Control_UI::user_has_access($visibility)) {

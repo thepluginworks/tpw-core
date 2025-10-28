@@ -1,7 +1,23 @@
 <?php
 
+/**
+ * Payment activity logger.
+ *
+ * Writes payment gateway activity and internal events to a dedicated table
+ * for audit and support. Use the static log() method to append entries.
+ *
+ * @since 1.0.0
+ */
 class TPW_Payment_Logger {
 
+    /**
+     * Create the payment logs table if missing.
+     *
+     * Idempotent; safe to call on activation or upgrades.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function create_table() {
         global $wpdb;
 
@@ -25,6 +41,19 @@ class TPW_Payment_Logger {
         dbDelta($sql);
     }
 
+    /**
+     * Append an entry to the payment logs table.
+     *
+     * @since 1.0.0
+     * @param string     $method             Payment method or integration key (e.g., 'bacs','sumup').
+     * @param string     $status             Status label (e.g., 'success','error').
+     * @param string     $message            Short human‑readable message.
+     * @param array|null $payload            Optional context array; JSON encoded.
+     * @param string     $reference          External reference or internal token.
+     * @param string     $plugin             Owning plugin or scope label.
+     * @param int|null   $plugin_payment_id  Optional related payment id in plugin scope.
+     * @return void
+     */
     public static function log($method, $status, $message, $payload = null, $reference = '', $plugin = '', $plugin_payment_id = null) {
         global $wpdb;
 

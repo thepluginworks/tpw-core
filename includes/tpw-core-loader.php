@@ -1,6 +1,13 @@
 <?php
 /**
- * Loads TPW Core classes and modules.
+ * TPW Core Loader
+ *
+ * Central include file that wires TPW modules, routes and settings into WordPress.
+ * Avoid putting business logic here; prefer to include classes and call their
+ * own initializers. This file may register rewrite rules and light routing for
+ * virtual pages where required.
+ *
+ * @since 1.0.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -144,6 +151,17 @@ if ( file_exists( TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control.php' ) 
 
 add_action('init', 'tpw_core_load_optional_modules', 20);
 
+/**
+ * Conditionally load optional TPW modules based on filters.
+ *
+ * Filters (booleans):
+ * - tpw_show_dining_menu — load menu admin UIs
+ * - tpw_show_payment_settings — expose Payments settings page
+ * - tpw_enable_create_menu — enable legacy Create Menu tools
+ *
+ * @since 1.0.0
+ * @return void
+ */
 function tpw_core_load_optional_modules() {
     if ( apply_filters('tpw_show_dining_menu', false) ) {
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menu-courses-manager.php';
@@ -172,6 +190,14 @@ function tpw_core_load_optional_modules() {
     }
 }
 // Register thank-you page endpoint
+/**
+ * Rewrite rules for shared front‑end endpoints.
+ *
+ * - /rsvp-thank-you/ — shared thank‑you endpoint
+ * - /my-profile/ — optional virtual route when no real page exists
+ *
+ * @since 1.0.0
+ */
 add_action('init', function() {
     add_rewrite_rule('^rsvp-thank-you/?$', 'index.php?tpw_thank_you=1', 'top');
 
@@ -196,6 +222,11 @@ add_action('init', function() {
     }
 });
 
+/**
+ * Register public query vars used by Core routes.
+ *
+ * @since 1.0.0
+ */
 add_filter('query_vars', function($vars) {
     $vars[] = 'tpw_thank_you';
     $vars[] = 'tpw_my_profile';
@@ -203,6 +234,14 @@ add_filter('query_vars', function($vars) {
 });
 
 // Protect real WP pages that render the profile shortcode and prevent caching
+/**
+ * Protect real profile pages and enforce login/no‑cache.
+ *
+ * Ensures pages containing [tpw_member_profile] are uncached and require login.
+ * Sites can override login URL via the tpw_core/login_url filter.
+ *
+ * @since 1.0.0
+ */
 add_action('template_redirect', function() {
     if ( is_admin() ) {
         return;
@@ -246,6 +285,11 @@ add_action('template_redirect', function() {
     }
 }, 5);
 
+/**
+ * Handle virtual routes for thank‑you and profile when applicable.
+ *
+ * @since 1.0.0
+ */
 add_action('template_redirect', function() {
     if (get_query_var('tpw_thank_you')) {
         include TPW_CORE_PATH . 'modules/payments/views/thank-you.php';
@@ -413,6 +457,11 @@ add_action('template_redirect', function() {
 });
 
 // One-time flush for new pretty permalink routes (e.g., /my-profile/)
+/**
+ * One‑time flush for new pretty permalink routes (v1).
+ *
+ * @since 1.0.0
+ */
 add_action('admin_init', function() {
     if ( ! current_user_can('manage_options') ) return;
     $flag = get_option('tpw_core_rewrite_flushed_v1');
@@ -423,6 +472,11 @@ add_action('admin_init', function() {
 });
 
 // One-time flush v2 to remove the /my-profile/ virtual route when a real page exists and the rule was previously saved.
+/**
+ * One‑time flush to remove the /my-profile/ virtual route when a real page exists (v2).
+ *
+ * @since 1.0.1
+ */
 add_action('admin_init', function() {
     if ( ! current_user_can('manage_options') ) return;
     $flag2 = get_option('tpw_core_rewrite_flushed_v2');

@@ -239,41 +239,60 @@ add_action('template_redirect', function(){
 
     $members = $controller->get_members( $args ); // no pagination -> all matching
 
-    // Determine all columns of the members table in defined order
+    // Build export field list from 'Download' selections (option), ordered by field sort_order
     global $wpdb;
+    $download_selected = get_option( 'tpw_member_field_download', [] );
+    if ( ! is_array( $download_selected ) ) { $download_selected = []; }
+
+    // Determine all columns of the members table to separate core vs meta
     $table = $wpdb->prefix . 'tpw_members';
-    $columns = [];
+    $members_columns = [];
     $describe = $wpdb->get_results( "DESCRIBE {$table}" );
     if ( $describe && is_array($describe) ) {
         foreach ( $describe as $col ) {
-            if ( isset($col->Field) ) {
-                $columns[] = $col->Field;
-            }
+            if ( isset($col->Field) ) { $members_columns[] = $col->Field; }
         }
     }
-    // Fallback to keys from the first row if DESCRIBE fails
-    if ( empty($columns) && ! empty($members) ) {
+    if ( empty($members_columns) && ! empty($members) ) {
         $first = (array) $members[0];
-        $columns = array_keys( $first );
+        $members_columns = array_keys( $first );
     }
 
-    // Determine enabled field-managed columns (core/custom) to exclude disabled core fields from export
-    $enabled = TPW_Member_Field_Loader::get_all_enabled_fields();
-    $enabled_keys = array_map( function($f){ return $f['key']; }, $enabled );
-    $core_fields = array_keys( TPW_Member_Field_Loader::get_core_fields() );
-
-    // Build final export columns: include system columns, and only enabled core fields
+    // If nothing selected, export an empty CSV with header only
     $export_columns = [];
-    foreach ( (array) $columns as $col ) {
-        if ( in_array( $col, $core_fields, true ) ) {
-            if ( in_array( $col, $enabled_keys, true ) ) {
-                $export_columns[] = $col;
-            } else {
-                // Skip disabled core field
-            }
+    $meta_columns = [];
+    if ( ! empty( $download_selected ) ) {
+        // Fetch sort order for selected keys for consistent ordering
+        $fs_table = $wpdb->prefix . 'tpw_field_settings';
+        // Prepare placeholders
+        $placeholders = implode( ',', array_fill( 0, count( $download_selected ), '%s' ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT field_key, sort_order, custom_label FROM {$fs_table} WHERE field_key IN ($placeholders) ORDER BY sort_order ASC", ...array_map('sanitize_key', $download_selected) ) );
+        $ordered = [];
+        if ( $rows ) {
+            foreach ( $rows as $r ) { $ordered[] = $r->field_key; }
+            // Include any selected keys missing in settings table (fallback at end)
+            foreach ( $download_selected as $k ) { if ( ! in_array( $k, $ordered, true ) ) { $ordered[] = $k; } }
         } else {
-            // System/housekeeping columns (e.g., id, user_id, created_at) are not field-managed -> include
-            $export_columns[] = $col;
+            $ordered = array_map( 'sanitize_key', $download_selected );
+        }
+
+        // Build a map of labels from settings table
+        $label_map = [];
+        if ( $rows ) {
+            foreach ( $rows as $r ) {
+                $fk = (string) $r->field_key;
+                $cl = isset($r->custom_label) ? (string) $r->custom_label : '';
+                if ( $cl !== '' ) { $label_map[$fk] = $cl; }
+            }
+        }
+
+        foreach ( $ordered as $key ) {
+            if ( in_array( $key, $members_columns, true ) ) {
+                $export_columns[] = $key; // core/member table column
+            } else {
+                $meta_columns[] = $key;   // custom meta column
+            }
         }
     }
 
@@ -292,12 +311,58 @@ add_action('template_redirect', function(){
     echo "\xEF\xBB\xBF";
 
     $out = fopen( 'php://output', 'w' );
-    // Header row: filtered columns
-    fputcsv( $out, $export_columns );
+    // Header row: use Custom Label where available; fallback to core field label or prettified key
+    $header_labels = [];
+    $core_fields_def = method_exists('TPW_Member_Field_Loader','get_core_fields') ? TPW_Member_Field_Loader::get_core_fields() : [];
+    $label_for = function($key) use ($label_map, $core_fields_def) {
+        $k = (string) $key;
+        if ( isset($label_map[$k]) && $label_map[$k] !== '' ) { return $label_map[$k]; }
+        if ( isset($core_fields_def[$k]) ) {
+            $def = $core_fields_def[$k];
+            if ( is_array($def) && isset($def['label']) && $def['label'] !== '' ) { return (string) $def['label']; }
+            if ( is_string($def) && $def !== '' ) { return $def; }
+        }
+        return ucwords( str_replace('_',' ', $k) );
+    };
+    foreach ( $export_columns as $c ) { $header_labels[] = $label_for($c); }
+    foreach ( $meta_columns as $c )   { $header_labels[] = $label_for($c); }
+    fputcsv( $out, $header_labels );
+
+    // Preload selected meta values for all members in one query
+    $meta_map = [];
+    if ( ! empty( $meta_columns ) && ! empty( $members ) ) {
+        $member_ids = array_map( function( $m ) { return (int) $m->id; }, (array) $members );
+        $member_ids = array_values( array_unique( array_filter( $member_ids ) ) );
+        if ( ! empty( $member_ids ) ) {
+            $meta_table = $wpdb->prefix . 'tpw_member_meta';
+            $id_placeholders = implode( ',', array_fill( 0, count( $member_ids ), '%d' ) );
+            $key_placeholders = implode( ',', array_fill( 0, count( $meta_columns ), '%s' ) );
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $sql = "SELECT member_id, meta_key, meta_value FROM {$meta_table} WHERE member_id IN ($id_placeholders) AND meta_key IN ($key_placeholders)";
+            $params = array_merge( $member_ids, array_map( 'sanitize_key', $meta_columns ) );
+            $results = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A );
+            if ( $results ) {
+                foreach ( $results as $r ) {
+                    $mid = (int) $r['member_id'];
+                    $mk  = (string) $r['meta_key'];
+                    $mv  = (string) $r['meta_value'];
+                    if ( ! isset( $meta_map[ $mid ] ) ) { $meta_map[ $mid ] = []; }
+                    $meta_map[ $mid ][ $mk ] = $mv;
+                }
+            }
+        }
+    }
+
     foreach ( (array) $members as $m ) {
         $row = [];
+        // Core/member table columns
         foreach ( $export_columns as $c ) {
             $row[] = isset($m->$c) && $m->$c !== null ? $m->$c : '';
+        }
+        // Meta columns
+        $mid = isset($m->id) ? (int) $m->id : 0;
+        foreach ( $meta_columns as $mc ) {
+            $row[] = ( $mid && isset($meta_map[$mid]) && array_key_exists($mc, $meta_map[$mid]) ) ? $meta_map[$mid][$mc] : '';
         }
         fputcsv( $out, $row );
     }

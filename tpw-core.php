@@ -100,6 +100,14 @@ function tpw_maybe_upgrade_members_db() {
 }
 
 // Provide a default login redirect handler in Core reading tpw_login_redirect_page_id
+/**
+ * Filter: tpw_member_login_redirect
+ *
+ * Adjust the URL members are sent to after a successful login. Core reads the
+ * configured page option and falls back to site home when unsafe or missing.
+ *
+ * @since 1.0.0
+ */
 add_filter( 'tpw_member_login_redirect', function( $url, $user ) {
     $page_id = (int) get_option( 'tpw_login_redirect_page_id', 0 );
     if ( $page_id > 0 && get_post_status( $page_id ) === 'publish' ) {
@@ -139,8 +147,17 @@ add_filter( 'tpw_member_login_redirect', function( $url, $user ) {
 }, 50, 2 );
 
 // Core login URL resolver: plugins can override via filter priority; core provides sane defaults.
-// Contract:
-// apply_filters( 'tpw_core/login_url', string $url, string $redirect_to ) => string URL
+/**
+ * Filter: tpw_core/login_url
+ *
+ * Resolve the front‑end login URL used when Core requires authentication for
+ * protected pages. Implementations may return a custom login page URL and can
+ * include a redirect_to parameter.
+ *
+ * Contract: apply_filters( 'tpw_core/login_url', string $url, string $redirect_to ): string
+ *
+ * @since 1.0.0
+ */
 add_filter( 'tpw_core/login_url', function( $url, $redirect_to = '' ) {
     // Honour existing plugin/site overrides
     if ( is_string( $url ) && $url !== '' ) {

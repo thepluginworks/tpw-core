@@ -12,7 +12,7 @@ Let members view and edit selected fields of their own profile.
 
 ## Select the Profile page
 
-- Create a page in WordPress that contains the shortcode: [tpw_member_profile]
+- Create a page in WordPress that contains the shortcode: '[tpw_member_profile]'
 - In Member Settings → Member Profile, select this page in the dropdown.
 
 ## What members see

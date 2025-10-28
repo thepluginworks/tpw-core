@@ -3,7 +3,7 @@
 Welcome to the Admin Help hub for Members. These short guides cover common admin tasks and workflows for managing your member directory.
 
 - Use the list below (on the settings page) to open a topic.
-- Topics are displayed directly in the Help tab.
+- The Help tab renders a single topic at a time to keep guidance focused.
 
 If you're new, start with:
 

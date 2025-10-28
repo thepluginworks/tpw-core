@@ -1,6 +1,16 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+/**
+ * Postcode lookup helper for TPW Core.
+ *
+ * Supports multiple providers (Postcodes.io, GetAddress.io, Google) and
+ * exposes a single lookup method for basic town/county resolution and an
+ * optional full address mode when supported. Provider and API keys are
+ * filterable for integration flexibility.
+ *
+ * @since 1.0.0
+ */
 class TPW_Postcode_Helper {
     /**
      * Basic UK postcode pattern check (not exhaustive but practical for parsing).
@@ -21,11 +31,18 @@ class TPW_Postcode_Helper {
         return substr( $v, 0, -3 ) . ' ' . substr( $v, -3 );
     }
     /**
-     * Lookup a postcode and return basic location details.
+     * Lookup a postcode and return location details.
      *
+     * Filters:
+     * - tpw_postcode_lookup_provider — change provider (`postcodesio`, `getaddress`, `google`)
+     * - tpw_postcode_lookup_api_key — supply API keys for providers
+     *
+     * @since 1.0.0
      * @param string $postcode Raw postcode input
-     * @param string $country  Country code (currently only 'GB' supported)
-     * @return array|false { postcode, town, county, district, region, latitude, longitude } or false on fail
+     * @param string $country  Country code (e.g., GB)
+     * @param string $mode     'basic' or 'full' (full supported for google/getaddress)
+     * @param string $street_prefix Optional street number prefix filter in full mode
+     * @return array|false Success payload or false on fail
      */
     public static function lookup_postcode( $postcode, $country = 'GB', $mode = 'basic', $street_prefix = '' ) {
         $postcode = is_string( $postcode ) ? strtoupper( trim( $postcode ) ) : '';

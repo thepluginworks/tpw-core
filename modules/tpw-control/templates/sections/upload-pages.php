@@ -219,9 +219,10 @@ echo '<style>
                             ?>
                             <p class="description">Leave empty for none. Admins always have access.</p>
                         </div>
-                        <div class="tpw-upl-actions" style="margin-top:8px">
-                            <a href="#" class="tpw-btn tpw-btn-primary" data-tpw-close="#tpw-upl-vis-modal">Done</a>
+                        <div class="tpw-upl-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <button class="tpw-btn tpw-btn-primary" type="submit" name="tpw_control_upload_pages_action" value="update_page">Save Visibility</button>
                             <a href="#" class="tpw-btn tpw-btn-light" data-tpw-close="#tpw-upl-vis-modal">Cancel</a>
+                            <span class="tpw-text-muted" style="margin-left:6px">Saving also updates Page Details.</span>
                         </div>
                     </div>
                 </div>
@@ -660,7 +661,7 @@ echo '<style>
                         <div style="background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:10px;margin:10px 0;">
                             <div style="font-weight:600;margin-bottom:4px;">Shortcode</div>
                             <code style="display:block;white-space:pre;">
-[tpw_upload_page slug="your-slug"]
+'[tpw_upload_page slug="your-slug"]'
                             </code>
                             <p class="description" style="margin:8px 0 0;">Replace <code>your-slug</code> with the slug of your Upload Page. The page layout (table, list, or cards) is controlled by the Upload Page settings.</p>
                         </div>

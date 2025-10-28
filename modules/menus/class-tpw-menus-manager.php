@@ -1,7 +1,21 @@
 <?php
 
+/**
+ * Data access layer for TPW Menus (admin-defined menus for events).
+ *
+ * Creates and manages the tpw_menus, tpw_menu_courses, and tpw_menu_choices
+ * tables and provides CRUD helpers used by admin UIs and renderers.
+ *
+ * @since 1.0.0
+ */
 class TPW_Menus_Manager {
 
+    /**
+     * Create the base menus table and related tables.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function create_table() {
         global $wpdb;
 
@@ -27,6 +41,12 @@ class TPW_Menus_Manager {
         self::create_menu_courses_table();
     }
 
+    /**
+     * Create the menu choices table.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function create_menu_choices_table() {
         global $wpdb;
 
@@ -48,12 +68,25 @@ class TPW_Menus_Manager {
         dbDelta($sql);
     }
 
+    /**
+     * Get all menus ordered by name.
+     *
+     * @since 1.0.0
+     * @return array<object>
+     */
     public static function get_all_menus() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menus';
         return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name ASC");
     }
 
+    /**
+     * Get a menu row by ID.
+     *
+     * @since 1.0.0
+     * @param int $id
+     * @return object|null
+     */
     public static function get_menu_by_id($id) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menus';
@@ -64,12 +97,29 @@ class TPW_Menus_Manager {
         ));
     }
 
+    /**
+     * Alias for get_menu_by_id().
+     *
+     * @since 1.0.0
+     * @param int $menu_id
+     * @return object|null
+     */
     public static function get_menu($menu_id) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menus';
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $menu_id));
     }
 
+    /**
+     * Insert a new menu.
+     *
+     * @since 1.0.0
+     * @param string $name
+     * @param string $description
+     * @param int    $number_of_courses
+     * @param float  $price
+     * @return int Insert ID
+     */
     public static function insert_menu($name, $description = '', $number_of_courses = 3, $price = 0.00) {
         //error_log('insert_menu() is executing from: ' . __FILE__);
         //error_log('insert_menu() args: ' . print_r(func_get_args(), true));
@@ -85,12 +135,30 @@ class TPW_Menus_Manager {
         return $wpdb->insert_id;
     }
 
+    /**
+     * Delete a menu by ID.
+     *
+     * @since 1.0.0
+     * @param int $menu_id
+     * @return int|false Rows affected or false on error
+     */
     public static function delete_menu($menu_id) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menus';
         return $wpdb->delete($table_name, ['id' => $menu_id], ['%d']);
     }
 
+    /**
+     * Update a menu row.
+     *
+     * @since 1.0.0
+     * @param int    $id
+     * @param string $name
+     * @param string $description
+     * @param int    $number_of_courses
+     * @param float  $price
+     * @return int|false Rows affected or false on error
+     */
     public static function update_menu($id, $name, $description, $number_of_courses, $price) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menus';
@@ -107,6 +175,12 @@ class TPW_Menus_Manager {
         );
     }
 
+    /**
+     * Create the menu courses table.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function create_menu_courses_table() {
         global $wpdb;
 
@@ -127,6 +201,13 @@ class TPW_Menus_Manager {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
     }
+    /**
+     * Get all courses for a menu (ordered by course_number).
+     *
+     * @since 1.0.0
+     * @param int $menu_id
+     * @return array<int,array>
+     */
     public static function get_courses_for_menu( $menu_id ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menu_courses';

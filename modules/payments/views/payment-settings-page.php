@@ -4,7 +4,20 @@ if (!defined('ABSPATH')) exit;
 
 error_log('payment-settings-page.php loaded');
 
+/**
+ * SumUp settings screen renderer.
+ *
+ * Renders the admin page UI and contextual Help tab for the SumUp gateway.
+ *
+ * @since 1.0.1
+ */
 class TPW_SumUp_Settings_Page {
+    /**
+     * Output the SumUp settings page.
+     *
+     * @since 1.0.1
+     * @return void
+     */
     public static function render_page() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tpw_sumup_nonce']) && wp_verify_nonce($_POST['tpw_sumup_nonce'], 'tpw_sumup_save_settings')) {
             $client_id = sanitize_text_field($_POST['tpw_sumup_client_id'] ?? '');
@@ -108,6 +121,11 @@ define(\'TPW_SUMUP_CLIENT_SECRET\', \'your-client-secret\');</code></pre>
 }
 
 
+/**
+ * Contextual Help: Secure Setup guidance for SumUp credentials.
+ *
+ * @since 1.0.1
+ */
 add_action('load-toplevel_page_tpw_payment_settings', function() {
     $screen = get_current_screen();
     $screen->add_help_tab([

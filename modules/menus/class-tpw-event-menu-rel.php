@@ -1,7 +1,21 @@
 <?php
 
+/**
+ * Event to Menu relationship helpers.
+ *
+ * Manages a compact mapping table between events and menus and basic queries
+ * to assign and fetch relationships.
+ *
+ * @since 1.0.0
+ */
 class TPW_Event_Menu_Rel {
 
+    /**
+     * Create the relationship table if missing.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function create_table() {
         global $wpdb;
 
@@ -21,6 +35,14 @@ class TPW_Event_Menu_Rel {
         dbDelta($sql);
     }
 
+    /**
+     * Assign or update a menu for an event.
+     *
+     * @since 1.0.0
+     * @param int $event_id
+     * @param int $menu_id
+     * @return void
+     */
     public static function assign_menu_to_event($event_id, $menu_id) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_event_menu_relationship';
@@ -32,6 +54,13 @@ class TPW_Event_Menu_Rel {
         ]);
     }
 
+    /**
+     * Get the assigned menu ID for an event.
+     *
+     * @since 1.0.0
+     * @param int $event_id
+     * @return int|null
+     */
     public static function get_menu_for_event($event_id) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_event_menu_relationship';

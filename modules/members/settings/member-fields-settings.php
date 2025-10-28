@@ -66,6 +66,7 @@ tr[data-custom="1"] {
 				<div class="tpw-table-cell">Searchable</div>
 				<div class="tpw-table-cell">Basic Search</div>
 				<div class="tpw-table-cell">Use in Conditions</div>
+				<div class="tpw-table-cell">Download</div>
 				<div class="tpw-table-cell">Delete</div>
 			</div>
 				<?php
@@ -187,6 +188,12 @@ tr[data-custom="1"] {
 							<input type="checkbox" name="tpw_conditional_fields[]" value="<?php echo esc_attr($field['key']); ?>" <?php checked( in_array($field['key'], $conditional_selected, true) ); ?> />
 							<span class="tpw-resp-text">Use in Conditions</span>
 							<span class="screen-reader-text">Use in conditions</span>
+						</label>
+					</div>
+					<div class="tpw-table-cell">
+						<label class="tpw-resp-label" style="display:inline-flex; align-items:center; gap:6px;">
+							<input type="checkbox" name="tpw_member_field_download[]" value="<?php echo esc_attr($field['key']); ?>" <?php $dl = get_option('tpw_member_field_download', []); if (!is_array($dl)) { $dl = []; } checked( in_array($field['key'], $dl, true) ); ?> />
+							<span class="tpw-resp-text">Download</span>
 						</label>
 					</div>
 					<div class="tpw-table-cell">

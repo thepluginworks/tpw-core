@@ -1,14 +1,17 @@
 <?php
 /**
- * Core admin functions: screen detection, asset enqueue, header rendering.
+ * Core admin functions: screen detection, asset enqueue, and shared header/UI helpers.
+ *
+ * @since 1.0.0
  */
 
 if ( ! function_exists( 'tpw_core_is_admin_screen' ) ) {
-	/**
-	 * Detects whether the current screen belongs to TPW Core or one of its CPTs.
-	 *
-	 * @return bool True if the current screen is a TPW Core screen or CPT, false otherwise.
-	 */
+    /**
+     * Detect whether the current screen belongs to TPW Core or one of its CPTs.
+     *
+     * @since 1.0.0
+     * @return bool True if the current screen is a TPW Core screen or CPT, false otherwise.
+     */
 	function tpw_core_is_admin_screen() {
 		$screen = get_current_screen();
 		$is_tpw_screen = false;
@@ -27,7 +30,9 @@ if ( ! function_exists( 'tpw_core_is_admin_screen' ) ) {
 }
 
 /**
- * Enqueues admin CSS only for TPW Core pages and CPT screens.
+ * Enqueue admin CSS for TPW Core pages and CPT screens only.
+ *
+ * @since 1.0.0
  */
 add_action( 'admin_enqueue_scripts', function () {
 
@@ -76,8 +81,9 @@ add_action( 'admin_enqueue_scripts', function () {
 }, 99);
 
 /**
- * Adds a CSS class to the <body> for styling on Core admin and CPT screens.
+ * Add CSS classes to <body> for styling on Core admin and CPT screens.
  *
+ * @since 1.0.0
  * @param string $classes Existing body classes.
  * @return string Modified body classes.
  */
@@ -112,8 +118,9 @@ add_filter('admin_body_class', function ($classes) {
 }, 10);
 
 /**
- * Returns an array of TPW Core admin page slugs.
+ * Get TPW Core admin page slugs.
  *
+ * @since 1.0.0
  * @return array List of TPW Core admin page slugs.
  */
 function tpw_core_get_admin_pages() {
@@ -135,8 +142,9 @@ add_action('current_screen', function($screen){
 });
 
 /**
- * Checks if the current admin screen matches any of the TPW Core admin pages or CPT screens.
+ * Check if the current admin screen matches any TPW Core admin pages or CPT screens.
  *
+ * @since 1.0.0
  * @return bool True if on a TPW Core admin page or CPT screen, false otherwise.
  */
 function tpw_core_is_plugin_admin_screen() {
@@ -210,6 +218,7 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
     /**
      * Output a consistent TPW admin header (same structure/classes as FlexiEvent).
      *
+     * @since 1.0.0
      * @param string $title          Page title.
      * @param string $notice_message Optional small message beneath the title.
      * @param array  $args           Optional args:
@@ -258,6 +267,12 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
  * UI Theme helpers: read and apply custom CSS variable tokens for .tpw-admin-ui
  */
 if ( ! function_exists( 'tpw_core_get_ui_theme_defaults' ) ) {
+    /**
+     * Get default UI theme token values consumed by .tpw-admin-ui.
+     *
+     * @since 1.0.0
+     * @return array
+     */
     function tpw_core_get_ui_theme_defaults() {
         return [
             'font_family'  => 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
@@ -274,6 +289,13 @@ if ( ! function_exists( 'tpw_core_get_ui_theme_defaults' ) ) {
 }
 
 if ( ! function_exists( 'tpw_core_get_ui_theme_settings' ) ) {
+    /**
+     * Read saved UI theme settings merged with defaults when requested.
+     *
+     * @since 1.0.0
+     * @param bool $with_defaults Merge defaults into the stored option.
+     * @return array
+     */
     function tpw_core_get_ui_theme_settings( $with_defaults = true ) {
         $opt = get_option( 'tpw_ui_theme_settings', [] );
         if ( ! is_array( $opt ) ) { $opt = []; }
@@ -286,8 +308,12 @@ if ( ! function_exists( 'tpw_core_get_ui_theme_settings' ) ) {
 
 if ( ! function_exists( 'tpw_core_build_ui_theme_style_attr' ) ) {
     /**
-     * Build a style attribute string of CSS custom properties for the .tpw-admin-ui wrapper.
+     * Build a style attribute value of CSS custom properties for .tpw-admin-ui.
+     *
      * Example output: "--tpw-font-family: ...; --tpw-btn-bg: ...; --tpw-btn-text: ...; --tpw-accent-color: ..."
+     *
+     * @since 1.0.0
+     * @return string
      */
     function tpw_core_build_ui_theme_style_attr() {
         $ui = tpw_core_get_ui_theme_settings( true );
@@ -331,6 +357,12 @@ if ( ! function_exists( 'tpw_core_build_ui_theme_style_attr' ) ) {
  * @return bool
  */
 if ( ! function_exists( 'tpw_core_inherit_global_frontend_enabled' ) ) {
+    /**
+     * Determine whether front-end admin-like screens inherit global theme styles.
+     *
+     * @since 1.0.0
+     * @return bool
+     */
     function tpw_core_inherit_global_frontend_enabled() {
         $opt = get_option( 'tpw_ui_theme_settings', [] );
         if ( ! is_array( $opt ) ) { $opt = []; }

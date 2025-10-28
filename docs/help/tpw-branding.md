@@ -89,9 +89,15 @@ echo '</div>';
 <a class="tpw-btn tpw-btn-primary" href="#">Save changes</a>
 <button type="submit" class="tpw-btn tpw-btn-secondary">Cancel</button>
 ```
+ 
+### Tokens the Branding tab controls
 
 - Optional admin body classes (wp-admin only): if your screen should inherit Core’s admin tweaks, add body classes `tpw-origin tpw-fe-embed`. Core does this automatically on its own pages via `admin_body_class` filter, but external plugins can mimic it when appropriate.
 
+- Developer Guide → ../developer-guide.md
+- Admin helpers: includes/admin-functions.php
+- Buttons CSS: assets/css/tpw-buttons.css
+- Admin UI CSS: assets/css/tpw-admin-ui.css
 ---
 
 ## Consuming tokens in your own CSS
@@ -104,7 +110,6 @@ The Branding tab emits variables to `:root`, so your CSS can use them directly:
 /* Heading tokens (if set) */
 .my-panel h2 { font-size: var(--tpw-h2-size, 1.5rem); font-weight: var(--tpw-h2-weight, 600); }
 ```
-
 When you wrap in `.tpw-admin-ui`, additional scoped tokens exist for inputs and buttons (see `assets/css/tpw-admin-ui.css`).
 
 ---
@@ -183,3 +188,5 @@ add_shortcode( 'my_action_link', function(){
 If you need more examples, check usages in:
 - `modules/payments/views/payment-settings-page.php` for `.tpw-admin-ui`
 - `assets/css/tpw-buttons.css` for available button variants
+
+See also: Core Hooks Index → ../developer-guide.md#core-hooks-index

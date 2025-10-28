@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Core payment helpers.
+ *
+ * Provides surcharge calculation and persistence helpers used by RSVP flows
+ * and integrations. No gateway side‑effects occur here.
+ *
+ * @since 1.0.0
+ */
 class TPW_Core_Payments {
 
     /**
@@ -10,6 +18,9 @@ class TPW_Core_Payments {
      * @param float  $amount Base amount before surcharge.
      * @param string $method Payment method slug (e.g., 'woocommerce','square','sumup','bacs','cheque','cash').
      * @return array{base_amount:float,surcharge_amount:float,total_with_surcharge:float}
+     */
+    /**
+     * @since 1.0.0
      */
     public static function tpw_core_calculate_payable_total( $amount, $method ) {
         $base = (float) $amount;
@@ -52,6 +63,9 @@ class TPW_Core_Payments {
      *     @type string $checkout_url
      *     @type string $error (only if success is false)
      * }
+     */
+    /**
+     * @since 1.0.0
      */
     public static function create_payment($args = []) {
         global $wpdb;

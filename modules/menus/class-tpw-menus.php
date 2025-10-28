@@ -1,4 +1,13 @@
 <?php
+/**
+ * Front-end Menu Modal renderer for FlexiEvent events.
+ *
+ * Hooks into event detail screens to render a "View Menu" button and a modal
+ * with menu courses and choices. Provides a shortcode fallback and a safety
+ * the_content appender if echoed markup is stripped by buffers/cachers.
+ *
+ * @since 1.0.0
+ */
 class TPW_Menus {
     /**
      * Holds last rendered menu modal block so we can append it to the_content
@@ -7,6 +16,12 @@ class TPW_Menus {
      */
     protected static $last_rendered_block = '';
 
+    /**
+     * Wire actions/filters and the shortcode.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function init() {
         // Hook into the FlexiEvent event page (after main event content)
         add_action( 'tpw_event_details_after_meta', [ __CLASS__, 'hook_after_event_content' ], 5 );
@@ -28,12 +43,24 @@ class TPW_Menus {
         });
     }
 
+    /**
+     * Internal debug logger (conditional on WP_DEBUG).
+     *
+     * @since 1.0.0
+     */
     protected static function log( $message ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( $message );
         }
     }
 
+    /**
+     * Receive event context and render the menu modal trigger once per event.
+     *
+     * @since 1.0.0
+     * @param mixed $event Event context (id, array, or object)
+     * @return void
+     */
     public static function hook_after_event_content( $event ) {
         self::log('[TPW_Menus] hook_after_event_content() received: ' . print_r($event, true));
 
@@ -77,6 +104,13 @@ class TPW_Menus {
         }
     }
 
+    /**
+     * Check if an event has a linked menu.
+     *
+     * @since 1.0.0
+     * @param int $event_id
+     * @return bool
+     */
     public static function event_has_menu( $event_id ) {
         global $wpdb;
         self::log('[TPW_Menus] event_has_menu() checking for event_id: ' . $event_id . ' in table: ' . $wpdb->prefix . 'tpw_event_menu_relationship');
@@ -88,6 +122,13 @@ class TPW_Menus {
         return $result;
     }
 
+    /**
+     * Build the menu payload (menu details + courses + choices).
+     *
+     * @since 1.0.0
+     * @param int $event_id
+     * @return array|null
+     */
     public static function get_menu_payload( $event_id ) {
         global $wpdb;
         $prefix = $wpdb->prefix;
@@ -148,6 +189,12 @@ class TPW_Menus {
         ];
     }
 
+    /**
+     * Ensure UI CSS/JS is registered and enqueued on front-end.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     public static function flag_need_ui_assets() {
         static $enqueued = false;
         if ( $enqueued ) {
@@ -224,7 +271,9 @@ class TPW_Menus {
     public static function tpw_core_flag_need_ui_assets() { self::flag_need_ui_assets(); }
 
     /**
-     * Late content filter: append last rendered menu modal if it vanished from DOM/content.
+     * Late content filter: append last rendered menu modal if it vanished from content.
+     *
+     * @since 1.0.0
      */
     public static function filter_content_append_menu( $content ) {
         if ( empty( self::$last_rendered_block ) ) {

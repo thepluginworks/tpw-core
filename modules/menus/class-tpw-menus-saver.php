@@ -1,11 +1,37 @@
 <?php
 
+/**
+ * Persistence helpers for TPW Menus admin UIs.
+ *
+ * Wraps inserts/updates for menus and their courses, and provides a utility
+ * to save a simple per-course option (legacy compatibility).
+ *
+ * @since 1.0.0
+ */
 class TPW_Menus_Saver {
 
+    /**
+     * Create a menu with basic fields.
+     *
+     * @since 1.0.0
+     * @param string $name
+     * @param string $description
+     * @param int    $number_of_courses
+     * @param float  $price
+     * @return int Insert ID
+     */
     public static function save_menu($name, $description = '', $number_of_courses = 3, $price = 0.00) {
         return TPW_Menus_Manager::insert_menu($name, $description, $number_of_courses, $price);
     }
 
+    /**
+     * Replace all courses for a menu with the provided list.
+     *
+     * @since 1.0.0
+     * @param int   $menu_id
+     * @param array $courses List of course name strings
+     * @return void
+     */
     public static function assign_courses_to_menu($menu_id, $courses = []) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menu_courses';
@@ -29,6 +55,15 @@ class TPW_Menus_Saver {
         }
     }
 
+    /**
+     * Save an option text for a given course (legacy helper).
+     *
+     * @since 1.0.0
+     * @param int    $menu_id
+     * @param string $course_name
+     * @param string $option_text
+     * @return void
+     */
     public static function save_course_option($menu_id, $course_name, $option_text) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'tpw_menu_options';

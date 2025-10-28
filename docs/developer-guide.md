@@ -1,3 +1,187 @@
+## Core Hooks Index
+
+Reference for actions and filters provided by TPW Core modules. For usage examples, see the relevant sections below.
+
+### Core
+- tpw_core_loaded — Fires when core initialization finishes.
+	- File: `includes/class-tpw-core.php`
+	- Since: 1.0.0
+	- Description: Bootstrap point for add-ons to hook into after dependencies are loaded.
+- tpw_core/login_url (filter) — Resolve the front-end login URL.
+	- File: `tpw-core.php` and `includes/tpw-core-loader.php` (consumer)
+	- Since: 1.0.0
+	- Description: Return a login URL; core provides defaults and honours redirect_to.
+- tpw_core_is_admin_screen (filter) — Identify TPW admin screens.
+	- File: `includes/admin-functions.php`
+	- Since: 1.0.0
+	- Description: Override detection to force or relax TPW admin styling.
+- tpw_core_admin_pages (filter) — Allowed admin page slugs for TPW header.
+	- File: `includes/admin-functions.php`
+	- Since: 1.0.0
+	- Description: Add or remove pages included in the TPW admin UI chrome.
+- tpw_core_get_admin_pages (filter) — Provide custom admin pages metadata.
+	- File: `includes/admin-functions.php`
+	- Since: 1.0.0
+	- Description: Supply a list of admin pages (title, slug, url) for the header.
+- tpw_core/header_icon_url (filter) — Change the branding icon URL in admin header.
+	- File: `includes/admin-functions.php`
+	- Since: 1.0.0
+	- Description: Swap logo/icon per-page or brand.
+- tpw_core/admin_header/after (action) — Inject content after TPW admin header.
+	- File: `includes/admin-functions.php`
+	- Since: 1.0.0
+	- Description: Append help links or notices next to the title.
+- tpw_core_settings_tabs (filter) — Alter or extend TPW Core settings tabs.
+	- File: `includes/tpw-core-settings.php`
+	- Since: 1.0.0
+	- Description: Add new tabs or change labels/order.
+
+### System Pages
+- tpw/system_pages/defaults (filter) — Default registry rows.
+	- File: `includes/class-tpw-core-system-pages.php`
+	- Since: 1.0.0
+	- Description: Register additional system pages at load.
+- tpw_system_page_url (filter) — Override a system page URL for a slug.
+	- File: `includes/class-tpw-core-system-pages.php`
+	- Since: 1.0.0
+	- Description: Rewrite or localize system page URL generation.
+
+### Members
+- tpw_member_login_redirect (filter) — Post-login redirect URL.
+	- File: `tpw-core.php` (default implementation), `modules/members/shortcodes/member-login.php` (consumers)
+	- Since: 1.0.0
+	- Description: Decide where members land after login.
+- tpw_members/allowed_statuses (filter) — Valid statuses for visibility.
+	- File: `modules/members/includes/class-tpw-member-access.php`
+	- Since: 1.0.0
+	- Description: Adjust statuses considered valid members.
+- tpw_members/wp_admin_is_full_admin (filter) — Treat WP admins as full admins.
+	- File: `modules/members/includes/class-tpw-member-access.php`
+	- Since: 1.0.0
+	- Description: When true, current_user_can(manage_options) implies TPW admin.
+- tpw_members/allow_email_match_for_member (filter) — Fallback to email matching.
+	- File: `modules/members/includes/class-tpw-member-access.php`
+	- Since: 1.0.0
+	- Description: Permit resolving member by email if user_id missing.
+- tpw_members/allow_username_match_for_member (filter) — Fallback to username.
+	- File: `modules/members/includes/class-tpw-member-access.php`
+	- Since: 1.0.0
+	- Description: Permit resolving member by username if user_id missing.
+- tpw_members/wp_admin_can_view_profile (filter) — Admins may view any profile.
+	- File: `includes/tpw-core-loader.php`, `modules/members/shortcodes/member-profile.php`
+	- Since: 1.0.0
+	- Description: Tighten or relax admin viewing of profiles.
+- tpw_members/profile_allow_all_statuses (filter) — Allow all statuses to view/edit.
+	- File: `includes/tpw-core-loader.php`, `modules/members/shortcodes/member-profile.php`
+	- Since: 1.0.0
+	- Description: Restrict profile screens to active-only when false.
+- tpw_members/profile_virtual_title (filter) — Virtual title for My Profile.
+	- File: `includes/tpw-core-loader.php`
+	- Since: 1.0.0
+	- Description: Customize the virtual page title for the profile route.
+- tpw_members_admin_form_extra_fields (action) — Extend admin add/edit forms.
+	- File: `modules/members/templates/admin/add.php`, `modules/members/templates/admin/edit.php`
+	- Since: 1.0.0
+	- Description: Render additional custom fields (see guide below for usage).
+- tpw_members_admin_form_after_save (action) — Persist extra fields after save.
+	- File: `modules/members/includes/class-tpw-member-form-handler.php`
+	- Since: 1.0.0
+	- Description: Hook for saving custom data after core save.
+- tpw_members/mail_from_header (filter) — Override From header for emails.
+	- File: `modules/members/includes/class-tpw-member-ajax.php`
+	- Since: 1.0.0
+	- Description: Provide authenticated From header string if required.
+- tpw_member_login_messages (filter) — Customize login UI messages.
+	- File: `modules/members/shortcodes/member-login.php`
+	- Since: 1.0.0
+	- Description: Add/alter user‑facing messages on the login form.
+- tpw_members_admin_buttons_end (action) — Add buttons to Admin toolbar.
+	- File: `modules/members/templates/admin/list.php`
+	- Since: 1.0.0
+	- Description: Append custom admin actions in Manage Members.
+- tpw_members_tools_buttons_end (action) — Add buttons to Tools toolbar.
+	- File: `modules/members/templates/admin/list.php`
+	- Since: 1.0.0
+	- Description: Append reporting/export tools in Manage Members.
+
+### Postcodes
+- tpw_postcode_lookup_provider (filter) — Select postcode provider.
+	- File: `modules/postcodes/class-tpw-postcode-helper.php`
+	- Since: 1.0.0
+	- Description: Choose between postcodesio, getaddress, google.
+- tpw_postcode_lookup_api_key (filter) — Provide provider API keys.
+	- File: `modules/postcodes/class-tpw-postcode-helper.php`
+	- Since: 1.0.0
+	- Description: Inject API keys per provider ('google' or 'getaddress').
+
+### Payments
+- tpw_payment_completed (action) — Payment completed webhook event.
+	- File: `modules/payments/webhook.php`
+	- Since: 1.0.0
+	- Description: Fires with gateway, reference, email, amount, payload array.
+
+### Gallery
+- tpw_gallery_enabled (filter) — Toggle gallery feature on/off.
+	- File: `modules/gallery/gallery-functions.php`
+	- Since: 1.0.0
+	- Description: Globally enable/disable gallery.
+- tpw_gallery_sources (filter) — Filter registered gallery sources.
+	- File: `modules/gallery/gallery-functions.php`
+	- Since: 1.0.0
+	- Description: Add/modify sources exposed to the gallery renderer.
+- tpw_gallery_source_{slug} (filter) — Filter output for a specific source.
+	- File: `modules/gallery/gallery-functions.php`
+	- Since: 1.0.0
+	- Description: Transform source output per context.
+- tpw_gallery_source_registered (action) — Fires after a source is registered.
+	- File: `modules/gallery/gallery-functions.php`
+	- Since: 1.0.0
+
+### TPW Control
+- tpw_control/register_sections (action) — Prepare section definitions.
+	- File: `modules/tpw-control/class-tpw-control.php`
+	- Since: 1.0.0
+- tpw_control_register_sections (filter) — Preferred hook to register sections.
+	- File: `modules/tpw-control/class-tpw-control.php`
+	- Since: 1.0.0
+	- Description: Add/modify sections (keys, labels, callbacks, visibility).
+- tpw_control/sections (filter) — Back-compat filter to modify sections.
+	- File: `modules/tpw-control/class-tpw-control.php`
+	- Since: 1.0.0
+- tpw_control_can_manage (filter) — Gate whole Control hub access.
+	- File: `modules/tpw-control/class-tpw-control.php`
+	- Since: 1.0.0
+- tpw_control/sidebar_after_menu (action) — Content after sidebar menu.
+	- File: `modules/tpw-control/templates/layout.php`
+	- Since: 1.0.0
+- tpw_control_render_section_{slug} (action) — Render external sections.
+	- File: `modules/tpw-control/class-tpw-control-router.php`
+	- Since: 1.0.0
+- tpw_control/upload_pages_per_page (filter) — Pagination size for Upload Pages.
+	- File: `modules/tpw-control/templates/sections/upload-pages.php`
+	- Since: 1.0.0
+
+### Menus (Event Menus)
+- tpw_core/menu_modal_button_label (filter) — Button label text.
+	- File: `modules/menus/templates/menu-modal.php`
+	- Since: 1.0.0
+- tpw_core/menu_modal_title (filter) — Modal title.
+	- File: `modules/menus/templates/menu-modal.php`
+	- Since: 1.0.0
+- tpw_core/menu_modal_price_html (filter) — Customize price HTML per menu.
+	- File: `modules/menus/templates/menu-modal.php`
+	- Since: 1.0.0
+
+### Email
+- tpw_email/log (action) — Receive email log details.
+	- File: `modules/email/class-tpw-email.php`
+	- Since: 1.0.0
+- tpw_email/require_login (filter) — Require login to send via email form.
+	- File: `modules/email/class-tpw-email-form.php`
+	- Since: 1.0.0
+
+---
+
 ### Reusable Email Module
 
 TPW Core includes a reusable Email module intended to be shared by features like Members, FlexiGolf, and Candidates. It provides:
@@ -590,6 +774,10 @@ Linked WordPress Page
 
 Public Shortcode
 - `[tpw_upload_page slug="..."]` renders the Upload Page on a normal WordPress Page or post. Internally this calls `TPW_Control_Upload_Pages::render_page_public( $slug )` and applies the Upload Page’s visibility rules.
+
+Lightbox behavior
+- Each file renders a single preview link (`.tpw-upl-preview`) that wraps the icon and label. This prevents duplicate anchors with the same `data-index`.
+- The built-in lightbox scopes navigation to the clicked Upload Page instance and resolves items by `data-index`. If you render multiple Upload Pages on one screen, navigation will stay within the clicked instance.
 
 Visibility JSON (supported keys)
 - `public` (bool): true allows all visitors (logged out users included)

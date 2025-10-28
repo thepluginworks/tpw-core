@@ -1,6 +1,15 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
+/**
+ * Front-end enqueue for postcode lookup script on TPW pages.
+ *
+ * Enqueues the lightweight JS and localizes ajaxUrl and nonce only on pages
+ * that include relevant TPW shortcodes to avoid site-wide overhead.
+ *
+ * @since 1.0.0
+ */
+
 add_action('wp_enqueue_scripts', function(){
     // Enqueue on front-end contexts where TPW pages may appear
     if (!is_page()) return;

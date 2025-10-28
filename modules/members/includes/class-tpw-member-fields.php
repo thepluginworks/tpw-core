@@ -247,6 +247,18 @@ class TPW_Member_Fields {
 			update_option('tpw_member_field_sections', $sections_map );
 		}
 
+		// Persist Download selections as a simple array option (field keys)
+		$download_fields = [];
+		if ( isset($_POST['tpw_member_field_download']) ) {
+			if ( is_array($_POST['tpw_member_field_download']) ) {
+				$download_fields = array_values( array_unique( array_filter( array_map('sanitize_key', $_POST['tpw_member_field_download'] ) ) ) );
+			} else {
+				// Single value fallback
+				$download_fields = [ sanitize_key( (string) $_POST['tpw_member_field_download'] ) ];
+			}
+		}
+		update_option( 'tpw_member_field_download', $download_fields );
+
 		// Persist conditional fields (multiple)
 		if ( isset($_POST['tpw_conditional_fields']) && is_array($_POST['tpw_conditional_fields']) ) {
 			$conds = array_values( array_unique( array_filter( array_map('sanitize_key', $_POST['tpw_conditional_fields']) ) ) );

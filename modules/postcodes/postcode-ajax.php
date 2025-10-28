@@ -1,10 +1,25 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+/**
+ * AJAX endpoint: tpw_lookup_postcode
+ *
+ * Validates nonce and proxies requests to TPW_Postcode_Helper::lookup_postcode(),
+ * returning a normalized JSON payload. Available to both logged‑in and public
+ * visitors (nonce required).
+ *
+ * @since 1.0.0
+ */
 // AJAX: postcode lookup
 add_action( 'wp_ajax_tpw_lookup_postcode', 'tpw_core_ajax_lookup_postcode' );
 add_action( 'wp_ajax_nopriv_tpw_lookup_postcode', 'tpw_core_ajax_lookup_postcode' );
 
+/**
+ * Handle postcode lookup request.
+ *
+ * @since 1.0.0
+ * @return void JSON response
+ */
 function tpw_core_ajax_lookup_postcode() {
     // Nonce: allow both admin and front-end usage
     $nonce = isset($_POST['_ajax_nonce']) ? $_POST['_ajax_nonce'] : ( $_POST['nonce'] ?? '' );

@@ -74,29 +74,106 @@ class TPW_Control_UI {
 
     // Visibility JSON access check
     public static function user_has_access( $visibility, $member = null ) {
+        // WP or TPW admins always pass
         if ( self::is_admin() ) return true;
-        if ( is_string( $visibility ) ) { $decoded = json_decode( $visibility, true ); if ( json_last_error() === JSON_ERROR_NONE ) $visibility = $decoded; else return false; }
+
+        // Decode if needed and normalize shape
+        if ( is_string( $visibility ) ) {
+            $decoded = json_decode( $visibility, true );
+            if ( json_last_error() === JSON_ERROR_NONE ) $visibility = $decoded; else return false;
+        }
         if ( ! is_array( $visibility ) ) $visibility = [];
+
+        // Public override
         if ( isset( $visibility['public'] ) && $visibility['public'] ) return true;
-        if ( isset( $visibility['logged_in'] ) && $visibility['logged_in'] ) { if ( ! is_user_logged_in() ) return false; }
+
+        // Logged-in requirement
+        if ( isset( $visibility['logged_in'] ) && $visibility['logged_in'] ) {
+            if ( ! is_user_logged_in() ) return false;
+        }
+
+        // Member context (when needed)
+        $need_member = true; // default to require a member record when evaluating flags/statuses
         if ( null === $member ) {
             if ( ! is_user_logged_in() ) return false;
-            if ( class_exists( 'TPW_Member_Access' ) ) { require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php'; $member = TPW_Member_Access::get_member_by_user_id( get_current_user_id() ); }
+            if ( class_exists( 'TPW_Member_Access' ) ) {
+                require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
+                $member = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
+            }
         }
+
+        // Helper to read flag values from the member
         $flag_val = function( $flag ) use ( $member ) {
             $allowed_flags = [ 'is_admin', 'is_committee', 'is_match_manager', 'is_noticeboard_admin' ];
             if ( ! in_array( $flag, $allowed_flags, true ) ) return false;
             if ( isset( $member->$flag ) ) return (int) $member->$flag === 1;
             return false;
         };
-        if ( ! empty( $visibility['flags_all'] ) && is_array( $visibility['flags_all'] ) ) { if ( ! $member ) return false; foreach ( $visibility['flags_all'] as $f ) { if ( ! $flag_val( $f ) ) return false; } }
-        if ( ! empty( $visibility['flags_any'] ) && is_array( $visibility['flags_any'] ) ) { if ( ! $member ) return false; $any = false; foreach ( $visibility['flags_any'] as $f ) { if ( $flag_val( $f ) ) { $any = true; break; } } if ( ! $any ) return false; }
-        if ( ! empty( $visibility['flags_not'] ) && is_array( $visibility['flags_not'] ) ) { if ( $member ) { foreach ( $visibility['flags_not'] as $f ) { if ( $flag_val( $f ) ) return false; } } }
-        $has_flag_constraints = ! empty( $visibility['flags_all'] ) || ! empty( $visibility['flags_any'] ) || ! empty( $visibility['flags_not'] );
+
+        // Evaluate flag constraints
+        $flags_all = isset( $visibility['flags_all'] ) && is_array( $visibility['flags_all'] ) ? $visibility['flags_all'] : [];
+        $flags_any = isset( $visibility['flags_any'] ) && is_array( $visibility['flags_any'] ) ? $visibility['flags_any'] : [];
+        $flags_not = isset( $visibility['flags_not'] ) && is_array( $visibility['flags_not'] ) ? $visibility['flags_not'] : [];
+        $has_flag_constraints = ! empty( $flags_all ) || ! empty( $flags_any ) || ! empty( $flags_not );
+
+        // Immediate deny if any forbidden flag is present
+        if ( $member && ! empty( $flags_not ) ) {
+            foreach ( $flags_not as $f ) { if ( $flag_val( $f ) ) return false; }
+        }
+
+        $flags_all_pass = true;
+        if ( ! empty( $flags_all ) ) {
+            if ( ! $member ) return false;
+            foreach ( $flags_all as $f ) { if ( ! $flag_val( $f ) ) { $flags_all_pass = false; break; } }
+        }
+
+        $flags_any_pass = true; // if none specified, treat as pass
+        if ( ! empty( $flags_any ) ) {
+            if ( ! $member ) return false;
+            $flags_any_pass = false;
+            foreach ( $flags_any as $f ) { if ( $flag_val( $f ) ) { $flags_any_pass = true; break; } }
+        }
+
+        // Combined flags pass
+        $flags_pass = $flags_all_pass && $flags_any_pass;
+
+        // Determine allowed statuses
         $statuses = null;
-        if ( array_key_exists( 'allowed_statuses', $visibility ) && is_array( $visibility['allowed_statuses'] ) ) $statuses = $visibility['allowed_statuses'];
-        elseif ( ! $has_flag_constraints ) { if ( class_exists( 'TPW_Member_Access' ) ) { $statuses = TPW_Member_Access::get_allowed_statuses(); } }
-        if ( is_array( $statuses ) ) { if ( ! $member ) return false; $allowed_norm = array_map( function( $s ) { return strtolower( trim( (string) $s ) ); }, $statuses ); $status = strtolower( trim( (string) ( $member->status ?? '' ) ) ); if ( ! in_array( $status, $allowed_norm, true ) ) return false; }
+        if ( array_key_exists( 'allowed_statuses', $visibility ) && is_array( $visibility['allowed_statuses'] ) ) {
+            $statuses = $visibility['allowed_statuses'];
+        } elseif ( ! $has_flag_constraints ) {
+            // Legacy default: if no flags specified, fall back to whatever statuses are allowed site-wide
+            if ( class_exists( 'TPW_Member_Access' ) ) { $statuses = TPW_Member_Access::get_allowed_statuses(); }
+        }
+
+        $status_pass = true;
+        if ( is_array( $statuses ) ) {
+            if ( ! $member ) return false;
+            $allowed_norm = array_map( function( $s ) { return strtolower( trim( (string) $s ) ); }, $statuses );
+            $status = strtolower( trim( (string) ( $member->status ?? '' ) ) );
+            $status_pass = in_array( $status, $allowed_norm, true );
+        }
+
+        // Combine logic between flags and statuses (default AND for backward compatibility)
+        $combine = isset( $visibility['combine'] ) ? strtolower( (string) $visibility['combine'] ) : 'and';
+        if ( $combine === 'or' ) {
+            // If either side is not present, fall back to the other condition
+            $has_status_constraint = is_array( $statuses );
+            $has_flags_constraint  = $has_flag_constraints;
+            if ( $has_status_constraint && $has_flags_constraint ) {
+                if ( ! $flags_pass && ! $status_pass ) return false; // neither passed
+            } elseif ( $has_status_constraint ) {
+                if ( ! $status_pass ) return false;
+            } elseif ( $has_flags_constraint ) {
+                if ( ! $flags_pass ) return false;
+            }
+        } else {
+            // AND: both must pass when present
+            if ( $has_flag_constraints && ! $flags_pass ) return false;
+            if ( is_array( $statuses ) && ! $status_pass ) return false;
+        }
+
+        // If no specific constraints were provided, require at least a logged-in member
         if ( empty( $visibility ) ) return self::is_member();
         return is_user_logged_in();
     }

@@ -4,6 +4,10 @@ class TPW_Member_Controller {
 
     /**
      * Get all members, optionally filtered.
+    *
+    * @since 1.0.0
+    * @param array $args Query args (status, search, adv_* filters, paging)
+    * @return array<object> Rows from tpw_members
      */
     public function get_members( $args = [] ) {
         global $wpdb;
@@ -160,6 +164,10 @@ class TPW_Member_Controller {
 
     /**
      * Get a member by linked WP user ID
+     *
+     * @since 1.0.0
+     * @param int $user_id
+     * @return object|null
      */
     public function get_member_by_user_id( $user_id ) {
         global $wpdb;
@@ -169,6 +177,10 @@ class TPW_Member_Controller {
 
     /**
      * Get a single member by ID.
+     *
+     * @since 1.0.0
+     * @param int $id
+     * @return object|null
      */
     public function get_member( $id ) {
         global $wpdb;
@@ -181,6 +193,10 @@ class TPW_Member_Controller {
 
     /**
      * Add a new member (core fields only).
+     *
+     * @since 1.0.0
+     * @param array $data Column => value map for tpw_members
+     * @return int|false Inserted member ID or false on failure
      */
     public function add_member( $data ) {
         global $wpdb;
@@ -238,6 +254,11 @@ class TPW_Member_Controller {
 
     /**
      * Update an existing member.
+     *
+     * @since 1.0.0
+     * @param int   $id Member ID
+     * @param array $data Partial column => value map
+     * @return int|false Rows affected or false on error
      */
     public function update_member( $id, $data ) {
         global $wpdb;
@@ -323,6 +344,10 @@ class TPW_Member_Controller {
 
     /**
      * Delete a member.
+     *
+     * @since 1.0.0
+     * @param int $id Member ID
+     * @return int|false Rows affected or false on error
      */
     public function delete_member( $id ) {
         global $wpdb;
@@ -332,11 +357,21 @@ class TPW_Member_Controller {
     }
     /**
      * Render CSV import form.
+     *
+     * @since 1.0.0
+     * @return void
      */
     public function render_import_csv_page() {
         include plugin_dir_path( __FILE__ ) . '../templates/admin/import-csv.php';
     }
 
+    /**
+     * Get total count for members matching filters (for pagination).
+     *
+     * @since 1.0.0
+     * @param array $args Same shape as get_members() filters
+     * @return int
+     */
     public function get_total_members_count( $args = [] ) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
@@ -478,6 +513,9 @@ class TPW_Member_Controller {
     /**
      * Get distinct current statuses present in the table.
      * Useful for building admin filters.
+     *
+     * @since 1.0.0
+     * @return string[]
      */
     public function get_statuses() {
         global $wpdb;

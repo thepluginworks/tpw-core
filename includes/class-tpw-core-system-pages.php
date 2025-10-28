@@ -1,12 +1,14 @@
 <?php
 /**
- * TPW Core – System Pages registry and resolver
+ * TPW Core – System Pages registry and resolver.
  *
  * Responsibilities:
  * - Define default keys and slugs for system pages
  * - Allow modules to register additional pages
  * - Resolve URLs and page IDs with optional overrides from wp_options
  * - Provide safe fallbacks to home_url() when unresolved
+ *
+ * @since 1.0.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -66,7 +68,12 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          * - Falls back to conventional path /{slug}/
          * - Applies filter 'tpw_system_page_url'
          */
-        public static function get( $key ) {
+    /**
+     * Get permalink for a system page key.
+     *
+     * @since 1.0.0
+     */
+    public static function get( $key ) {
             $slug = sanitize_key( (string) $key );
             if ( $slug === '' ) return home_url();
 
@@ -105,7 +112,12 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
         /**
          * Public: get a WP Page ID for a system page key, or 0 if not found.
          */
-        public static function get_id( $key ) {
+    /**
+     * Get a WP Page ID for a system page key, or 0 if not found.
+     *
+     * @since 1.0.0
+     */
+    public static function get_id( $key ) {
             $slug = sanitize_key( (string) $key );
             if ( $slug === '' ) return 0;
 
@@ -148,7 +160,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          * @param string $slug
          * @param array  $args { title, shortcode, plugin, required }
          */
-        public static function register_page( $slug, $args = [] ) {
+    /**
+     * @since 1.0.0
+     */
+    public static function register_page( $slug, $args = [] ) {
             $s = sanitize_key( (string) $slug );
             if ( $s === '' ) return;
             self::boot_defaults();
@@ -166,7 +181,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          * - Stores mapping in tpw_core_system_pages option.
          * Returns the page ID or 0.
          */
-        public static function ensure_page( $slug ) {
+    /**
+     * @since 1.0.0
+     */
+    public static function ensure_page( $slug ) {
             $s = sanitize_key( (string) $slug );
             if ( $s === '' ) return 0;
             self::boot_defaults();
@@ -214,7 +232,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          * Each item: (object){ slug, title, wp_page_id, plugin, required }
          * @return array<int,object>
          */
-        public static function get_all() {
+    /**
+     * @since 1.0.0
+     */
+    public static function get_all() {
             self::boot_defaults();
             self::load_overrides();
             $out = [];
@@ -269,7 +290,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          * Extract a shortcode tag from a shortcode string like "[tag attr=\"\"]".
          * @return string
          */
-        public static function parse_shortcode_tag( $shortcode ) {
+    /**
+     * @since 1.0.0
+     */
+    public static function parse_shortcode_tag( $shortcode ) {
             $s = is_string( $shortcode ) ? trim( $shortcode ) : '';
             if ( $s === '' ) return '';
             if ( $s[0] !== '[' ) return '';
@@ -283,7 +307,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
         /**
          * Check content for a given shortcode tag using core has_shortcode.
          */
-        public static function content_has_shortcode_tag( $content, $tag ) {
+    /**
+     * @since 1.0.0
+     */
+    public static function content_has_shortcode_tag( $content, $tag ) {
             $c = (string) $content; $t = sanitize_key( (string) $tag );
             if ( $c === '' || $t === '' ) return false;
             if ( function_exists( 'has_shortcode' ) ) {

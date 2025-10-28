@@ -1,6 +1,11 @@
 <?php
 /**
- * TPW Core Settings and Member Menu swapper
+ * TPW Core Settings and Member Menu swapper.
+ *
+ * Registers the Settings → TPW Core page with tabbed content for Branding,
+ * Member Menu, Features, Email, Email Templates, and System Pages.
+ *
+ * @since 1.0.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -38,6 +43,12 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 
 // 3) Render the settings page (tabbed)
 if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
+    /**
+     * Render the TPW Core settings page wrapper and tabs.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     function tpw_core_render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -204,6 +215,12 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
 
 // Render Features tab: Login redirect target page
 if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
+    /**
+     * Render Features tab content (login target and redirect pages).
+     *
+     * @since 1.0.0
+     * @return void
+     */
     function tpw_core_render_features_tab() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         // Ensure the option exists and is registered
@@ -258,6 +275,12 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
 
 // System Pages tab renderer
 if ( ! function_exists( 'tpw_core_render_system_pages_tab' ) ) {
+    /**
+     * Render System Pages registry UI.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     function tpw_core_render_system_pages_tab() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         // Load template
@@ -272,6 +295,12 @@ if ( ! function_exists( 'tpw_core_render_system_pages_tab' ) ) {
 
 // Render Email Settings tab content
 if ( ! function_exists( 'tpw_core_render_email_settings_tab' ) ) {
+    /**
+     * Render Email settings tab content.
+     *
+     * @since 1.0.1 Exposed additional branding title and base64 embedding toggles.
+     * @return void
+     */
     function tpw_core_render_email_settings_tab() {
         if ( ! class_exists( 'TPW_Core_Email_Settings' ) ) {
             echo '<div class="notice notice-error"><p>' . esc_html__( 'Email settings class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';

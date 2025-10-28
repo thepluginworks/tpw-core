@@ -1,9 +1,21 @@
 <?php
 
+/**
+ * Core bootstrap for TPW components.
+ *
+ * Loads core modules, wires actions, and exposes high‑level lifecycle methods
+ * used by the plugin entry file. This class contains no UI and no side‑effects
+ * beyond including files and firing lifecycle hooks.
+ *
+ * @since 1.0.1 Added class‑level docs and method annotations.
+ */
 class TPW_Core {
 
     /**
-     * Initialize the core plugin functionality.
+     * Initialize core modules and fire the loaded marker.
+     *
+     * @since 1.0.0
+     * @return void
      */
     public static function init() {
         self::load_dependencies();
@@ -12,6 +24,12 @@ class TPW_Core {
 
     /**
      * Load required files and modules.
+     *
+     * Includes payment, menu and admin components. Avoid adding runtime logic
+     * here—this function should only include files and register initializers.
+     *
+     * @since 1.0.0
+     * @return void
      */
     private static function load_dependencies() {
         $base = plugin_dir_path(dirname(__FILE__));
@@ -34,7 +52,12 @@ class TPW_Core {
     }
 
     /**
-     * Activation logic for the core plugin.
+     * Activation tasks for the core plugin.
+     *
+     * Creates or upgrades required tables. Safe to call multiple times.
+     *
+     * @since 1.0.0
+     * @return void
      */
     public static function activate() {
         TPW_Payment_Logger::create_table();
@@ -45,6 +68,11 @@ class TPW_Core {
 
     /**
      * Optional deactivation cleanup.
+     *
+     * Currently a no‑op. Reserved for future deactivation behaviour.
+     *
+     * @since 1.0.0
+     * @return void
      */
     public static function deactivate() {
         // Currently no deactivation logic required
