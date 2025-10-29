@@ -60,13 +60,23 @@ class TPW_Square_Gateway {
             'currency' => 'GBP'
         ]);
 
+        $note_parts = [];
+        if (!empty($args['member_name'])) {
+            $note_parts[] = 'Member: ' . $args['member_name'];
+        }
+        if (!empty($args['payment_id'])) {
+            $note_parts[] = '| TPW Payment ID: ' . $args['payment_id'];
+        }
+        $note_parts[] = '— RSVP payment';
+        $built_note = trim(implode(' ', $note_parts));
+
         $body = new CreatePaymentRequest([
             'sourceId' => $args['nonce'],
             'idempotencyKey' => uniqid('sq_'),
             'amountMoney' => $money,
             'locationId' => $location_id,
             'referenceId' => $args['reference_id'] ?? 'RSVP-' . $args['submission_id'],
-            'note' => $args['note'] ?? 'RSVP payment'
+            'note' => $built_note
         ]);
 
         error_log('[TPW DEBUG] Payment Request Body: ' . print_r($body, true));

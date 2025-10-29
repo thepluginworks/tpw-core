@@ -179,10 +179,12 @@ class TPW_Core_Payments {
                 'notes'             => $data['notes'],
                 'amount_breakdown'  => $data['amount_breakdown'],
                 'confirmed_amount'  => isset($data['confirmed_amount']) ? $data['confirmed_amount'] : null,
+                'expected_amount'   => isset($data['expected_amount']) ? $data['expected_amount'] : null,
+                'surcharge_applied' => isset($data['surcharge_applied']) ? $data['surcharge_applied'] : null,
                 'paid_at'           => isset($data['paid_at']) ? $data['paid_at'] : null,
                 'created_at'        => current_time('mysql'),
             ],
-            ['%d','%d','%f','%s','%s','%s','%s','%s','%s','%f','%s','%s']
+            ['%d','%d','%f','%s','%s','%s','%s','%s','%s','%f','%f','%f','%s','%s']
         );
 
         if ($result === false) {
