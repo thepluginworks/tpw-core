@@ -224,17 +224,23 @@ class TPW_Member_Login_Shortcode {
             $user = get_user_by('login', $identifier);
         }
         if (!$user) {
-            self::store_message('reset_error', __('We could not find that account.', 'tpw-core'));
+            // Do not disclose whether the account exists; show a generic success notice
+            $msg = __("If an account with that email address exists, you'll receive an email with a link to reset your password shortly. Please check your inbox (and junk folder).", 'tpw-core');
+            self::store_message('reset_success', $msg);
+            self::set_notice_cookie('reset_sent');
             self::redirect_back_preserving_redirect();
         }
 
         // Trigger WordPress password reset flow
         $result = retrieve_password($user->user_login);
         if ($result === true) {
-            self::store_message('reset_success', __('If that account exists, a reset link has been sent.', 'tpw-core'));
+            $msg = __("If an account with that email address exists, you'll receive an email with a link to reset your password shortly. Please check your inbox (and junk folder).", 'tpw-core');
+            self::store_message('reset_success', $msg);
+            self::set_notice_cookie('reset_sent');
         } else {
             $message = is_wp_error($result) ? $result->get_error_message() : __('Password reset failed. Please try again later.', 'tpw-core');
             self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error');
         }
         self::redirect_back_preserving_redirect();
     }
@@ -404,6 +410,40 @@ class TPW_Member_Login_Shortcode {
         $_SESSION['tpw_member_login_messages'][$type] = wp_kses_post($text);
     }
 
+    /**
+     * Set a short-lived cookie to carry notices across redirects when sessions are unreliable.
+     */
+    private static function set_notice_cookie( $value ) {
+        $name   = 'tpw_member_login_notice';
+        $expire = time() + MINUTE_IN_SECONDS; // short-lived
+        $path   = defined('COOKIEPATH') ? COOKIEPATH : '/';
+        $domain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+        $secure = is_ssl();
+        $httpOnly = true;
+        if ( PHP_VERSION_ID >= 70300 ) {
+            setcookie( $name, (string) $value, [
+                'expires'  => $expire,
+                'path'     => $path,
+                'domain'   => $domain,
+                'secure'   => $secure,
+                'httponly' => $httpOnly,
+                'samesite' => 'Lax',
+            ] );
+        } else {
+            // Fallback for older PHP versions
+            setcookie( $name, (string) $value, $expire, $path, $domain, $secure, $httpOnly );
+        }
+    }
+
+    private static function clear_notice_cookie() {
+        $name   = 'tpw_member_login_notice';
+        $path   = defined('COOKIEPATH') ? COOKIEPATH : '/';
+        $domain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+        $secure = is_ssl();
+        setcookie( $name, '', time() - HOUR_IN_SECONDS, $path, $domain, $secure, true );
+        unset( $_COOKIE[ $name ] );
+    }
+
     public static function render_shortcode($atts, $content = null) {
         // Pass messages from session (then clear)
         $messages = [];
@@ -411,6 +451,16 @@ class TPW_Member_Login_Shortcode {
         if (isset($_SESSION['tpw_member_login_messages'])) {
             $messages = $_SESSION['tpw_member_login_messages'];
             unset($_SESSION['tpw_member_login_messages']);
+        }
+        // Cookie-based fallback for environments where sessions aren't persisted across redirect
+        if ( empty( $messages ) && isset($_COOKIE['tpw_member_login_notice']) ) {
+            $flag = sanitize_text_field( wp_unslash( $_COOKIE['tpw_member_login_notice'] ) );
+            if ( $flag === 'reset_sent' ) {
+                $messages['reset_success'] = __("If an account with that email address exists, you'll receive an email with a link to reset your password shortly. Please check your inbox (and junk folder).", 'tpw-core');
+            } elseif ( $flag === 'reset_error' ) {
+                $messages['reset_error'] = __('Password reset failed. Please try again later.', 'tpw-core');
+            }
+            self::clear_notice_cookie();
         }
         $messages = apply_filters('tpw_member_login_messages', $messages);
 
