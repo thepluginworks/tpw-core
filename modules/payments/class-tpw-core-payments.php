@@ -16,7 +16,7 @@ class TPW_Core_Payments {
      * No side-effects: only reads options and returns computed values.
      *
      * @param float  $amount Base amount before surcharge.
-     * @param string $method Payment method slug (e.g., 'woocommerce','square','sumup','bacs','cheque','cash').
+    * @param string $method Payment method slug (e.g., 'woocommerce','square','sumup','bacs','cheque','cash','card-on-the-day').
      * @return array{base_amount:float,surcharge_amount:float,total_with_surcharge:float}
      */
     /**
@@ -102,7 +102,7 @@ class TPW_Core_Payments {
             return ['success' => false, 'error' => 'Missing required fields'];
         }
 
-        if (in_array($data['payment_method'], ['bacs', 'cash']) && empty($data['payment_reference'])) {
+        if (in_array($data['payment_method'], ['bacs', 'cash', 'card-on-the-day']) && empty($data['payment_reference'])) {
             $data['payment_reference'] = 'rsvp_' . uniqid();
         }
 
@@ -149,8 +149,8 @@ class TPW_Core_Payments {
             }
         }
 
-        // Apply surcharge for offline methods only (BACS, Cheque, Cash) right before persisting.
-        if ( isset($data['payment_method']) && in_array($data['payment_method'], ['bacs','cheque','cash'], true) ) {
+        // Apply surcharge for offline methods only (BACS, Cheque, Cash, Card on the day) right before persisting.
+        if ( isset($data['payment_method']) && in_array($data['payment_method'], ['bacs','cheque','cash','card-on-the-day'], true) ) {
             $calc = self::tpw_core_calculate_payable_total( (float) $data['amount'], $data['payment_method'] );
             $data['amount'] = $calc['total_with_surcharge'];
         }

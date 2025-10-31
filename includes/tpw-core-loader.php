@@ -98,6 +98,7 @@ TPW_Payments_Settings::init();
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-bacs-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cheque-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-cash-settings.php';
+require_once TPW_CORE_PATH . 'modules/payments/class-tpw-card-on-the-day-settings.php';
 require_once TPW_CORE_PATH . 'modules/payments/views/thank-you-shortcode.php';
 
 require_once TPW_CORE_PATH . 'modules/feedback/class-tpw-feedback.php';

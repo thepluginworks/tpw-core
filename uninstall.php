@@ -75,6 +75,10 @@ $options = [
     'tpw_cheque_postcode',
     'tpw_cash_enabled',
     'tpw_cash_message',
+    'tpw_card_on_the_day_enabled',
+    'tpw_card_on_the_day_message',
+    'tpw_surcharge_card-on-the-day_percent',
+    'tpw_surcharge_card-on-the-day_fixed',
 
     // Square / SumUp
     'tpw_square_access_token',

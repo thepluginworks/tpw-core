@@ -24,6 +24,16 @@ class TPW_Payments_Admin {
 
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_payment_methods';
+        // Ensure new methods are present for existing installs (idempotent)
+        $exists_card_day = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE slug = %s", 'card-on-the-day' ) );
+        if ( $exists_card_day === 0 ) {
+            $wpdb->insert( $table, [
+                'name'       => 'Card on the day',
+                'slug'       => 'card-on-the-day',
+                'active'     => 0,
+                'created_at' => current_time('mysql'),
+            ] );
+        }
         $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY name ASC");
 
         foreach ($methods as $index => $method) {
@@ -41,6 +51,11 @@ class TPW_Payments_Admin {
                     'slug' => 'cash',
                     'name' => 'Cash',
                     'active' => get_option('tpw_cash_enabled') ? 1 : 0
+                ];
+                $methods[] = (object) [
+                    'slug' => 'card-on-the-day',
+                    'name' => 'Card on the day',
+                    'active' => get_option('tpw_card_on_the_day_enabled') ? 1 : 0
                 ];
             }
         }
@@ -98,6 +113,10 @@ class TPW_Payments_Admin {
                                 $msg = trim((string) get_option('tpw_cash_message'));
                                 if (!$msg) { $needs_setup = true; $status_chip = '<span class="tpw-status-chip needs-setup">Needs setup</span>'; }
                                 if ($msg) { $snippet = wp_trim_words(wp_strip_all_tags($msg), 10, '…'); $summary = '<span class="tpw-pay-summary">' . esc_html($snippet) . '</span>'; }
+                            } elseif ($method->slug === 'card-on-the-day') {
+                                $msg = trim((string) get_option('tpw_card_on_the_day_message'));
+                                if (!$msg) { $needs_setup = true; $status_chip = '<span class="tpw-status-chip needs-setup">Needs setup</span>'; }
+                                if ($msg) { $snippet = wp_trim_words(wp_strip_all_tags($msg), 10, '…'); $summary = '<span class="tpw-pay-summary">' . esc_html($snippet) . '</span>'; }
                             } elseif ($method->slug === 'sumup') {
                                 $access_token = get_option('tpw_sumup_access_token');
                                 $status_chip = $access_token ? '<span class="tpw-status-chip configured">Connected</span>' : '<span class="tpw-status-chip disconnected">Disconnected</span>';
@@ -138,6 +157,12 @@ class TPW_Payments_Admin {
                                         <a href="admin.php?page=tpw-cash-settings" class="button button-primary">Configure Cash</a>
                                     <?php else: ?>
                                         <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-cash-settings')); ?>" class="button">Edit</a>
+                                    <?php endif; ?>
+                                <?php elseif ($method->slug === 'card-on-the-day'): ?>
+                                    <?php if ($needs_setup): ?>
+                                        <a href="admin.php?page=tpw-card-on-the-day-settings" class="button button-primary">Configure Card on the day</a>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-card-on-the-day-settings')); ?>" class="button">Edit</a>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <a href="<?php echo esc_url(admin_url('admin.php?page=tpw-' . esc_attr($method->slug) . '-settings')); ?>" class="button">Edit</a>

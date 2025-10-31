@@ -83,7 +83,7 @@ class TPW_Core_Activator {
 
         // Seed default surcharge options (percent and fixed) for all supported methods
         try {
-            $methods = [ 'woocommerce', 'square', 'sumup', 'bacs', 'cheque', 'cash' ];
+            $methods = [ 'woocommerce', 'square', 'sumup', 'bacs', 'cheque', 'cash', 'card-on-the-day' ];
             foreach ( $methods as $m ) {
                 $k_percent = 'tpw_surcharge_' . $m . '_percent';
                 $k_fixed   = 'tpw_surcharge_' . $m . '_fixed';

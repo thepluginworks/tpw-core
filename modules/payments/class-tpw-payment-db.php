@@ -30,6 +30,7 @@ class TPW_Payment_DB {
             ['name' => 'BACS', 'slug' => 'bacs'],
             ['name' => 'Cheque', 'slug' => 'cheque'],
             ['name' => 'Cash', 'slug' => 'cash'],
+            ['name' => 'Card on the day', 'slug' => 'card-on-the-day'],
             ['name' => 'Pay by Card (via SumUp)', 'slug' => 'sumup'],
             ['name' => 'Pay by Card (via Square)', 'slug' => 'square'],
             ['name' => 'WooCommerce', 'slug' => 'woocommerce'],
