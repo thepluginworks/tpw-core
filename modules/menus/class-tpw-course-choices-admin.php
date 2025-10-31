@@ -102,7 +102,9 @@ class TPW_Course_Choices_Admin {
                             admin_url('admin.php?page=tpw-course-choices&menu_id=' . intval($menu_id) . '&delete_choice=' . intval($choice->id)),
                             'delete_choice_' . $choice->id
                         );
-                        echo '<li><strong>' . esc_html( wp_unslash( $choice->label ) ) . '</strong> ';
+                        $extra = isset($choice->extra_cost) ? (float) $choice->extra_cost : 0.00;
+                        $extra_html = $extra > 0 ? ' <span class="tpw-badge tpw-badge--extra">(+£' . esc_html( number_format( $extra, 2 ) ) . ')</span>' : '';
+                        echo '<li><strong>' . esc_html( wp_unslash( $choice->label ) ) . '</strong>' . $extra_html . ' ';
                         echo '<a href="' . esc_url($edit_url) . '">Edit</a> | ';
                         echo '<a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Are you sure you want to delete this choice?\')">Delete</a>';
                         if ($choice->description) {

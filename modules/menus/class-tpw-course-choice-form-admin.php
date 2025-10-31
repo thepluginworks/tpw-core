@@ -26,14 +26,15 @@ class TPW_Course_Choice_Form_Admin {
 
         $label = sanitize_textarea_field( wp_unslash( $_POST['label'] ) );
         $description = sanitize_textarea_field( wp_unslash( $_POST['description'] ) );
+        $extra_cost = isset($_POST['extra_cost']) ? (float) $_POST['extra_cost'] : 0.00;
         $menu_id = intval($_POST['menu_id']);
         $course_number = intval($_POST['course_number']);
         $choice_id = isset($_POST['choice_id']) ? intval($_POST['choice_id']) : 0;
 
         if ($choice_id) {
-            TPW_Course_Choices_Manager::update_choice($choice_id, $label, $description);
+            TPW_Course_Choices_Manager::update_choice($choice_id, $label, $description, $extra_cost);
         } else {
-            TPW_Course_Choices_Manager::insert_choice($menu_id, $course_number, $label, $description);
+            TPW_Course_Choices_Manager::insert_choice($menu_id, $course_number, $label, $description, $extra_cost);
         }
 
         wp_redirect(admin_url('admin.php?page=tpw-course-choices&menu_id=' . $menu_id));
@@ -66,13 +67,15 @@ class TPW_Course_Choice_Form_Admin {
 
         $choice = $choice_id ? TPW_Course_Choices_Manager::get_choice_by_id($choice_id) : null;
 
-        $label_value = $choice ? esc_attr( wp_unslash( $choice->label ) ) : '';
-        $desc_value = $choice ? esc_textarea( wp_unslash( $choice->description ) ) : '';
+    $label_value = $choice ? esc_attr( wp_unslash( $choice->label ) ) : '';
+    $desc_value = $choice ? esc_textarea( wp_unslash( $choice->description ) ) : '';
+    $cost_value = $choice && isset($choice->extra_cost) ? number_format( (float) $choice->extra_cost, 2, '.', '' ) : '0.00';
 
         echo '<form method="post">';
-        echo '<table class="form-table">';
-        echo '<tr><th><label for="label">Dish Name</label></th><td><input name="label" id="label" type="text" value="' . $label_value . '" required /></td></tr>';
-        echo '<tr><th><label for="description">Dish Description</label></th><td><textarea name="description" id="description">' . $desc_value . '</textarea></td></tr>';
+    echo '<table class="form-table">';
+    echo '<tr><th><label for="label">Dish Name</label></th><td><input name="label" id="label" type="text" value="' . $label_value . '" required /></td></tr>';
+    echo '<tr><th><label for="description">Dish Description</label></th><td><textarea name="description" id="description">' . $desc_value . '</textarea></td></tr>';
+    echo '<tr><th><label for="extra_cost">Extra Cost (£)</label></th><td><span class="tpw-currency-prefix">£</span> <input name="extra_cost" id="extra_cost" type="number" step="0.01" min="0" value="' . esc_attr( $cost_value ) . '" /></td></tr>';
         echo '</table>';
 
         echo '<input type="hidden" name="menu_id" value="' . esc_attr($menu_id) . '">';

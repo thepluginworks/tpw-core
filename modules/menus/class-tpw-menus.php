@@ -165,7 +165,7 @@ class TPW_Menus {
         }
 
         $choice_rows = $wpdb->get_results( $wpdb->prepare(
-            "SELECT course_number, label, description
+            "SELECT course_number, label, description, extra_cost
              FROM {$prefix}tpw_menu_choices
              WHERE menu_id = %d
              ORDER BY course_number ASC, id ASC",
@@ -180,6 +180,7 @@ class TPW_Menus {
             $courses[ $num ]['choices'][] = [
                 'label'       => $choice['label'],
                 'description' => $choice['description'],
+                'extra_cost'  => isset($choice['extra_cost']) ? (float) $choice['extra_cost'] : 0.00,
             ];
         }
 

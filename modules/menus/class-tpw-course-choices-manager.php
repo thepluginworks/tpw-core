@@ -29,7 +29,7 @@ class TPW_Course_Choices_Manager {
         ));
     }
 
-    public static function insert_choice($menu_id, $course_number, $label, $description = '') {
+    public static function insert_choice($menu_id, $course_number, $label, $description = '', $extra_cost = 0.00) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_menu_choices';
         $wpdb->insert($table, [
@@ -37,17 +37,19 @@ class TPW_Course_Choices_Manager {
             'course_number' => $course_number,
             'label' => sanitize_textarea_field($label),
             'description' => sanitize_textarea_field($description),
+            'extra_cost' => number_format((float)$extra_cost, 2, '.', ''),
             'created_at' => current_time('mysql')
         ]);
         return $wpdb->insert_id;
     }
 
-    public static function update_choice($id, $label, $description = '') {
+    public static function update_choice($id, $label, $description = '', $extra_cost = 0.00) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_menu_choices';
         return $wpdb->update($table, [
             'label' => sanitize_textarea_field($label),
-            'description' => sanitize_textarea_field($description)
+            'description' => sanitize_textarea_field($description),
+            'extra_cost' => number_format((float)$extra_cost, 2, '.', '')
         ], ['id' => $id]);
     }
 

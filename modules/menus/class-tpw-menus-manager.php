@@ -59,6 +59,7 @@ class TPW_Menus_Manager {
             course_number TINYINT UNSIGNED NOT NULL,
             label VARCHAR(255) NOT NULL,
             description TEXT,
+            extra_cost DECIMAL(8,2) NOT NULL DEFAULT 0.00,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             FOREIGN KEY (menu_id) REFERENCES {$wpdb->prefix}tpw_menus(id) ON DELETE CASCADE
@@ -66,6 +67,13 @@ class TPW_Menus_Manager {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
+
+        // Safe incremental upgrade: ensure the extra_cost column exists for older installs
+        self::ensure_column_exists(
+            $table_name,
+            'extra_cost',
+            'ADD COLUMN extra_cost DECIMAL(8,2) NOT NULL DEFAULT 0.00 AFTER description'
+        );
     }
 
     /**
@@ -218,5 +226,24 @@ class TPW_Menus_Manager {
         ), ARRAY_A );
 
         return $results ?: [];
+    }
+
+    /**
+     * Ensure a column exists on a given table; add it if missing.
+     *
+     * @param string $table_name Fully-qualified table name (including $wpdb->prefix)
+     * @param string $column     Column name to check
+     * @param string $alter_sql  ALTER TABLE fragment to add the column (without the table name)
+     * @return void
+     */
+    protected static function ensure_column_exists( $table_name, $column, $alter_sql ) {
+        global $wpdb;
+        // Check if column exists
+        $exists = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table_name} LIKE %s", $column ) );
+        if ( $exists ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table and statement constructed safely above
+        $wpdb->query( "ALTER TABLE {$table_name} {$alter_sql}" );
     }
 }
