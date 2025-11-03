@@ -38,6 +38,29 @@ add_shortcode('tpw_member_profile', function(){
         }
     }
 
+  // Section routing: when explicitly on My Payments, render the Payments Hub instead of the default profile
+  $section = isset($_GET['section']) ? sanitize_key( (string) $_GET['section'] ) : '';
+  if ( $section === 'payments' && class_exists('TPW_Member_Payments') ) {
+    // Before switching, render a small in-page navigation so users can return to profile easily
+    $sections = apply_filters( 'tpw_core_register_profile_sections', [] );
+    $has_payments = is_array($sections) && isset($sections['payments']);
+    ob_start();
+    echo '<nav class="tpw-member-profile-nav" aria-label="Profile sections" style="margin-bottom:12px;">';
+    echo '  <ul class="tpw-member-profile-menu" style="display:flex;gap:12px;flex-wrap:wrap;list-style:none;padding:0;">';
+    // My Profile link
+    $profile_url = remove_query_arg( 'section' );
+    echo '    <li><a class="tpw-member-profile-link" href="' . esc_url( $profile_url ) . '">' . esc_html__('My Profile','tpw-core') . '</a></li>';
+    if ( $has_payments ) {
+      $payments_url = add_query_arg( 'section', 'payments' );
+      echo '    <li><a class="tpw-member-profile-link is-active" aria-current="page" href="' . esc_url( $payments_url ) . '">' . esc_html__('My Payments','tpw-core') . '</a></li>';
+    }
+    echo '  </ul>';
+    echo '</nav>';
+    // Render the hub after the nav
+    TPW_Member_Payments::render_profile_payments( $member );
+    return ob_get_clean();
+  }
+
   $editable = get_option( 'tpw_member_editable_fields', [] );
   $editable = is_array($editable) ? $editable : [];
   $viewable = get_option( 'tpw_member_viewable_fields', [] );
@@ -51,6 +74,22 @@ add_shortcode('tpw_member_profile', function(){
 
     ob_start();
     echo '<div class="tpw-profile">';
+  // Top navigation: show sections including Payments when active
+  $sections = apply_filters( 'tpw_core_register_profile_sections', [] );
+  $has_payments = is_array($sections) && isset($sections['payments']);
+  echo '<nav class="tpw-member-profile-nav" aria-label="Profile sections" style="margin-bottom:12px;">';
+  echo '  <ul class="tpw-member-profile-menu" style="display:flex;gap:12px;flex-wrap:wrap;list-style:none;padding:0;">';
+  // My Profile tab
+  $is_profile_active = ($section !== 'payments');
+  $profile_url = remove_query_arg( 'section' );
+  echo '    <li><a class="tpw-member-profile-link' . ( $is_profile_active ? ' is-active' : '' ) . '"' . ( $is_profile_active ? ' aria-current="page"' : '' ) . ' href="' . esc_url( $profile_url ) . '">' . esc_html__('My Profile','tpw-core') . '</a></li>';
+  if ( $has_payments ) {
+    $payments_url = add_query_arg( 'section', 'payments' );
+    $is_pay_active = ($section === 'payments');
+    echo '    <li><a class="tpw-member-profile-link' . ( $is_pay_active ? ' is-active' : '' ) . '"' . ( $is_pay_active ? ' aria-current="page"' : '' ) . ' href="' . esc_url( $payments_url ) . '">' . esc_html__('My Payments','tpw-core') . '</a></li>';
+  }
+  echo '  </ul>';
+  echo '</nav>';
   echo '<h2>' . esc_html__( 'My Profile', 'tpw-core' ) . '</h2>';
 
     echo '<div class="tpw-table">';

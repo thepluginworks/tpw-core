@@ -120,6 +120,14 @@ require_once TPW_CORE_PATH . 'modules/email/class-tpw-email.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-form.php';
 TPW_Email_Form::init();
 
+// Member Payments (Phase 1 skeleton)
+if ( file_exists( TPW_CORE_PATH . 'includes/class-tpw-member-payments.php' ) ) {
+    require_once TPW_CORE_PATH . 'includes/class-tpw-member-payments.php';
+    if ( class_exists( 'TPW_Member_Payments' ) ) {
+        add_action( 'init', [ 'TPW_Member_Payments', 'init' ] );
+    }
+}
+
 // Postcodes module (global)
 require_once TPW_CORE_PATH . 'modules/postcodes/class-tpw-postcode-helper.php';
 require_once TPW_CORE_PATH . 'modules/postcodes/postcode-ajax.php';
