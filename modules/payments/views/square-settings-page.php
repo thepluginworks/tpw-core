@@ -24,6 +24,18 @@
         ?>
         <table class="form-table">
             <tr>
+                <th scope="row"><label for="tpw_label_square">Label</label></th>
+                <td>
+                    <?php
+                    global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+                    $current_label = $wpdb->get_var( $wpdb->prepare("SELECT name FROM $table WHERE slug = %s", 'square') );
+                    if ( ! is_string($current_label) || $current_label === '' ) { $current_label = 'Pay by Card (via Square)'; }
+                    ?>
+                    <input type="text" name="tpw_label_square" id="tpw_label_square" value="<?php echo esc_attr( $current_label ); ?>" class="regular-text" />
+                    <p class="description">Shown on checkout.</p>
+                </td>
+            </tr>
+            <tr>
                 <th scope="row"><label for="tpw_square_app_id">Application ID</label></th>
                 <td><input type="text" name="tpw_square_app_id" id="tpw_square_app_id" value="<?php echo esc_attr(get_option('tpw_square_app_id')); ?>" class="regular-text" /></td>
             </tr>

@@ -22,6 +22,7 @@ class TPW_Payments_Manager {
             $has_active     = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'active'" );
             $has_enabled    = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'enabled'" );
             $has_name       = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'name'" );
+            $has_sort       = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'sort_order'" );
 
             $col_slug = $has_slug ? 'slug' : ( $has_key ? 'method_key' : '' );
             $col_flag = $has_active ? 'active' : ( $has_enabled ? 'enabled' : '' );
@@ -29,8 +30,10 @@ class TPW_Payments_Manager {
 
             if ( $col_slug && $col_flag ) {
                 $select_name = $col_name ? ", {$col_name} AS name" : '';
+                $order_by = $has_sort ? 'ORDER BY sort_order ASC' : ( $col_name ? 'ORDER BY name ASC' : '' );
+                if ( $order_by && $has_sort && $col_name ) { $order_by .= ', name ASC'; }
                 $rows = (array) $wpdb->get_results(
-                    "SELECT {$col_slug} AS slug{$select_name}, {$col_flag} AS enabled FROM {$table} WHERE {$col_flag} IN (1,'1','yes','on','true','enabled')"
+                    "SELECT {$col_slug} AS slug{$select_name}, {$col_flag} AS enabled FROM {$table} WHERE {$col_flag} IN (1,'1','yes','on','true','enabled') {$order_by}"
                 );
                 foreach ( $rows as $r ) {
                     $slug = isset($r->slug) ? (string) $r->slug : '';

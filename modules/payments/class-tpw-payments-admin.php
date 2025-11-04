@@ -3,6 +3,42 @@
 class TPW_Payments_Admin {
     public static function init() {
         error_log('TPW_Payments_Admin::init() called');
+        // AJAX handler for updating sort order of payment methods
+        add_action('wp_ajax_tpw_update_payment_sort', [ __CLASS__, 'ajax_update_sort' ]);
+    }
+
+    /**
+     * AJAX: Update sort order for payment methods.
+     * Expects POST 'order' as an array of slugs in desired order.
+     */
+    public static function ajax_update_sort() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized' ], 403 );
+        }
+        check_ajax_referer( 'tpw_update_payment_sort', 'nonce' );
+
+        $order = isset($_POST['order']) ? (array) $_POST['order'] : [];
+        if ( empty( $order ) ) {
+            wp_send_json_error( [ 'message' => 'No order provided' ], 400 );
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'tpw_payment_methods';
+        // Ensure column exists; best-effort
+        $has_sort = $wpdb->get_var( "SHOW COLUMNS FROM $table LIKE 'sort_order'" );
+        if ( ! $has_sort ) {
+            $wpdb->query( "ALTER TABLE $table ADD COLUMN sort_order INT(11) NOT NULL DEFAULT 0 AFTER slug" );
+        }
+
+        $i = 0;
+        foreach ( $order as $slug ) {
+            $slug = sanitize_key( (string) $slug );
+            if ( $slug === '' ) { continue; }
+            $wpdb->update( $table, [ 'sort_order' => $i ], [ 'slug' => $slug ] );
+            $i++;
+        }
+
+        wp_send_json_success( [ 'message' => 'Order updated' ] );
     }
 
     public static function render_page() {
@@ -24,6 +60,16 @@ class TPW_Payments_Admin {
 
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_payment_methods';
+        // Ensure sortable library is available
+        if ( function_exists('wp_enqueue_script') ) {
+            wp_enqueue_script('jquery-ui-sortable');
+        }
+        // Ensure the new sort_order column exists for older installs
+        $has_sort = $wpdb->get_var( "SHOW COLUMNS FROM $table LIKE 'sort_order'" );
+        if ( ! $has_sort ) {
+            // Best-effort add; ignore errors if it already exists
+            $wpdb->query( "ALTER TABLE $table ADD COLUMN sort_order INT(11) NOT NULL DEFAULT 0 AFTER slug" );
+        }
         // Ensure new methods are present for existing installs (idempotent)
         $exists_card_day = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE slug = %s", 'card-on-the-day' ) );
         if ( $exists_card_day === 0 ) {
@@ -34,7 +80,8 @@ class TPW_Payments_Admin {
                 'created_at' => current_time('mysql'),
             ] );
         }
-        $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY name ASC");
+    $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY sort_order ASC, name ASC");
+    $sort_nonce = wp_create_nonce('tpw_update_payment_sort');
 
         foreach ($methods as $index => $method) {
             if ($method->slug === 'cheque-cash') {
@@ -127,7 +174,10 @@ class TPW_Payments_Admin {
                                 $disabled_attr = 'disabled';
                             }
                         ?>
-                        <div class="tpw-pay-row">
+                        <div class="tpw-pay-row" data-slug="<?php echo esc_attr($method->slug); ?>">
+                            <div class="tpw-pay-col tpw-pay-drag" title="Drag to reorder" aria-label="Drag to reorder">
+                                <span class="tpw-drag-handle" aria-hidden="true">⋮⋮</span>
+                            </div>
                             <div class="tpw-pay-col tpw-pay-name">
                                 <strong><?php echo esc_html($method->name); ?></strong>
                                 <?php echo $summary; ?>
@@ -173,7 +223,43 @@ class TPW_Payments_Admin {
                 </div>
                 <?php submit_button('Save Changes'); ?>
             </form>
+            <div id="tpw-sort-feedback" style="margin-top:8px; display:none;"></div>
         </div></div>
+        <style>
+            .tpw-payments-list { counter-reset: rownum; }
+            .tpw-pay-row { display:flex; align-items:center; gap:12px; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px; background:#fff; }
+            .tpw-pay-row + .tpw-pay-row { margin-top:8px; }
+            .tpw-pay-drag { width:24px; cursor:move; color:#64748b; display:flex; align-items:center; justify-content:center; }
+            .tpw-drag-handle { font-size:18px; line-height:1; user-select:none; }
+            .ui-sortable-helper { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        </style>
+        <script>
+        (function($){
+            $(function(){
+                var $list = $('.tpw-payments-list');
+                if (!$list.length || !$.fn.sortable) return;
+                $list.sortable({
+                    items: '.tpw-pay-row',
+                    handle: '.tpw-drag-handle',
+                    axis: 'y',
+                    update: function(){
+                        var order = $list.find('.tpw-pay-row').map(function(){ return $(this).data('slug'); }).get();
+                        $('#tpw-sort-feedback').stop(true,true).text('Saving order…').css({display:'block', color:'#334155'});
+                        $.post(ajaxurl, {
+                            action: 'tpw_update_payment_sort',
+                            nonce: '<?php echo esc_js($sort_nonce); ?>',
+                            order: order
+                        }).done(function(resp){
+                            var ok = resp && resp.success;
+                            $('#tpw-sort-feedback').text(ok ? 'Order saved.' : 'Save failed.').css('color', ok ? '#16a34a' : '#dc2626').delay(1500).fadeOut(400);
+                        }).fail(function(){
+                            $('#tpw-sort-feedback').text('Save failed.').css('color', '#dc2626').delay(2000).fadeOut(400);
+                        });
+                    }
+                });
+            });
+        })(jQuery);
+        </script>
         <?php
     }
 }

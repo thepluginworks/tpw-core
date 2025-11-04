@@ -26,6 +26,13 @@ class TPW_SumUp_Settings_Page {
             update_option('tpw_sumup_client_id', $client_id);
             update_option('tpw_sumup_client_secret', $client_secret);
 
+            // Update display label in tpw_payment_methods for SumUp if provided
+            if ( isset($_POST['tpw_label_sumup']) ) {
+                $label = sanitize_text_field( (string) $_POST['tpw_label_sumup'] );
+                global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+                $wpdb->update( $table, [ 'name' => $label ], [ 'slug' => 'sumup' ] );
+            }
+
             echo '<div class="notice notice-success is-dismissible"><p>Settings saved successfully.</p></div>';
         }
 
@@ -51,6 +58,13 @@ class TPW_SumUp_Settings_Page {
         wp_nonce_field('tpw_sumup_save_settings', 'tpw_sumup_nonce');
 
         echo '<table class="form-table"><tbody>';
+        // Current display label for SumUp
+        global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+        $current_label = $wpdb->get_var( $wpdb->prepare("SELECT name FROM $table WHERE slug = %s", 'sumup') );
+        if ( ! is_string($current_label) || $current_label === '' ) { $current_label = 'Pay by Card (via SumUp)'; }
+        echo '<tr><th scope="row"><label for="tpw_label_sumup">Label</label></th>';
+        echo '<td><input name="tpw_label_sumup" type="text" id="tpw_label_sumup" value="' . esc_attr($current_label) . '" class="regular-text">';
+        echo '<p class="description">Shown on checkout.</p></td></tr>';
         echo '<tr><th scope="row"><label for="tpw_sumup_client_id">Client ID</label></th>';
         $client_id_value = get_option('tpw_sumup_client_id');
         if (!$client_id_value && defined('TPW_SUMUP_CLIENT_ID')) {

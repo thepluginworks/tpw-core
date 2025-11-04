@@ -94,17 +94,19 @@ class TPW_Member_Payments {
      */
     public static function render_source_methods() : void {
         global $wpdb;
-        $active_slugs = [];
-        $table = $wpdb->prefix . 'tpw_payment_methods';
+    $active_slugs = [];
+    $table = $wpdb->prefix . 'tpw_payment_methods';
         if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table ) ) === $table ) {
             $has_active      = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'active'" );
             $has_enabled     = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'enabled'" );
             $has_slug        = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'slug'" );
             $has_method_key  = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'method_key'" );
+            $has_sort        = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'sort_order'" );
             $col_key   = $has_slug ? 'slug' : ( $has_method_key ? 'method_key' : '' );
             $col_flag  = $has_active ? 'active' : ( $has_enabled ? 'enabled' : '' );
             if ( $col_key && $col_flag ) {
-                $rows = (array) $wpdb->get_results( "SELECT {$col_key} AS slug, {$col_flag} AS enabled FROM {$table} WHERE {$col_flag} IN (1,'1','yes','on','true','enabled')" );
+                $order_by = $has_sort ? 'ORDER BY sort_order ASC' : '';
+                $rows = (array) $wpdb->get_results( "SELECT {$col_key} AS slug, {$col_flag} AS enabled FROM {$table} WHERE {$col_flag} IN (1,'1','yes','on','true','enabled') {$order_by}" );
                 foreach ( $rows as $r ) {
                     $slug = (string) $r->slug;
                     if ( $slug !== '' ) { $active_slugs[] = $slug; }

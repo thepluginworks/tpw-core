@@ -362,6 +362,58 @@ Parameters:
 
 Templates are stored in memory only (static registry). Admin overrides are stored in the `wp_`-prefixed `tpw_email_templates` DB table.
 
+#### RSVP plugin — registering templates
+
+To expose RSVP-related templates in Settings → TPW Core → Email Templates (`/wp-admin/options-general.php?page=tpw-core-settings&tab=email-templates`), register them from your RSVP plugin on `init` (or after `tpw_core_loaded`). Use a stable group key for tidy grouping in the UI, e.g. `tpw-rsvp-lodge-meetings`.
+
+Example bootstrap in your RSVP plugin:
+
+```php
+add_action( 'init', function() {
+	if ( ! class_exists( 'TPW_Email_Template_Registry' ) ) return;
+
+	// Meeting invitation
+	TPW_Email_Template_Registry::register_template([
+		'key'              => 'rsvp-meeting-invite',
+		'group'            => 'tpw-rsvp-lodge-meetings',
+		'label'            => 'Meeting Invitation',
+		'default_subject'  => 'Invitation: {event-name} on {event-date}',
+		'default_body'     => '<p>Hi {member-name},</p><p>You are invited to {event-name} on {event-date} at {event-venue}.</p><p>Please RSVP here: <a href="{rsvp-link}">{rsvp-link}</a></p>',
+		'editable_subject' => true,
+		'editable_body'    => true,
+		'placeholders'     => [
+			'{member-name}' => 'Member full name',
+			'{event-name}'  => 'Event/meeting title',
+			'{event-date}'  => 'Event date (formatted)',
+			'{event-venue}' => 'Venue name',
+			'{rsvp-link}'   => 'Unique RSVP link for the recipient',
+		],
+	]);
+
+	// Reminder
+	TPW_Email_Template_Registry::register_template([
+		'key'              => 'rsvp-reminder',
+		'group'            => 'tpw-rsvp-lodge-meetings',
+		'label'            => 'RSVP Reminder',
+		'default_subject'  => 'Reminder: RSVP for {event-name} ({event-date})',
+		'default_body'     => '<p>Hi {member-name},</p><p>This is a reminder to RSVP for {event-name} on {event-date}.</p><p>Respond here: <a href="{rsvp-link}">{rsvp-link}</a></p>',
+		'editable_subject' => true,
+		'editable_body'    => true,
+		'placeholders'     => [
+			'{member-name}' => 'Member full name',
+			'{event-name}'  => 'Event/meeting title',
+			'{event-date}'  => 'Event date (formatted)',
+			'{rsvp-link}'   => 'Unique RSVP link for the recipient',
+		],
+	]);
+});
+```
+
+Notes:
+- If your plugin must run strictly after Core, hook to `tpw_core_loaded` instead of `init`.
+- Choose a unique group string to avoid mixing templates from unrelated plugins.
+- When sending, use `TPW_Email_Template_Manager::get_rendered_template( 'rsvp-meeting-invite', $tokens )` to merge admin overrides and replace placeholders.
+
 ### Rendering a Template
 
 Use the manager to merge any admin overrides and replace tokens:

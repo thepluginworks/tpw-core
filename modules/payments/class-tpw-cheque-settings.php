@@ -26,6 +26,10 @@ class TPW_Cheque_Settings {
         register_setting('tpw_cheque_settings', 'tpw_cheque_county');
         register_setting('tpw_cheque_settings', 'tpw_cheque_postcode');
         register_setting('tpw_cheque_settings', 'tpw_cheque_post_name');
+        // Label field stored in tpw_payment_methods.name
+        register_setting('tpw_cheque_settings', 'tpw_label_cheque', [
+            'sanitize_callback' => [__CLASS__, 'save_method_label_cheque']
+        ]);
         // Surcharge fields
         register_setting('tpw_cheque_settings', 'tpw_surcharge_cheque_percent', [
             'sanitize_callback' => [__CLASS__, 'sanitize_surcharge_value']
@@ -52,6 +56,10 @@ class TPW_Cheque_Settings {
                 <?php
                 settings_fields('tpw_cheque_settings');
                 do_settings_sections('tpw_cheque_settings');
+                // Current label from DB
+                global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+                $current_label = $wpdb->get_var( $wpdb->prepare("SELECT name FROM $table WHERE slug = %s", 'cheque') );
+                if ( ! is_string($current_label) || $current_label === '' ) { $current_label = 'Cheque'; }
                 // Determine currency symbol from Core settings or fallback
                 $currency_symbol = '£';
                 if ( function_exists('tpw_core_get_currency_symbol') ) {
@@ -66,6 +74,13 @@ class TPW_Cheque_Settings {
                 }
                 ?>
                 <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="tpw_label_cheque">Label</label></th>
+                        <td>
+                            <input type="text" name="tpw_label_cheque" id="tpw_label_cheque" value="<?php echo esc_attr( $current_label ); ?>" class="regular-text" />
+                            <p class="description">Shown on checkout.</p>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="tpw_cheque_payable_to">Make Cheque Payable To</label></th>
                         <td><input type="text" name="tpw_cheque_payable_to" id="tpw_cheque_payable_to" value="<?php echo esc_attr(get_option('tpw_cheque_payable_to')); ?>" class="regular-text" /></td>
@@ -116,6 +131,13 @@ class TPW_Cheque_Settings {
             </form>
         </div></div>
         <?php
+    }
+
+    public static function save_method_label_cheque( $val ) {
+        $label = sanitize_text_field( (string) $val );
+        global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+        $wpdb->update( $table, [ 'name' => $label ], [ 'slug' => 'cheque' ] );
+        return $label;
     }
 }
 

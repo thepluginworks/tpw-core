@@ -21,6 +21,10 @@ class TPW_Card_On_The_Day_Settings {
     public function register_settings() {
         // Instructional message (same as cash style)
         register_setting('tpw_card_on_the_day_settings_group', 'tpw_card_on_the_day_message');
+        // Label field stored in tpw_payment_methods.name
+        register_setting('tpw_card_on_the_day_settings_group', 'tpw_label_card_on_the_day', [
+            'sanitize_callback' => [$this, 'save_method_label_card_on_the_day']
+        ]);
         // Surcharge fields (percent and fixed)
         register_setting('tpw_card_on_the_day_settings_group', 'tpw_surcharge_card-on-the-day_percent', [
             'sanitize_callback' => [$this, 'sanitize_surcharge_value']
@@ -48,6 +52,10 @@ class TPW_Card_On_The_Day_Settings {
                 settings_fields('tpw_card_on_the_day_settings_group');
                 do_settings_sections('tpw_card_on_the_day_settings_group');
                 $message = get_option('tpw_card_on_the_day_message', '');
+                // Current label from DB
+                global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+                $current_label = $wpdb->get_var( $wpdb->prepare("SELECT name FROM $table WHERE slug = %s", 'card-on-the-day') );
+                if ( ! is_string($current_label) || $current_label === '' ) { $current_label = 'Card on the day'; }
                 // Determine currency symbol from Core settings or fallback
                 $currency_symbol = '£';
                 if ( function_exists('tpw_core_get_currency_symbol') ) {
@@ -62,6 +70,13 @@ class TPW_Card_On_The_Day_Settings {
                 }
                 ?>
                 <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="tpw_label_card_on_the_day"><?php esc_html_e('Label', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" name="tpw_label_card_on_the_day" id="tpw_label_card_on_the_day" value="<?php echo esc_attr( $current_label ); ?>" class="regular-text" />
+                            <p class="description"><?php esc_html_e('Shown on checkout.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
                     <tr valign="top">
                         <th scope="row"><label for="tpw_card_on_the_day_message"><?php esc_html_e('Message to display', 'tpw-core'); ?></label></th>
                         <td>
@@ -86,6 +101,13 @@ class TPW_Card_On_The_Day_Settings {
             </form>
         </div></div>
         <?php
+    }
+
+    public function save_method_label_card_on_the_day( $val ) {
+        $label = sanitize_text_field( (string) $val );
+        global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+        $wpdb->update( $table, [ 'name' => $label ], [ 'slug' => 'card-on-the-day' ] );
+        return $label;
     }
 }
 

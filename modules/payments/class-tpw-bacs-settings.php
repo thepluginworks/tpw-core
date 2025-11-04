@@ -21,6 +21,10 @@ class TPW_BACS_Settings {
         register_setting('tpw_bacs_settings', 'tpw_bacs_account_name');
         register_setting('tpw_bacs_settings', 'tpw_bacs_account_number');
         register_setting('tpw_bacs_settings', 'tpw_bacs_sort_code');
+        // Label field stored in tpw_payment_methods.name
+        register_setting('tpw_bacs_settings', 'tpw_label_bacs', [
+            'sanitize_callback' => [__CLASS__, 'save_method_label_bacs']
+        ]);
         // Surcharge fields
         register_setting('tpw_bacs_settings', 'tpw_surcharge_bacs_percent', [
             'sanitize_callback' => [__CLASS__, 'sanitize_surcharge_value']
@@ -48,6 +52,10 @@ class TPW_BACS_Settings {
                 <?php
                 settings_fields('tpw_bacs_settings');
                 do_settings_sections('tpw_bacs_settings');
+                // Current label from DB
+                global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+                $current_label = $wpdb->get_var( $wpdb->prepare("SELECT name FROM $table WHERE slug = %s", 'bacs') );
+                if ( ! is_string($current_label) || $current_label === '' ) { $current_label = 'BACS'; }
                 // Determine currency symbol from Core settings or fallback
                 $currency_symbol = '£';
                 if ( function_exists('tpw_core_get_currency_symbol') ) {
@@ -62,6 +70,13 @@ class TPW_BACS_Settings {
                 }
                 ?>
                 <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="tpw_label_bacs">Label</label></th>
+                        <td>
+                            <input type="text" name="tpw_label_bacs" id="tpw_label_bacs" value="<?php echo esc_attr( $current_label ); ?>" class="regular-text" />
+                            <p class="description">Shown on checkout.</p>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="tpw_bacs_account_name">Account Name</label></th>
                         <td><input type="text" name="tpw_bacs_account_name" id="tpw_bacs_account_name" value="<?php echo esc_attr(get_option('tpw_bacs_account_name')); ?>" class="regular-text" /></td>
@@ -91,6 +106,13 @@ class TPW_BACS_Settings {
             </form>
         </div></div>
         <?php
+    }
+
+    public static function save_method_label_bacs( $val ) {
+        $label = sanitize_text_field( (string) $val );
+        global $wpdb; $table = $wpdb->prefix . 'tpw_payment_methods';
+        $wpdb->update( $table, [ 'name' => $label ], [ 'slug' => 'bacs' ] );
+        return $label; // value stored as option too (harmless)
     }
 }
 

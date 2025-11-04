@@ -11,6 +11,7 @@ class TPW_Payment_DB {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name varchar(100) NOT NULL,
             slug varchar(100) NOT NULL,
+            sort_order int(11) NOT NULL DEFAULT 0,
             active tinyint(1) DEFAULT 1,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
@@ -27,7 +28,7 @@ class TPW_Payment_DB {
 
         // Insert default methods if not already present
         $default_methods = [
-            ['name' => 'BACS', 'slug' => 'bacs'],
+            ['name' => 'Bank Transfer', 'slug' => 'bacs'],
             ['name' => 'Cheque', 'slug' => 'cheque'],
             ['name' => 'Cash', 'slug' => 'cash'],
             ['name' => 'Card on the day', 'slug' => 'card-on-the-day'],
@@ -36,16 +37,19 @@ class TPW_Payment_DB {
             ['name' => 'WooCommerce', 'slug' => 'woocommerce'],
         ];
 
+        $i = 0;
         foreach ($default_methods as $method) {
             $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE slug = %s", $method['slug']));
             if (!$exists) {
                 $wpdb->insert($table_name, [
                     'name' => $method['name'],
                     'slug' => $method['slug'],
+                    'sort_order' => $i,
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                 ]);
             }
+            $i++;
         }
     }
 }
