@@ -310,10 +310,21 @@ class TPW_Member_Controller {
             }
         }
 
+        // Normalise user_id so blank values become NULL (avoid UNIQUE '0' collisions)
+        if ( array_key_exists( 'user_id', $update ) ) {
+            $uid = $update['user_id'];
+            // Treat empty string, null, or 0 (int or string) as no linkage
+            if ( $uid === '' || $uid === null || $uid === 0 || $uid === '0' ) {
+                $update['user_id'] = null; // wpdb->update will persist NULL correctly
+            } else {
+                $update['user_id'] = (int) $uid;
+            }
+        }
+
         // Always bump the updated_at timestamp
         $update['updated_at'] = current_time( 'mysql' );
 
-        $res = $wpdb->update( $table, $update, [ 'id' => $id ] );
+    $res = $wpdb->update( $table, $update, [ 'id' => $id ] );
         if ( $res !== false ) {
             // Bust dependent option caches for any updated columns
             if ( ! empty($update) ) {
