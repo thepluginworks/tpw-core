@@ -9,6 +9,24 @@ The Members module manages society members in a dedicated table with front‑end
   - [tpw_member_profile] — member self‑service profile
   - [tpw_member_login] — front‑end login form
 
+## Create WordPress User (manual)
+When a member has an email address but no linked WordPress user, admins can create/link an account from the Edit Member screen.
+
+Eligibility
+- Member has no linked user and a valid email.
+- You have permission to manage members (Admins always; Committee if enabled in Member Settings).
+
+How to use
+1) Open Manage Members → Edit for the person.
+2) If you just added an email, click Save; the form will reload once so the button appears.
+3) Under the Email field, optionally tick “Send login credentials to this member”.
+4) Click “Create WordPress User”.
+
+What it does
+- Links an existing WP user by email, or creates a new one with a generated password and member capabilities, then links it to the member record.
+- If email option is selected, sends a credentials email with friendly links to /member-login/ for both login and password reset.
+- Shows a success notice on return to the Edit screen.
+
 ## Hooks
 - tpw_members_admin_form_extra_fields (action) — Render extra fields on Add/Edit forms.
 - tpw_members_admin_form_after_save (action) — Persist extra fields after core save.
