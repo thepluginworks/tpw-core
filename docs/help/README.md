@@ -6,6 +6,8 @@ A quick index of module help topics for browsing in GitHub and for reference fro
   - Manage member records, profile shortcode, login redirect, and extension hooks.
 - [Payments](payments.md)
   - Gateway settings, webhooks, `tpw_payment_completed` action, and logger references.
+- [Payments Integration](payments-integration.md)
+  - For external plugins (e.g., FlexiTicket, RSVP): enqueue Core assets, radio input contract, Square container IDs, JS events, `TPW_Core_Payments::create_payment()`, config localization, and an example checkout flow.
 - [System Pages](system-pages.md)
   - Register/ensure required front‑end pages and resolve links.
 - [Menus](menus.md)

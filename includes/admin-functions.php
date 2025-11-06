@@ -206,6 +206,19 @@ add_action( 'wp_enqueue_scripts', function(){
     // Fixtures manage stylesheet is now owned by FlexiGolf; only ensure base buttons here.
 }, 100 );
 
+// Front-end: register a lightweight Payments bootstrap (not auto-enqueued)
+add_action( 'wp_enqueue_scripts', function(){
+    if ( ! defined('TPW_CORE_PATH') || ! defined('TPW_CORE_URL') ) return;
+    $js_file = TPW_CORE_PATH . 'assets/js/tpw-payments.js';
+    if ( file_exists( $js_file ) ) {
+        $js_url = TPW_CORE_URL . 'assets/js/tpw-payments.js';
+        $js_ver = filemtime( $js_file );
+        if ( ! wp_script_is( 'tpw-core-payments', 'registered' ) ) {
+            wp_register_script( 'tpw-core-payments', $js_url, [], $js_ver, true );
+        }
+    }
+}, 20 );
+
 /**
  * Renders a consistent header block for TPW Core admin pages,
  * with optional notice message and customisation args.

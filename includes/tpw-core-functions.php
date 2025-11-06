@@ -466,3 +466,79 @@ function tpw_members_module_enabled(): bool {
      */
     return (bool) apply_filters( 'tpw_members/module_enabled', $enabled );
 }
+
+/**
+ * Build a default payments page config for front-end bootstrapping.
+ *
+ * Includes currency, Square app/location IDs, sandbox flag, and active methods list.
+ *
+ * @since 1.1.0
+ * @return array
+ */
+if ( ! function_exists( 'tpw_core_get_payments_page_config' ) ) {
+    function tpw_core_get_payments_page_config(): array {
+        $cfg = [
+            'currency' => [
+                'code'   => function_exists('tpw_core_get_currency_code') ? tpw_core_get_currency_code() : 'GBP',
+                'symbol' => function_exists('tpw_core_get_currency_symbol') ? tpw_core_get_currency_symbol() : '£',
+            ],
+            'square' => [
+                'appId'      => get_option('tpw_square_app_id'),
+                'locationId' => get_option('tpw_square_location_id'),
+                'sandbox'    => ( get_option('tpw_square_sandbox_mode') === '1' ),
+            ],
+            'activeMethods' => class_exists('TPW_Payments_Manager') ? TPW_Payments_Manager::get_active_methods() : [],
+        ];
+
+        /**
+         * Filter the default front-end payments page config before it is returned.
+         *
+         * @param array $cfg
+         */
+        return apply_filters( 'tpw_core/payments_page_config', $cfg );
+    }
+}
+
+/**
+ * Enqueue the Square Web Payments SDK (sandbox or production) and the Core payments bootstrap JS.
+ * Optionally localize a config array to `tpwPaymentsConfig` if provided; otherwise builds a default.
+ *
+ * Usage: call from your shortcode/template controller for pages that render a payments form.
+ *
+ * @since 1.1.0
+ * @param array|null $config Optional config to localize. If null, a default will be used.
+ */
+if ( ! function_exists( 'tpw_core_enqueue_payments_assets' ) ) {
+    function tpw_core_enqueue_payments_assets( ?array $config = null ): void {
+        // Decide SDK URL by sandbox flag
+        $is_sandbox = ( get_option('tpw_square_sandbox_mode') === '1' );
+        $sdk_url = $is_sandbox
+            ? 'https://sandbox.web.squarecdn.com/v1/square.js'
+            : 'https://web.squarecdn.com/v1/square.js';
+
+        // Enqueue Square Web Payments SDK once
+        if ( ! wp_script_is( 'square-web-payments', 'enqueued' ) && ! wp_script_is( 'square-web-payments', 'registered' ) ) {
+            wp_register_script( 'square-web-payments', $sdk_url, [], null, true );
+        }
+        wp_enqueue_script( 'square-web-payments' );
+
+        // Ensure the Core bootstrap is registered; admin-functions.php registers it, but provide a fallback here
+        if ( ! wp_script_is( 'tpw-core-payments', 'registered' ) ) {
+            if ( defined('TPW_CORE_PATH') && defined('TPW_CORE_URL') ) {
+                $file = TPW_CORE_PATH . 'assets/js/tpw-payments.js';
+                if ( file_exists( $file ) ) {
+                    $url = TPW_CORE_URL . 'assets/js/tpw-payments.js';
+                    wp_register_script( 'tpw-core-payments', $url, [], filemtime($file), true );
+                }
+            }
+        }
+        if ( wp_script_is( 'tpw-core-payments', 'registered' ) ) {
+            // Localize config (merge default if none supplied)
+            $cfg = is_array( $config ) ? $config : tpw_core_get_payments_page_config();
+            // Allow callers to tweak
+            $cfg = apply_filters( 'tpw_core/payments_page_config_localized', $cfg );
+            wp_localize_script( 'tpw-core-payments', 'tpwPaymentsConfig', $cfg );
+            wp_enqueue_script( 'tpw-core-payments' );
+        }
+    }
+}
