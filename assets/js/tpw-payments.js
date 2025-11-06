@@ -21,8 +21,12 @@
     activeMethod: null,
     mounted: false,
     nonceCallback: null,
-    listenersBound: false
+    listenersBound: false,
+    mountTimer: null
   };
+
+  // Safe, short delay to allow DOM/UI to settle before mounting Square
+  var SAFE_INIT_DELAY = 50; // reduced from 150ms for faster visual response
 
   async function ensureSquarePayments(cfg){
     if (!window.Square || !window.Square.payments) {
@@ -54,6 +58,11 @@
   }
 
   function unmountSquare(){
+    // Cancel any pending mount before unmounting
+    if (state.mountTimer) {
+      try { clearTimeout(state.mountTimer); } catch(e) {}
+      state.mountTimer = null;
+    }
     var container = $('#tpw-square-container');
     if (container) {
       try {
@@ -94,7 +103,12 @@
       var method = e && e.detail && e.detail.method ? e.detail.method : '';
       state.activeMethod = method;
       if (method === 'square') {
-        try { await mountSquare(cfg); } catch (err) { showError(err.message || String(err)); }
+        // Debounce and defer slightly to ensure containers are present and visible
+        if (state.mountTimer) { try { clearTimeout(state.mountTimer); } catch(_) {} }
+        state.mountTimer = setTimeout(async function(){
+          try { await mountSquare(cfg); } catch (err) { showError(err.message || String(err)); }
+          state.mountTimer = null;
+        }, SAFE_INIT_DELAY);
       } else {
         unmountSquare();
       }
@@ -113,7 +127,12 @@
     // Mount immediately if Square is already selected
     state.activeMethod = detectInitialMethod();
     if (state.activeMethod === 'square') {
-      try { await mountSquare(state.cfg); } catch (err) { showError(err.message || String(err)); }
+      // Use a short delay to avoid racing with initial render/localization
+      if (state.mountTimer) { try { clearTimeout(state.mountTimer); } catch(_) {} }
+      state.mountTimer = setTimeout(async function(){
+        try { await mountSquare(state.cfg); } catch (err) { showError(err.message || String(err)); }
+        state.mountTimer = null;
+      }, SAFE_INIT_DELAY);
     } else {
       unmountSquare();
     }
