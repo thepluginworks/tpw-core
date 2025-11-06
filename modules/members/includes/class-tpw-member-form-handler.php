@@ -454,6 +454,23 @@ class TPW_Member_Form_Handler {
 
         // Update WP User info if user_id is available
         $member = $controller->get_member($member_id);
+
+        // Conditional reload: if email was just added (previously empty) and still no linked WP user, return to edit form once
+        $prev_email_empty = ( ! $member_before || empty( $member_before->email ) );
+        $now_has_email    = ( $member && ! empty( $member->email ) );
+        $still_unlinked   = ( $member && empty( $member->user_id ) );
+        if ( $prev_email_empty && $now_has_email && $still_unlinked ) {
+            $edit_url = add_query_arg(
+                [
+                    'action'      => 'edit_form',
+                    'id'          => (int) $member_id,
+                    'email_added' => '1',
+                ],
+                site_url( '/manage-members/' )
+            );
+            wp_safe_redirect( $edit_url );
+            exit;
+        }
         if ( $member && ! empty($member->user_id) ) {
             wp_update_user([
                 'ID'         => $member->user_id,
@@ -501,7 +518,7 @@ class TPW_Member_Form_Handler {
         // Notify extensions that the Edit form has been saved so they can persist extra fields.
         // Signature: ( string $context, int $member_id )
         do_action( 'tpw_members_admin_form_after_save', 'edit', $member_id );
-        // Redirect after successful edit, include flash message when set
+    // Redirect after successful edit, include flash message when set
         $base_url = site_url( '/manage-members/' );
         // Always indicate a successful save; also include photo message when applicable
         $args = [ 'saved' => '1' ];

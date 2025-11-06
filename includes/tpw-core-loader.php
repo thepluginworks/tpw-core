@@ -69,6 +69,13 @@ require_once TPW_CORE_PATH . 'modules/members/shortcodes/members-admin.php';
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-login.php';
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-profile.php';
 require_once TPW_CORE_PATH . 'modules/members/members-init.php';
+// Members admin actions (admin-post handlers)
+if ( file_exists( TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-admin-actions.php' ) ) {
+    require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-admin-actions.php';
+    if ( class_exists( 'TPW_Member_Admin_Actions' ) ) {
+        add_action( 'init', [ 'TPW_Member_Admin_Actions', 'init' ] );
+    }
+}
 
 //require_once TPW_CORE_PATH . 'modules/choices/class-tpw-choices-handler.php';
 //require_once TPW_CORE_PATH . 'modules/choices/class-tpw-choices-utils.php';
@@ -119,6 +126,29 @@ require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-template-manager.php
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-form.php';
 TPW_Email_Form::init();
+
+// Register Members email templates
+add_action( 'plugins_loaded', function(){
+    if ( class_exists( 'TPW_Email_Template_Registry' ) ) {
+        TPW_Email_Template_Registry::register_template( [
+            'key'               => 'member_new_wp_user_created',
+            'group'             => 'members',
+            'label'             => 'Member: New WP User Created',
+            'default_subject'   => 'Your Member Login Has Been Created',
+            'default_body'      => "Dear {member_first_name},\n\nA member login has now been created for you on {site_name}.\n\nYou can access the members’ area here:\n{member_login_url}\n\nBefore you can log in for the first time, please set your password using the Reset Password option on the login page below:\n{password_reset_url}\n\nKind regards,\n{organisation_name}",
+            'editable_subject'  => true,
+            'editable_body'     => true,
+            'placeholders'      => [
+                '{member_first_name}',
+                '{member_last_name}',
+                '{site_name}',
+                '{member_login_url}',
+                '{password_reset_url}',
+                '{organisation_name}',
+            ],
+        ] );
+    }
+}, 20 );
 
 // Member Payments (Phase 1 skeleton)
 if ( file_exists( TPW_CORE_PATH . 'includes/class-tpw-member-payments.php' ) ) {

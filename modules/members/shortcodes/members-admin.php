@@ -420,6 +420,15 @@ add_shortcode('tpw_manage_members', function() {
         }
     }
 
+    // Show success notice after creating and linking a WP user
+    if ( isset($_GET['wp_user_created']) && $_GET['wp_user_created'] === '1' ) {
+        echo '<div class="notice notice-success" style="margin:10px 0;"><p>' . esc_html__( 'WordPress user successfully created and linked.', 'tpw-core' ) . '</p></div>';
+    }
+    // Informational notice when email was added and page reloaded to reveal the button
+    if ( isset($_GET['email_added']) && $_GET['email_added'] === '1' ) {
+        echo '<div class="notice notice-info" style="margin:10px 0;"><p>✉️ ' . esc_html__( 'Email address added — you can now create a WordPress user for this member.', 'tpw-core' ) . '</p></div>';
+    }
+
     $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'list';
 
     // If the user cannot manage and also isn't eligible to view, block entirely

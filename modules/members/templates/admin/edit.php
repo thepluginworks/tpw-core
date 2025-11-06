@@ -10,6 +10,12 @@ $member_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $member = $controller->get_member($member_id);
 $meta = TPW_Member_Meta::get_all_meta($member_id);
 
+// Precompute Create WP User availability and ids for detached form wiring
+$can_show_create_wp_user = ( empty($member->user_id) && ! empty($member->email) && current_user_can('manage_options') );
+$create_wp_form_id = 'tpw-create-wp-user-form-' . (int) $member_id;
+$create_wp_btn_id  = 'tpw-create-wp-user-btn-' . (int) $member_id;
+$create_wp_admin_post = admin_url('admin-post.php');
+
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 $fields = array_filter($fields, fn($field) => $field['key'] !== 'password_hash');
 // Ensure explicit sort by sort_order from settings
@@ -187,6 +193,22 @@ if ( ! $member ) {
                                     echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '" readonly aria-readonly="true">';
                                 } else {
                                     echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                                }
+                                // Inline Create WP User control directly under Email when eligible
+                                if (
+                                    $key === 'email'
+                                    && $can_show_create_wp_user
+                                ) {
+                                    echo '<div class="description" style="margin-top:8px;color:#7c2d12;background:#fffbeb;border:1px solid #fcd34d;padding:8px;border-radius:6px;">';
+                                    echo '<strong>⚠️ This member has no WordPress account.</strong><br>Click the button to create one using the email above.';
+                                    echo '</div>';
+                                    echo '<div class="tpw-inline-create-user" style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;">';
+                                    echo '<label style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0 8px 0 0;">';
+                                    echo '<input type="checkbox" name="send_credentials" value="1" form="' . esc_attr($create_wp_form_id) . '">';
+                                    echo '<span>Send login credentials to this member</span>';
+                                    echo '</label>';
+                                    echo '<button type="button" id="' . esc_attr($create_wp_btn_id) . '" class="tpw-btn tpw-btn-secondary">Create WordPress User</button>';
+                                    echo '</div>';
                                 }
                             }
                             // If this is the WHI field and FlexiGolf is active, add a read-only last-updated note below it
@@ -442,5 +464,37 @@ if ( ! $member ) {
         </div>
     </form>
 </div>
+
+<?php if ( $can_show_create_wp_user ) : ?>
+<!-- Hidden detached form for Create WP User action -->
+<form id="<?php echo esc_attr( $create_wp_form_id ); ?>" method="post" action="<?php echo esc_url( $create_wp_admin_post ); ?>" style="display:none;">
+        <input type="hidden" name="action" value="tpw_create_wp_user">
+        <input type="hidden" name="member_id" value="<?php echo (int) $member_id; ?>">
+        <?php echo wp_nonce_field( 'tpw_create_wp_user', '_wpnonce', true, false ); ?>
+        <!-- send_credentials checkbox is rendered near Email field and associated via form="..." -->
+        <input type="submit" value="submit">
+        <!-- Note: submit input ensures form.submit() is safe even if native submit is overridden -->
+        <!-- The form remains hidden; submission is triggered by the button below via JS. -->
+</form>
+<script>
+(function(){
+    document.addEventListener('DOMContentLoaded', function(){
+        var btn = document.getElementById(<?php echo json_encode( $create_wp_btn_id ); ?>);
+        var form = document.getElementById(<?php echo json_encode( $create_wp_form_id ); ?>);
+        if (!btn || !form) return;
+        btn.addEventListener('click', function(e){
+            e.preventDefault();
+            try { btn.disabled = true; btn.dataset.prevText = btn.textContent; btn.textContent = 'Working…'; } catch(_){}
+            // Prefer native submit if available
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+    });
+})();
+</script>
+<?php endif; ?>
 
 <!-- Postcode lookup script is enqueued and initialized via members-admin enqueue hook -->
