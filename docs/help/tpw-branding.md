@@ -135,6 +135,25 @@ The Branding tab emits variables to `:root`, so your CSS can use them directly:
 ```
 When you wrap in `.tpw-admin-ui`, additional scoped tokens exist for inputs and buttons (see `assets/css/tpw-admin-ui.css`).
 
+### Front-end field validation (universal)
+
+For TPW-styled front-end forms wrapped in `.tpw-frontend-ui`, invalid field containers can use `.tpw-field--invalid` to inherit the global warning token automatically:
+
+```css
+/* Universal field validation warning */
+.tpw-frontend-ui :where(.tpw-field--invalid) :is(input, select, textarea) {
+  border-color: var(--tpw-color-warning);
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tpw-color-warning) 25%, transparent);
+}
+
+.tpw-frontend-ui :where(.tpw-field--invalid) .tpw-field-hint {
+  color: var(--tpw-color-warning);
+}
+```
+
+This relies on the Branding tab token `--tpw-color-warning` and requires no JS. Styles are defined centrally in `assets/css/tpw-admin-ui.css` so both admin and front-end UIs stay consistent.
+
 ---
 
 ## Helper functions you can call

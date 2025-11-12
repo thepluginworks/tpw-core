@@ -139,6 +139,25 @@ To make semantic notice colours work consistently in both admin screens and publ
 
 This ensures consistent appearance between admin and public-facing RSVP pages.
 
+### Frontend: Universal field validation
+
+TPW Core provides a universal style for invalid required fields on TPW-styled forms, scoped to `.tpw-frontend-ui` and using the semantic warning token. These rules live in `assets/css/tpw-admin-ui.css`:
+
+```css
+/* Universal field validation warning */
+.tpw-frontend-ui :where(.tpw-field--invalid) :is(input, select, textarea) {
+	border-color: var(--tpw-color-warning);
+	outline: 0;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--tpw-color-warning) 25%, transparent);
+}
+
+.tpw-frontend-ui :where(.tpw-field--invalid) .tpw-field-hint {
+	color: var(--tpw-color-warning);
+}
+```
+
+No markup or JavaScript changes are required—any field wrapper with `.tpw-field--invalid` will apply the styling automatically.
+
 ---
 
 ## Behavior & Edge Cases

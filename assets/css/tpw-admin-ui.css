@@ -246,6 +246,50 @@
     border-radius: 4px;
   }
 
+  /* Solid/filled notice variant */
+  .tpw-admin-ui .tpw-notice.tpw-notice--solid,
+  .tpw-frontend-ui .tpw-notice.tpw-notice--solid {
+    color: #fff;
+  }
+
+  .tpw-admin-ui .tpw-notice.tpw-notice--solid a,
+  .tpw-frontend-ui .tpw-notice.tpw-notice--solid a {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  /* Specific variants using existing TPW tokens */
+  .tpw-admin-ui .tpw-notice-warning.tpw-notice--solid,
+  .tpw-frontend-ui .tpw-notice-warning.tpw-notice--solid {
+    background-color: var(--tpw-color-warning, #ed6c02);
+    border-color: var(--tpw-color-warning, #ed6c02);
+  }
+
+  .tpw-admin-ui .tpw-notice-error.tpw-notice--solid,
+  .tpw-frontend-ui .tpw-notice-error.tpw-notice--solid {
+    background-color: var(--tpw-color-error, #bd2e3c);
+    border-color: var(--tpw-color-error, #bd2e3c);
+  }
+
+  .tpw-admin-ui .tpw-notice-success.tpw-notice--solid,
+  .tpw-frontend-ui .tpw-notice-success.tpw-notice--solid {
+    background-color: var(--tpw-color-success, #0A875A);
+    border-color: var(--tpw-color-success, #0A875A);
+  }
+
+  /* Universal field validation warning (frontend + admin) */
+  .tpw-admin-ui :where(.tpw-field--invalid) :is(input, select, textarea),
+  .tpw-frontend-ui :where(.tpw-field--invalid) :is(input, select, textarea) {
+    border-color: var(--tpw-color-warning);
+    outline: 0;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--tpw-color-warning) 25%, transparent);
+  }
+
+  .tpw-admin-ui :where(.tpw-field--invalid) .tpw-field-hint,
+  .tpw-frontend-ui :where(.tpw-field--invalid) .tpw-field-hint {
+    color: var(--tpw-color-warning);
+  }
+
   /* Cards */
   .tpw-admin-ui :where(.tpw-card) {
     border: 1px solid var(--tpw-border-color);
