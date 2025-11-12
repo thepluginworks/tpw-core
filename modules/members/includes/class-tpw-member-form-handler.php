@@ -575,6 +575,10 @@ class TPW_Member_Form_Handler {
         if ( ! empty($member->user_id) ) {
             $wp_user = get_user_by( 'id', $member->user_id );
             if ( $wp_user ) {
+                // Ensure wp_delete_user() is available outside wp-admin context
+                if ( ! function_exists( 'wp_delete_user' ) ) {
+                    require_once ABSPATH . 'wp-admin/includes/user.php';
+                }
                 wp_delete_user( $member->user_id );
             } else {
                 error_log( 'User ID ' . $member->user_id . ' not found in wp_users.' );
