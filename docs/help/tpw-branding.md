@@ -29,6 +29,29 @@ That means other plugins only need to enqueue the relevant CSS and use the class
 
 ---
 
+## New: Semantic notice colours (global tokens)
+
+TPW Core now emits global CSS variables for common notice states that other TPW plugins can consume:
+
+- `--tpw-color-success`
+- `--tpw-color-info`
+- `--tpw-color-warning`
+- `--tpw-color-error`
+
+Defaults/derivations:
+- Success: `color-mix(in oklab, var(--tpw-btn-primary) 60%, white 40%)`
+- Info: `var(--tpw-accent-color)` (from UI Theme)
+- Warning: `#ed6c02`
+- Error: `var(--tpw-btn-danger)`
+
+Where they come from:
+- Defined in Branding tab (Settings → TPW Core → Branding) with optional overrides.
+- Emitted in the same inline `<style id="tpw-core-branding-vars">` block as other Branding tokens (admin and front-end heads).
+
+Integration guidance will follow separately; for now, other TPW plugins can reference these variables directly in their CSS with sensible fallbacks.
+
+---
+
 ## Enqueue: which stylesheets to use
 
 Use these handles/paths exposed by TPW Core.

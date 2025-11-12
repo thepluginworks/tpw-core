@@ -601,6 +601,11 @@ if ( ! function_exists('tpw_core_build_branding_css') ) {
             'btn_text_dark'  => '--tpw-btn-text-dark',
             // Action colours
             'action_edit'    => '--tpw-action-edit',
+            // Semantic notice palette (success/info/warning/error)
+            'color_success'  => '--tpw-color-success',
+            'color_info'     => '--tpw-color-info',
+            'color_warning'  => '--tpw-color-warning',
+            'color_error'    => '--tpw-color-error',
             'btn_radius'     => '--tpw-btn-radius',
             'btn_padding'    => '--tpw-btn-padding',
             'btn_font_size'  => '--tpw-btn-font-size',
@@ -733,6 +738,11 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
             'btn_text_dark'  => '#000000',
             // Action buttons (module UIs)
             'action_edit'    => '#2d7ff9',
+            // Semantic notice colours (admin may override). Success derived via color-mix using primary by default.
+            'color_success'  => 'color-mix(in oklab, var(--tpw-btn-primary) 60%, white 40%)',
+            'color_info'     => 'var(--tpw-accent-color)',
+            'color_warning'  => '#ed6c02',
+            'color_error'    => 'var(--tpw-btn-danger)',
             'btn_radius'     => '7px',
             'btn_padding'    => '4px 8px',
             'btn_font_size'  => '0.9rem',
@@ -913,6 +923,36 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                             <p class="description"><?php esc_html_e('Used for .tpw-action-edit buttons in admin module lists.', 'tpw-core'); ?></p>
                         </td>
                     </tr>
+                    <tr><th colspan="2"><h2 style="margin:12px 0 6px;">Semantic Notice Colours</h2></th></tr>
+                    <tr>
+                        <th scope="row"><label for="color_success">Success</label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="color_success" name="color_success" value="<?php echo esc_attr($val['color_success']); ?>" placeholder="color-mix(in oklab, var(--tpw-btn-primary) 60%, white 40%)" />
+                            <p class="description"><?php esc_html_e('Background/base colour for success states. Supports CSS functions (color-mix, var()).', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="color_info">Info</label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="color_info" name="color_info" value="<?php echo esc_attr($val['color_info']); ?>" placeholder="var(--tpw-accent-color)" />
+                            <p class="description"><?php esc_html_e('Base colour for informational notices. Typically uses the UI accent.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="color_warning">Warning</label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="color_warning" name="color_warning" value="<?php echo esc_attr($val['color_warning']); ?>" placeholder="#ed6c02" />
+                            <input type="color" value="<?php echo esc_attr(preg_match('/^#/', $val['color_warning']) ? $val['color_warning'] : '#ed6c02'); ?>" oninput="document.getElementById('color_warning').value=this.value" />
+                            <p class="description"><?php esc_html_e('High-attention but non-fatal states.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="color_error">Error</label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="color_error" name="color_error" value="<?php echo esc_attr($val['color_error']); ?>" placeholder="var(--tpw-btn-danger)" />
+                            <p class="description"><?php esc_html_e('Critical / failure state colour, usually matches Danger button.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="btn_radius">Border radius</label></th>
                         <td><input type="text" class="regular-text" id="btn_radius" name="btn_radius" value="<?php echo esc_attr($val['btn_radius']); ?>" placeholder="7px" /> <span class="description">e.g., 7px, 0.5rem</span></td>
@@ -1006,6 +1046,11 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         'btn_text_dark'  => '#000000',
         // Action buttons (module UIs)
         'action_edit'    => '#2d7ff9',
+        // Semantic notice colours (same defaults as form)
+        'color_success'  => 'color-mix(in oklab, var(--tpw-btn-primary) 60%, white 40%)',
+        'color_info'     => 'var(--tpw-accent-color)',
+        'color_warning'  => '#ed6c02',
+        'color_error'    => 'var(--tpw-btn-danger)',
         'btn_radius'     => '7px',
         'btn_padding'    => '4px 8px',
         'btn_font_size'  => '0.9rem',
@@ -1033,6 +1078,32 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
             // allow #fff shorthand also
             if ( ! $hex && preg_match('/^#([0-9a-fA-F]{3})$/', $v) ) { $hex = $v; }
             $in[$ck] = $hex ?: $defaults[$ck];
+        }
+        // Warning is a hex by default; sanitize as color (supports override)
+        if ( array_key_exists('color_warning', $in ) ) {
+            $v = trim( (string) $in['color_warning'] );
+            $hex = sanitize_hex_color( $v );
+            if ( ! $hex && preg_match('/^#([0-9a-fA-F]{3})$/', $v) ) { $hex = $v; }
+            $in['color_warning'] = $hex ?: $defaults['color_warning'];
+        }
+        // Preserve functional values for success/info/error when using CSS functions or var() references.
+        foreach ( ['color_success','color_info','color_error'] as $fk ) {
+            if ( array_key_exists( $fk, $in ) ) {
+                $val = trim( (string) $in[$fk] );
+                // If plain hex, sanitize; otherwise allow vetted patterns.
+                $hex = sanitize_hex_color( $val );
+                if ( $hex ) {
+                    $in[$fk] = $hex;
+                } else {
+                    // Allow color-mix() and var(--tpw-*) forms; basic safety check.
+                    if ( preg_match( '/^(color-mix\(|var\(--tpw-[a-z0-9-]+\))/', $val ) ) {
+                        $in[$fk] = $val;
+                    } else {
+                        // Fallback to default if pattern not recognized.
+                        $in[$fk] = $defaults[$fk];
+                    }
+                }
+            }
         }
         // Sanitize sizes (allow px, rem, em, %)
         $sanitize_size = function($s, $fallback){

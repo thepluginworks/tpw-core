@@ -221,6 +221,31 @@
   .tpw-admin-ui :where(.notice.notice-warning) { border-left-color: #dba617; }
   .tpw-admin-ui :where(.notice.notice-error) { border-left-color: #d63638; }
 
+  /* TPW semantic notice tokens (admin + front-end via shared classes)
+     Uses global --tpw-color-* variables defined by Branding tab. */
+  .tpw-admin-ui :where(.tpw-notice),
+  .tpw-frontend-ui :where(.tpw-notice) {
+    display: block;
+    margin: 0.75em 0;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .tpw-admin-ui :where(.tpw-notice-success),
+  .tpw-frontend-ui :where(.tpw-notice-success) { color: var(--tpw-color-success); }
+  .tpw-admin-ui :where(.tpw-notice-info),
+  .tpw-frontend-ui :where(.tpw-notice-info)    { color: var(--tpw-color-info); }
+  .tpw-admin-ui :where(.tpw-notice-warning),
+  .tpw-frontend-ui :where(.tpw-notice-warning) { color: var(--tpw-color-warning); }
+  .tpw-admin-ui :where(.tpw-notice-error),
+  .tpw-frontend-ui :where(.tpw-notice-error)   {
+    color: var(--tpw-color-error);
+    font-weight: 600;
+    border-left: 4px solid var(--tpw-color-error);
+    background: color-mix(in srgb, var(--tpw-color-error) 10%, white 90%);
+    padding: 0.75em 1em;
+    border-radius: 4px;
+  }
+
   /* Cards */
   .tpw-admin-ui :where(.tpw-card) {
     border: 1px solid var(--tpw-border-color);
