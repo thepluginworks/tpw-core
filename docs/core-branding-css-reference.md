@@ -126,6 +126,19 @@ Design Guidance:
 
 See also: `docs/help/tpw-branding.md` for the live defaults and admin override description.
 
+### Scoped Notice Styling
+
+To make semantic notice colours work consistently in both admin screens and public-facing UIs, TPW Core styles notices under both `.tpw-admin-ui` and `.tpw-frontend-ui` scopes using the same variables. For example:
+
+```css
+.tpw-admin-ui :where(.tpw-notice-warning),
+.tpw-frontend-ui :where(.tpw-notice-warning) {
+	color: var(--tpw-color-warning);
+}
+```
+
+This ensures consistent appearance between admin and public-facing RSVP pages.
+
 ---
 
 ## Behavior & Edge Cases
