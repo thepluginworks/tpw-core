@@ -277,6 +277,55 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
 }
 
 /**
+ * Render a simple branded header strip for TPW settings pages.
+ *
+ * Uses the same markup and CSS classes as the "Manage Payment Methods" screen,
+ * preferring existing helpers when available to ensure consistency across products.
+ *
+ * - Left: Title
+ * - Right: TPW logo
+ * - No card/box wrappers; just the header strip
+ *
+ * @since 1.1.1
+ * @param string $title Header title text.
+ */
+if ( ! function_exists( 'tpw_core_render_settings_header' ) ) {
+    function tpw_core_render_settings_header( string $title ): void {
+        // Reuse existing product header helpers if present
+        if ( function_exists( 'tpw_admin_output_header' ) ) {
+            tpw_admin_output_header( $title, '' );
+            return;
+        }
+        if ( function_exists( 'flexievent_output_header' ) ) {
+            flexievent_output_header( $title, '' );
+            return;
+        }
+        if ( function_exists( 'tpw_core_output_header' ) ) {
+            tpw_core_output_header( $title, '' );
+            return;
+        }
+
+        // Fallback: minimal markup matching our TPW admin header pattern
+        $plugin_url = plugin_dir_url( __DIR__ );
+        $logo_url   = $plugin_url . 'assets/images/thepluginworks-logo-300.png';
+        ?>
+        <div class="wrap tpw-fe-header">
+            <div class="tpw-fe-header-inner">
+                <div class="tpw-fe-header-left">
+                    <div class="tpw-fe-title-wrap">
+                        <h1 class="tpw-fe-title"><?php echo esc_html( $title ); ?></h1>
+                    </div>
+                </div>
+                <div class="tpw-fe-header-right">
+                    <img class="tpw-fe-logo" src="<?php echo esc_url( $logo_url ); ?>" alt="The Plugin Works" />
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}
+
+/**
  * UI Theme helpers: read and apply custom CSS variable tokens for .tpw-admin-ui
  */
 if ( ! function_exists( 'tpw_core_get_ui_theme_defaults' ) ) {

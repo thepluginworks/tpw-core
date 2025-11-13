@@ -42,8 +42,9 @@ class TPW_Card_On_The_Day_Settings {
 
     public function render_settings_page() {
         ?>
+        <?php if ( function_exists( 'tpw_core_render_settings_header' ) ) { tpw_core_render_settings_header( __( 'Card on the day Settings', 'tpw-core' ) ); } ?>
         <div class="tpw-admin-ui"><div class="wrap">
-            <h1><?php esc_html_e('Card on the day Settings', 'tpw-core'); ?></h1>
+            <p><a href="<?php echo esc_url( admin_url('admin.php?page=tpw-core-payment-methods') ); ?>" class="button"><?php esc_html_e('Back to Payment Methods', 'tpw-core'); ?></a></p>
             <?php if ( isset($_GET['settings-updated']) && $_GET['settings-updated'] ) : ?>
                 <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Surcharge settings updated successfully.', 'tpw-core'); ?></p></div>
             <?php endif; ?>
