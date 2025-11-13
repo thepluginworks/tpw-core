@@ -21,7 +21,14 @@ class TPW_Menus_Saver {
      * @return int Insert ID
      */
     public static function save_menu($name, $description = '', $number_of_courses = 3, $price = 0.00) {
-        return TPW_Menus_Manager::insert_menu($name, $description, $number_of_courses, $price);
+        $menu_id = TPW_Menus_Manager::insert_menu($name, $description, $number_of_courses, $price);
+        // Ensure default courses exist immediately after creation so dependents can resolve names
+        if ( $menu_id ) {
+            $defaults = [ 'Starter', 'Main Course', 'Dessert' ];
+            // Normalisation is applied inside assign_courses_to_menu() when saving
+            self::assign_courses_to_menu( $menu_id, $defaults );
+        }
+        return $menu_id;
     }
 
     /**
