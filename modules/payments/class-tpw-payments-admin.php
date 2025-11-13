@@ -179,7 +179,19 @@ class TPW_Payments_Admin {
                                 <span class="tpw-drag-handle" aria-hidden="true">⋮⋮</span>
                             </div>
                             <div class="tpw-pay-col tpw-pay-name">
-                                <strong><?php echo esc_html($method->name); ?></strong>
+                                <?php
+                                    // Display fixed method names on this list only, regardless of admin-customised labels elsewhere.
+                                    $fixed_names = [
+                                        'square'           => 'Square',
+                                        'bacs'             => 'Bank Transfer',
+                                        'card-on-the-day'  => 'Card on the day',
+                                        'cash'             => 'Cash',
+                                        'cheque'           => 'Cheque',
+                                    ];
+                                    $slug = isset($method->slug) ? (string) $method->slug : '';
+                                    $display_name = isset($fixed_names[$slug]) ? $fixed_names[$slug] : (string) ($method->name ?? '');
+                                ?>
+                                <strong><?php echo esc_html( $display_name ); ?></strong>
                                 <?php echo $summary; ?>
                             </div>
                             <div class="tpw-pay-col tpw-pay-status">
