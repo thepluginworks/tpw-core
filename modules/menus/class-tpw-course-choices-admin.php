@@ -74,7 +74,8 @@ class TPW_Course_Choices_Admin {
             for ($i = 1; $i <= intval($menu->number_of_courses); $i++) {
                 echo '<div class="course-section">';
                 $course_name = TPW_Menu_Courses_Manager::get_course_name($menu_id, $i);
-                $heading = $course_name ? esc_html($course_name) : 'Course ' . $i;
+                $heading_raw = $course_name ? tpw_normalise_value( $course_name ) : 'Course ' . $i;
+                $heading = esc_html( $heading_raw );
 
                 echo '<div class="course-header">';
                 echo '<h2 id="course_heading_' . esc_attr($i) . '">';
@@ -86,7 +87,7 @@ class TPW_Course_Choices_Admin {
                 wp_nonce_field('rename_course_action');
                 echo '<input type="hidden" name="menu_id" value="' . esc_attr($menu_id) . '">';
                 echo '<input type="hidden" name="course_number" value="' . esc_attr($i) . '">';
-                echo '<input type="text" name="course_name" value="' . esc_attr($heading) . '" />';
+                echo '<input type="text" name="course_name" value="' . esc_attr( $heading_raw ) . '" />';
                 echo '<button type="submit" name="rename_course" class="button button-primary">Confirm</button> ';
                 echo '<button type="button" class="button cancel-rename">Cancel</button>';
                 echo '</form>';
@@ -104,11 +105,11 @@ class TPW_Course_Choices_Admin {
                         );
                         $extra = isset($choice->extra_cost) ? (float) $choice->extra_cost : 0.00;
                         $extra_html = $extra > 0 ? ' <span class="tpw-badge tpw-badge--extra">(+£' . esc_html( number_format( $extra, 2 ) ) . ')</span>' : '';
-                        echo '<li><strong>' . esc_html( wp_unslash( $choice->label ) ) . '</strong>' . $extra_html . ' ';
+                        echo '<li><strong>' . esc_html( tpw_normalise_value( wp_unslash( $choice->label ) ) ) . '</strong>' . $extra_html . ' ';
                         echo '<a href="' . esc_url($edit_url) . '">Edit</a> | ';
                         echo '<a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Are you sure you want to delete this choice?\')">Delete</a>';
                         if ($choice->description) {
-                            echo '<br/><em>' . esc_html( wp_unslash( $choice->description ) ) . '</em>';
+                            echo '<br/><em>' . esc_html( tpw_normalise_value( wp_unslash( $choice->description ) ) ) . '</em>';
                         }
                         echo '</li>';
                     }

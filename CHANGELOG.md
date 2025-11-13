@@ -4,7 +4,7 @@ All notable changes to TPW Core will be documented in this file.
 
 ## [Unreleased]
 
-_(No changes yet)_
+- Menus: Added tpw_normalise_value() (trim + collapse spaces) and applied when menu option values are saved, read, and rendered in the admin menu option builder. No other logic changes.
 
 ## [1.1.0] - 2025-10-28
 

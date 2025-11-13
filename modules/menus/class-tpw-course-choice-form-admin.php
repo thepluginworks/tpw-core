@@ -67,8 +67,8 @@ class TPW_Course_Choice_Form_Admin {
 
         $choice = $choice_id ? TPW_Course_Choices_Manager::get_choice_by_id($choice_id) : null;
 
-    $label_value = $choice ? esc_attr( wp_unslash( $choice->label ) ) : '';
-    $desc_value = $choice ? esc_textarea( wp_unslash( $choice->description ) ) : '';
+    $label_value = $choice ? esc_attr( tpw_normalise_value( wp_unslash( $choice->label ) ) ) : '';
+    $desc_value = $choice ? esc_textarea( tpw_normalise_value( wp_unslash( $choice->description ) ) ) : '';
     $cost_value = $choice && isset($choice->extra_cost) ? number_format( (float) $choice->extra_cost, 2, '.', '' ) : '0.00';
 
         echo '<form method="post">';

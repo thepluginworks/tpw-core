@@ -47,7 +47,7 @@ class TPW_Menus_Saver {
                 [
                     'menu_id'       => $menu_id,
                     'course_number' => $course_number++,
-                    'course_name'   => sanitize_text_field($course),
+                    'course_name'   => sanitize_text_field( tpw_normalise_value( $course ) ),
                     'created_at'    => current_time('mysql'),
                 ],
                 [ '%d', '%d', '%s', '%s' ]
@@ -70,8 +70,8 @@ class TPW_Menus_Saver {
 
         $wpdb->insert($table_name, [
             'menu_id'     => $menu_id,
-            'course_name' => sanitize_text_field($course_name),
-            'option_text' => sanitize_text_field($option_text)
+            'course_name' => sanitize_text_field( tpw_normalise_value( $course_name ) ),
+            'option_text' => sanitize_text_field( tpw_normalise_value( $option_text ) )
         ]);
     }
 }

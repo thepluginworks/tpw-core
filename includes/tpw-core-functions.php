@@ -337,6 +337,38 @@ function tpw_core_date_placeholder( string $php_format ): string {
 }
 
 /**
+ * Normalise a free‑text value for menus/options.
+ *
+ * Behaviour:
+ * - Trims leading/trailing whitespace
+ * - Collapses runs of multiple spaces to a single space
+ *
+ * Notes:
+ * - Newlines and tabs are preserved; only regular spaces are collapsed.
+ * - Always returns a string; null inputs become '' (empty string).
+ *
+ * @since 1.1.1
+ */
+if ( ! function_exists( 'tpw_normalise_value' ) ) {
+    function tpw_normalise_value( $value ): string {
+        if ( is_null( $value ) ) {
+            return '';
+        }
+        if ( ! is_string( $value ) ) {
+            $value = (string) $value;
+        }
+        // Trim and collapse multiple spaces
+        $value = trim( $value );
+        $collapsed = preg_replace( '/ {2,}/', ' ', $value );
+        if ( null === $collapsed ) {
+            // preg_replace failure edge case; fall back to trimmed value
+            return $value;
+        }
+        return $collapsed;
+    }
+}
+
+/**
  * Determine if a group can see a field in the directory/modal context.
  *
  * Purpose:
