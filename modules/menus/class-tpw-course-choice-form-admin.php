@@ -5,6 +5,7 @@ class TPW_Course_Choice_Form_Admin {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'register_submenu_page']);
         add_action('admin_init', [__CLASS__, 'handle_form_submit']);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_warning_script']);
     }
 
     public static function register_submenu_page() {
@@ -71,7 +72,7 @@ class TPW_Course_Choice_Form_Admin {
     $desc_value = $choice ? esc_textarea( tpw_normalise_value( wp_unslash( $choice->description ) ) ) : '';
     $cost_value = $choice && isset($choice->extra_cost) ? number_format( (float) $choice->extra_cost, 2, '.', '' ) : '0.00';
 
-        echo '<form method="post">';
+    echo '<form method="post" id="tpw-course-choice-form">';
     echo '<table class="form-table">';
     echo '<tr><th><label for="label">Dish Name</label></th><td><input name="label" id="label" type="text" value="' . $label_value . '" required /></td></tr>';
     echo '<tr><th><label for="description">Dish Description</label></th><td><textarea name="description" id="description">' . $desc_value . '</textarea></td></tr>';
@@ -85,7 +86,44 @@ class TPW_Course_Choice_Form_Admin {
         }
 
         echo '<p><input type="submit" name="submit_course_choice" class="button-primary" value="' . ($choice_id ? 'Update' : 'Add') . ' Choice"></p>';
-        echo '</form></div></div>';
+        echo '</form>';
+
+        echo '</div></div>';
+    }
+
+    /**
+     * Enqueue admin script for rename warning on the course choice edit screen.
+     */
+    public static function enqueue_warning_script( $hook ) {
+        // Only for our hidden admin page slug
+        $is_target = ( isset($_GET['page']) && $_GET['page'] === 'tpw-course-choice-form' );
+        if ( ! $is_target ) {
+            return;
+        }
+
+        // Compute original label (when editing an existing choice)
+        $original = '';
+        $choice_id = isset($_GET['choice_id']) ? intval($_GET['choice_id']) : 0;
+        if ( $choice_id > 0 && class_exists('TPW_Course_Choices_Manager') ) {
+            $choice = TPW_Course_Choices_Manager::get_choice_by_id( $choice_id );
+            if ( $choice && isset( $choice->label ) ) {
+                $original = tpw_normalise_value( wp_unslash( $choice->label ) );
+            }
+        }
+
+        // Enqueue the script and localize settings
+        wp_enqueue_script(
+            'tpw-course-rename-warning',
+            TPW_CORE_URL . 'assets/js/course-rename-warning.js',
+            [],
+            defined('TPW_CORE_VERSION') ? TPW_CORE_VERSION : null,
+            true
+        );
+
+        wp_localize_script( 'tpw-course-rename-warning', 'TPW_COURSE_RENAME', [
+            'original' => $original,
+            'message'  => __( "Changing this menu item's name will remove the preselected value from existing RSVPs. Are you sure you want to continue?", 'tpw-core' ),
+        ] );
     }
 }
 
