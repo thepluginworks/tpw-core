@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,6 +50,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.2.0 =
+* Implemented consistent branded header for payment settings pages.
+* Ensured default courses are created automatically when a menu is inserted.
+* Added rename warning script for course choice form to prevent accidental edits.
+* Added `tpw_normalise_value()` and applied normalisation across menu classes.
+* Ensured `wp_delete_user()` is available outside wp-admin context for member deletion.
 
 = 1.1.0 =
 * Documentation refresh across admin help and developer guides.
