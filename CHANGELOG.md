@@ -2,9 +2,19 @@
 
 All notable changes to TPW Core will be documented in this file.
 
-## [Unreleased]
+## [1.2.0] - 2025-11-13
+### Added
+- Implement consistent branded header for payment settings pages.
+- Ensure default courses are created automatically when a menu is inserted.
+- Add rename warning script for course choice form to prevent accidental edits.
+- Add `tpw_normalise_value()` and apply normalisation across menu classes.
+- Ensure `wp_delete_user()` is available outside wp-admin context for member deletion.
 
-- Menus: Added tpw_normalise_value() (trim + collapse spaces) and applied when menu option values are saved, read, and rendered in the admin menu option builder. No other logic changes.
+### Fixed
+(none)
+
+### Changed
+(none)
 
 ## [1.1.0] - 2025-10-28
 
