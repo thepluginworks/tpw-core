@@ -197,16 +197,12 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 </form>
             <?php elseif ( 'features' === $current_tab ) : ?>
                 <?php if ( function_exists( 'tpw_core_render_features_tab' ) ) { tpw_core_render_features_tab(); } ?>
+            <?php elseif ( 'member-menu' === $current_tab ) : ?>
+                <?php if ( function_exists( 'tpw_core_render_member_menu_tab' ) ) { tpw_core_render_member_menu_tab(); } ?>
             <?php elseif ( 'system-pages' === $current_tab ) : ?>
                 <?php if ( function_exists( 'tpw_core_render_system_pages_tab' ) ) { tpw_core_render_system_pages_tab(); } ?>
             <?php else : ?>
-                <form method="post" action="options.php">
-                    <?php
-                    settings_fields( 'tpw_core_settings' );
-                    do_settings_sections( 'tpw-core-settings' );
-                    submit_button();
-                    ?>
-                </form>
+                <p><?php esc_html_e('Unknown settings tab.', 'tpw-core'); ?></p>
             <?php endif; ?>
         </div></div>
         <?php
@@ -223,12 +219,13 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
      */
     function tpw_core_render_features_tab() {
         if ( ! current_user_can( 'manage_options' ) ) return;
-        // Ensure the option exists and is registered
         $selected_redirect = (int) get_option( 'tpw_login_redirect_page_id', 0 );
         $selected_login    = (int) get_option( 'tpw_core_default_login_page', 0 );
+        $action = esc_url( admin_url( 'admin-post.php' ) );
         ?>
-        <form method="post" action="options.php">
-            <?php settings_fields( 'tpw_core_settings' ); ?>
+        <form method="post" action="<?php echo $action; ?>">
+            <?php wp_nonce_field( 'tpw_core_save_features', 'tpw_core_features_nonce' ); ?>
+            <input type="hidden" name="action" value="tpw_core_save_features" />
             <table class="form-table" role="presentation">
                 <tbody>
                     <tr>
@@ -267,7 +264,39 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
                     </tr>
                 </tbody>
             </table>
-            <?php submit_button(); ?>
+            <?php submit_button( __( 'Save Features', 'tpw-core' ) ); ?>
+        </form>
+        <?php
+    }
+}
+
+// Member Menu tab renderer (previously used generic settings API form)
+if ( ! function_exists( 'tpw_core_render_member_menu_tab' ) ) {
+    function tpw_core_render_member_menu_tab() {
+        if ( ! current_user_can( 'manage_options' ) ) return;
+        $selected = get_option( 'tpw_member_menu_location', 'primary' );
+        $locations = function_exists( 'get_registered_nav_menus' ) ? get_registered_nav_menus() : [];
+        $action = esc_url( admin_url( 'admin-post.php' ) );
+        ?>
+        <form method="post" action="<?php echo $action; ?>">
+            <?php wp_nonce_field( 'tpw_core_save_member_menu', 'tpw_core_member_menu_nonce' ); ?>
+            <input type="hidden" name="action" value="tpw_core_save_member_menu" />
+            <table class="form-table" role="presentation">
+                <tbody>
+                    <tr>
+                        <th scope="row"><label for="tpw_member_menu_location"><?php esc_html_e( 'Replace Which Menu Location for Members?', 'tpw-core' ); ?></label></th>
+                        <td>
+                            <select name="tpw_member_menu_location" id="tpw_member_menu_location">
+                                <?php foreach ( $locations as $key => $label ) : ?>
+                                    <option value="<?php echo esc_attr( $key ); ?>" <?php selected( $selected, $key ); ?>><?php echo esc_html( $label ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Logged-in users will see the TPW Member Menu at this location if a menu is assigned to it.', 'tpw-core' ); ?></p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <?php submit_button( __( 'Save Member Menu', 'tpw-core' ) ); ?>
         </form>
         <?php
     }
@@ -1253,52 +1282,50 @@ add_action( 'admin_post_tpw_core_reset_email_template', function() {
     exit;
 } );
 
-// 4) Register the setting, section, and dropdown field
-add_action( 'admin_init', function () {
-    register_setting( 'tpw_core_settings', 'tpw_member_menu_location', [
-        'type'              => 'string',
-        'sanitize_callback' => 'sanitize_key',
-        'default'           => 'primary',
-    ] );
+// Old Settings API registration for Features & Member Menu removed (now using dedicated handlers)
 
-    // Register login redirect page option
-    register_setting( 'tpw_core_settings', 'tpw_login_redirect_page_id', [
-        'type'              => 'integer',
-        'sanitize_callback' => function( $val ) {
-            $id = (int) $val;
-            if ( $id <= 0 ) return 0;
-            $status = get_post_status( $id );
-            return ( $status === 'publish' ) ? $id : 0;
-        },
-        'default'           => 0,
-    ] );
+// New save handler: Features tab
+add_action( 'admin_post_tpw_core_save_features', function() {
+    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    check_admin_referer( 'tpw_core_save_features', 'tpw_core_features_nonce' );
 
-    // Register default login page option
-    register_setting( 'tpw_core_settings', 'tpw_core_default_login_page', [
-        'type'              => 'integer',
-        'sanitize_callback' => function( $val ) {
-            $id = (int) $val;
-            if ( $id <= 0 ) return 0;
-            $status = get_post_status( $id );
-            return ( $status === 'publish' ) ? $id : 0;
-        },
-        'default'           => 0,
-    ] );
+    $login_page   = isset( $_POST['tpw_core_default_login_page'] ) ? (int) $_POST['tpw_core_default_login_page'] : 0;
+    $redirect_page= isset( $_POST['tpw_login_redirect_page_id'] ) ? (int) $_POST['tpw_login_redirect_page_id'] : 0;
 
-    add_settings_section(
-        'tpw_menu_section',
-        __( 'Member Menu Options', 'tpw-core' ),
-        null,
-        'tpw-core-settings'
-    );
+    // Validate published status
+    $validate_page = function( $id ) {
+        $id = (int) $id;
+        if ( $id <= 0 ) return 0;
+        $status = get_post_status( $id );
+        return ( $status === 'publish' ) ? $id : 0;
+    };
+    $login_page    = $validate_page( $login_page );
+    $redirect_page = $validate_page( $redirect_page );
 
-    add_settings_field(
-        'tpw_member_menu_location',
-        __( 'Replace Which Menu Location for Members?', 'tpw-core' ),
-        'tpw_member_menu_location_dropdown',
-        'tpw-core-settings',
-        'tpw_menu_section'
-    );
+    update_option( 'tpw_core_default_login_page', $login_page );
+    update_option( 'tpw_login_redirect_page_id', $redirect_page );
+
+    add_settings_error( 'tpw_core_features', 'tpw_features_saved', __( 'Features settings saved.', 'tpw-core' ), 'updated' );
+    $errors = get_settings_errors();
+    set_transient( 'settings_errors', $errors, 30 );
+    wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'features', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
+    exit;
+} );
+
+// New save handler: Member Menu tab
+add_action( 'admin_post_tpw_core_save_member_menu', function() {
+    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    check_admin_referer( 'tpw_core_save_member_menu', 'tpw_core_member_menu_nonce' );
+
+    $location = isset( $_POST['tpw_member_menu_location'] ) ? sanitize_key( $_POST['tpw_member_menu_location'] ) : 'primary';
+    if ( $location === '' ) { $location = 'primary'; }
+    update_option( 'tpw_member_menu_location', $location );
+
+    add_settings_error( 'tpw_core_member_menu', 'tpw_member_menu_saved', __( 'Member Menu settings saved.', 'tpw-core' ), 'updated' );
+    $errors = get_settings_errors();
+    set_transient( 'settings_errors', $errors, 30 );
+    wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'member-menu', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
+    exit;
 } );
 
 // Migrate legacy FlexiGolf option to Core on admin_init (one-way)

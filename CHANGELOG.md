@@ -2,6 +2,19 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.2.1] - 2025-11-20
+### Changed
+- Refactor: Features and Member Menu tabs now save independently via dedicated `admin_post` handlers to prevent the WordPress Settings API from overwriting unrelated options when one tab is saved.
+- Removed legacy `register_setting` usage for `tpw_core_default_login_page`, `tpw_login_redirect_page_id`, and `tpw_member_menu_location` (now updated atomically per tab).
+- Added explicit nonces and capability checks for new save actions.
+
+### Fixed
+- Eliminated cross-tab resets where saving Features reverted Member Menu location and vice versa.
+
+### Notes
+- No database schema changes; existing option values are preserved.
+- Other tabs (Branding, Email, Templates, System Pages) remain unchanged and continue using their existing handlers.
+
 ## [1.2.0] - 2025-11-13
 ### Added
 - Implement consistent branded header for payment settings pages.
