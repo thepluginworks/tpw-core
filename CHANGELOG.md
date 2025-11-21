@@ -2,6 +2,26 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.2.3] - 2025-11-21
+### Added
+- New shortcode `[tpw_profile_badge]` providing a standalone circular profile/login badge (40px). Supports optional `dropdown="yes"` for a hover (desktop) / tap (mobile) profile menu (My Profile, Logout).
+- Accessible dropdown: `aria-haspopup`, `aria-expanded` with touch-device JS; ESC/outside tap closes on mobile.
+
+### Changed
+- Avatar fallback logic (badge): Member photo → real WP avatar (excluding placeholder grey silhouette) → initials from member `first_name` + `surname` → `display_name` → `user_login`.
+- Styling consolidated with CSS variable `--tpw-profile-size: 40px` for easy theme override; enforced perfect circle across avatar and initials.
+
+### Fixed
+- Eliminated display of default placeholder avatar (grey silhouette) in profile badge; initials now show when no true photo exists.
+- Dropdown position refined (flush against badge, no dead hover gap) ensuring reliable pointer transition.
+
+### Docs
+- Added `docs/members/tpw_profile_badge.md` covering usage, dropdown behaviour, accessibility, and override examples.
+
+### Notes
+- No database schema changes.
+- Menu injection/profile avatar logic untouched; changes isolated to shortcode, CSS, JS, docs.
+
 ## [1.2.1] - 2025-11-20
 ### Changed
 - Refactor: Features and Member Menu tabs now save independently via dedicated `admin_post` handlers to prevent the WordPress Settings API from overwriting unrelated options when one tab is saved.

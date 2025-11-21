@@ -68,6 +68,7 @@ new TPW_Member_Fields();
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/members-admin.php';
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-login.php';
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-profile.php';
+require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-profile-badge.php';
 require_once TPW_CORE_PATH . 'modules/members/members-init.php';
 // Members admin actions (admin-post handlers)
 if ( file_exists( TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-admin-actions.php' ) ) {

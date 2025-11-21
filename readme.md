@@ -1,4 +1,4 @@
-# TPW Core
+# TPW Core (v1.2.3)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -110,6 +110,17 @@ Custom link text:
 ```
 
 ### `[tpw-control]`
+### `[tpw_profile_badge]`
+
+Standalone circular profile/login badge (40px). Shows member photo, real avatar, or initials. Optional dropdown:
+
+```
+[tpw_profile_badge]
+[tpw_profile_badge dropdown="yes"]
+```
+
+Dropdown behaviour: hover opens on desktop; first tap opens on touch devices, second tap follows link or outside tap/ESC closes. Links: My Profile, Logout.
+
 
 Front‑end admin hub (TPW Control). Create a page titled “TPW Control” with this shortcode to access Upload Pages, Menu Manager, and plugin‑provided tools via `/tpw-control/?action=`.
 

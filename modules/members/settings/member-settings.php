@@ -451,17 +451,24 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 $help_dir  = trailingslashit( TPW_CORE_PATH . 'modules/members/docs/admin-help' );
                 $help_base = add_query_arg( [ 'action' => 'settings', 'tab' => 'help' ], get_permalink() );
                 $topics = [
-                    'getting-started' => [ 'label' => 'Getting Started for Admins', 'file' => 'getting-started.md' ],
-                    'managing-members' => [ 'label' => 'Managing Members', 'file' => 'managing-members.md' ],
-                    'member-profiles' => [ 'label' => 'Member Profiles and Self‑Service', 'file' => 'member-profiles.md' ],
-                    'roles-and-access' => [ 'label' => 'Roles and Access', 'file' => 'roles-and-access.md' ],
-                    'postcode-lookup' => [ 'label' => 'Postcode Lookup', 'file' => 'postcode-lookup.md' ],
+                    'getting-started'   => [ 'label' => 'Getting Started for Admins', 'file' => 'getting-started.md' ],
+                    'managing-members'  => [ 'label' => 'Managing Members', 'file' => 'managing-members.md' ],
+                    'member-profiles'   => [ 'label' => 'Member Profiles and Self‑Service', 'file' => 'member-profiles.md' ],
+                    'roles-and-access'  => [ 'label' => 'Roles and Access', 'file' => 'roles-and-access.md' ],
+                    'postcode-lookup'   => [ 'label' => 'Postcode Lookup', 'file' => 'postcode-lookup.md' ],
+                    // New: Profile Badge shortcode help (loaded from core docs directory rather than admin-help)
+                    'profile-badge'     => [ 'label' => 'Profile Badge Shortcode', 'file' => 'docs/members/tpw_profile_badge.md' ],
                 ];
 
                 $selected_slug = isset($_GET['help_topic']) ? sanitize_key($_GET['help_topic']) : '';
                 $selected = isset($topics[$selected_slug]) ? $topics[$selected_slug] : null;
                 $file_to_show = $selected ? $selected['file'] : 'README.md';
-                $abs_path = $help_dir . $file_to_show;
+                // Allow referencing files outside admin-help directory when prefixed with 'docs/'
+                if ( strpos( $file_to_show, 'docs/' ) === 0 ) {
+                    $abs_path = trailingslashit( TPW_CORE_PATH ) . $file_to_show;
+                } else {
+                    $abs_path = $help_dir . $file_to_show;
+                }
                 $markdown = file_exists($abs_path) ? file_get_contents($abs_path) : '# Topic not found' . "\n\nThe requested help topic could not be found.";
 
                 // Minimal Markdown → HTML renderer (headings, lists, paragraphs, links, inline code, code fences)
