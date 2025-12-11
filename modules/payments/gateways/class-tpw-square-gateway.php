@@ -11,6 +11,11 @@ use Square\Payments\Requests\CreatePaymentRequest;
 use Square\Types\CashPaymentDetails;
 use Square\Types\Currency;
 use Square\Types\Money;
+use Square\Exceptions\SquareApiException;
+use Square\Exceptions\SquareException;
+use Square\Types\Error;
+use Square\Types\ErrorCategory;
+use Square\Types\ErrorCode;
 error_log('Money class exists: ' . (class_exists('\Square\Types\Money') ? 'yes' : 'no'));
 class TPW_Square_Gateway {
 
@@ -84,6 +89,150 @@ class TPW_Square_Gateway {
         error_log('[TPW DEBUG] Idempotency Key: ' . $body->getIdempotencyKey());
         error_log('[TPW DEBUG] Amount Money: ' . print_r($body->getAmountMoney(), true));
         error_log('[TPW DEBUG] Location ID in Body: ' . $body->getLocationId());
-        return $client->payments->create(request: $body);
+        try {
+            return $client->payments->create(request: $body);
+        } catch (SquareApiException $e) {
+            // Extract and normalize errors
+            $errors = method_exists($e, 'getErrors') ? $e->getErrors() : [];
+            $normalized = self::normalize_square_errors($errors);
+            $friendly = self::friendly_message_for_errors($normalized);
+            error_log('[TPW ERROR] SquareApiException: status=' . $e->getStatusCode() . ' codes=' . implode(',', array_map(fn($n) => $n['code'], $normalized)) . ' category=' . ($normalized[0]['category'] ?? ''));
+            return new \WP_Error(
+                self::wp_error_code_for_errors($normalized),
+                $friendly,
+                [
+                    'status' => $e->getStatusCode(),
+                    'category' => $normalized[0]['category'] ?? null,
+                    'codes' => array_map(fn($n) => $n['code'], $normalized),
+                    'details' => array_map(fn($n) => $n['detail'], $normalized),
+                    'require_new_nonce' => self::require_new_nonce($normalized),
+                    'raw_errors' => $normalized,
+                ]
+            );
+        } catch (SquareException $e) {
+            error_log('[TPW ERROR] SquareException: ' . $e->getMessage());
+            return new \WP_Error('square_payment_error', 'Payment service error. Please try again.', [ 'detail' => $e->getMessage() ]);
+        } catch (\Throwable $e) {
+            error_log('[TPW ERROR] Unexpected payment error: ' . $e->getMessage());
+            return new \WP_Error('square_payment_error', 'Unexpected payment error. Please try again.', [ 'detail' => $e->getMessage() ]);
+        }
+    }
+
+    /**
+     * Normalize SDK Error objects to arrays for safe processing.
+     * @param Error[] $errors
+     * @return array<int, array{category: string, code: string, detail: ?string, field: ?string}>
+     */
+    private static function normalize_square_errors(array $errors): array {
+        $out = [];
+        foreach ($errors as $err) {
+            try {
+                $out[] = [
+                    'category' => method_exists($err, 'getCategory') ? $err->getCategory() : 'API_ERROR',
+                    'code' => method_exists($err, 'getCode') ? $err->getCode() : 'Unknown',
+                    'detail' => method_exists($err, 'getDetail') ? $err->getDetail() : null,
+                    'field' => method_exists($err, 'getField') ? $err->getField() : null,
+                ];
+            } catch (\Throwable $t) {
+                $out[] = [ 'category' => 'API_ERROR', 'code' => 'Unknown', 'detail' => null, 'field' => null ];
+            }
+        }
+        if (empty($out)) {
+            $out[] = [ 'category' => 'API_ERROR', 'code' => 'Unknown', 'detail' => null, 'field' => null ];
+        }
+        return $out;
+    }
+
+    /**
+     * Map common Square error codes to friendly messages.
+     * @param array<int, array{category: string, code: string, detail: ?string, field: ?string}> $errors
+     */
+    private static function friendly_message_for_errors(array $errors): string {
+        $codes = array_map(fn($e) => strtoupper($e['code'] ?? ''), $errors);
+        $primary = $codes[0] ?? '';
+
+        // Category-based temporary issue catch (API_ERROR)
+        $category = strtoupper($errors[0]['category'] ?? '');
+        if ($category === ErrorCategory::ApiError->value) {
+            return 'There was a temporary issue processing your payment. Please try again.';
+        }
+
+        switch ($primary) {
+            case ErrorCode::GenericDecline->value:
+            case ErrorCode::CardDeclined->value:
+                return 'Your bank has declined this payment. Please try another card or contact your bank.';
+            case ErrorCode::InsufficientFunds->value:
+                return 'This card does not have enough funds to complete the payment. Please try another card.';
+            case ErrorCode::CardDeclinedVerificationRequired->value:
+                return 'Your bank requires additional security verification for this payment. Please use a different card or contact your bank.';
+            case ErrorCode::CvvFailure->value:
+            case ErrorCode::VerifyCvvFailure->value:
+                return 'The security code (CVV) was incorrect. Please check the number and try again.';
+            case 'AVS_FAILURE':
+            case ErrorCode::AddressVerificationFailure->value:
+            case ErrorCode::VerifyAvsFailure->value:
+                return 'The billing postcode or address does not match the card.';
+            case ErrorCode::CardExpired->value:
+                return 'This card has expired. Please try a different card.';
+            case ErrorCode::InvalidCard->value:
+            case ErrorCode::InvalidExpiration->value:
+            case ErrorCode::InvalidExpirationDate->value:
+            case ErrorCode::BadExpiration->value:
+                return 'The card details entered are not valid. Please check and try again.';
+            case ErrorCode::CardNotSupported->value:
+            case ErrorCode::UnsupportedCardBrand->value:
+                return 'This card type is not supported. Please try a different card.';
+            case ErrorCode::CardTokenUsed->value:
+            case ErrorCode::SourceUsed->value:
+            case ErrorCode::CardTokenExpired->value:
+            case ErrorCode::SourceExpired->value:
+                return 'Your payment session expired. Please re-enter your card details.';
+            case ErrorCode::Unauthorized->value:
+            case ErrorCode::AccessTokenExpired->value:
+            case ErrorCode::RateLimited->value:
+                return 'There was a temporary issue processing your payment. Please try again.';
+            default:
+                $detail = $errors[0]['detail'] ?? null;
+                return $detail ? $detail : 'We couldn’t process your payment. Please try again or use a different card.';
+        }
+    }
+
+    /**
+     * Determine WP_Error code based on error category.
+     * @param array<int, array{category: string, code: string, detail: ?string, field: ?string}> $errors
+     */
+    private static function wp_error_code_for_errors(array $errors): string {
+        $category = strtoupper($errors[0]['category'] ?? '');
+        switch ($category) {
+            case ErrorCategory::PaymentMethodError->value:
+                return 'square_payment_declined';
+            case ErrorCategory::InvalidRequestError->value:
+                return 'square_invalid_request';
+            case ErrorCategory::AuthenticationError->value:
+                return 'square_auth_error';
+            case ErrorCategory::RateLimitError->value:
+                return 'square_rate_limited';
+            default:
+                return 'square_payment_error';
+        }
+    }
+
+    /**
+     * Whether a fresh card nonce/token is required before retrying.
+     * @param array<int, array{category: string, code: string, detail: ?string, field: ?string}> $errors
+     */
+    private static function require_new_nonce(array $errors): bool {
+        foreach ($errors as $e) {
+            $code = strtoupper($e['code'] ?? '');
+            if (in_array($code, [
+                ErrorCode::CardTokenUsed->value,
+                ErrorCode::SourceUsed->value,
+                ErrorCode::CardTokenExpired->value,
+                ErrorCode::SourceExpired->value,
+            ], true)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

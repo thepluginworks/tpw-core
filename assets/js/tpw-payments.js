@@ -81,17 +81,61 @@
     }
     clearError();
     try {
-      var result = await state.squareCard.tokenize();
+      // Build verificationDetails for SCA/3DS per Square docs
+      var verificationDetails = null;
+      try {
+        var amount = null;
+        // Amount should be a string in major units with two decimals per Square docs
+        if (state.cfg && typeof state.cfg.amount === 'string') {
+          amount = state.cfg.amount;
+        } else if (state.cfg && state.cfg.square && typeof state.cfg.square.amount === 'string') {
+          amount = state.cfg.square.amount;
+        }
+        var currencyCode = (state.cfg && state.cfg.currency && state.cfg.currency.code) ? state.cfg.currency.code : 'GBP';
+        var billing = (state.cfg && state.cfg.billingContact) ? state.cfg.billingContact : null;
+
+        if (amount && currencyCode) {
+          verificationDetails = {
+            amount: amount,
+            currencyCode: currencyCode,
+            intent: 'CHARGE',
+            customerInitiated: true,
+            sellerKeyedIn: false
+          };
+          if (billing && typeof billing === 'object') {
+            verificationDetails.billingContact = {
+              familyName: billing.familyName || billing.lastName || undefined,
+              givenName: billing.givenName || billing.firstName || undefined,
+              email: billing.email || undefined,
+              phone: billing.phone || undefined,
+              addressLines: Array.isArray(billing.addressLines) ? billing.addressLines : (billing.address ? [billing.address] : undefined),
+              city: billing.city || undefined,
+              postalCode: billing.postalCode || billing.postcode || undefined,
+              countryCode: billing.countryCode || 'GB'
+            };
+            if (billing.state) { verificationDetails.billingContact.state = billing.state; }
+          }
+        }
+      } catch (e) {
+        // If building verification details fails, continue without them
+      }
+
+      var result = verificationDetails
+        ? await state.squareCard.tokenize(verificationDetails)
+        : await state.squareCard.tokenize();
       if (result && result.status === 'OK' && result.token) {
         if (typeof state.nonceCallback === 'function') {
           try { state.nonceCallback(result.token); } catch(e) {}
         }
         return { ok: true, nonce: result.token };
       }
-      var msg = (result && result.errors && result.errors[0] && result.errors[0].message) || 'Card tokenization failed';
+      var msg = (result && result.errors && result.errors[0] && result.errors[0].message) || ('Card tokenization failed: ' + (result && result.status ? result.status : 'UNKNOWN'));
+      // Dev-only console logging to aid SCA testing
+      try { console.warn('[TPW Square] tokenize status:', result && result.status, 'errors:', result && result.errors); } catch(_) {}
       showError(msg);
       return { ok: false, errors: result && result.errors ? result.errors : [{ message: msg }] };
     } catch (err) {
+      try { console.error('[TPW Square] tokenize exception:', err); } catch(_) {}
       showError(err && err.message ? err.message : 'Payment error');
       return { ok: false, errors: [{ message: (err && err.message) || 'Payment error' }] };
     }

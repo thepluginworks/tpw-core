@@ -541,7 +541,7 @@ if ( ! function_exists( 'tpw_core_get_payments_page_config' ) ) {
  * @param array|null $config Optional config to localize. If null, a default will be used.
  */
 if ( ! function_exists( 'tpw_core_enqueue_payments_assets' ) ) {
-    function tpw_core_enqueue_payments_assets( ?array $config = null ): void {
+    function tpw_core_enqueue_payments_assets( ?array $config = null, array $context = [] ): void {
         // Decide SDK URL by sandbox flag
         $is_sandbox = ( get_option('tpw_square_sandbox_mode') === '1' );
         $sdk_url = $is_sandbox
@@ -567,8 +567,16 @@ if ( ! function_exists( 'tpw_core_enqueue_payments_assets' ) ) {
         if ( wp_script_is( 'tpw-core-payments', 'registered' ) ) {
             // Localize config (merge default if none supplied)
             $cfg = is_array( $config ) ? $config : tpw_core_get_payments_page_config();
-            // Allow callers to tweak
-            $cfg = apply_filters( 'tpw_core/payments_page_config_localized', $cfg );
+            // Provide a minimal context with page/type defaults
+            $ctx = array_merge(
+                [
+                    'page' => is_admin() ? 'admin' : 'front',
+                    'type' => 'generic',
+                ],
+                $context
+            );
+            // Allow callers (e.g., RSVP) to inject SCA details via filter with context
+            $cfg = apply_filters( 'tpw_core/payments_page_config_localized', $cfg, $ctx );
             wp_localize_script( 'tpw-core-payments', 'tpwPaymentsConfig', $cfg );
             wp_enqueue_script( 'tpw-core-payments' );
         }
