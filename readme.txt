@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,14 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.5.0 =
+- Gallery shortcode:
+	- Added optional pagination for large galleries via `per_page` and `paginate` (grid/list views).
+	- Cache key now varies by pagination query args to avoid serving the wrong page.
+- Elementor (optional): added TPW Gallery widget with Grid/List/Story views (loads only when Elementor is active).
+- Story view: improved navigation performance via neighbor image preloading.
+- Docs: updated Gallery help topics and admin guide.
 
 = 1.4.0 =
 - Gallery module enhancements:

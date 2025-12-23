@@ -66,6 +66,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
       <h2><?php esc_html_e('Public Display', 'tpw-core'); ?></h2>
       <p><?php esc_html_e('Use', 'tpw-core'); ?> <code>[tpw_gallery id="123"]</code> <?php esc_html_e('to show a gallery on public pages. Thumbnails crop to fit and honor focal points; captions are shown below.', 'tpw-core'); ?></p>
 
+      <p>
+        <?php esc_html_e('For very large galleries, you can limit how many thumbnails render at once (grid/list only):', 'tpw-core'); ?>
+        <code>[tpw_gallery id="123" view="grid" paginate="1"]</code>
+        <?php esc_html_e('or', 'tpw-core'); ?>
+        <code>[tpw_gallery id="123" view="list" per_page="40"]</code>
+      </p>
+
       <div class="tpw-card note">
         <div class="tpw-card__body">
           <strong><?php esc_html_e('Tips & Troubleshooting', 'tpw-core'); ?></strong>

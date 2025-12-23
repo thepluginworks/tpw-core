@@ -2,6 +2,22 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.5.0] - 2025-12-23
+### Added
+- Gallery Pagination: New shortcode attributes `per_page` and `paginate` for `[tpw_gallery]` in `grid` and `list` views to limit how many thumbnails render at once.
+- Elementor: Optional TPW Gallery Elementor widget (loads only when Elementor is active) supporting Grid/List/Story views.
+
+### Changed
+- Caching: Gallery shortcode cache key now varies by pagination query args to avoid serving the wrong page.
+- Public UI: Pagination controls added for grid/list; fixed-column rendering uses a CSS variable for more predictable layouts.
+- Story view: Preloads previous/next images and sets `decoding="async"` on the story image for smoother navigation.
+
+### Docs
+- Gallery docs expanded with Story view, pagination, and Elementor widget usage.
+
+### Notes
+- No database schema changes.
+
 ## [1.4.0] - 2025-12-23
 ### Added
 - Gallery Help: New front-end help page for the Gallery module accessible at `/gallery-help/` via shortcode `[tpw_gallery_help]`.

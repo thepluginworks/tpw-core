@@ -35,6 +35,20 @@ function tpw_gallery_render( array $args = [] ): string {
     $view_in  = isset( $args['view'] ) ? strtolower( (string) $args['view'] ) : 'grid';
     $view     = in_array( $view_in, [ 'grid', 'list', 'story' ], true ) ? $view_in : 'grid';
 
+    // Performance safeguard: optional pagination for grid/list.
+    // - per_page: max tiles per page (0 disables)
+    // - paginate: "1" enables with default per_page when per_page not set
+    $per_page = isset( $args['per_page'] ) ? max( 0, (int) $args['per_page'] ) : 0;
+    $paginate = false;
+    if ( isset( $args['paginate'] ) ) {
+        $pg = $args['paginate'];
+        $paginate = ( $pg === true || $pg === 1 || $pg === '1' || $pg === 'true' );
+    }
+    if ( $paginate && $per_page <= 0 ) {
+        // Conservative default; keeps large galleries from rendering hundreds of tiles.
+        $per_page = 60;
+    }
+
     $showCats = false;
     if ( isset( $args['show_categories'] ) ) {
         $sc = $args['show_categories'];
@@ -47,12 +61,9 @@ function tpw_gallery_render( array $args = [] ): string {
         'columns'         => (string) $columns,
         'view'            => (string) $view,
         'show_categories' => $showCats ? '1' : '0',
+        'per_page'        => (string) $per_page,
+        'paginate'        => $paginate ? '1' : '0',
     ];
-
-    // Cache key
-    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats ] ) );
-    $cached = wp_cache_get( $ckey, 'tpw' );
-    if ( is_string( $cached ) ) return $cached;
 
     // Resolve data
     $items = [];
@@ -72,12 +83,35 @@ function tpw_gallery_render( array $args = [] ): string {
 
     if ( empty( $items ) ) return '';
 
+    // Cache key (must vary by pagination query args, otherwise page 2 may show page 1)
+    $page_map = [];
+    $paging_enabled = ( $per_page > 0 && in_array( $view, [ 'grid', 'list' ], true ) );
+    if ( $paging_enabled ) {
+        foreach ( $items as $it ) {
+            $gid = isset( $it['gallery']['gallery_id'] ) ? (int) $it['gallery']['gallery_id'] : 0;
+            if ( $gid <= 0 ) continue;
+            $qv = 'tpw_gallery_page_' . $gid;
+            $page_map[ $gid ] = isset( $_GET[ $qv ] ) ? max( 1, (int) $_GET[ $qv ] ) : 1;
+        }
+        ksort( $page_map );
+    }
+    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats, $per_page, $paginate, $page_map ] ) );
+    $cached = wp_cache_get( $ckey, 'tpw' );
+    if ( is_string( $cached ) ) return $cached;
+
     // Enqueue assets once per request
     tpw_gallery_enqueue_public_assets();
 
     ob_start();
     $tpl = __DIR__ . '/templates/' . ( $view === 'list' ? 'list-view.php' : ( $view === 'story' ? 'story-view.php' : 'grid.php' ) );
-    $data = [ 'items' => $items, 'columns' => $columns, 'show_categories' => $showCats, 'view' => $view ];
+    $data = [
+        'items'           => $items,
+        'columns'         => $columns,
+        'show_categories' => $showCats,
+        'view'            => $view,
+        'per_page'        => $per_page,
+        'paginate'        => $paginate ? true : false,
+    ];
     include $tpl;
     $out = ob_get_clean();
 
@@ -87,7 +121,7 @@ function tpw_gallery_render( array $args = [] ): string {
 }
 
 /**
- * [tpw_gallery id="123" category="slug" columns="4" view="grid|list" show_categories="0|1"]
+ * [tpw_gallery id="123" category="slug" columns="4" view="grid|list|story" show_categories="0|1" per_page="0" paginate="0|1"]
  */
 add_shortcode( 'tpw_gallery', function( $atts ){
     $atts = shortcode_atts([
@@ -96,6 +130,8 @@ add_shortcode( 'tpw_gallery', function( $atts ){
         'columns'         => '3',
         'view'            => 'grid',
         'show_categories' => '0', // optional toolbar above grid
+        'per_page'        => '0', // optional pagination safeguard for large galleries (grid/list)
+        'paginate'        => '0', // set to 1 to enable pagination with default per_page
     ], $atts, 'tpw_gallery' );
 
     if ( function_exists( 'tpw_gallery_render' ) ) {

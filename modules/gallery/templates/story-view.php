@@ -48,7 +48,7 @@ $base = trailingslashit( TPW_CORE_URL ) . 'modules/gallery/';
     <div class="tpw-gallery-story" data-gallery-id="<?php echo $gid; ?>" tabindex="0" aria-label="Image carousel">
       <div class="tpw-gallery-story-viewport">
         <button class="tpw-gallery-story-nav prev" type="button" aria-label="Previous image">&#10094;</button>
-        <img class="tpw-gallery-story-image" src="<?php echo esc_url( $slides[0]['url'] ); ?>" alt="<?php echo esc_attr( $slides[0]['cap'] ); ?>"<?php echo $slides[0]['w']>0 && $slides[0]['h']>0 ? ' width=\"' . (int) $slides[0]['w'] . '\" height=\"' . (int) $slides[0]['h'] . '\"' : ''; ?> />
+        <img class="tpw-gallery-story-image" src="<?php echo esc_url( $slides[0]['url'] ); ?>" alt="<?php echo esc_attr( $slides[0]['cap'] ); ?>" decoding="async"<?php echo $slides[0]['w']>0 && $slides[0]['h']>0 ? ' width="' . (int) $slides[0]['w'] . '" height="' . (int) $slides[0]['h'] . '"' : ''; ?> />
         <button class="tpw-gallery-story-nav next" type="button" aria-label="Next image">&#10095;</button>
       </div>
       <div class="tpw-gallery-story-caption"><?php echo esc_html( $slides[0]['cap'] ); ?></div>

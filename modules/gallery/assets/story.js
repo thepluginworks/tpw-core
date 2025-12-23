@@ -22,6 +22,10 @@
     }
     this.total = this.slides.length;
 
+    // Preload only prev/next (avoid loading the whole gallery).
+    this._preloadPrev = null;
+    this._preloadNext = null;
+
     this.bind();
     this.update(0, false);
   }
@@ -90,12 +94,30 @@
     if (this.cap) this.cap.textContent = slide.cap || '';
     if (this.counterCurrent) this.counterCurrent.textContent = String(idx + 1);
 
+    this.preloadNeighbors();
+
     // Update buttons disabled state
     if (this.prevBtn) this.prevBtn.disabled = (this.total <= 1);
     if (this.nextBtn) this.nextBtn.disabled = (this.total <= 1);
 
     // Recalculate available height so caption remains visible
     this.adjustMaxHeight();
+  };
+
+  Story.prototype.preloadNeighbors = function(){
+    if (!this.slides || this.slides.length <= 1) return;
+    var prevIdx = (this.index - 1 + this.slides.length) % this.slides.length;
+    var nextIdx = (this.index + 1) % this.slides.length;
+    var prev = this.slides[prevIdx];
+    var next = this.slides[nextIdx];
+    if (prev && prev.url) {
+      if (!this._preloadPrev) this._preloadPrev = new Image();
+      if (this._preloadPrev.src !== prev.url) this._preloadPrev.src = prev.url;
+    }
+    if (next && next.url) {
+      if (!this._preloadNext) this._preloadNext = new Image();
+      if (this._preloadNext.src !== next.url) this._preloadNext.src = next.url;
+    }
   };
 
   Story.prototype.prev = function(){ this.update(this.index - 1, true); };

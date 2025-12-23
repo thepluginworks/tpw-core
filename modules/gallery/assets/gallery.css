@@ -108,6 +108,12 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 	padding: 0;
 }
 
+/* Fixed columns: allow renderers (shortcode/Elementor) to force an exact column count.
+   Uses a CSS variable so responsive breakpoints can still override below. */
+.tpw-gallery-grid-public.tpw-gallery-grid-public--fixed {
+	grid-template-columns: repeat(var(--tpw-gallery-columns, 3), minmax(0, 1fr)) !important;
+}
+
 /* List view: vertical list with small thumbs */
 .tpw-gallery-list-public { list-style:none; padding:0; margin:1rem 0 0; display:flex; flex-direction:column; gap:.75rem; }
 .tpw-gallery-list-item { display:flex; align-items:center; gap:.75rem; }
@@ -148,12 +154,22 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 .tpw-gallery-toolbar { margin-bottom: 14px; }
 .tpw-gallery-categories { display:flex; flex-wrap:wrap; gap:8px; }
 
+/* Public pagination (grid/list) */
+.tpw-gallery-pagination {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	justify-content: center;
+	margin-top: 12px;
+}
+
 /* Grid breakpoints for predictable resizing */
 @media (max-width: 900px) {
-	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; }
 }
 @media (max-width: 600px) {
-	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .8rem; }
+	.tpw-gallery-grid, .tpw-gallery-grid-public { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: .8rem; }
 	.tpw-gallery-title, .tpw-gallery-public-title { font-size: 1.4rem; margin-bottom: .5rem; }
 	.tpw-gallery-description, .tpw-gallery-public-desc { font-size: .9rem; }
 	.tpw-gallery-caption, .tpw-caption { font-size: .75rem; }
@@ -195,7 +211,7 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 }
 
 /* Public grid container: ensure neat rows and consistent gaps */
-.tpw-gallery-public .tpw-gallery-grid-public {
+.tpw-gallery-public .tpw-gallery-grid-public:not(.tpw-gallery-grid-public--fixed) {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	gap: 20px;
@@ -203,6 +219,11 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 	list-style: none;
 	margin: 0;
 	padding: 0;
+}
+
+/* Fixed columns inside the public wrapper (higher specificity) */
+.tpw-gallery-public .tpw-gallery-grid-public.tpw-gallery-grid-public--fixed {
+	grid-template-columns: repeat(var(--tpw-gallery-columns, 3), minmax(0, 1fr)) !important;
 }
 
 /* Public cards: stack thumbnail then caption */
@@ -215,10 +236,10 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 
 /* Public responsive breakpoints */
 @media (max-width: 768px) {
-	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: repeat(2, 1fr) !important; gap: 14px; }
 }
 @media (max-width: 480px) {
-	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: 1fr; gap: 12px; }
+	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: 1fr !important; gap: 12px; }
 }
 
 /* ==========================

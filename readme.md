@@ -1,4 +1,4 @@
-# TPW Core (v1.4.0)
+# TPW Core (v1.5.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -15,11 +15,11 @@ Browse all module documentation → [docs/help/README.md](docs/help/README.md)
 - Postcodes: AJAX postcode lookup utilities with multiple providers
 - TPW Control: front‑end admin hub that other plugins extend via hooks
 
-### Gallery updates (1.4.0)
-- Front-end help page at `/gallery-help/` via `[tpw_gallery_help]`.
-- Admin: drag-and-drop image reordering; streamlined caption editor and focal point controls.
-- Performance: optimized styles/scripts for smoother interactions.
-- Docs: expanded Gallery Admin guidance and template refactors for maintainability.
+### Gallery updates (1.5.0)
+- Public shortcode: optional pagination for large galleries (`per_page` / `paginate`) in `grid` and `list` views.
+- Elementor: TPW Gallery widget (Grid/List/Story) when Elementor is installed and active.
+- Story view: smoother navigation via neighbor preloading and improved image decoding.
+- Docs: updated Gallery help topics and admin guide.
 
 ## Works with other TPW plugins
 

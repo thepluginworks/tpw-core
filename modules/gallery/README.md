@@ -61,6 +61,17 @@ Examples:
 ```text
 [tpw_gallery id="123" columns="3"]
 [tpw_gallery category="events" columns="4" show_categories="1"]
+Performance safeguards for large galleries (optional):
+
+```
+[tpw_gallery id="123" view="grid" paginate="1"]
+[tpw_gallery id="123" view="list" per_page="40"]
+```
+
+- `per_page` (int): Limits how many tiles are rendered per page in `grid` and `list` views. `0` disables (default).
+- `paginate` (0/1): Enables pagination. If `per_page` is not set, a conservative default of 60 is used.
+
+Pagination uses a per-gallery query arg like `?tpw_gallery_page_123=2` so multiple galleries on the same page can paginate independently.
 ```
 
 ### [tpw_gallery_categories]

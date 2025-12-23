@@ -49,6 +49,29 @@ This guide helps site administrators manage image galleries using TPW Core’s G
   - Story/Carousel (inline): `[tpw_gallery id="123" view="story"]` — one image at a time with Previous/Next, swipe, and arrow keys; no autoplay.
 - Thumbnails crop to fit and honor focal points; captions are shown below (grid/list) or prominently with the image (story).
 
+## Elementor Widget (Optional)
+
+If Elementor is installed and active, TPW Core provides an Elementor widget named **TPW Gallery**. This is often the easiest way to add a gallery to a page without writing shortcodes.
+
+How to use:
+1. Edit the page in Elementor.
+2. Search for **TPW Gallery** in the widgets panel.
+3. Drag it onto the page.
+4. In the widget settings:
+   - **Gallery**: Start typing to search galleries by title, then select one.
+   - **View**:
+     - **Grid**: Thumbnail grid.
+     - **List**: Vertical list with captions.
+     - **Story**: Inline carousel (one image at a time).
+   - **Columns**: Only shown for **Grid**; sets the number of columns.
+   - **Paginate**: Only shown for **Grid** and **List**; when enabled, the gallery displays a page at a time.
+   - **Per page**: Only shown when **Paginate** is enabled; how many images to show per page.
+
+### Large gallery performance
+- If a gallery has lots of images, you can limit how many thumbnails render at once (grid/list only):
+  - Enable pagination with a default page size: `[tpw_gallery id="123" view="grid" paginate="1"]`
+  - Or set an explicit limit: `[tpw_gallery id="123" view="list" per_page="40"]`
+
 ## Tips & Troubleshooting
 - If changes don’t appear, refresh and ensure browser cache isn’t stale.
 - The focal point is stored per image; set it for portraits to improve crops.

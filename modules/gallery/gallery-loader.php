@@ -315,6 +315,29 @@ add_action( 'plugins_loaded', function() {
 // Phase 5 – Public display layer
 require_once __DIR__ . '/gallery-display.php';
 
+// Optional: Elementor integration (fully guarded; loads only when Elementor is loaded)
+if ( ! function_exists( 'tpw_gallery_elementor_bootstrap' ) ) {
+    function tpw_gallery_elementor_bootstrap() {
+        if ( ! did_action( 'elementor/loaded' ) ) {
+            return;
+        }
+        $loader = __DIR__ . '/elementor/elementor-loader.php';
+        if ( file_exists( $loader ) ) {
+            require_once $loader;
+            if ( function_exists( 'tpw_gallery_elementor_init' ) ) {
+                tpw_gallery_elementor_init();
+            }
+        }
+    }
+}
+
+if ( did_action( 'elementor/loaded' ) ) {
+    tpw_gallery_elementor_bootstrap();
+} else {
+    // Register a no-op-until-fired hook to support any plugin load order.
+    add_action( 'elementor/loaded', 'tpw_gallery_elementor_bootstrap' );
+}
+
 // Optional: WP-CLI integration
 if ( defined( 'WP_CLI' ) && WP_CLI && file_exists( __DIR__ . '/cli.php' ) ) {
     require_once __DIR__ . '/cli.php';
