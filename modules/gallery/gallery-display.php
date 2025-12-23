@@ -19,22 +19,35 @@ function tpw_gallery_enqueue_public_assets() {
 }
 
 /**
- * [tpw_gallery id="123" category="slug" columns="4" view="grid|list" show_categories="0|1"]
+ * Render a TPW gallery (shared renderer for shortcode + integrations).
+ *
+ * Accepted args (strings/ints are tolerated; will be normalized):
+ * - id (int) Gallery ID
+ * - category (string) Category slug
+ * - columns (int) 1..6
+ * - view (string) grid|list|story
+ * - show_categories (bool|"0"|"1")
  */
-add_shortcode( 'tpw_gallery', function( $atts ){
-    $atts = shortcode_atts([
-        'id'              => '',
-        'category'        => '',
-        'columns'         => '3',
-        'view'            => 'grid',
-        'show_categories' => '0', // optional toolbar above grid
-    ], $atts, 'tpw_gallery' );
+function tpw_gallery_render( array $args = [] ): string {
+    $id       = isset( $args['id'] ) ? (int) $args['id'] : 0;
+    $category = isset( $args['category'] ) ? sanitize_title( (string) $args['category'] ) : '';
+    $columns  = isset( $args['columns'] ) ? max( 1, min( 6, (int) $args['columns'] ) ) : 3;
+    $view_in  = isset( $args['view'] ) ? strtolower( (string) $args['view'] ) : 'grid';
+    $view     = in_array( $view_in, [ 'grid', 'list', 'story' ], true ) ? $view_in : 'grid';
 
-    $id       = (int) $atts['id'];
-    $category = sanitize_title( (string) $atts['category'] );
-    $columns  = max( 1, min( 6, (int) $atts['columns'] ) );
-    $view     = in_array( strtolower( (string) $atts['view'] ), ['grid','list','story'], true ) ? strtolower( (string) $atts['view'] ) : 'grid';
-    $showCats = (string) $atts['show_categories'] === '1';
+    $showCats = false;
+    if ( isset( $args['show_categories'] ) ) {
+        $sc = $args['show_categories'];
+        $showCats = ( $sc === true || $sc === 1 || $sc === '1' || $sc === 'true' );
+    }
+
+    $normalized_atts = [
+        'id'              => (string) $id,
+        'category'        => (string) $category,
+        'columns'         => (string) $columns,
+        'view'            => (string) $view,
+        'show_categories' => $showCats ? '1' : '0',
+    ];
 
     // Cache key
     $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats ] ) );
@@ -68,9 +81,27 @@ add_shortcode( 'tpw_gallery', function( $atts ){
     include $tpl;
     $out = ob_get_clean();
 
-    $out = apply_filters( 'tpw_gallery_display', $out, $atts );
+    $out = apply_filters( 'tpw_gallery_display', $out, $normalized_atts );
     wp_cache_set( $ckey, $out, 'tpw', HOUR_IN_SECONDS );
-    return $out;
+    return (string) $out;
+}
+
+/**
+ * [tpw_gallery id="123" category="slug" columns="4" view="grid|list" show_categories="0|1"]
+ */
+add_shortcode( 'tpw_gallery', function( $atts ){
+    $atts = shortcode_atts([
+        'id'              => '',
+        'category'        => '',
+        'columns'         => '3',
+        'view'            => 'grid',
+        'show_categories' => '0', // optional toolbar above grid
+    ], $atts, 'tpw_gallery' );
+
+    if ( function_exists( 'tpw_gallery_render' ) ) {
+        return tpw_gallery_render( $atts );
+    }
+    return '';
 });
 
 /**

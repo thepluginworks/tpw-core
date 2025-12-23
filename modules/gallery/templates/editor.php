@@ -5,7 +5,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) {
     wp_die( esc_html__( 'You do not have permission to access this page.', 'tpw-core' ) );
 }
 

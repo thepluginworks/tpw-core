@@ -15,6 +15,19 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! function_exists( 'tpw_gallery_manage_capability' ) ) {
+    /**
+     * Capability required to manage TPW Galleries (admin UI + privileged AJAX).
+     *
+     * Filter: tpw_gallery_manage_capability
+     * Default: manage_options
+     */
+    function tpw_gallery_manage_capability(): string {
+        $cap = (string) apply_filters( 'tpw_gallery_manage_capability', 'manage_options' );
+        return $cap !== '' ? $cap : 'manage_options';
+    }
+}
+
 if ( ! function_exists( 'tpw_gallery_module_enabled' ) ) {
     function tpw_gallery_module_enabled(): bool {
         return (bool) apply_filters( 'tpw_gallery_enabled', true );
