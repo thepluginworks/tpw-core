@@ -24,6 +24,7 @@ A quick index of module help topics for browsing in GitHub and for reference fro
   - Collecting feedback and using the Email module for delivery.
 - [Gallery](gallery.md)
   - Gallery hooks, upload UI notes, and extension guidance.
+  - Admin Guide → [admin-guide-gallery.md](admin-guide-gallery.md)
 - [Notices](notices.md)
   - Noticeboard overview, posting workflow, and hooks.
 

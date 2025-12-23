@@ -2,6 +2,39 @@
 .tpw-admin-ui .tpw-card { background:#fff; padding:16px; margin-bottom:16px; border:1px solid #e5e7eb; border-radius:8px; }
 .tpw-admin-ui .tpw-grid { display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:8px 0 0; }
 .tpw-admin-ui .tpw-grid li { width:130px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; position:relative; overflow:hidden; padding:8px; gap:8px; }
+.tpw-admin-ui .tpw-grid li { cursor: grab; }
+.tpw-admin-ui #tpw-gallery-thumbs .tpw-thumb-drag-placeholder { background:#eef2f7; border:1px dashed #cbd5e1; border-radius:8px; }
+/* Consistent inline actions for Remove/Delete */
+.tpw-admin-ui .tpw-gallery-actions { display:flex; flex-wrap:nowrap; gap:8px; align-items:center; justify-content:flex-start; margin-top:2px; width:100%; }
+.tpw-admin-ui .tpw-gallery-actions .tpw-btn { font-size:.85em; padding:6px 10px; line-height:1.2; white-space:nowrap; }
+
+/* ==========================
+	Editor Page Card Layout
+	========================== */
+.tpw-gallery-editor #tpw-gallery-thumbs { list-style:none; padding:0; margin:8px 0 0; display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; align-items:start; justify-items: stretch; justify-content: start; align-content: start; grid-auto-flow: row; }
+.tpw-gallery-editor #tpw-gallery-thumbs li { width:auto; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-gallery-card { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; background:#fff; border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.04); overflow:hidden; margin-bottom:0; padding:4px; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-card__media { padding:4px; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-thumb { width:100%; aspect-ratio:3/2; display:block; overflow:hidden; border-radius:8px; background:#f3f4f6; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-thumb img { width:100%; height:100%; object-fit:cover; display:block; object-position: var(--focus-x, 50%) var(--focus-y, 50%); }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-card__footer { padding:3px; border-top:1px solid #eceff3; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-gallery-actions { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-gallery-actions--main { justify-content:flex-start; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-gallery-actions--danger { margin-top:2px; }
+.tpw-gallery-editor #tpw-gallery-thumbs li .tpw-gallery-actions .tpw-btn { font-size:.85em; padding:4px 8px; }
+
+/* Make caption look interactive in admin */
+.tpw-admin-ui .tpw-cap-text { cursor: pointer; }
+
+@media (max-width: 640px) {
+	.tpw-gallery-editor #tpw-gallery-thumbs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+/* Ensure modal grid remains unchanged */
+.tpw-modal .tpw-grid li { width:130px; overflow:hidden; }
+.tpw-admin-ui .tpw-grid li { cursor: grab; }
+.tpw-admin-ui .tpw-grid li:active { cursor: grabbing; }
+.tpw-thumb-drag-placeholder { background:#eef2f7; border:1px dashed #c7ced7; border-radius:8px; min-height:130px; }
 .tpw-admin-ui .tpw-grid li .tpw-thumb { width:100%; aspect-ratio:1/1; background:#eef2f7; border-radius:6px; overflow:hidden; display:block; }
 .tpw-admin-ui .tpw-grid li .tpw-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 /* Natural aspect mode for admin thumbnails (accurate focal preview) */
@@ -75,6 +108,13 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 	padding: 0;
 }
 
+/* List view: vertical list with small thumbs */
+.tpw-gallery-list-public { list-style:none; padding:0; margin:1rem 0 0; display:flex; flex-direction:column; gap:.75rem; }
+.tpw-gallery-list-item { display:flex; align-items:center; gap:.75rem; }
+.tpw-gallery-list-thumb { display:block; width:80px; height:80px; border-radius:8px; overflow:hidden; background:#f3f4f6; flex:0 0 auto; }
+.tpw-gallery-list-thumb img { width:100%; height:100%; object-fit:cover; object-position: var(--focus-x, 50%) var(--focus-y, 50%); display:block; }
+.tpw-gallery-list-caption { flex:1 1 auto; color:#374151; }
+
 /* Item card (grid): container plus a ratio-constrained anchor for the image */
 .tpw-gallery-item {
 	overflow: hidden;
@@ -119,14 +159,15 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 	.tpw-gallery-caption, .tpw-caption { font-size: .75rem; }
 }
 
-/* --- Priority portrait rule to override all other image styles --- */
+/* Portrait items should also fully cover the frame (respecting focal point) */
 .tpw-gallery-item.portrait img {
-	object-fit: contain !important;
-	object-position: 50% 50% !important;
+	object-fit: cover !important;
+	/* Use declared focus custom properties; default to centered */
+	object-position: clamp(0%, calc(var(--focus-x, 50) * 1%), 100%) clamp(0%, calc(var(--focus-y, 50) * 1%), 100%) !important;
 	height: 100% !important;
 	position: static !important;
-	background: #fafafa;
-	padding: 4px;
+	background: transparent;
+	padding: 0;
 }
 
 /* Public front-end: restore consistent cropped thumbnails */
@@ -145,9 +186,9 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 }
 .tpw-gallery-public .tpw-gallery-grid-public .tpw-gallery-item.portrait img,
 .tpw-gallery-public .tpw-gallery .tpw-gallery-item.portrait img {
-	/* Portraits show full image, centered, within fixed height */
-	object-fit: contain !important;
-	object-position: 50% 50% !important;
+	/* Portraits should also cover the fixed-height thumbnail, using focal point */
+	object-fit: cover !important;
+	object-position: clamp(0%, calc(var(--focus-x, 50) * 1%), 100%) clamp(0%, calc(var(--focus-y, 50) * 1%), 100%) !important;
 	height: 240px !important;
 	padding: 0 !important;
 	background: transparent !important;
@@ -178,4 +219,25 @@ html.tpw-modal-open, body.tpw-modal-open { overflow: hidden; }
 }
 @media (max-width: 480px) {
 	.tpw-gallery-public .tpw-gallery-grid-public { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ==========================
+	 Story / Carousel View (inline)
+	 ========================== */
+.tpw-gallery-story { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; align-items: center; justify-items: center; outline: none; }
+.tpw-gallery-story-viewport { position: relative; width: 100%; max-width: min(1000px, 100%); background: #0b0c0f; border-radius: 10px; overflow: hidden; display:flex; align-items:center; justify-content:center; }
+/* Maintain aspect ratio without cropping; cap height to viewport */
+.tpw-gallery-story-image { display:block; max-width: 100%; height: auto; width: auto; max-height: 70vh; object-fit: contain; background:#0b0c0f; color: transparent; }
+.tpw-gallery-story-caption { width: 100%; max-width: min(1000px, 100%); font-size: 1rem; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; }
+.tpw-gallery-story-meta { width:100%; max-width: min(1000px, 100%); display:flex; justify-content:flex-end; color:#6b7280; font-size:.9rem; }
+.tpw-gallery-story-counter { background:#f3f4f6; border:1px solid #e5e7eb; padding:2px 8px; border-radius:6px; }
+.tpw-gallery-story-viewport .tpw-gallery-story-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.92); border: 1px solid #e5e7eb; color: #111827; width: 40px; height: 40px; border-radius: 999px; display:flex; align-items:center; justify-content:center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+.tpw-gallery-story-nav:hover { background: #ffffff; }
+.tpw-gallery-story-nav:disabled { opacity: .6; cursor: not-allowed; }
+.tpw-gallery-story-viewport .tpw-gallery-story-nav.prev { left: 10px; }
+.tpw-gallery-story-viewport .tpw-gallery-story-nav.next { right: 10px; }
+.tpw-gallery-story.transitioning .tpw-gallery-story-image { transition: opacity .18s ease; opacity: .85; }
+@media (max-width: 640px) {
+  .tpw-gallery-story-nav { width: 36px; height: 36px; }
+  .tpw-gallery-story-caption { font-size: .95rem; }
 }

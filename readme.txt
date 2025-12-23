@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,14 @@ Example URL:
 /rsvp-thank-you/?submission_id=123
 ```
 
+= [tpw_gallery_help] =
+Front-end help page for the Gallery module. Creates an accessible overview of gallery features, including image reordering, caption editing, focal points, and category management.
+
+Example route:
+```
+/gallery-help/
+```
+
 == Frequently Asked Questions ==
 
 = Do I need this plugin for other TPW modules to work? =
@@ -50,6 +58,15 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.4.0 =
+- Gallery module enhancements:
+	- New front-end help page accessible at `/gallery-help/` (shortcode `[tpw_gallery_help]`).
+	- Drag-and-drop image reordering in the Gallery admin interface.
+	- Improved image editing UI with streamlined caption editor and focal point controls.
+	- Optimized styles and scripts for faster loading and smoother interactions.
+	- Expanded documentation covering Gallery Admin, image management, and categories.
+	- Refactored templates for clearer structure and maintainability.
 
 = 1.3.0 =
 - Added Square SCA (Strong Customer Authentication) support in tpw-payments.js via card.tokenize(verificationDetails).

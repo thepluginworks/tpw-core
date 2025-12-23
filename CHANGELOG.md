@@ -2,6 +2,24 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.4.0] - 2025-12-23
+### Added
+- Gallery Help: New front-end help page for the Gallery module accessible at `/gallery-help/` via shortcode `[tpw_gallery_help]`.
+- Admin Reordering: Drag-and-drop image reordering in the Gallery admin interface.
+
+### Changed
+- Image Editing UI: Enhanced caption editing and focal point controls for faster, more intuitive updates.
+- Performance: Optimized styles and scripts to reduce load times and improve interaction smoothness.
+- Templates: Refactored gallery templates for clearer structure and easier maintenance.
+
+### Docs
+- Comprehensive Gallery Admin documentation covering image management, reordering, captions, focal points, and category handling.
+- Cross-linked help topics and updated references in README.
+
+### Notes
+- No database schema changes.
+- Front-end help page is auto-created by System Pages when the Gallery module is enabled.
+
 ## [1.2.3] - 2025-11-21
 ### Added
 - New shortcode `[tpw_profile_badge]` providing a standalone circular profile/login badge (40px). Supports optional `dropdown="yes"` for a hover (desktop) / tap (mobile) profile menu (My Profile, Logout).

@@ -18,6 +18,9 @@ $cats  = function_exists('tpw_gallery_get_categories') ? tpw_gallery_get_categor
     <div class="tpw-row" style="gap:8px;align-items:center;">
       <a href="#add" class="tpw-btn tpw-btn-primary" id="tpw-add-gallery-btn"><?php esc_html_e('Add Gallery', 'tpw-core'); ?></a>
       <button type="button" class="tpw-btn tpw-btn-secondary" id="tpw-manage-categories-btn"><?php esc_html_e('Manage Categories', 'tpw-core'); ?></button>
+      <a href="<?php echo esc_url( home_url( '/gallery-help/' ) ); ?>" class="tpw-btn tpw-btn-secondary">
+        <?php esc_html_e('Help', 'tpw-core'); ?>
+      </a>
     </div>
   </div>
 
@@ -44,7 +47,8 @@ $cats  = function_exists('tpw_gallery_get_categories') ? tpw_gallery_get_categor
           <div class="table-cell"><?php echo esc_html( tpw_format_datetime( $row['created_at'] ) ); ?></div>
           <div class="table-cell"><?php echo (int) ($row['image_count'] ?? 0); ?></div>
           <div class="table-cell">
-            <button class="tpw-btn tpw-gallery-edit tpw-btn-secondary" data-id="<?php echo (int) $row['gallery_id']; ?>"><?php esc_html_e('Edit', 'tpw-core'); ?></button>
+            <button class="tpw-btn tpw-gallery-quick-edit tpw-btn-secondary" data-id="<?php echo (int) $row['gallery_id']; ?>"><?php esc_html_e('Quick Edit', 'tpw-core'); ?></button>
+            &nbsp;<a class="tpw-btn tpw-btn-primary" href="<?php echo esc_url( add_query_arg( 'gallery_id', (int) $row['gallery_id'], home_url( '/gallery-admin/' ) ) ); ?>"><?php esc_html_e('Edit', 'tpw-core'); ?></a>
             &nbsp;<button class="tpw-btn tpw-gallery-delete tpw-btn-danger" data-id="<?php echo (int) $row['gallery_id']; ?>"><?php esc_html_e('Delete', 'tpw-core'); ?></button>
           </div>
         </div>

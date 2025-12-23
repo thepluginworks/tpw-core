@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gallery Admin — User Guide</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #111827; margin: 0; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.8rem; margin: 0 0 16px; }
+    h2 { font-size: 1.25rem; margin: 24px 0 8px; }
+    p { margin: 0 0 10px; }
+    ul { margin: 0 0 12px 22px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    .note { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin: 16px 0; }
+    .toolbar { display:flex; justify-content:flex-end; gap:8px; margin-bottom: 10px; }
+    .btn { display:inline-block; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; text-decoration:none; color:#111827; }
+    .btn:hover { background:#eef2f7; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <a class="btn" href="/gallery-admin/">← Back to Galleries</a>
+    </div>
+    <h1>Gallery Admin — User Guide</h1>
+
+    <h2>Access</h2>
+    <ul>
+      <li>Route: <code>/gallery-admin/</code> (front‑end admin system page)</li>
+      <li>Shortcode: <code>[tpw_gallery_admin]</code> — add to a page if not auto‑created</li>
+      <li>Permission: Administrators</li>
+    </ul>
+
+    <h2>Create a Gallery</h2>
+    <ol>
+      <li>Click “Add Gallery”.</li>
+      <li>Enter a Title and (optional) Description.</li>
+      <li>Choose a Category (or leave Uncategorised).</li>
+      <li>Click “Save Gallery”.</li>
+    </ol>
+
+    <h2>Add Images</h2>
+    <ul>
+      <li><strong>From Media Library</strong>: pick existing images; they are linked into the gallery.</li>
+      <li><strong>Upload New Files</strong>: select images to upload; the gallery auto‑saves if needed.</li>
+    </ul>
+
+    <h2>Edit Images</h2>
+    <ul>
+      <li><strong>Caption</strong>: Click the caption to edit, then Save or Cancel.</li>
+      <li><strong>Focal Point</strong>: Click the image (or “Focal” button) to open the focal editor.
+        <ul>
+          <li>Click or drag the green handle to set the focus; Save to apply.</li>
+          <li>Editor page thumbnails recenter to the saved focal point.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2>Reorder Images</h2>
+    <p>Drag and drop thumbnails to change order. Order is saved automatically.</p>
+
+    <h2>Remove vs Delete</h2>
+    <ul>
+      <li><strong>Remove</strong>: Unlinks the image from the gallery only (keeps it in Media Library).</li>
+      <li><strong>Delete</strong>: Permanently deletes the image from the Media Library (cannot be undone).</li>
+    </ul>
+
+    <h2>Manage Categories</h2>
+    <p>Use “Manage Categories” to add or delete categories. The gallery form’s Category dropdown updates after closing the modal.</p>
+
+    <h2>Quick Edit vs Full Page</h2>
+    <ul>
+      <li><strong>Quick Edit</strong>: Opens a modal for lightweight changes.</li>
+      <li><strong>Edit (Page)</strong>: Opens the full Gallery Editor for larger galleries and drag‑drop.</li>
+    </ul>
+
+    <h2>Public Display</h2>
+    <p>Use <code>[tpw_gallery id="123"]</code> to show a gallery on public pages. Thumbnails crop to fit and honor focal points; captions are shown below.</p>
+
+    <div class="note">
+      <strong>Tips & Troubleshooting</strong>
+      <ul>
+        <li>If changes don’t appear, refresh and clear browser cache.</li>
+        <li>The focal point is stored per image; set it for portraits for better crops.</li>
+        <li>You must Save the gallery to create it before uploading files.</li>
+        <li>Only administrators can access <code>/gallery-admin/</code>.</li>
+      </ul>
+    </div>
+
+    <h2>Reference</h2>
+    <ul>
+      <li>Templates & assets: <code>modules/gallery/templates/</code>, <code>modules/gallery/assets/</code></li>
+      <li>Developer hooks: see the developer help “Gallery”.</li>
+    </ul>
+  </div>
+</body>
+</html>

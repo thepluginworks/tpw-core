@@ -12,30 +12,32 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function tpw_gallery_enqueue_public_assets() {
     static $done = false; if ( $done ) return; $done = true;
     $base = trailingslashit( TPW_CORE_URL ) . 'modules/gallery/';
-    wp_enqueue_style( 'tpw-gallery-public', $base . 'assets/gallery.css', [], '0.7.2' );
+    wp_enqueue_style( 'tpw-gallery-public', $base . 'assets/gallery.css', [], '0.7.4' );
     // Minimal built-in lightbox if TPW Control lightbox not present
     wp_enqueue_script( 'tpw-gallery-lightbox', $base . 'assets/lightbox.js', [ 'jquery' ], '0.7.2', true );
     wp_enqueue_style( 'tpw-gallery-lightbox', $base . 'assets/lightbox.css', [], '0.7.2' );
 }
 
 /**
- * [tpw_gallery id="123" category="slug" columns="4"]
+ * [tpw_gallery id="123" category="slug" columns="4" view="grid|list" show_categories="0|1"]
  */
 add_shortcode( 'tpw_gallery', function( $atts ){
     $atts = shortcode_atts([
         'id'              => '',
         'category'        => '',
         'columns'         => '3',
+        'view'            => 'grid',
         'show_categories' => '0', // optional toolbar above grid
     ], $atts, 'tpw_gallery' );
 
     $id       = (int) $atts['id'];
     $category = sanitize_title( (string) $atts['category'] );
     $columns  = max( 1, min( 6, (int) $atts['columns'] ) );
+    $view     = in_array( strtolower( (string) $atts['view'] ), ['grid','list','story'], true ) ? strtolower( (string) $atts['view'] ) : 'grid';
     $showCats = (string) $atts['show_categories'] === '1';
 
     // Cache key
-    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $showCats ] ) );
+    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats ] ) );
     $cached = wp_cache_get( $ckey, 'tpw' );
     if ( is_string( $cached ) ) return $cached;
 
@@ -61,8 +63,8 @@ add_shortcode( 'tpw_gallery', function( $atts ){
     tpw_gallery_enqueue_public_assets();
 
     ob_start();
-    $tpl = __DIR__ . '/templates/grid.php';
-    $data = [ 'items' => $items, 'columns' => $columns, 'show_categories' => $showCats ];
+    $tpl = __DIR__ . '/templates/' . ( $view === 'list' ? 'list-view.php' : ( $view === 'story' ? 'story-view.php' : 'grid.php' ) );
+    $data = [ 'items' => $items, 'columns' => $columns, 'show_categories' => $showCats, 'view' => $view ];
     include $tpl;
     $out = ob_get_clean();
 

@@ -26,9 +26,17 @@ add_action( 'plugins_loaded', function(){
             'plugin'    => 'tpw-core',
             'required'  => 0,
         ] );
+        // Register a front-end help page at /gallery-help/
+        TPW_Core_System_Pages::register_page( 'gallery-help', [
+            'title'     => __( 'Gallery Help', 'tpw-core' ),
+            'shortcode' => '[tpw_gallery_help]',
+            'plugin'    => 'tpw-core',
+            'required'  => 0,
+        ] );
         // Ensure the page actually exists so /gallery-admin/ resolves even if not marked as required
         try {
             TPW_Core_System_Pages::ensure_page( 'gallery-admin' );
+            TPW_Core_System_Pages::ensure_page( 'gallery-help' );
         } catch ( \Throwable $e ) {
             // Silently ignore; admins can still create a page with [tpw_gallery_admin]
         }
@@ -54,11 +62,14 @@ add_shortcode( 'tpw_gallery_admin', function( $atts ){
     if ( function_exists( 'wp_enqueue_media' ) ) {
         wp_enqueue_media();
     }
-    wp_enqueue_style( 'tpw-gallery-admin', $base_url . 'assets/gallery.css', [], '0.6.0' );
+    wp_enqueue_style( 'tpw-gallery-admin', $base_url . 'assets/gallery.css', [], '0.6.11' );
     // Lightbox assets used for previewing thumbnails inside the modal
     wp_enqueue_style( 'tpw-gallery-lightbox', $base_url . 'assets/lightbox.css', [], '0.6.0' );
-    wp_enqueue_script( 'tpw-gallery-admin', $base_url . 'assets/gallery.js', [ 'jquery', 'media-editor', 'wp-util' ], '0.6.0', true );
+    // Enable drag-and-drop sorting support
+    wp_enqueue_script( 'jquery-ui-sortable' );
+    wp_enqueue_script( 'tpw-gallery-admin', $base_url . 'assets/gallery.js', [ 'jquery', 'jquery-ui-sortable', 'media-editor', 'wp-util' ], '0.6.10', true );
     wp_enqueue_script( 'tpw-gallery-lightbox', $base_url . 'assets/lightbox.js', [ 'jquery' ], '0.6.0', true );
+    $editor_id = isset($_GET['gallery_id']) ? (int) $_GET['gallery_id'] : 0;
     wp_localize_script( 'tpw-gallery-admin', 'tpwGallery', [
         'nonce' => wp_create_nonce( 'tpw_gallery' ),
         'i18nConfirmDelete' => __( 'Delete this gallery?', 'tpw-core' ),
@@ -67,13 +78,15 @@ add_shortcode( 'tpw_gallery_admin', function( $atts ){
         'adminUrl' => home_url( '/gallery-admin/' ),
         'ajaxurl' => admin_url( 'admin-ajax.php' ),
         'isAdmin' => true,
+        'isEditorPage' => $editor_id > 0,
+        'editorGalleryId' => $editor_id,
         'i18nRemoveConfirm' => __( 'Remove this image from the gallery?', 'tpw-core' ),
-        'i18nRemove' => __( 'Remove from Gallery', 'tpw-core' ),
+        'i18nRemove' => __( 'Remove', 'tpw-core' ),
         'i18nNoImages' => __( 'No images in this gallery yet.', 'tpw-core' ),
         'i18nUploadToGallery' => __( 'Upload to this Gallery', 'tpw-core' ),
         'i18nAddFromLibrary' => __( 'Add Images (Media Library)', 'tpw-core' ),
         'i18nDeletePerm' => __( 'Delete this image permanently from the Media Library? This cannot be undone.', 'tpw-core' ),
-        'i18nDeletePermShort' => __( 'Delete permanently', 'tpw-core' ),
+        'i18nDeletePermShort' => __( 'Delete', 'tpw-core' ),
         'i18nEditCaption' => __( 'Edit caption', 'tpw-core' ),
         'i18nSave' => __( 'Save', 'tpw-core' ),
         'i18nCancel' => __( 'Cancel', 'tpw-core' ),
@@ -88,7 +101,32 @@ add_shortcode( 'tpw_gallery_admin', function( $atts ){
     ] );
 
     // Default list view with embedded categories panel
-    include __DIR__ . '/templates/list.php';
+    if ( $editor_id > 0 && function_exists('tpw_gallery_get') ) {
+        $gallery = tpw_gallery_get( $editor_id );
+        include __DIR__ . '/templates/editor.php';
+    } else {
+        include __DIR__ . '/templates/list.php';
+    }
+    return ob_get_clean();
+} );
+
+// Shortcode: gallery help page
+add_shortcode( 'tpw_gallery_help', function( $atts ){
+    if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+        return '<div class="tpw-notice tpw-notice--error">' . esc_html__( 'You do not have permission to access the Gallery help.', 'tpw-core' ) . '</div>';
+    }
+    // Enqueue base admin UI styles for consistent look
+    $base_url = trailingslashit( TPW_CORE_URL ) . 'modules/gallery/';
+    wp_enqueue_style( 'tpw-buttons', trailingslashit( TPW_CORE_URL ) . 'assets/css/tpw-buttons.css', [], '0.6.0' );
+    $ui_file = trailingslashit( TPW_CORE_PATH ) . 'assets/css/tpw-ui.css';
+    $ui_url  = trailingslashit( TPW_CORE_URL ) . 'assets/css/tpw-ui.css';
+    $ui_ver  = file_exists( $ui_file ) ? (string) filemtime( $ui_file ) : '0.1.0';
+    if ( ! wp_style_is( 'tpw-ui', 'enqueued' ) ) wp_enqueue_style( 'tpw-ui', $ui_url, [], $ui_ver );
+    // Scope gallery admin styles for layout consistency
+    wp_enqueue_style( 'tpw-gallery-admin', $base_url . 'assets/gallery.css', [], '0.6.11' );
+
+    ob_start();
+    include __DIR__ . '/templates/help.php';
     return ob_get_clean();
 } );
 
@@ -241,6 +279,21 @@ add_action( 'wp_ajax_tpw_gallery_update_image_focus', function(){
     if ( $image_id <= 0 ) wp_send_json_error( 'Invalid image ID' );
     if ( ! function_exists('tpw_gallery_update_image_focus') ) wp_send_json_error( 'API missing' );
     $res = tpw_gallery_update_image_focus( $image_id, $fx, $fy );
+    if ( is_wp_error( $res ) ) wp_send_json_error( $res->get_error_message() );
+    wp_send_json_success( true );
+} );
+
+// AJAX: reorder images within a gallery (saves to sort_order)
+add_action( 'wp_ajax_tpw_gallery_reorder_images', function(){
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    check_ajax_referer( 'tpw_gallery' );
+    $gallery_id = isset($_POST['gallery_id']) ? (int) $_POST['gallery_id'] : 0;
+    $order_raw  = isset($_POST['order']) ? (string) $_POST['order'] : '';
+    if ( $gallery_id <= 0 ) wp_send_json_error( 'Invalid gallery ID' );
+    $ids = array_filter( array_map( 'intval', array_filter( array_map( 'trim', explode( ',', $order_raw ) ) ) ) );
+    if ( empty( $ids ) ) wp_send_json_error( 'Invalid order' );
+    if ( ! function_exists( 'tpw_gallery_reorder_images' ) ) wp_send_json_error( 'API missing' );
+    $res = tpw_gallery_reorder_images( $gallery_id, $ids );
     if ( is_wp_error( $res ) ) wp_send_json_error( $res->get_error_message() );
     wp_send_json_success( true );
 } );

@@ -55,19 +55,44 @@ $gallery = isset($gallery) && is_array($gallery) ? $gallery : null; // allow pre
             $thumb = $aid ? wp_get_attachment_image_src( $aid, 'thumbnail' ) : null;
             $full_url = $full && is_array($full) ? $full[0] : ( $img['url'] ?? '' );
             $thumb_url = $thumb && is_array($thumb) ? $thumb[0] : $full_url;
-            $cap = get_post_field( 'post_title', $aid );
+            $cap = isset($img['caption']) && $img['caption'] !== '' ? (string) $img['caption'] : get_post_field( 'post_title', $aid );
+            $fx = isset($img['focus_x']) && is_numeric($img['focus_x']) ? (float) $img['focus_x'] : null;
+            $fy = isset($img['focus_y']) && is_numeric($img['focus_y']) ? (float) $img['focus_y'] : null;
+            $fxp = $fx !== null ? max(0, min(100, (int) round($fx * 100))) : 50;
+            $fyp = $fy !== null ? max(0, min(100, (int) round($fy * 100))) : 50;
+            $fxp_str = $fxp . '%';
+            $fyp_str = $fyp . '%';
           ?>
             <li data-image-id="<?php echo (int) $img['image_id']; ?>">
-              <?php if ( $full_url ) : ?>
-                <a href="<?php echo esc_url( $full_url ); ?>" class="tpw-gallery-lightbox tpw-thumb" data-caption="<?php echo esc_attr( $cap ); ?>">
-                  <img src="<?php echo esc_url( $thumb_url ); ?>" alt="" />
-                </a>
-              <?php else : ?>
-                <div class="tpw-thumb-placeholder">#</div>
-              <?php endif; ?>
-              <div class="tpw-row" style="gap:6px; width:100%;">
-                <button type="button" class="tpw-btn tpw-btn-gallery tpw-btn-secondary tpw-gallery-remove-image" data-image-id="<?php echo (int) $img['image_id']; ?>"><?php esc_html_e('Remove', 'tpw-core'); ?></button>
-                <button type="button" class="tpw-btn tpw-btn-gallery tpw-btn-danger tpw-gallery-remove-image-perm" data-image-id="<?php echo (int) $img['image_id']; ?>"><?php esc_html_e('Delete permanently', 'tpw-core'); ?></button>
+              <div class="tpw-card tpw-gallery-card">
+                <div class="tpw-card__media">
+                  <?php if ( $full_url ) : ?>
+                    <a href="<?php echo esc_url( $full_url ); ?>" class="tpw-gallery-lightbox tpw-thumb" style="--focus-x: <?php echo esc_attr( $fxp_str ); ?>; --focus-y: <?php echo esc_attr( $fyp_str ); ?>;" data-caption="<?php echo esc_attr( $cap ); ?>">
+                      <img src="<?php echo esc_url( $thumb_url ); ?>" alt="" style="object-fit:cover; object-position: var(--focus-x, 50%) var(--focus-y, 50%);" />
+                    </a>
+                  <?php else : ?>
+                    <div class="tpw-thumb-placeholder">#</div>
+                  <?php endif; ?>
+                </div>
+                <div class="tpw-cap-wrap" style="width:100%;margin-top:4px;">
+                  <div class="tpw-row" style="justify-content:space-between;align-items:center;gap:6px;">
+                    <div class="tpw-cap-text" tabindex="0" title="<?php esc_attr_e('Edit caption','tpw-core'); ?>"><?php echo esc_html( $cap ); ?></div>
+                  </div>
+                  <div class="tpw-cap-editor" style="display:none;gap:6px;margin-top:6px;">
+                    <input type="text" class="tpw-cap-input" value="<?php echo esc_attr( $cap ); ?>" style="flex:1 1 auto;" />
+                    <button type="button" class="tpw-btn tpw-btn-small tpw-btn-primary tpw-cap-save"><?php esc_html_e('Save','tpw-core'); ?></button>
+                    <button type="button" class="tpw-btn tpw-btn-small tpw-btn-secondary tpw-cap-cancel"><?php esc_html_e('Cancel','tpw-core'); ?></button>
+                  </div>
+                </div>
+                <div class="tpw-card__footer">
+                  <div class="tpw-row tpw-gallery-actions tpw-gallery-actions--main" style="gap:6px; width:100%;">
+                    <button type="button" class="tpw-btn tpw-btn-gallery tpw-btn-secondary tpw-gallery-focal" data-image-id="<?php echo (int) $img['image_id']; ?>"><?php esc_html_e('Focal', 'tpw-core'); ?></button>
+                    <button type="button" class="tpw-btn tpw-btn-gallery tpw-btn-secondary tpw-gallery-remove-image" data-image-id="<?php echo (int) $img['image_id']; ?>"><?php esc_html_e('Remove', 'tpw-core'); ?></button>
+                  </div>
+                  <div class="tpw-row tpw-gallery-actions tpw-gallery-actions--danger" style="gap:6px; width:100%;">
+                    <button type="button" class="tpw-btn tpw-btn-gallery tpw-btn-danger tpw-gallery-remove-image-perm" data-image-id="<?php echo (int) $img['image_id']; ?>"><?php esc_html_e('Delete', 'tpw-core'); ?></button>
+                  </div>
+                </div>
               </div>
             </li>
           <?php endforeach; endif; ?>
