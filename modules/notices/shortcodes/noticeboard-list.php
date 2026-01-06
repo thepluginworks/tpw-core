@@ -73,7 +73,13 @@ class TPW_Noticeboard_List_Shortcode {
                 $terms = get_the_terms($id, 'tpw_notice_category');
                 $cat = (!is_wp_error($terms) && !empty($terms)) ? esc_html($terms[0]->name) : '';
                 echo '<div class="tpw-notice-card" data-id="' . esc_attr($id) . '">';
-                if ($thumb) echo '<div class="tpw-notice-thumb"><img src="' . esc_url($thumb) . '" alt=""/></div>';
+                if ($thumb) {
+                    if ($atts['read_more'] === 'true') {
+                        echo '<div class="tpw-notice-thumb"><a href="' . esc_url(get_permalink($id)) . '"><img src="' . esc_url($thumb) . '" alt=""/></a></div>';
+                    } else {
+                        echo '<div class="tpw-notice-thumb"><img src="' . esc_url($thumb) . '" alt=""/></div>';
+                    }
+                }
                 echo '<div class="tpw-notice-body">';
                 echo '<h3 class="tpw-notice-title">' . esc_html($title) . '</h3>';
                 if ($cat) echo '<div class="tpw-notice-cat">' . $cat . '</div>';

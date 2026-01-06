@@ -2,6 +2,10 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.5.1] - 2026-01-06
+### Fixed
+- Notices: Noticeboard list shortcode thumbnail now links to the notice (image is clickable).
+
 ## [1.5.0] - 2025-12-23
 ### Added
 - Gallery Pagination: New shortcode attributes `per_page` and `paginate` for `[tpw_gallery]` in `grid` and `list` views to limit how many thumbnails render at once.
