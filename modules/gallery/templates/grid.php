@@ -41,11 +41,13 @@ $col = max(1, min(6, (int) ($columns ?? 3)));
   $images_to_show = ( $paging_enabled ? array_slice( $images, $offset, $per_page ) : $images );
 ?>
   <div class="tpw-gallery-public-block">
-    <?php if ( ! empty( $g['title'] ) ) : ?>
-      <h3 class="tpw-gallery-public-title"><?php echo esc_html( $g['title'] ); ?></h3>
-    <?php endif; ?>
-    <?php if ( ! empty( $g['description'] ) ) : ?>
-      <div class="tpw-gallery-public-desc"><?php echo wp_kses_post( wpautop( $g['description'] ) ); ?></div>
+    <?php if ( ! empty( $show_heading ) ) : ?>
+      <?php if ( ! empty( $g['title'] ) ) : ?>
+        <h3 class="tpw-gallery-public-title"><?php echo esc_html( $g['title'] ); ?></h3>
+      <?php endif; ?>
+      <?php if ( ! empty( $g['description'] ) ) : ?>
+        <div class="tpw-gallery-public-desc"><?php echo wp_kses_post( wpautop( $g['description'] ) ); ?></div>
+      <?php endif; ?>
     <?php endif; ?>
 
     <ul class="tpw-gallery-grid-public tpw-gallery-grid-public--fixed" data-columns="<?php echo (int) $col; ?>" style="--tpw-gallery-columns: <?php echo (int) $col; ?>;">

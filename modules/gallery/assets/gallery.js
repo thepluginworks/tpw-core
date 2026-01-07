@@ -3,6 +3,147 @@
   const AJAX_URL = (window.tpwGallery && window.tpwGallery.ajaxurl) ? window.tpwGallery.ajaxurl : (window.ajaxurl || '/wp-admin/admin-ajax.php');
   const ajax = (action, data) => $.post(AJAX_URL, Object.assign({ action }, data));
 
+  // Shared caption editor (modal)
+  function ensureCaptionModal(){
+    if ($('#tpw-caption-modal').length) return;
+    const html = '\
+    <div id="tpw-caption-modal" class="tpw-modal tpw-caption-modal" aria-hidden="true">\
+      <div class="tpw-modal__overlay" data-tpw-caption-close></div>\
+      <div class="tpw-modal__content">\
+        <div class="tpw-modal__header">\
+          <h3 class="tpw-modal__title">' + (tpwGallery.i18nEditCaption||'Edit caption') + '</h3>\
+          <button class="tpw-btn tpw-btn-small" data-tpw-caption-close aria-label="' + (tpwGallery.i18nCancel||'Close') + '">&times;</button>\
+        </div>\
+        <div class="tpw-modal__body">\
+          <div class="tpw-row" style="gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px;">\
+            <div class="tpw-row" style="gap:8px;align-items:center;">\
+              <button type="button" class="tpw-btn tpw-btn-secondary tpw-caption-prev">' + (tpwGallery.i18nPrevious||'Previous') + '</button>\
+              <button type="button" class="tpw-btn tpw-btn-secondary tpw-caption-next">' + (tpwGallery.i18nNext||'Next') + '</button>\
+              <span class="tpw-caption-counter" style="opacity:.8"></span>\
+            </div>\
+          </div>\
+          <textarea class="tpw-caption-textarea" rows="6"></textarea>\
+          <div class="tpw-actions">\
+            <button type="button" class="tpw-btn tpw-btn-primary tpw-caption-save">' + (tpwGallery.i18nSave||'Save') + '</button>\
+            <button type="button" class="tpw-btn tpw-btn-secondary" data-tpw-caption-close>' + (tpwGallery.i18nCancel||'Cancel') + '</button>\
+          </div>\
+        </div>\
+      </div>\
+    </div>';
+    $('body').append(html);
+  }
+
+  function autoGrowTextarea(el){
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function getCaptionFromLi($li){
+    const $t = $li.find('.tpw-cap-text').first();
+    const data = $t.attr('data-caption');
+    if (typeof data === 'string') return data;
+    return $t.text() || '';
+  }
+  function setCaptionOnLi($li, caption){
+    const cap = (caption == null) ? '' : String(caption);
+    const $t = $li.find('.tpw-cap-text').first();
+    $t.text(cap);
+    $t.attr('data-caption', cap);
+    // Keep lightbox preview in sync if present
+    $li.find('.tpw-gallery-lightbox').attr('data-caption', cap);
+    // Keep <img alt> sane
+    $li.find('img').first().attr('alt', cap);
+  }
+
+  function captionLis(){
+    return $('#tpw-gallery-thumbs').find('li[data-image-id]').filter(function(){
+      return parseInt($(this).data('image-id')||0,10) > 0;
+    });
+  }
+
+  function openCaptionModalForLi($li){
+    ensureCaptionModal();
+    const $m = $('#tpw-caption-modal');
+    const $ta = $m.find('textarea.tpw-caption-textarea');
+    const $counter = $m.find('.tpw-caption-counter');
+
+    const lis = captionLis().toArray();
+    const idx = lis.findIndex(el => el === $li.get(0));
+
+    $m.data('tpwCapLi', $li);
+    $m.data('tpwCapIdx', idx);
+    $m.data('tpwCapDirty', false);
+    $ta.val(getCaptionFromLi($li));
+    autoGrowTextarea($ta.get(0));
+
+    const total = lis.length;
+    const showIdx = idx >= 0 ? (idx + 1) : 1;
+    $counter.text(total ? (showIdx + '/' + total) : '');
+
+    $m.find('.tpw-caption-prev').prop('disabled', idx <= 0);
+    $m.find('.tpw-caption-next').prop('disabled', idx < 0 || idx >= total - 1);
+
+    $m.show().attr('aria-hidden', 'false');
+    $('html, body').addClass('tpw-modal-open');
+    setTimeout(()=>{ $ta.trigger('focus'); }, 0);
+  }
+
+  function closeCaptionModal(){
+    const $m = $('#tpw-caption-modal');
+    if (!$m.length) return;
+    $m.hide().attr('aria-hidden','true');
+    $('html, body').removeClass('tpw-modal-open');
+  }
+
+  function captionModalNavigate(delta){
+    const $m = $('#tpw-caption-modal');
+    const dirty = !!$m.data('tpwCapDirty');
+    if (dirty) {
+      const ok = confirm((tpwGallery.i18nUnsavedCaption||'You have unsaved caption changes. Discard them?'));
+      if (!ok) return;
+    }
+    const lis = captionLis().toArray();
+    const idx = parseInt($m.data('tpwCapIdx')||0,10);
+    const nextIdx = idx + delta;
+    if (nextIdx < 0 || nextIdx >= lis.length) return;
+    openCaptionModalForLi($(lis[nextIdx]));
+  }
+
+  function saveCaptionFromModal(){
+    const $m = $('#tpw-caption-modal');
+    const $li = $m.data('tpwCapLi');
+    if (!$li || !$li.length) return;
+    const imageId = parseInt($li.data('image-id')||0,10);
+    if (!imageId) return;
+    const val = String($m.find('textarea.tpw-caption-textarea').val()||'');
+    ajax('tpw_gallery_update_caption', { image_id: imageId, caption: val, _wpnonce: tpwGallery.nonce }).done(resp=>{
+      if (resp && resp.success && resp.data){
+        const saved = resp.data.caption || '';
+        setCaptionOnLi($li, saved);
+        $m.data('tpwCapDirty', false);
+        // Tiny toast inside modal
+        const $btn = $m.find('.tpw-caption-save');
+        const tick = $('<span/>', { text: ' ' + (tpwGallery.i18nSaved||'Saved'), style:'margin-left:8px;color:#2e7d32;font-size:.9em;' });
+        $btn.after(tick);
+        setTimeout(()=> tick.fadeOut(200,()=>tick.remove()), 1200);
+      } else {
+        alert(resp && resp.data ? resp.data : 'Error');
+      }
+    });
+  }
+
+  function buildCaptionUI(caption){
+    const cap = (caption == null) ? '' : String(caption);
+    const $wrap = $('<div/>', { 'class': 'tpw-cap-wrap', style: 'width:100%;margin-top:4px;' });
+    const $row  = $('<div/>', { 'class': 'tpw-row', style: 'justify-content:space-between;align-items:center;gap:6px;' });
+    const $text = $('<div/>', { 'class': 'tpw-cap-text', text: cap, tabindex: 0, title: tpwGallery.i18nEditCaption||'Edit caption' });
+    $text.attr('data-caption', cap);
+    $row.append($text);
+    $wrap.append($row);
+    return $wrap;
+  }
+
   // Modal helpers
   const $modal = $('#tpw-gallery-modal');
   const openModal = (title) => {
@@ -84,19 +225,7 @@
           }
           // Caption display + edit controls (admin only)
           if (tpwGallery.isAdmin) {
-            const capWrap = $('<div/>', { 'class': 'tpw-cap-wrap', style: 'width:100%;margin-top:6px;' });
-            const capRow  = $('<div/>', { 'class':'tpw-row', style:'justify-content:space-between;align-items:center;gap:6px;' });
-            const capText = $('<div/>', { 'class': 'tpw-cap-text', text: cap || '', tabindex: 0, title: tpwGallery.i18nEditCaption||'Edit caption' });
-            capRow.append(capText);
-            capWrap.append(capRow);
-            // Hidden editor row
-            const editor = $('<div/>', { 'class': 'tpw-cap-editor', style: 'display:none;gap:6px;margin-top:6px;' });
-            const input = $('<input/>', { type: 'text', value: cap||'', 'class':'tpw-cap-input', style:'flex:1 1 auto;' });
-            const save = $('<button/>', { type: 'button', 'class':'tpw-btn tpw-btn-small tpw-btn-primary tpw-cap-save' }).text(tpwGallery.i18nSave||'Save');
-            const cancel = $('<button/>', { type: 'button', 'class':'tpw-btn tpw-btn-small tpw-btn-secondary tpw-cap-cancel' }).text(tpwGallery.i18nCancel||'Cancel');
-            editor.append(input, save, cancel);
-            capWrap.append(editor);
-            li.append(capWrap);
+            li.append(buildCaptionUI(cap));
           }
           // Actions row: Remove (unlink) + Delete (destructive)
           const actions = $('<div/>', { 'class': 'tpw-row tpw-gallery-actions', 'style': 'gap:8px; width:100%;' });
@@ -256,17 +385,7 @@
             } else {
               $media.append($('<div/>', { 'class': 'tpw-thumb-placeholder', text: '#' }));
             }
-            // Caption editor block (editor page)
-            const $capWrap = $('<div/>', { 'class': 'tpw-cap-wrap', style: 'width:100%;margin-top:4px;' });
-            const $capRow  = $('<div/>', { 'class': 'tpw-row', style: 'justify-content:space-between;align-items:center;gap:6px;' });
-            const $capText = $('<div/>', { 'class': 'tpw-cap-text', text: cap || '', tabindex: 0, title: tpwGallery.i18nEditCaption||'Edit caption' });
-            $capRow.append($capText);
-            const $capEditor = $('<div/>', { 'class':'tpw-cap-editor', style:'display:none;gap:6px;margin-top:6px;' });
-            const $capInput  = $('<input/>', { type:'text', 'class':'tpw-cap-input', value: cap||'', style:'flex:1 1 auto;' });
-            const $capSave   = $('<button/>', { type:'button', 'class':'tpw-btn tpw-btn-small tpw-btn-primary tpw-cap-save' }).text(tpwGallery.i18nSave||'Save');
-            const $capCancel = $('<button/>', { type:'button', 'class':'tpw-btn tpw-btn-small tpw-btn-secondary tpw-cap-cancel' }).text(tpwGallery.i18nCancel||'Cancel');
-            $capEditor.append($capInput, $capSave, $capCancel);
-            $capWrap.append($capRow, $capEditor);
+            const $capWrap = buildCaptionUI(cap);
 
             const $footer = $('<div/>', { 'class': 'tpw-card__footer' });
             const $actionsMain = $('<div/>', { 'class': 'tpw-row tpw-gallery-actions tpw-gallery-actions--main', 'style': 'gap:6px; width:100%;' });
@@ -290,6 +409,11 @@
             } else {
               li.append($('<div/>', { 'class': 'tpw-thumb-placeholder', text: '#' }));
             }
+
+            if (tpwGallery.isAdmin) {
+              li.append(buildCaptionUI(cap));
+            }
+
             const $actions = $('<div/>', { 'class': 'tpw-row tpw-gallery-actions', 'style': 'gap:8px; width:100%;' });
             $actions
               .append($('<button/>', { 'type': 'button', 'class': 'tpw-btn tpw-btn-small tpw-btn-secondary tpw-gallery-focal', 'data-image-id': rec.image_id }).text('Focal'))
@@ -365,105 +489,47 @@
     });
   });
 
-  // Caption editing interactions (admin)
-  function startEdit($wrap){
-    $wrap.find('.tpw-cap-editor').show();
-    $wrap.find('.tpw-cap-input').focus().select();
-  }
-  function stopEdit($wrap){
-    $wrap.find('.tpw-cap-editor').hide();
-  }
-  function saveCaption($li, $wrap){
-    const imageId = parseInt($li.data('image-id')||0,10);
-    if (!imageId) return;
-    const val = $wrap.find('.tpw-cap-input').val();
-    ajax('tpw_gallery_update_caption', { image_id: imageId, caption: val, _wpnonce: tpwGallery.nonce }).done(resp=>{
-      if (resp && resp.success && resp.data){
-        const saved = resp.data.caption || '';
-        $wrap.find('.tpw-cap-text').text(saved);
-        stopEdit($wrap);
-        // Tiny toast
-        const tick = $('<span/>', { 'class':'tpw-cap-saved', text: '✔ ' + (tpwGallery.i18nSaved||'Saved') , style:'margin-left:6px;color:#2e7d32;font-size:.85em;' });
-        $wrap.find('.tpw-cap-text').after(tick);
-        setTimeout(()=>tick.fadeOut(200,()=>tick.remove()), 1200);
-        // Clear any pending intent flags
-        $wrap.removeData('capAction');
-      } else {
-        alert(resp && resp.data ? resp.data : 'Error');
-        $wrap.removeData('capAction');
-      }
-    });
-  }
-  // Click caption to edit
-  $(document).on('click', '.tpw-cap-text', function(){
-    const $wrap = $(this).closest('.tpw-cap-wrap');
-    startEdit($wrap);
-  });
-  // Keyboard access on caption (Enter/Space)
-  $(document).on('keydown', '.tpw-cap-text', function(e){
-    if (e.key === 'Enter' || e.key === ' '){
-      e.preventDefault();
-      const $wrap = $(this).closest('.tpw-cap-wrap');
-      startEdit($wrap);
-    }
-  });
-  // Double-click image to edit
-  $(document).on('dblclick', '#tpw-gallery-thumbs li .tpw-thumb img', function(){
+  // Caption editor open/save/navigate (admin)
+  $(document).on('click', '.tpw-cap-text', function(e){
     if (!tpwGallery.isAdmin) return;
-    const $wrap = $(this).closest('li').find('.tpw-cap-wrap');
-    if ($wrap.length) startEdit($wrap);
-  });
-  // Pre-mark intent on mousedown to distinguish blur cause
-  $(document).on('mousedown', '.tpw-cap-save', function(){
-    $(this).closest('.tpw-cap-wrap').data('capAction', 'save');
-  });
-  $(document).on('mousedown', '.tpw-cap-cancel', function(){
-    $(this).closest('.tpw-cap-wrap').data('capAction', 'cancel');
-  });
-  // Save
-  $(document).on('click', '.tpw-cap-save', function(e){
     e.preventDefault();
     e.stopPropagation();
-    const $wrap = $(this).closest('.tpw-cap-wrap');
-    $wrap.data('capAction', 'save');
     const $li = $(this).closest('li');
-    saveCaption($li, $wrap);
+    if (!$li.length) return;
+    openCaptionModalForLi($li);
   });
-  // Cancel
-  $(document).on('click', '.tpw-cap-cancel', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    const $wrap = $(this).closest('.tpw-cap-wrap');
-    // Explicitly cancel edit and clear intent
-    stopEdit($wrap);
-    $wrap.removeData('capAction');
-  });
-  // Enter / blur autosave with intent awareness
-  $(document).on('keydown', '.tpw-cap-input', function(e){
-    if (e.key==='Enter'){
+
+  $(document).on('keydown', '.tpw-cap-text', function(e){
+    if (!tpwGallery.isAdmin) return;
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      const $wrap = $(this).closest('.tpw-cap-wrap');
       const $li = $(this).closest('li');
-      $wrap.data('capAction', 'save');
-      saveCaption($li, $wrap);
+      if ($li.length) openCaptionModalForLi($li);
     }
   });
-  $(document).on('blur', '.tpw-cap-input', function(){
-    const $wrap = $(this).closest('.tpw-cap-wrap');
-    const intent = $wrap.data('capAction');
-    const $li = $(this).closest('li');
-    if (intent === 'cancel') {
-      // Cancel requested: just close editor, no save
-      stopEdit($wrap);
-      $wrap.removeData('capAction');
-      return;
-    }
-    if (intent === 'save') {
-      // Save will be/was handled by click/enter handler; skip duplicate
-      return;
-    }
-    // No explicit intent: treat as autosave on blur
-    saveCaption($li, $wrap);
+
+  $(document).on('click', '[data-tpw-caption-close]', function(e){
+    e.preventDefault();
+    closeCaptionModal();
+  });
+  $(document).on('keyup', function(e){
+    if (e.key === 'Escape') closeCaptionModal();
+  });
+  $(document).on('input', '#tpw-caption-modal textarea.tpw-caption-textarea', function(){
+    autoGrowTextarea(this);
+    $('#tpw-caption-modal').data('tpwCapDirty', true);
+  });
+  $(document).on('click', '#tpw-caption-modal .tpw-caption-save', function(e){
+    e.preventDefault();
+    saveCaptionFromModal();
+  });
+  $(document).on('click', '#tpw-caption-modal .tpw-caption-prev', function(e){
+    e.preventDefault();
+    captionModalNavigate(-1);
+  });
+  $(document).on('click', '#tpw-caption-modal .tpw-caption-next', function(e){
+    e.preventDefault();
+    captionModalNavigate(1);
   });
 
   // Focal point editor modal (admin)

@@ -1,4 +1,4 @@
-# TPW Core (v1.5.1)
+# TPW Core (v1.5.2)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -23,6 +23,10 @@ Browse all module documentation → [docs/help/README.md](docs/help/README.md)
 
 ### Notices update (1.5.1)
 - Noticeboard list: notice thumbnail image is now clickable (links to the notice).
+
+### Gallery updates (1.5.2)
+- Public shortcode + Elementor: added `show_heading` option to hide the gallery title/description above images (useful when page already has a heading).
+- Gallery Admin: caption editing now uses a single textarea modal (auto-growing) suitable for long narrative captions, with clamped previews so cards don’t expand.
 
 ## Works with other TPW plugins
 

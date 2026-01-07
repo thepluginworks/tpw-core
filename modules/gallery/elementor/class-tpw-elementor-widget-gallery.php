@@ -60,6 +60,19 @@ class TPW_Elementor_Widget_Gallery extends \Elementor\Widget_Base {
         );
 
         $this->add_control(
+            'show_heading',
+            [
+                'label'        => __( 'Show heading', 'tpw-core' ),
+                'type'         => \Elementor\Controls_Manager::SWITCHER,
+                'label_on'     => __( 'Yes', 'tpw-core' ),
+                'label_off'    => __( 'No', 'tpw-core' ),
+                'return_value' => 'yes',
+                'default'      => 'yes',
+                'description'  => __( 'Show the gallery title/description above the images.', 'tpw-core' ),
+            ]
+        );
+
+        $this->add_control(
             'columns',
             [
                 'label'     => __( 'Columns', 'tpw-core' ),
@@ -124,6 +137,7 @@ class TPW_Elementor_Widget_Gallery extends \Elementor\Widget_Base {
 
         $view = isset( $settings['view'] ) ? (string) $settings['view'] : 'grid';
         $columns = isset( $settings['columns'] ) ? (int) $settings['columns'] : 3;
+        $show_heading = ! isset( $settings['show_heading'] ) || (string) $settings['show_heading'] === 'yes';
         $paginate = isset( $settings['paginate'] ) && (string) $settings['paginate'] === 'yes';
         $per_page = isset( $settings['per_page'] ) ? (int) $settings['per_page'] : 0;
         if ( $per_page < 1 ) {
@@ -135,6 +149,7 @@ class TPW_Elementor_Widget_Gallery extends \Elementor\Widget_Base {
                 'id'      => $gallery_id,
                 'view'    => $view,
                 'columns' => $columns,
+                'show_heading' => $show_heading ? '1' : '0',
             ];
 
             // Pagination is supported only for grid/list.

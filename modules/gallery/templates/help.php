@@ -73,6 +73,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
         <code>[tpw_gallery id="123" view="list" per_page="40"]</code>
       </p>
 
+      <p>
+        <?php esc_html_e('To hide the gallery heading (title/description) above the images:', 'tpw-core'); ?>
+        <code>[tpw_gallery id="123" view="story" show_heading="0"]</code>
+      </p>
+
       <div class="tpw-card note">
         <div class="tpw-card__body">
           <strong><?php esc_html_e('Tips & Troubleshooting', 'tpw-core'); ?></strong>

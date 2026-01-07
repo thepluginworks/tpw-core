@@ -2,6 +2,13 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.5.2] - 2026-01-07
+### Added
+- Gallery: new `show_heading` attribute for `[tpw_gallery]` (and Elementor widget) to hide the gallery title/description above images.
+
+### Changed
+- Gallery Admin: caption editing now uses a textarea modal suitable for long captions (shared across modal + full-page editors), with clamped caption previews to keep card heights stable.
+
 ## [1.5.1] - 2026-01-06
 ### Fixed
 - Notices: Noticeboard list shortcode thumbnail now links to the notice (image is clickable).

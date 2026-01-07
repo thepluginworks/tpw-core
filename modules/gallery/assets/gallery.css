@@ -26,6 +26,26 @@
 /* Make caption look interactive in admin */
 .tpw-admin-ui .tpw-cap-text { cursor: pointer; }
 
+/* Clamp caption previews so long text doesn't expand cards */
+.tpw-admin-ui .tpw-cap-text {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 4;
+	overflow: hidden;
+	line-height: 1.25;
+	max-height: calc(1.25em * 4);
+	white-space: normal;
+	word-break: break-word;
+}
+
+/* Caption editor modal textarea */
+.tpw-caption-modal { z-index: 100002; }
+.tpw-caption-modal textarea.tpw-caption-textarea {
+	width: 100%;
+	min-height: 140px;
+	resize: none;
+}
+
 @media (max-width: 640px) {
 	.tpw-gallery-editor #tpw-gallery-thumbs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }

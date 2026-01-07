@@ -27,6 +27,7 @@ function tpw_gallery_enqueue_public_assets() {
  * - columns (int) 1..6
  * - view (string) grid|list|story
  * - show_categories (bool|"0"|"1")
+ * - show_heading (bool|"0"|"1")
  */
 function tpw_gallery_render( array $args = [] ): string {
     $id       = isset( $args['id'] ) ? (int) $args['id'] : 0;
@@ -55,12 +56,19 @@ function tpw_gallery_render( array $args = [] ): string {
         $showCats = ( $sc === true || $sc === 1 || $sc === '1' || $sc === 'true' );
     }
 
+    $showHeading = true;
+    if ( isset( $args['show_heading'] ) ) {
+        $sh = $args['show_heading'];
+        $showHeading = ( $sh === true || $sh === 1 || $sh === '1' || $sh === 'true' );
+    }
+
     $normalized_atts = [
         'id'              => (string) $id,
         'category'        => (string) $category,
         'columns'         => (string) $columns,
         'view'            => (string) $view,
         'show_categories' => $showCats ? '1' : '0',
+        'show_heading'    => $showHeading ? '1' : '0',
         'per_page'        => (string) $per_page,
         'paginate'        => $paginate ? '1' : '0',
     ];
@@ -95,12 +103,16 @@ function tpw_gallery_render( array $args = [] ): string {
         }
         ksort( $page_map );
     }
-    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats, $per_page, $paginate, $page_map ] ) );
+    $ckey = 'tpw_gallery_sc_' . md5( serialize( [ $id, $category, $columns, $view, $showCats, $showHeading, $per_page, $paginate, $page_map ] ) );
     $cached = wp_cache_get( $ckey, 'tpw' );
     if ( is_string( $cached ) ) return $cached;
 
     // Enqueue assets once per request
     tpw_gallery_enqueue_public_assets();
+
+    // Provide template-friendly variables.
+    // (Templates use snake_case names; keep logic unchanged elsewhere.)
+    $show_heading = $showHeading;
 
     ob_start();
     $tpl = __DIR__ . '/templates/' . ( $view === 'list' ? 'list-view.php' : ( $view === 'story' ? 'story-view.php' : 'grid.php' ) );
@@ -108,6 +120,7 @@ function tpw_gallery_render( array $args = [] ): string {
         'items'           => $items,
         'columns'         => $columns,
         'show_categories' => $showCats,
+        'show_heading'    => $showHeading,
         'view'            => $view,
         'per_page'        => $per_page,
         'paginate'        => $paginate ? true : false,
@@ -121,7 +134,7 @@ function tpw_gallery_render( array $args = [] ): string {
 }
 
 /**
- * [tpw_gallery id="123" category="slug" columns="4" view="grid|list|story" show_categories="0|1" per_page="0" paginate="0|1"]
+ * [tpw_gallery id="123" category="slug" columns="4" view="grid|list|story" show_categories="0|1" show_heading="0|1" per_page="0" paginate="0|1"]
  */
 add_shortcode( 'tpw_gallery', function( $atts ){
     $atts = shortcode_atts([
@@ -130,6 +143,7 @@ add_shortcode( 'tpw_gallery', function( $atts ){
         'columns'         => '3',
         'view'            => 'grid',
         'show_categories' => '0', // optional toolbar above grid
+        'show_heading'    => '1', // show gallery title/description above images
         'per_page'        => '0', // optional pagination safeguard for large galleries (grid/list)
         'paginate'        => '0', // set to 1 to enable pagination with default per_page
     ], $atts, 'tpw_gallery' );

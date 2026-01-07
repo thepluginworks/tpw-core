@@ -20,11 +20,13 @@ $base = trailingslashit( TPW_CORE_URL ) . 'modules/gallery/';
   if ( empty( $images ) ) continue;
 ?>
   <div class="tpw-gallery-public-block">
-    <?php if ( ! empty( $g['title'] ) ) : ?>
-      <h3 class="tpw-gallery-public-title"><?php echo esc_html( $g['title'] ); ?></h3>
-    <?php endif; ?>
-    <?php if ( ! empty( $g['description'] ) ) : ?>
-      <div class="tpw-gallery-public-desc"><?php echo wp_kses_post( wpautop( $g['description'] ) ); ?></div>
+    <?php if ( ! empty( $show_heading ) ) : ?>
+      <?php if ( ! empty( $g['title'] ) ) : ?>
+        <h3 class="tpw-gallery-public-title"><?php echo esc_html( $g['title'] ); ?></h3>
+      <?php endif; ?>
+      <?php if ( ! empty( $g['description'] ) ) : ?>
+        <div class="tpw-gallery-public-desc"><?php echo wp_kses_post( wpautop( $g['description'] ) ); ?></div>
+      <?php endif; ?>
     <?php endif; ?>
 
     <?php

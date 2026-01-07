@@ -76,12 +76,7 @@ $gallery = isset($gallery) && is_array($gallery) ? $gallery : null; // allow pre
                 </div>
                 <div class="tpw-cap-wrap" style="width:100%;margin-top:4px;">
                   <div class="tpw-row" style="justify-content:space-between;align-items:center;gap:6px;">
-                    <div class="tpw-cap-text" tabindex="0" title="<?php esc_attr_e('Edit caption','tpw-core'); ?>"><?php echo esc_html( $cap ); ?></div>
-                  </div>
-                  <div class="tpw-cap-editor" style="display:none;gap:6px;margin-top:6px;">
-                    <input type="text" class="tpw-cap-input" value="<?php echo esc_attr( $cap ); ?>" style="flex:1 1 auto;" />
-                    <button type="button" class="tpw-btn tpw-btn-small tpw-btn-primary tpw-cap-save"><?php esc_html_e('Save','tpw-core'); ?></button>
-                    <button type="button" class="tpw-btn tpw-btn-small tpw-btn-secondary tpw-cap-cancel"><?php esc_html_e('Cancel','tpw-core'); ?></button>
+                    <div class="tpw-cap-text" tabindex="0" title="<?php esc_attr_e('Edit caption','tpw-core'); ?>" data-caption="<?php echo esc_attr( $cap ); ?>"><?php echo esc_html( $cap ); ?></div>
                   </div>
                 </div>
                 <div class="tpw-card__footer">
