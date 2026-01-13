@@ -34,6 +34,7 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             update_option( 'tpw_members_allow_deletion', isset($_POST['tpw_members_allow_deletion']) ? '1' : '0' );
             update_option( 'tpw_default_member_status', sanitize_text_field($_POST['tpw_default_member_status'] ?? 'Active') );
             update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
+            update_option( 'tpw_members_enable_households', isset( $_POST['tpw_members_enable_households'] ) ? '1' : '0' );
             // New: enable Advanced Search modal for all members (non-admins)
             update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
             // New: Member Profile Change Notification Email (single site option)
@@ -173,6 +174,15 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
         <?php wp_nonce_field('tpw_member_settings', 'tpw_member_settings_nonce'); ?>
 
         <?php if ( $current_tab === 'general' ) : ?>
+            <p>
+                <label>
+                    <input type="checkbox" name="tpw_members_enable_households" value="1" <?php checked( get_option( 'tpw_members_enable_households', '0' ), '1' ); ?> />
+                    Enable household support
+                </label>
+                <br>
+                <small class="description">When enabled, household assignment tools appear on the Edit Member screen. Default: off.</small>
+            </p>
+
             <p>
                     <label>
                             <input type="checkbox" name="tpw_members_allow_deletion" value="1" <?php checked( tpw_members_allow_deletion(), true ); ?> />

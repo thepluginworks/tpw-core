@@ -32,6 +32,7 @@ class TPW_Members_DB {
             postcode VARCHAR(20),
             country VARCHAR(100),
 
+            dob DATE NULL,
             date_joined DATE NULL,
             status VARCHAR(50),
             is_committee TINYINT(1) DEFAULT 0,
@@ -63,6 +64,41 @@ class TPW_Members_DB {
         if ( ! $has_member_photo ) {
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN member_photo VARCHAR(255) NULL AFTER landline" );
         }
+
+        // Safety net: ensure the dob column exists even if dbDelta skipped it
+        $has_dob = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'dob'",
+            $table_name
+        ) );
+        if ( ! $has_dob ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN dob DATE NULL AFTER country" );
+        }
+
+        // New table: members household
+        $sql_household = "CREATE TABLE {$wpdb->prefix}tpw_members_household (
+            id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+            society_id INT(11) UNSIGNED NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY society_id (society_id)
+        ) $charset_collate;";
+        dbDelta( $sql_household );
+
+        // New table: members household membership
+        $sql_household_member = "CREATE TABLE {$wpdb->prefix}tpw_members_household_member (
+            id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+            household_id INT(11) UNSIGNED NOT NULL,
+            member_id INT(11) UNSIGNED NOT NULL,
+            role VARCHAR(50) NULL,
+            is_primary TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY member_id_unique (member_id),
+            KEY household_id (household_id),
+            KEY household_primary (household_id, is_primary)
+        ) $charset_collate;";
+        dbDelta( $sql_household_member );
 
         // Field settings table
         $sql_settings = "CREATE TABLE {$wpdb->prefix}tpw_field_settings (
@@ -97,6 +133,15 @@ class TPW_Members_DB {
         ) );
         if ( ! $has_depends_on ) {
             $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN depends_on VARCHAR(100) NULL AFTER basic_search" );
+        }
+
+        // Safety net: ensure the field_options column exists on field settings table for select option lists
+        $has_field_options = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'field_options'",
+            $fs_table
+        ) );
+        if ( ! $has_field_options ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN field_options TEXT NULL" );
         }
 
         // New table: member field visibility per group

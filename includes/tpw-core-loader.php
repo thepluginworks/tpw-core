@@ -63,6 +63,7 @@ require_once TPW_CORE_PATH . 'modules/menus/class-tpw-event-menu-rel.php';
 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus.php';
 TPW_Menus::init();
 //member modules
+require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-household-repository.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-fields.php';
 new TPW_Member_Fields();
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/members-admin.php';

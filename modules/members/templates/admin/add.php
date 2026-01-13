@@ -77,6 +77,11 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
                                 $selected = ($field['key'] === 'status' && $value === $default_status) ? ' selected' : '';
                                 echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
                             }
+                        } elseif ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+                            foreach ( $field['options'] as $opt ) {
+                                $opt = (string) $opt;
+                                echo '<option value="' . esc_attr( $opt ) . '">' . esc_html( $opt ) . '</option>';
+                            }
                         }
 
                         echo '</select>';

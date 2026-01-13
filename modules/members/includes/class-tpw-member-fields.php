@@ -63,6 +63,7 @@ class TPW_Member_Fields {
 			'county'                => [ 'label' => 'County', 'type' => 'varchar(100)' ],
 			'postcode'              => [ 'label' => 'Postcode', 'type' => 'varchar(20)' ],
 			'country'               => [ 'label' => 'Country', 'type' => 'varchar(100)' ],
+			'dob'                   => [ 'label' => 'Date of Birth', 'type' => 'date' ],
 			'date_joined'           => [ 'label' => 'Date Joined', 'type' => 'date' ],
 			'status' => [
 				'label'   => 'Status',
@@ -438,16 +439,51 @@ class TPW_Member_Fields {
 			WHERE 1=1
 		" );
 
-		$sort = 0;
+		$existing_sorts = $wpdb->get_results( "SELECT field_key, sort_order FROM $table" );
+		$sort_map = [];
+		$max_sort = -1;
+		foreach ( (array) $existing_sorts as $row ) {
+			if ( isset( $row->field_key ) ) {
+				$so = isset( $row->sort_order ) ? (int) $row->sort_order : 0;
+				$sort_map[ $row->field_key ] = $so;
+				if ( $so > $max_sort ) {
+					$max_sort = $so;
+				}
+			}
+		}
+		$next_sort = $max_sort + 1;
+
+		// Ensure DOB sits immediately after Title in sort order.
+		if ( isset( $sort_map['title'] ) ) {
+			$desired = (int) $sort_map['title'] + 1;
+			if ( isset( $sort_map['dob'] ) ) {
+				$dob_sort = (int) $sort_map['dob'];
+				if ( $dob_sort !== $desired ) {
+					if ( $dob_sort < $desired ) {
+						$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order - 1 WHERE sort_order > %d AND sort_order <= %d", $dob_sort, $desired ) );
+					} else {
+						$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d AND sort_order < %d", $desired, $dob_sort ) );
+					}
+					$wpdb->update( $table, [ 'sort_order' => $desired ], [ 'field_key' => 'dob' ], [ '%d' ], [ '%s' ] );
+					$sort_map['dob'] = $desired;
+				}
+			}
+		}
+
 		foreach ( $this->get_core_fields() as $field_key => $field_info ) {
 			if ( ! in_array( $field_key, $existing_keys, true ) ) {
+				$insert_sort = $next_sort++;
+				if ( 'dob' === $field_key && isset( $sort_map['title'] ) ) {
+					$insert_sort = (int) $sort_map['title'] + 1;
+					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+				}
 				$wpdb->insert(
 					$table,
 					[
 						'field_key'   => $field_key,
 						'is_enabled'     => 1,
 						'custom_label'       => $field_info['label'],
-						'sort_order'  => $sort++,
+						'sort_order'  => $insert_sort,
 						'field_type'  => isset($field_info['type']) ? $field_info['type'] : 'text',
 					],
 					[ '%s', '%d', '%s', '%d', '%s' ]

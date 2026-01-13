@@ -1,4 +1,4 @@
-# TPW Core (v1.5.2)
+# TPW Core (v1.6.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -27,6 +27,11 @@ Browse all module documentation → [docs/help/README.md](docs/help/README.md)
 ### Gallery updates (1.5.2)
 - Public shortcode + Elementor: added `show_heading` option to hide the gallery title/description above images (useful when page already has a heading).
 - Gallery Admin: caption editing now uses a single textarea modal (auto-growing) suitable for long narrative captions, with clamped previews so cards don’t expand.
+
+### Members updates (1.6.0)
+- Optional Household support (default off) with new tools on the Edit Member screen to create households and attach/move members.
+- Added Date of Birth (DOB) core field.
+- Select fields can now use option lists via `field_options` (one option per line).
 
 ## Works with other TPW plugins
 

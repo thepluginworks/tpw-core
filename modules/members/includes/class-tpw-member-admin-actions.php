@@ -5,6 +5,488 @@ class TPW_Member_Admin_Actions {
     public static function init() {
         // Secure admin-post handler (logged-in only)
         add_action( 'admin_post_tpw_create_wp_user', [ __CLASS__, 'handle_create_wp_user' ] );
+
+        // Extend the Edit Member admin form with a minimal Household section (UI only).
+        add_action( 'tpw_members_admin_form_extra_fields', [ __CLASS__, 'render_household_section' ], 10, 4 );
+
+        // Household assignment actions (admin-post handlers).
+        add_action( 'admin_post_tpw_members_household_create', [ __CLASS__, 'handle_household_create' ] );
+        add_action( 'admin_post_tpw_members_household_assign', [ __CLASS__, 'handle_household_assign' ] );
+    }
+
+    /**
+     * Determine if the current user is allowed to manage members.
+     * Matches TPW_Member_Form_Handler::user_can_manage() behaviour.
+     *
+     * @return bool
+     */
+    protected static function user_can_manage() {
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        $setting = get_option( 'tpw_members_manage_access', 'admins_only' );
+        if ( 'admins_committee' === $setting && is_user_logged_in() ) {
+            if ( ! class_exists( 'TPW_Member_Access' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+            }
+            $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
+            if ( $m && ! empty( $m->is_committee ) && 1 === (int) $m->is_committee ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check whether household UI is enabled.
+     *
+     * Default is OFF.
+     *
+     * @return bool
+     */
+    protected static function households_enabled() {
+        return '1' === get_option( 'tpw_members_enable_households', '0' );
+    }
+
+    /**
+     * Build a display name for a member row.
+     *
+     * @param object $member Member row.
+     * @return string
+     */
+    protected static function get_member_display_name( $member ) {
+        if ( function_exists( 'tpw_members_get_display_name' ) ) {
+            return (string) tpw_members_get_display_name( $member );
+        }
+        $first   = ( is_object( $member ) && isset( $member->first_name ) ) ? trim( (string) $member->first_name ) : '';
+        $surname = ( is_object( $member ) && isset( $member->surname ) ) ? trim( (string) $member->surname ) : '';
+        $name    = trim( $surname . ( '' !== $surname && '' !== $first ? ', ' : '' ) . $first );
+        return '' !== $name ? $name : '—';
+    }
+
+    /**
+     * Get all primary household members within a society.
+     *
+     * @param int $society_id Society ID.
+     * @param int $exclude_id Member ID to exclude.
+     * @return array<object>
+     */
+    protected static function get_primary_members_for_society( $society_id, $exclude_id = 0 ) {
+        global $wpdb;
+        $society_id = (int) $society_id;
+        $exclude_id = (int) $exclude_id;
+        if ( 0 >= $society_id ) {
+            return [];
+        }
+
+        $table_household = $wpdb->prefix . 'tpw_members_household';
+        $table_member    = $wpdb->prefix . 'tpw_members_household_member';
+        $table_members   = $wpdb->prefix . 'tpw_members';
+
+        $exclude_sql = '';
+        $args        = [ $society_id ];
+        if ( 0 < $exclude_id ) {
+            $exclude_sql = ' AND m.id <> %d';
+            $args[]      = $exclude_id;
+        }
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $sql = "SELECT DISTINCT m.*
+            FROM {$table_members} AS m
+            INNER JOIN {$table_member} AS hm ON hm.member_id = m.id AND hm.is_primary = 1
+            INNER JOIN {$table_household} AS h ON h.id = hm.household_id
+            WHERE h.society_id = %d{$exclude_sql}
+            ORDER BY m.surname ASC, m.first_name ASC";
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        $prepared = $wpdb->prepare( $sql, $args );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results( $prepared );
+        return is_array( $rows ) ? $rows : [];
+    }
+
+    /**
+     * Get the primary member for a household.
+     *
+     * @param int $household_id Household ID.
+     * @return object|null
+     */
+    protected static function get_primary_member_for_household( $household_id ) {
+        global $wpdb;
+        $household_id = (int) $household_id;
+        if ( 0 >= $household_id ) {
+            return null;
+        }
+
+        $table_member  = $wpdb->prefix . 'tpw_members_household_member';
+        $table_members = $wpdb->prefix . 'tpw_members';
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $prepared = $wpdb->prepare(
+            "SELECT m.*
+            FROM {$table_members} AS m
+            INNER JOIN {$table_member} AS hm ON hm.member_id = m.id
+            WHERE hm.household_id = %d AND hm.is_primary = 1
+            LIMIT 1",
+            $household_id
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_row( $prepared );
+    }
+
+    /**
+     * Build a safe redirect URL back to the Edit Member screen.
+     *
+     * @param int   $member_id Member ID.
+     * @param array $args      Query args to add.
+     * @return string
+     */
+    protected static function get_edit_redirect_url( $member_id, $args = [] ) {
+        $member_id = (int) $member_id;
+        $ref       = wp_get_referer();
+        if ( empty( $ref ) ) {
+            $ref = site_url( '/manage-members/?action=edit_form&id=' . $member_id );
+        }
+        $ref = remove_query_arg( [ 'tpw_household_notice', 'tpw_household_error', 'tpw_household_id' ], $ref );
+        return add_query_arg( $args, $ref );
+    }
+
+    /**
+     * Render the Household section on the Edit Member screen.
+     *
+     * UI-only, read-only for now.
+     *
+     * @param string     $context   'add'|'edit'
+     * @param int|null   $member_id Member ID in edit context.
+     * @param object|null $member   Member row.
+     * @param array      $meta     Member meta.
+     * @return void
+     */
+    public static function render_household_section( $context, $member_id, $member, $meta ) {
+        if ( 'edit' !== (string) $context ) {
+            return;
+        }
+
+        if ( ! self::households_enabled() ) {
+            return;
+        }
+
+        $member_id = (int) $member_id;
+        if ( 0 >= $member_id ) {
+            return;
+        }
+
+        if ( ! class_exists( 'TPW_Member_Household_Repository' ) ) {
+            return;
+        }
+
+        $repo = new TPW_Member_Household_Repository();
+        $membership = $repo->get_household_for_member( $member_id );
+
+        $household_id = 0;
+        $is_primary   = false;
+        $role         = '';
+        if ( $membership && isset( $membership->household_id ) ) {
+            $household_id = (int) $membership->household_id;
+            $is_primary = ( isset( $membership->is_primary ) && 1 === (int) $membership->is_primary );
+            $role = isset( $membership->role ) ? (string) $membership->role : '';
+        }
+        if ( $is_primary ) {
+            $role = 'primary';
+        }
+
+        echo '<fieldset class="tpw-section">';
+        echo '<legend class="tpw-section__legend">' . esc_html__( 'Household', 'tpw-core' ) . '</legend>';
+        echo '<div class="form-group">';
+
+        // Flash notice (after admin-post actions).
+        $notice = '';
+        $error  = '';
+        if ( isset( $_GET['tpw_household_notice'] ) ) {
+            $notice = sanitize_key( wp_unslash( $_GET['tpw_household_notice'] ) );
+        }
+        if ( isset( $_GET['tpw_household_error'] ) ) {
+            $error = sanitize_key( wp_unslash( $_GET['tpw_household_error'] ) );
+        }
+        if ( '' !== $notice ) {
+            $messages = [
+                'created' => __( 'Household created and member assigned.', 'tpw-core' ),
+                'assigned' => __( 'Member assigned to household.', 'tpw-core' ),
+            ];
+            if ( isset( $messages[ $notice ] ) ) {
+                echo '<div class="notice notice-success" style="margin:10px 0;"><p>' . esc_html( $messages[ $notice ] ) . '</p></div>';
+            }
+        }
+        if ( '' !== $error ) {
+            $errors = [
+                'permission' => __( 'You do not have permission to manage households.', 'tpw-core' ),
+                'disabled' => __( 'Household support is disabled.', 'tpw-core' ),
+                'invalid_member' => __( 'Invalid member.', 'tpw-core' ),
+                'missing_society' => __( 'Cannot create household: member has no society assigned.', 'tpw-core' ),
+                'create_failed' => __( 'Failed to create household.', 'tpw-core' ),
+                'assign_failed' => __( 'Failed to assign member to household.', 'tpw-core' ),
+                'invalid_primary' => __( 'Please select a valid primary member.', 'tpw-core' ),
+                'society_mismatch' => __( 'Household belongs to a different society.', 'tpw-core' ),
+            ];
+            if ( isset( $errors[ $error ] ) ) {
+                echo '<div class="notice notice-error" style="margin:10px 0;"><p>' . esc_html( $errors[ $error ] ) . '</p></div>';
+            }
+        }
+
+        $member_society_id = 0;
+        if ( is_object( $member ) && isset( $member->society_id ) ) {
+            $member_society_id = (int) $member->society_id;
+        }
+
+        $primary_member     = ( 0 < $household_id ) ? self::get_primary_member_for_household( $household_id ) : null;
+        $primary_member_id  = ( $primary_member && isset( $primary_member->id ) ) ? (int) $primary_member->id : 0;
+        $primary_member_name = $primary_member ? self::get_member_display_name( $primary_member ) : '—';
+
+        if ( 0 < $household_id ) {
+            echo '<div><strong>' . esc_html__( 'Assigned:', 'tpw-core' ) . '</strong> ' . esc_html__( 'Yes', 'tpw-core' ) . '</div>';
+            echo '<div><strong>' . esc_html__( 'Primary member:', 'tpw-core' ) . '</strong> ' . esc_html( $primary_member_name ) . '</div>';
+            echo '<div><strong>' . esc_html__( 'Primary member (this record):', 'tpw-core' ) . '</strong> ' . esc_html( $is_primary ? __( 'Yes', 'tpw-core' ) : __( 'No', 'tpw-core' ) ) . '</div>';
+            echo '<div><strong>' . esc_html__( 'Role:', 'tpw-core' ) . '</strong> ' . esc_html( '' !== $role ? ucfirst( $role ) : '—' ) . '</div>';
+        } else {
+            echo '<div><strong>' . esc_html__( 'Status:', 'tpw-core' ) . '</strong> ' . esc_html__( 'Not assigned to a household', 'tpw-core' ) . '</div>';
+        }
+
+        $primary_options = self::get_primary_members_for_society( $member_society_id, $member_id );
+
+        // If this member is the household primary, the UI is read-only.
+        if ( $is_primary ) {
+            echo '<div class="description" style="margin-top:10px;">' . esc_html__( 'This member is the primary contact for their household. Household changes are disabled here.', 'tpw-core' ) . '</div>';
+        } else {
+            // Editable UI for non-primary members.
+            if ( 'primary' === $role ) {
+                $role = 'partner';
+            }
+
+            echo '<div style="margin-top:12px;">';
+            echo '<input type="hidden" name="member_id" value="' . esc_attr( (string) $member_id ) . '">';
+            wp_nonce_field( 'tpw_members_household_create', 'tpw_members_household_create_nonce' );
+            wp_nonce_field( 'tpw_members_household_assign', 'tpw_members_household_assign_nonce' );
+
+            if ( 0 >= $household_id ) {
+                echo '<div style="margin-bottom:12px;">';
+                echo '<button type="submit" name="action" value="tpw_members_household_create" class="tpw-btn tpw-btn-secondary" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formnovalidate>' . esc_html__( 'Create new household with this member as primary', 'tpw-core' ) . '</button>';
+                echo '</div>';
+            }
+
+            echo '<div>';
+            echo '<label style="margin-right:6px;">' . esc_html__( 'Select existing primary member', 'tpw-core' ) . '</label>';
+            echo '<select name="tpw_household_primary_member_id" style="min-width:260px; margin-right:8px;">';
+            echo '<option value="0">' . esc_html__( '— Select —', 'tpw-core' ) . '</option>';
+            foreach ( $primary_options as $pm ) {
+                $pm_id = isset( $pm->id ) ? (int) $pm->id : 0;
+                if ( 0 >= $pm_id ) {
+                    continue;
+                }
+                $selected = ( 0 < $primary_member_id && $pm_id === $primary_member_id ) ? ' selected' : '';
+                echo '<option value="' . esc_attr( (string) $pm_id ) . '"' . $selected . '>' . esc_html( self::get_member_display_name( $pm ) ) . '</option>';
+            }
+            echo '</select>';
+
+            echo '<label style="margin-right:6px;">' . esc_html__( 'Role', 'tpw-core' ) . '</label>';
+            echo '<select name="tpw_household_role" style="margin-right:8px;">';
+            echo '<option value="partner"' . ( 'partner' === $role ? ' selected' : '' ) . '>' . esc_html__( 'Partner', 'tpw-core' ) . '</option>';
+            echo '<option value="child"' . ( 'child' === $role ? ' selected' : '' ) . '>' . esc_html__( 'Child', 'tpw-core' ) . '</option>';
+            echo '</select>';
+
+            echo '<label style="margin-right:8px;">';
+            echo '<input type="checkbox" name="tpw_household_make_primary" value="1" style="margin-right:4px;">';
+            echo esc_html__( 'Make this member primary', 'tpw-core' );
+            echo '</label>';
+
+            echo '<button type="submit" name="action" value="tpw_members_household_assign" class="tpw-btn tpw-btn-secondary" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formnovalidate>' . esc_html__( ( 0 < $household_id ) ? 'Update household' : 'Attach', 'tpw-core' ) . '</button>';
+            echo '</div>';
+            echo '<div class="description" style="margin-top:6px;">' . esc_html__( 'Choose a primary member to attach/move this member into that household.', 'tpw-core' ) . '</div>';
+            echo '</div>';
+        }
+
+        echo '</div>';
+        echo '</fieldset>';
+    }
+
+    /**
+     * Create a new household for the member's society and assign the member as primary.
+     *
+     * @return void
+     */
+    public static function handle_household_create() {
+        if ( ! self::households_enabled() ) {
+            wp_die( 'Household support is disabled.', 403 );
+        }
+        if ( ! is_user_logged_in() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+        if ( ! self::user_can_manage() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+        check_admin_referer( 'tpw_members_household_create', 'tpw_members_household_create_nonce' );
+
+        $member_id = 0;
+        if ( isset( $_POST['member_id'] ) ) {
+            $member_id = absint( wp_unslash( $_POST['member_id'] ) );
+        }
+        if ( 0 >= $member_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_member' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        $controller = new TPW_Member_Controller();
+        $member     = $controller->get_member( $member_id );
+        if ( ! $member ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_member' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $society_id = isset( $member->society_id ) ? (int) $member->society_id : 0;
+        if ( 0 >= $society_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'missing_society' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $repo = new TPW_Member_Household_Repository();
+        $household_id = $repo->create_household( $society_id );
+        if ( 0 >= $household_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'create_failed' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $ok = $repo->assign_member( $household_id, $member_id, 'primary', true );
+        if ( $ok ) {
+            $repo->set_primary_contact( $household_id, $member_id );
+        }
+        if ( ! $ok ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'assign_failed' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $url = self::get_edit_redirect_url( $member_id, [
+            'tpw_household_notice' => 'created',
+            'tpw_household_id'     => (string) $household_id,
+        ] );
+        wp_safe_redirect( $url );
+        exit;
+    }
+
+    /**
+     * Assign/move a member into an existing household.
+     *
+     * Validates household exists and matches member society.
+     *
+     * @return void
+     */
+    public static function handle_household_assign() {
+        if ( ! self::households_enabled() ) {
+            wp_die( 'Household support is disabled.', 403 );
+        }
+        if ( ! is_user_logged_in() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+        if ( ! self::user_can_manage() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+        check_admin_referer( 'tpw_members_household_assign', 'tpw_members_household_assign_nonce' );
+
+        $member_id = 0;
+        if ( isset( $_POST['member_id'] ) ) {
+            $member_id = absint( wp_unslash( $_POST['member_id'] ) );
+        }
+        if ( 0 >= $member_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_member' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $primary_member_id = 0;
+        if ( isset( $_POST['tpw_household_primary_member_id'] ) ) {
+            $primary_member_id = absint( wp_unslash( $_POST['tpw_household_primary_member_id'] ) );
+        }
+        if ( 0 >= $primary_member_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_primary' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        $controller = new TPW_Member_Controller();
+        $member     = $controller->get_member( $member_id );
+        if ( ! $member ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_member' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+        $member_society_id = isset( $member->society_id ) ? (int) $member->society_id : 0;
+
+        $repo = new TPW_Member_Household_Repository();
+        $current_membership = $repo->get_household_for_member( $member_id );
+        if ( $current_membership && ! empty( $current_membership->is_primary ) && 1 === (int) $current_membership->is_primary ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'assign_failed' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $primary_membership = $repo->get_household_for_member( $primary_member_id );
+        if ( ! $primary_membership || empty( $primary_membership->household_id ) || 1 !== (int) $primary_membership->is_primary ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'invalid_primary' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+        $household_id = (int) $primary_membership->household_id;
+
+        $household = $repo->get_household( $household_id );
+        if ( ! $household || ! isset( $household->society_id ) ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'assign_failed' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+        if ( (int) $household->society_id !== (int) $member_society_id ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'society_mismatch' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $role = 'partner';
+        if ( isset( $_POST['tpw_household_role'] ) ) {
+            $role = sanitize_key( wp_unslash( $_POST['tpw_household_role'] ) );
+        }
+        $allowed_roles = [ 'partner', 'child' ];
+        if ( ! in_array( $role, $allowed_roles, true ) ) {
+            $role = 'partner';
+        }
+
+        $make_primary = false;
+        if ( isset( $_POST['tpw_household_make_primary'] ) && '1' === wp_unslash( $_POST['tpw_household_make_primary'] ) ) {
+            $make_primary = true;
+        }
+
+        $ok = $repo->assign_member( $household_id, $member_id, $role, false );
+        if ( $ok && $make_primary ) {
+            $ok = $repo->set_primary_contact( $household_id, $member_id );
+        }
+        if ( ! $ok ) {
+            $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'assign_failed' ] );
+            wp_safe_redirect( $url );
+            exit;
+        }
+
+        $url = self::get_edit_redirect_url( $member_id, [
+            'tpw_household_notice' => 'assigned',
+            'tpw_household_id'     => (string) $household_id,
+        ] );
+        wp_safe_redirect( $url );
+        exit;
     }
 
     /**

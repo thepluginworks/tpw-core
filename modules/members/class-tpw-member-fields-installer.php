@@ -12,6 +12,7 @@ class TPW_Member_Fields_Installer {
 			'surname'             => 'Last Name',
 			'initials'              => 'Initials',
 			'title'                 => 'Title',
+			'dob'                  => 'Date of Birth',
 			'email'                 => 'Email',
 			'mobile'                => 'Mobile',
 			'landline'              => 'Landline',

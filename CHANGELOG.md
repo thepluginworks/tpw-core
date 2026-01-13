@@ -2,6 +2,18 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.6.0] - 2026-01-13
+### Added
+- Members: optional Household support (default off) with new admin tools on the Edit Member screen to create households and attach/move members.
+- Members: new core field Date of Birth (DOB).
+- Members: select field option lists via `field_options` (one option per line) for enabled select fields.
+
+### Changed
+- Members DB: schema upgrades for DOB and household tables; internal members DB version bumped to 0.3.6.
+
+### Notes
+- Household support is gated by the new setting “Enable household support” (Members Settings → General) and remains disabled by default.
+
 ## [1.5.2] - 2026-01-07
 ### Added
 - Gallery: new `show_heading` attribute for `[tpw_gallery]` (and Elementor widget) to hide the gallery title/description above images.

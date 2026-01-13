@@ -5,7 +5,7 @@
  * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
  * Author: ThePluginWorks
  * Author URI: https://thepluginworks.com/
- * Version: 1.5.2
+ * Version: 1.6.0
  * Text Domain: tpw-core
  * Domain Path: /languages
  */
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin version constant
 if ( ! defined( 'TPW_CORE_VERSION' ) ) {
-    define( 'TPW_CORE_VERSION', '1.5.2' );
+    define( 'TPW_CORE_VERSION', '1.6.0' );
 }
 
 // Freemius SDK integration
@@ -84,7 +84,7 @@ add_action( 'before_woocommerce_init', function() {
 } );
 
 // Define the current members DB version
-define( 'TPW_MEMBERS_DB_VERSION', '0.3.5' );
+define( 'TPW_MEMBERS_DB_VERSION', '0.3.6' );
 
 // Run DB upgrades if needed
 add_action( 'admin_init', 'tpw_maybe_upgrade_members_db' );

@@ -34,6 +34,7 @@ class TPW_Member_Field_Loader {
             'county'                => 'County',
             'postcode'              => 'Postcode',
             'country'               => 'Country',
+            'dob'                   => 'Date of Birth',
             'date_joined'           => 'Date Joined',
             'status'                => 'Status',
             'is_committee'          => 'Is Committee',
@@ -96,6 +97,7 @@ class TPW_Member_Field_Loader {
 
         // Default input types for known core fields (form rendering types)
         $core_default_types = [
+            'dob'                 => 'date',
             'date_joined'          => 'date',
             'status'               => 'select',
             'is_committee'         => 'checkbox',
@@ -129,6 +131,20 @@ class TPW_Member_Field_Loader {
                 ? $row->custom_label
                 : ( $is_core ? $core_fields[ $row->field_key ] : ucwords( str_replace( '_', ' ', $row->field_key ) ) );
 
+            $options = [];
+            if ( $type === 'select' && ! empty( $row->field_options ) && is_string( $row->field_options ) ) {
+                $lines = preg_split( '/\r\n|\r|\n/', $row->field_options );
+                $lines = is_array( $lines ) ? $lines : [];
+                foreach ( $lines as $line ) {
+                    $opt = trim( (string) $line );
+                    if ( $opt === '' ) {
+                        continue;
+                    }
+                    $options[] = $opt;
+                }
+                $options = array_values( array_unique( $options ) );
+            }
+
             $enabled_fields[] = [
                 'key'        => $row->field_key,
                 'label'      => $label,
@@ -136,6 +152,7 @@ class TPW_Member_Field_Loader {
                 'is_core'    => $is_core,
                 'sort_order' => (int) $row->sort_order,
                 'section'    => isset($sections_map[$row->field_key]) && $sections_map[$row->field_key] !== '' ? (string) $sections_map[$row->field_key] : 'General',
+                'options'    => $options,
             ];
         }
 

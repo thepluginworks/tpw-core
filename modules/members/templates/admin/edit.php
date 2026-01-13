@@ -116,6 +116,23 @@ if ( ! $member ) {
                                 $sel = ($cur_l === strtolower($opt)) ? ' selected' : '';
                                 echo '<option value="' . esc_attr($opt) . '"' . $sel . '>' . esc_html($opt) . '</option>';
                             }
+                        } elseif ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+                            $cur = is_string( $value ) ? trim( $value ) : '';
+                            $has_cur = false;
+                            foreach ( $field['options'] as $opt ) {
+                                if ( (string) $opt === $cur ) {
+                                    $has_cur = true;
+                                    break;
+                                }
+                            }
+                            if ( $cur !== '' && ! $has_cur ) {
+                                echo '<option value="' . esc_attr( $cur ) . '" selected>' . esc_html( $cur ) . '</option>';
+                            }
+                            foreach ( $field['options'] as $opt ) {
+                                $opt = (string) $opt;
+                                $sel = ( $cur !== '' && $opt === $cur ) ? ' selected' : '';
+                                echo '<option value="' . esc_attr( $opt ) . '"' . $sel . '>' . esc_html( $opt ) . '</option>';
+                            }
                         } else {
                             // Generic select fallback: include current value
                             echo '<option value="' . esc_attr($value) . '" selected>' . esc_html($value) . '</option>';
@@ -235,8 +252,10 @@ if ( ! $member ) {
     ?>
 
         <?php if ( get_option('tpw_members_use_photos', '0') === '1' ) : ?>
+        <fieldset class="tpw-section">
+            <legend class="tpw-section__legend">Upload Member Photo</legend>
         <div class="form-group">
-            <label for="tpw-member-photo-input"><strong>Upload Member Photo</strong></label>
+            <label for="tpw-member-photo-input">Photo</label>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <input type="file" name="member_photo_file" id="tpw-member-photo-input" accept=".jpg,.jpeg,.png" style="display:none;">
                 <button type="button" class="tpw-btn tpw-btn-light" id="tpw-member-photo-choose">Choose file</button>
@@ -266,6 +285,7 @@ if ( ! $member ) {
             <div id="tpw-member-photo-error" style="display:none; font-size:12px; color:#b45309; background:#fff7ed; border:1px solid #fed7aa; padding:6px 8px; border-radius:4px; margin-top:6px;"></div>
             <?php endif; ?>
         </div>
+        </fieldset>
         <script>
         (function(){
             var AJAX_URL = <?php echo json_encode( admin_url('admin-ajax.php') ); ?>;

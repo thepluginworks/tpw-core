@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.5.2
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.6.0 =
+- Members: optional Household support (default off) with new tools on the Edit Member screen.
+- Members: added Date of Birth (DOB) core field.
+- Members: select fields can now use option lists via `field_options` (one option per line).
+- Members DB: schema upgrades for DOB and household tables; internal members DB version bumped to 0.3.6.
 
 = 1.5.2 =
 - Gallery: public display can now hide the gallery heading (title/description) via `show_heading="0"` (shortcode + Elementor).
