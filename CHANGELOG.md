@@ -2,6 +2,15 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.7.0] - 2026-01-20
+### Added
+- Scheduler: added `TPW_Core_Scheduler` as the single source of truth for background scheduling across TPW plugins.
+- Action Scheduler: Core now provides a lazy init wrapper that uses an existing Action Scheduler instance when present (e.g. WooCommerce) or loads Core's bundled copy when needed.
+- Scheduler API: wrappers for single + recurring actions, unscheduling, and basic query helpers, with default group `tpw`.
+
+### Notes
+- TPW plugins should call `TPW_Core_Scheduler::init_if_needed()` early (e.g. on `plugins_loaded`) instead of bundling Action Scheduler themselves.
+
 ## [1.6.0] - 2026-01-13
 ### Added
 - Members: optional Household support (default off) with new admin tools on the Edit Member screen to create households and attach/move members.

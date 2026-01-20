@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.7.0 =
+- Scheduler: vendored Action Scheduler is now available via a single Core manager with safe duplicate-load detection.
+- Scheduler API: added `TPW_Core_Scheduler` wrapper methods for single/recurring scheduling, unscheduling, and basic queries.
+- Stability: avoids fatals when WooCommerce (or another plugin) already loads Action Scheduler.
 
 = 1.6.0 =
 - Members: optional Household support (default off) with new tools on the Edit Member screen.
