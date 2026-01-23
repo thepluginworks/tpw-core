@@ -2,6 +2,14 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.7.2] - 2026-01-23
+### Fixed
+- Members Admin: Add Member form now validates required fields inline (username, first name, surname, email).
+- Members Admin: Edit Member no longer blocks saving when imported records have an empty member username.
+
+### Changed
+- Members Admin: When member username is blank but a WP user is linked, the WP username is displayed read-only (display only).
+
 ## [1.7.1] - 2026-01-23
 ### Added
 - Members: new setting (default off) to optionally show adult family members on the primary member profile.

@@ -207,7 +207,14 @@ if ( ! $member ) {
                             } else {
                                 // Username is not editable on the Edit form
                                 if ( $key === 'username' ) {
-                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '" readonly aria-readonly="true">';
+                                    $display_value = $value;
+                                    if ( (string) $display_value === '' && ! empty( $member->user_id ) ) {
+                                        $wp_user = get_user_by( 'id', (int) $member->user_id );
+                                        if ( $wp_user && isset( $wp_user->user_login ) ) {
+                                            $display_value = (string) $wp_user->user_login;
+                                        }
+                                    }
+                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($display_value) . '" readonly aria-readonly="true">';
                                 } else {
                                     echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
                                 }

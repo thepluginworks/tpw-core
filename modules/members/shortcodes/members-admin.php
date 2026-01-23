@@ -38,6 +38,22 @@ add_action('wp_enqueue_scripts', function () {
                 true
             );
 
+            // Tell the validation script which form mode it's running under.
+            // Expected: add | edit | other
+            $form_mode = 'other';
+            if ( $action === 'add' ) {
+                $form_mode = 'add';
+            } elseif ( $action === 'edit_form' ) {
+                $form_mode = 'edit';
+            }
+            wp_localize_script(
+                'tpw-member-form-validation',
+                'tpwMembersForm',
+                [
+                    'mode' => $form_mode,
+                ]
+            );
+
             wp_enqueue_style(
                 'tpw-member-admin-style',
                 plugins_url('../assets/css/member-admin.css', __FILE__),

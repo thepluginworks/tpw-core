@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.7.2 =
+- Members Admin: Add Member form now validates required fields inline (username, first name, surname, email).
+- Members Admin: Edit Member no longer blocks saving when imported records have an empty member username.
+- Members Admin: When member username is blank but a WP user is linked, the WP username is displayed read-only (display only).
 
 = 1.7.1 =
 - Members: added a new setting (default off) to optionally show adult family members on the primary member profile.

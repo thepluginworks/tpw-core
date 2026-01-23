@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('.tpw-member-form form');
     if (!form) return;
 
+    const mode = (window.tpwMembersForm && typeof window.tpwMembersForm.mode === 'string')
+        ? window.tpwMembersForm.mode
+        : 'other';
+
     form.addEventListener('submit', function (e) {
         // Remove old errors
         form.querySelectorAll('.form-error').forEach(el => el.remove());
@@ -22,15 +26,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Email validation
         const emailField = form.querySelector('input[name="email"]');
-        if (emailField && emailField.value.trim() !== '') {
+        if (emailField) {
+            const emailValue = emailField.value.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(emailField.value.trim())) {
+            if (mode === 'add' && emailValue === '') {
+                showError(emailField, 'email is required.');
+            } else if (emailValue !== '' && !emailRegex.test(emailValue)) {
                 showError(emailField, 'Please enter a valid email address.');
             }
         }
 
         // Required fields
-        const requiredFields = ['username', 'first_name', 'surname'];
+        // - username is required only on Add (imported records may have blank tpw_members.username)
+        // - other fields remain required across Add/Edit
+        const requiredFields = ['first_name', 'surname'];
+        if (mode === 'add') requiredFields.unshift('username');
         for (const fieldName of requiredFields) {
             const field = form.querySelector(`input[name="${fieldName}"]`);
             if (field && field.value.trim() === '') {
