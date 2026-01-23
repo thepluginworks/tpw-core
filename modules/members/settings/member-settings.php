@@ -35,6 +35,8 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             update_option( 'tpw_default_member_status', sanitize_text_field($_POST['tpw_default_member_status'] ?? 'Active') );
             update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
             update_option( 'tpw_members_enable_households', isset( $_POST['tpw_members_enable_households'] ) ? '1' : '0' );
+            // New: Show adult family members (partner) on primary member profile/details
+            update_option( 'tpw_members_show_adult_family_on_primary_profile', isset( $_POST['tpw_members_show_adult_family_on_primary_profile'] ) ? '1' : '0' );
             // New: enable Advanced Search modal for all members (non-admins)
             update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
             // New: Member Profile Change Notification Email (single site option)
@@ -181,6 +183,15 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 </label>
                 <br>
                 <small class="description">When enabled, household assignment tools appear on the Edit Member screen. Default: off.</small>
+            </p>
+
+            <p>
+                <label>
+                    <input type="checkbox" name="tpw_members_show_adult_family_on_primary_profile" value="1" <?php checked( get_option( 'tpw_members_show_adult_family_on_primary_profile', '0' ), '1' ); ?> />
+                    Show adult family members on primary profile
+                </label>
+                <br>
+                <small class="description">When enabled, a primary member’s profile/details can show secondary adult family member names (partner only). Dependants/children are never shown.</small>
             </p>
 
             <p>

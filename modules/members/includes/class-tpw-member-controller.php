@@ -17,6 +17,17 @@ class TPW_Member_Controller {
     $sql = "SELECT {$table}.* FROM $table WHERE 1=1";
     $meta_joins = [];
 
+    // Directory safety: optionally restrict results to primary household members only.
+    // Also hard-exclude household children when enabled.
+    if ( ! empty( $args['directory_primary_only'] ) ) {
+        $hm_table = $wpdb->prefix . 'tpw_members_household_member';
+        $meta_joins[] = " LEFT JOIN {$hm_table} AS hm_dir ON hm_dir.member_id = {$table}.id ";
+        // Include non-household members OR household primary.
+        $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.is_primary = 1 )";
+        // Hard rule: never include household children in member-facing lists/search.
+        $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.role IS NULL OR hm_dir.role <> 'child' )";
+    }
+
         // Optional filters
         if ( isset( $args['society_id'] ) ) {
             $sql .= $wpdb->prepare( " AND society_id = %d", $args['society_id'] );
@@ -391,6 +402,15 @@ class TPW_Member_Controller {
 
     $sql = "SELECT COUNT(*) FROM $table WHERE 1=1";
     $meta_joins = [];
+
+    // Directory safety: optionally restrict results to primary household members only.
+    // Also hard-exclude household children when enabled.
+    if ( ! empty( $args['directory_primary_only'] ) ) {
+        $hm_table = $wpdb->prefix . 'tpw_members_household_member';
+        $meta_joins[] = " LEFT JOIN {$hm_table} AS hm_dir ON hm_dir.member_id = {$table}.id ";
+        $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.is_primary = 1 )";
+        $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.role IS NULL OR hm_dir.role <> 'child' )";
+    }
 
         // Optional filters
         if ( isset( $args['society_id'] ) ) {

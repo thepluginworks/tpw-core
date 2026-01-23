@@ -250,6 +250,98 @@ class TPW_Member_Admin_Actions {
             echo '<div><strong>' . esc_html__( 'Primary member:', 'tpw-core' ) . '</strong> ' . esc_html( $primary_member_name ) . '</div>';
             echo '<div><strong>' . esc_html__( 'Primary member (this record):', 'tpw-core' ) . '</strong> ' . esc_html( $is_primary ? __( 'Yes', 'tpw-core' ) : __( 'No', 'tpw-core' ) ) . '</div>';
             echo '<div><strong>' . esc_html__( 'Role:', 'tpw-core' ) . '</strong> ' . esc_html( '' !== $role ? ucfirst( $role ) : '—' ) . '</div>';
+
+            // Household members list (admin-only UI on Edit Member screen).
+            $household_members = (array) $repo->get_household_members( $household_id );
+            if ( ! empty( $household_members ) ) {
+                // Ensure deterministic ordering: Primary, then Partner, then Child.
+                usort( $household_members, function( $a, $b ) {
+                    $role_rank = function( $hm ) {
+                        $is_primary = ( isset( $hm->is_primary ) && 1 === (int) $hm->is_primary );
+                        if ( $is_primary ) {
+                            return 0;
+                        }
+                        $role = isset( $hm->role ) ? strtolower( trim( (string) $hm->role ) ) : '';
+                        if ( 'partner' === $role ) {
+                            return 1;
+                        }
+                        if ( 'child' === $role ) {
+                            return 2;
+                        }
+                        return 3;
+                    };
+                    $ra = $role_rank( $a );
+                    $rb = $role_rank( $b );
+                    if ( $ra !== $rb ) {
+                        return $ra <=> $rb;
+                    }
+                    // Tie-breaker: surname, then first name, then member_id.
+                    $sa = isset( $a->surname ) ? strtolower( trim( (string) $a->surname ) ) : '';
+                    $sb = isset( $b->surname ) ? strtolower( trim( (string) $b->surname ) ) : '';
+                    if ( $sa !== $sb ) {
+                        return $sa <=> $sb;
+                    }
+                    $fa = isset( $a->first_name ) ? strtolower( trim( (string) $a->first_name ) ) : '';
+                    $fb = isset( $b->first_name ) ? strtolower( trim( (string) $b->first_name ) ) : '';
+                    if ( $fa !== $fb ) {
+                        return $fa <=> $fb;
+                    }
+                    $ia = isset( $a->member_id ) ? (int) $a->member_id : 0;
+                    $ib = isset( $b->member_id ) ? (int) $b->member_id : 0;
+                    return $ia <=> $ib;
+                } );
+
+                echo '<div style="margin-top:10px;">';
+                echo '<strong>' . esc_html__( 'Household members:', 'tpw-core' ) . '</strong>';
+                echo '<div style="margin-top:6px;">';
+                echo '<ul style="margin:0; padding-left:18px;">';
+                foreach ( $household_members as $hm ) {
+                    $hm_id = isset( $hm->member_id ) ? (int) $hm->member_id : 0;
+                    if ( 0 >= $hm_id ) {
+                        continue;
+                    }
+                    $hm_role = isset( $hm->role ) ? strtolower( trim( (string) $hm->role ) ) : '';
+                    $hm_is_primary = ( isset( $hm->is_primary ) && 1 === (int) $hm->is_primary );
+                    if ( $hm_is_primary ) {
+                        $hm_role = 'primary';
+                    }
+                    $role_label = '';
+                    if ( 'primary' === $hm_role ) {
+                        $role_label = __( 'Primary', 'tpw-core' );
+                    } elseif ( 'partner' === $hm_role ) {
+                        $role_label = __( 'Partner', 'tpw-core' );
+                    } elseif ( 'child' === $hm_role ) {
+                        $role_label = __( 'Child', 'tpw-core' );
+                    } else {
+                        $role_label = __( 'Member', 'tpw-core' );
+                    }
+                    $badge = '<span style="display:inline-block; font-size:11px; line-height:1; padding:3px 6px; border-radius:999px; border:1px solid #cbd5e1; color:#334155; background:#f8fafc; margin-left:6px;">' . esc_html( $role_label ) . '</span>';
+
+                    $first = isset( $hm->first_name ) ? trim( (string) $hm->first_name ) : '';
+                    $surname = isset( $hm->surname ) ? trim( (string) $hm->surname ) : '';
+                    $hm_name = trim( $surname . ( '' !== $surname && '' !== $first ? ', ' : '' ) . $first );
+                    if ( '' === $hm_name ) {
+                        $hm_name = '—';
+                    }
+
+                    $is_this = ( $hm_id === $member_id );
+                    $this_marker = $is_this ? '<em style="margin-left:6px; color:#475569;">' . esc_html__( 'This record', 'tpw-core' ) . '</em>' : '';
+
+                    $edit_url = esc_url( site_url( '/manage-members/?action=edit_form&id=' . $hm_id ) );
+                    echo '<li style="margin:4px 0;">';
+                    if ( $is_this ) {
+                        echo '<span>' . esc_html( $hm_name ) . '</span>';
+                    } else {
+                        echo '<a href="' . $edit_url . '" target="_blank" rel="noopener noreferrer">' . esc_html( $hm_name ) . '</a>';
+                    }
+                    echo $badge; // escaped above
+                    echo $this_marker; // escaped above
+                    echo '</li>';
+                }
+                echo '</ul>';
+                echo '</div>';
+                echo '</div>';
+            }
         } else {
             echo '<div><strong>' . esc_html__( 'Status:', 'tpw-core' ) . '</strong> ' . esc_html__( 'Not assigned to a household', 'tpw-core' ) . '</div>';
         }
@@ -265,7 +357,21 @@ class TPW_Member_Admin_Actions {
                 $role = 'partner';
             }
 
+            $reveal_btn_id = 'tpw-household-structure-toggle-' . (int) $member_id;
+            $controls_id   = 'tpw-household-structure-controls-' . (int) $member_id;
+            $select_household_id = 'tpw-household-primary-select-' . (int) $member_id;
+            $select_role_id      = 'tpw-household-role-select-' . (int) $member_id;
+            $checkbox_primary_id = 'tpw-household-make-primary-' . (int) $member_id;
+            $update_btn_id       = 'tpw-household-update-btn-' . (int) $member_id;
+            $warn_move_id        = 'tpw-household-warn-move-' . (int) $member_id;
+            $warn_replace_id     = 'tpw-household-warn-replace-' . (int) $member_id;
+
             echo '<div style="margin-top:12px;">';
+            echo '<button type="button" id="' . esc_attr( $reveal_btn_id ) . '" class="tpw-btn tpw-btn-light" aria-expanded="false" aria-controls="' . esc_attr( $controls_id ) . '">' . esc_html__( 'Change household / primary member', 'tpw-core' ) . '</button>';
+            echo '<div class="description" style="margin-top:6px;">' . esc_html__( 'Choose a primary member to attach or move this member into that household.', 'tpw-core' ) . '</div>';
+            echo '</div>';
+
+            echo '<div id="' . esc_attr( $controls_id ) . '" hidden style="margin-top:12px;" data-current-household-id="' . esc_attr( (string) (int) $household_id ) . '" data-current-primary-member-id="' . esc_attr( (string) (int) $primary_member_id ) . '">';
             echo '<input type="hidden" name="member_id" value="' . esc_attr( (string) $member_id ) . '">';
             wp_nonce_field( 'tpw_members_household_create', 'tpw_members_household_create_nonce' );
             wp_nonce_field( 'tpw_members_household_assign', 'tpw_members_household_assign_nonce' );
@@ -277,8 +383,10 @@ class TPW_Member_Admin_Actions {
             }
 
             echo '<div>';
-            echo '<label style="margin-right:6px;">' . esc_html__( 'Select existing primary member', 'tpw-core' ) . '</label>';
-            echo '<select name="tpw_household_primary_member_id" style="min-width:260px; margin-right:8px;">';
+            // Primary select
+            echo '<div style="margin-top:10px; margin-bottom:8px;">';
+            echo '<label for="' . esc_attr( $select_household_id ) . '" style="display:block; margin-bottom:4px;">' . esc_html__( 'Choose household (primary member)', 'tpw-core' ) . '</label>';
+            echo '<select id="' . esc_attr( $select_household_id ) . '" name="tpw_household_primary_member_id" style="min-width:260px;">';
             echo '<option value="0">' . esc_html__( '— Select —', 'tpw-core' ) . '</option>';
             foreach ( $primary_options as $pm ) {
                 $pm_id = isset( $pm->id ) ? (int) $pm->id : 0;
@@ -289,22 +397,102 @@ class TPW_Member_Admin_Actions {
                 echo '<option value="' . esc_attr( (string) $pm_id ) . '"' . $selected . '>' . esc_html( self::get_member_display_name( $pm ) ) . '</option>';
             }
             echo '</select>';
+            echo '</div>';
+            echo '<div id="' . esc_attr( $warn_move_id ) . '" style="display:none; margin:8px 0; padding:8px 10px; border:1px solid #fcd34d; background:#fffbeb; color:#92400e; border-radius:6px;">⚠️ ' . esc_html__( 'This will move the member to a different household.', 'tpw-core' ) . '</div>';
 
-            echo '<label style="margin-right:6px;">' . esc_html__( 'Role', 'tpw-core' ) . '</label>';
-            echo '<select name="tpw_household_role" style="margin-right:8px;">';
+            // Role select
+            echo '<div style="margin-bottom:10px;">';
+            echo '<label for="' . esc_attr( $select_role_id ) . '" style="display:block; margin-bottom:4px;">' . esc_html__( 'Household role for this member', 'tpw-core' ) . '</label>';
+            echo '<select id="' . esc_attr( $select_role_id ) . '" name="tpw_household_role" style="min-width:260px;">';
             echo '<option value="partner"' . ( 'partner' === $role ? ' selected' : '' ) . '>' . esc_html__( 'Partner', 'tpw-core' ) . '</option>';
             echo '<option value="child"' . ( 'child' === $role ? ' selected' : '' ) . '>' . esc_html__( 'Child', 'tpw-core' ) . '</option>';
             echo '</select>';
+            echo '</div>';
 
-            echo '<label style="margin-right:8px;">';
-            echo '<input type="checkbox" name="tpw_household_make_primary" value="1" style="margin-right:4px;">';
-            echo esc_html__( 'Make this member primary', 'tpw-core' );
+            // Primary toggle
+            echo '<div style="margin-top:8px;">';
+            echo '<label style="display:inline-block; margin-right:10px;">';
+            echo '<input id="' . esc_attr( $checkbox_primary_id ) . '" type="checkbox" name="tpw_household_make_primary" value="1" style="margin-right:4px;">';
+            echo esc_html__( 'Make this member the primary member for this household', 'tpw-core' );
             echo '</label>';
+            echo '<div class="description" style="margin-top:4px;">' . esc_html__( 'This will replace the existing primary member.', 'tpw-core' ) . '</div>';
+            echo '</div>';
+            echo '<div id="' . esc_attr( $warn_replace_id ) . '" style="display:none; margin:8px 0; padding:8px 10px; border:1px solid #fcd34d; background:#fffbeb; color:#92400e; border-radius:6px;">⚠️ ' . esc_html__( 'This will replace the existing primary member for this household.', 'tpw-core' ) . '</div>';
 
-            echo '<button type="submit" name="action" value="tpw_members_household_assign" class="tpw-btn tpw-btn-secondary" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formnovalidate>' . esc_html__( ( 0 < $household_id ) ? 'Update household' : 'Attach', 'tpw-core' ) . '</button>';
+            // Submit button (own row)
+            echo '<div style="margin-top:10px;">';
+            echo '<button id="' . esc_attr( $update_btn_id ) . '" type="submit" name="action" value="tpw_members_household_assign" class="tpw-btn tpw-btn-secondary" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formnovalidate disabled>' . esc_html__( 'Update household', 'tpw-core' ) . '</button>';
             echo '</div>';
-            echo '<div class="description" style="margin-top:6px;">' . esc_html__( 'Choose a primary member to attach/move this member into that household.', 'tpw-core' ) . '</div>';
             echo '</div>';
+            echo '</div>';
+
+            // Inline progressive-disclosure toggle (UX only).
+            echo '<script>(function(){
+                var b=document.getElementById(' . wp_json_encode( $reveal_btn_id ) . ');
+                var c=document.getElementById(' . wp_json_encode( $controls_id ) . ');
+                var selHouse=document.getElementById(' . wp_json_encode( $select_household_id ) . ');
+                var selRole=document.getElementById(' . wp_json_encode( $select_role_id ) . ');
+                var chkPrimary=document.getElementById(' . wp_json_encode( $checkbox_primary_id ) . ');
+                var btnSave=document.getElementById(' . wp_json_encode( $update_btn_id ) . ');
+                var warnMove=document.getElementById(' . wp_json_encode( $warn_move_id ) . ');
+                var warnReplace=document.getElementById(' . wp_json_encode( $warn_replace_id ) . ');
+                if(!b||!c){return;}
+                var currentHouseholdId=parseInt(c.getAttribute("data-current-household-id")||"0",10)||0;
+                var currentPrimaryMemberId=parseInt(c.getAttribute("data-current-primary-member-id")||"0",10)||0;
+                function setDisabled(el, disabled){ if(!el){return;} if(disabled){ el.setAttribute("disabled","disabled"); } else { el.removeAttribute("disabled"); } }
+                function setLockedStyle(el, locked){ if(!el){return;} el.style.opacity = locked ? "0.65" : ""; }
+                function updateState(){
+                    if(!selHouse||!selRole||!chkPrimary||!btnSave){return;}
+                    var householdVal=parseInt(selHouse.value||"0",10)||0;
+                    var makePrimary=!!chkPrimary.checked;
+                    // Rule 1: Primary cannot be child; lock role to adult equivalent (partner) when primary is checked.
+                    if(makePrimary){
+                        selRole.value="partner";
+                        setDisabled(selRole,true);
+                        setLockedStyle(selRole,true);
+                    }else{
+                        setDisabled(selRole,false);
+                        setLockedStyle(selRole,false);
+                    }
+                    // Rule 2: Child cannot be primary.
+                    if(selRole.value==="child"){
+                        chkPrimary.checked=false;
+                        setDisabled(chkPrimary,true);
+                        setLockedStyle(chkPrimary,true);
+                    }else{
+                        setDisabled(chkPrimary,false);
+                        setLockedStyle(chkPrimary,false);
+                    }
+                    // Warnings
+                    if(warnMove){
+                        var showMove = (currentHouseholdId>0 && householdVal>0 && currentPrimaryMemberId>0 && householdVal!==currentPrimaryMemberId);
+                        warnMove.style.display = showMove ? "block" : "none";
+                    }
+                    if(warnReplace){
+                        var showReplace = (chkPrimary.checked && householdVal>0);
+                        warnReplace.style.display = showReplace ? "block" : "none";
+                    }
+                    // Save button enablement
+                    var roleVal=selRole.value;
+                    var validRole = (roleVal==="partner" || roleVal==="child");
+                    var ok = (householdVal>0 && validRole);
+                    setDisabled(btnSave, !ok);
+                }
+                b.addEventListener("click",function(){
+                    var isHidden=c.hasAttribute("hidden");
+                    if(isHidden){
+                        c.removeAttribute("hidden");
+                        b.setAttribute("aria-expanded","true");
+                        updateState();
+                    }else{
+                        c.setAttribute("hidden","");
+                        b.setAttribute("aria-expanded","false");
+                    }
+                });
+                if(selHouse){ selHouse.addEventListener("change", updateState); }
+                if(selRole){ selRole.addEventListener("change", updateState); }
+                if(chkPrimary){ chkPrimary.addEventListener("change", updateState); }
+            })();</script>';
         }
 
         echo '</div>';

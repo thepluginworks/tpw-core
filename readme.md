@@ -1,4 +1,4 @@
-# TPW Core (v1.7.0)
+# TPW Core (v1.7.1)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -36,6 +36,11 @@ Browse all module documentation → [docs/help/README.md](docs/help/README.md)
 ### Scheduler updates (1.7.0)
 - Core now provides an ecosystem-wide scheduling engine via Action Scheduler, with safe detection/avoidance of duplicate loads.
 - Other TPW plugins should call `TPW_Core_Scheduler::init_if_needed()` early (e.g. on `plugins_loaded`) and use the wrapper methods (single/recurring/unschedule/query).
+
+### Members updates (1.7.1)
+- New setting (default off) to optionally show adult family members on the primary member profile.
+- Member-facing directory and details now only allow primary members; dependants/children are never displayed to other members.
+- Admin Edit Member: improved Household UI with a household members list and safer change controls.
 
 ## Works with other TPW plugins
 

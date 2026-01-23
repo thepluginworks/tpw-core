@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.7.1 =
+- Members: added a new setting (default off) to optionally show adult family members on the primary member profile.
+- Members: dependants/children are never displayed to other members (hard privacy rule).
+- Members Directory: member-facing directory list and detail modal only allow primary members.
+- Members Admin: improved Household UI on Edit Member (household members list, clearer change controls, safer defaults and validation).
 
 = 1.7.0 =
 - Scheduler: vendored Action Scheduler is now available via a single Core manager with safe duplicate-load detection.

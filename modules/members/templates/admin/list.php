@@ -199,6 +199,9 @@ if ( ! $is_admin ) {
     } else {
         $args['status_in'] = TPW_Member_Access::ALLOWED_STATUSES; // fallback
     }
+
+    // Directory rule: primary members only (no partners/children). Children are hard-excluded.
+    $args['directory_primary_only'] = true;
 }
 // Admins can filter by any existing status
 if ( $is_admin && $selected_status !== '' ) {
@@ -1140,6 +1143,9 @@ $current_view = $initial_view;
             } else {
                 $count_args['status_in'] = TPW_Member_Access::ALLOWED_STATUSES;
             }
+
+            // Directory rule: primary members only (no partners/children). Children are hard-excluded.
+            $count_args['directory_primary_only'] = true;
         }
         if ( $is_admin && $selected_status !== '' ) { $count_args['status'] = $selected_status; }
         $total_members = $controller->get_total_members_count( $count_args );

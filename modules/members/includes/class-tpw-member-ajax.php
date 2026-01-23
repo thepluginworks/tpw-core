@@ -544,6 +544,29 @@ class TPW_Member_Ajax {
                 // Build safe HTML for details modal using configured field sort order
                 $is_admin = TPW_Member_Access::is_admin_current();
 
+                // Directory/profile safety: Non-admins can only view primary members.
+                // Hard rule: dependants/children must never be visible to other members.
+                $is_primary_household_member = false;
+                $household_id_for_member = 0;
+                if ( ! $is_admin ) {
+                    require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-household-repository.php';
+                    $repo = new TPW_Member_Household_Repository();
+                    $membership = $repo->get_household_for_member( $requested_id );
+                    if ( $membership && isset( $membership->household_id ) ) {
+                        $household_id_for_member = (int) $membership->household_id;
+                        $role = isset( $membership->role ) ? (string) $membership->role : '';
+                        $is_primary_household_member = ( isset( $membership->is_primary ) && 1 === (int) $membership->is_primary );
+                        // Never allow children to be viewed.
+                        if ( 'child' === $role ) {
+                            wp_send_json_error(['message'=>'Member not found','requested_id'=>$requested_id,'code'=>'not_found'],404);
+                        }
+                        // Directory is primary members only.
+                        if ( ! $is_primary_household_member ) {
+                            wp_send_json_error(['message'=>'Member not found','requested_id'=>$requested_id,'code'=>'not_found'],404);
+                        }
+                    }
+                }
+
                 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
                 // Extra guard to ensure sort order is respected
                 usort($fields, function($a, $b){
@@ -642,6 +665,49 @@ class TPW_Member_Ajax {
                             echo '</fieldset>';
                         }
                     }
+
+                    // Family membership (optional): show adult secondary members (partner only) on primary profile.
+                    $show_family = get_option( 'tpw_members_show_adult_family_on_primary_profile', '0' ) === '1';
+                    if ( $show_family ) {
+                        // Resolve household membership if not already known.
+                        if ( 0 === $household_id_for_member ) {
+                            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-household-repository.php';
+                            $repo = new TPW_Member_Household_Repository();
+                            $membership = $repo->get_household_for_member( $requested_id );
+                            if ( $membership && isset( $membership->household_id ) ) {
+                                $household_id_for_member = (int) $membership->household_id;
+                                $is_primary_household_member = ( isset( $membership->is_primary ) && 1 === (int) $membership->is_primary );
+                            }
+                        }
+
+                        if ( 0 < $household_id_for_member && $is_primary_household_member ) {
+                            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-household-repository.php';
+                            $repo = new TPW_Member_Household_Repository();
+                            $members = (array) $repo->get_household_members( $household_id_for_member );
+                            $partner_names = [];
+                            foreach ( $members as $hm ) {
+                                $role = isset( $hm->role ) ? (string) $hm->role : '';
+                                if ( 'partner' !== $role ) {
+                                    continue;
+                                }
+                                $first = isset( $hm->first_name ) ? trim( (string) $hm->first_name ) : '';
+                                $surname = isset( $hm->surname ) ? trim( (string) $hm->surname ) : '';
+                                $name = trim( $first . ( ( '' !== $first && '' !== $surname ) ? ' ' : '' ) . $surname );
+                                if ( '' !== $name ) {
+                                    $partner_names[] = $name;
+                                }
+                            }
+
+                            if ( ! empty( $partner_names ) ) {
+                                echo '<fieldset class="tpw-section">';
+                                echo '<legend class="tpw-section__legend">' . esc_html__( 'Family membership', 'tpw-core' ) . '</legend>';
+                                foreach ( $partner_names as $n ) {
+                                    echo '<p><strong>' . esc_html__( 'Partner', 'tpw-core' ) . ':</strong> ' . esc_html( $n ) . '</p>';
+                                }
+                                echo '</fieldset>';
+                            }
+                        }
+                    }
                     ?>
                 </div>
                 <?php
@@ -676,6 +742,23 @@ class TPW_Member_Ajax {
             }
             if ( ! is_email( $from_email ) ) {
                 wp_send_json_error(['message'=>'Invalid email'],400);
+            }
+
+            // Directory safety: non-admin members can only contact primary members.
+            // Hard rule: dependants/children must never be reachable via directory endpoints.
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+            $is_admin = TPW_Member_Access::is_admin_current();
+            if ( ! $is_admin ) {
+                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-household-repository.php';
+                $repo = new TPW_Member_Household_Repository();
+                $membership = $repo->get_household_for_member( $member_id );
+                if ( $membership && isset( $membership->household_id ) ) {
+                    $role = isset( $membership->role ) ? (string) $membership->role : '';
+                    $is_primary = ( isset( $membership->is_primary ) && 1 === (int) $membership->is_primary );
+                    if ( 'child' === $role || ! $is_primary ) {
+                        wp_send_json_error(['message'=>'Recipient not found'],404);
+                    }
+                }
             }
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
                 $controller = new TPW_Member_Controller();

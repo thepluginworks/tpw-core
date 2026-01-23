@@ -144,13 +144,28 @@ class TPW_Member_Household_Repository {
 			return $this->assign_member( $household_id, $member_id, 'primary', true );
 		}
 
+		// Best-effort transaction (only if supported by the underlying DB engine).
+		$in_txn = false;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$txn_started = $wpdb->query( 'START TRANSACTION' );
+		if ( false !== $txn_started ) {
+			$in_txn = true;
+		}
+
 		// Clear any existing primary in the household.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$prepared = $wpdb->prepare( "UPDATE {$this->table_member} SET is_primary = 0 WHERE household_id = %d", $household_id );
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->query( $prepared );
+		$cleared = $wpdb->query( $prepared );
+		if ( false === $cleared ) {
+			if ( $in_txn ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$wpdb->query( 'ROLLBACK' );
+			}
+			return false;
+		}
 
 		// Set this member as primary (and normalise role).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -167,8 +182,43 @@ class TPW_Member_Household_Repository {
 			array( '%d', '%s' ),
 			array( '%d', '%d' )
 		);
+		if ( false === $updated ) {
+			if ( $in_txn ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$wpdb->query( 'ROLLBACK' );
+			}
+			return false;
+		}
 
-		return false !== $updated;
+		// Normalise roles: only the new primary may retain role='primary'.
+		// Downgrade any other stale primary-role rows to partner, but do not touch children.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$prepared = $wpdb->prepare(
+			"UPDATE {$this->table_member}
+			 SET role = 'partner'
+			 WHERE household_id = %d
+			   AND member_id <> %d
+			   AND role = 'primary'",
+			$household_id,
+			$member_id
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$downgraded = $wpdb->query( $prepared );
+		if ( false === $downgraded ) {
+			if ( $in_txn ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$wpdb->query( 'ROLLBACK' );
+			}
+			return false;
+		}
+
+		if ( $in_txn ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->query( 'COMMIT' );
+		}
+
+		return true;
 	}
 
 	/**

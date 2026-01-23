@@ -2,6 +2,15 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.7.1] - 2026-01-23
+### Added
+- Members: new setting (default off) to optionally show adult family members on the primary member profile.
+
+### Changed
+- Members Directory: member-facing directory list and detail modal only allow primary members.
+- Members: dependants/children are never displayed to other members (hard privacy rule).
+- Members Admin: improved Household UI on Edit Member (household members list, clearer change controls, safer defaults and validation).
+
 ## [1.7.0] - 2026-01-20
 ### Added
 - Scheduler: added `TPW_Core_Scheduler` as the single source of truth for background scheduling across TPW plugins.
