@@ -146,3 +146,27 @@ add_action('flexievent_settings_tab_content_payments', function($settings) {
     </script>
     <?php
 });
+
+// --- TPW Core Settings integration: Payment Methods tab content ---
+add_action( 'tpw_core_settings_tab_content_payment-methods', function( $active_tab ) {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        echo '<p>' . esc_html__( 'You do not have permission to view this page.', 'tpw-core' ) . '</p>';
+        return;
+    }
+
+    // Load the existing Payments admin screen renderer (used by the standalone page too).
+    $admin_class_file = defined( 'TPW_CORE_PATH' )
+        ? TPW_CORE_PATH . 'modules/payments/class-tpw-payments-admin.php'
+        : plugin_dir_path( __FILE__ ) . 'class-tpw-payments-admin.php';
+
+    if ( file_exists( $admin_class_file ) ) {
+        require_once $admin_class_file;
+    }
+
+    if ( class_exists( 'TPW_Payments_Admin' ) && method_exists( 'TPW_Payments_Admin', 'render_manage_methods_content' ) ) {
+        TPW_Payments_Admin::render_manage_methods_content();
+        return;
+    }
+
+    echo '<p>' . esc_html__( 'Payment Methods UI is unavailable (missing admin renderer).', 'tpw-core' ) . '</p>';
+}, 10, 1 );

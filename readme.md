@@ -1,4 +1,4 @@
-# TPW Core (v1.7.2)
+# TPW Core (v1.8.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -14,6 +14,11 @@ Browse all module documentation → [docs/help/README.md](docs/help/README.md)
 - Email: reusable email settings, templates, and sending helpers
 - Postcodes: AJAX postcode lookup utilities with multiple providers
 - TPW Control: front‑end admin hub that other plugins extend via hooks
+
+### Payments updates (1.8.0)
+- Payment Methods management is now a tab in TPW Core Settings.
+- Settings tabs can now be extended via `tpw_core_settings_tab_content` and `tpw_core_settings_tab_content_{tab}`.
+- Added `tpw_core_get_payment_methods_settings_url()` and redirected the legacy Payment Methods page/menu to the new tab.
 
 ### Gallery updates (1.5.0)
 - Public shortcode: optional pagination for large galleries (`per_page` / `paginate`) in `grid` and `list` views.

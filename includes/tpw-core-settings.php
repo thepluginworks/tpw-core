@@ -61,10 +61,11 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             'features'    => __( 'Features', 'tpw-core' ),
             'email'       => __( 'Email Settings', 'tpw-core' ),
             'email-templates' => __( 'Email Templates', 'tpw-core' ),
+            'payment-methods' => __( 'Payment Methods', 'tpw-core' ),
             'system-pages' => __( 'System Pages', 'tpw-core' ),
         ] );
         $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'member-menu';
-        if ( ! isset( $tabs[ $current_tab ] ) ) {
+        if ( $current_tab === '' ) {
             $current_tab = 'member-menu';
         }
 
@@ -84,14 +85,20 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 <?php endforeach; ?>
             </h2>
 
+            <?php $tpw_core_builtin_tab_rendered = false; ?>
+
             <?php if ( 'branding' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php tpw_core_render_branding_tab(); ?>
             <?php elseif ( 'email' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php tpw_core_render_email_settings_tab(); ?>
             <?php elseif ( 'email-templates' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php tpw_core_render_email_templates_tab(); ?>
             <?php elseif ( 'branding' === $current_tab ) : ?>
                 <?php
+                $tpw_core_builtin_tab_rendered = true;
                 // UI Theme settings form inside Branding tab
                 $ui_defaults = function_exists('tpw_core_get_ui_theme_defaults') ? tpw_core_get_ui_theme_defaults() : [];
                 $ui = function_exists('tpw_core_get_ui_theme_settings') ? tpw_core_get_ui_theme_settings(true) : $ui_defaults;
@@ -196,14 +203,30 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     <?php submit_button( __( 'Save UI Theme', 'tpw-core' ) ); ?>
                 </form>
             <?php elseif ( 'features' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php if ( function_exists( 'tpw_core_render_features_tab' ) ) { tpw_core_render_features_tab(); } ?>
             <?php elseif ( 'member-menu' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php if ( function_exists( 'tpw_core_render_member_menu_tab' ) ) { tpw_core_render_member_menu_tab(); } ?>
             <?php elseif ( 'system-pages' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php if ( function_exists( 'tpw_core_render_system_pages_tab' ) ) { tpw_core_render_system_pages_tab(); } ?>
-            <?php else : ?>
-                <p><?php esc_html_e('Unknown settings tab.', 'tpw-core'); ?></p>
             <?php endif; ?>
+
+            <?php
+            // Extensible tab content mechanism: allow modules/add-ons to render tab content.
+            ob_start();
+            do_action( 'tpw_core_settings_tab_content', $current_tab );
+            do_action( "tpw_core_settings_tab_content_{$current_tab}", $current_tab );
+            $tpw_core_hooked_tab_output = (string) ob_get_clean();
+
+            if ( trim( $tpw_core_hooked_tab_output ) !== '' ) {
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tab content is responsible for escaping.
+                echo $tpw_core_hooked_tab_output;
+            } elseif ( ! $tpw_core_builtin_tab_rendered ) {
+                echo '<p>' . esc_html__( 'No content registered for this tab.', 'tpw-core' ) . '</p>';
+            }
+            ?>
         </div></div>
         <?php
     }

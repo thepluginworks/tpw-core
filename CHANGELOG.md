@@ -2,6 +2,16 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.0] - 2026-02-03
+### Added
+- Settings: new “Payment Methods” tab under TPW Core Settings.
+- Settings: extensible tab content hooks (`tpw_core_settings_tab_content` and `tpw_core_settings_tab_content_{tab}`).
+- Payments: helper `tpw_core_get_payment_methods_settings_url()` for a stable Payment Methods settings URL.
+
+### Changed
+- Admin: legacy Payment Methods menu/page now redirects to the TPW Core Settings “Payment Methods” tab.
+- Payments: gateway settings “Back to Payment Methods” links now return to the Settings tab.
+
 ## [1.7.2] - 2026-01-23
 ### Fixed
 - Members Admin: Add Member form now validates required fields inline (username, first name, surname, email).

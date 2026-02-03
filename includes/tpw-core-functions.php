@@ -152,6 +152,20 @@ function tpw_core_get_currency_code() {
 }
 
 /**
+ * Get the TPW Core Settings URL for the Payment Methods tab.
+ *
+ * Used by other TPW plugins to link to the single source of truth for
+ * payment method enable/disable and configuration.
+ *
+ * @since 1.0.0
+ */
+if ( ! function_exists( 'tpw_core_get_payment_methods_settings_url' ) ) {
+    function tpw_core_get_payment_methods_settings_url(): string {
+        return admin_url( 'options-general.php?page=tpw-core-settings&tab=payment-methods' );
+    }
+}
+
+/**
  * Retrieve configured date format from FlexiEvent settings.
  * Falls back to d-m-Y.
  */

@@ -49,7 +49,7 @@ class TPW_Cheque_Settings {
         ?>
         <?php if ( function_exists( 'tpw_core_render_settings_header' ) ) { tpw_core_render_settings_header( 'Cheque Payment Settings' ); } ?>
         <div class="tpw-admin-ui"><div class="wrap">
-            <p><a href="<?php echo esc_url( admin_url('admin.php?page=tpw-core-payment-methods') ); ?>" class="button">Back to Payment Methods</a></p>
+            <p><a href="<?php echo esc_url( tpw_core_get_payment_methods_settings_url() ); ?>" class="button">Back to Payment Methods</a></p>
             <?php if ( isset($_GET['settings-updated']) && $_GET['settings-updated'] ) : ?>
                 <div class="notice notice-success is-dismissible"><p>Surcharge settings updated successfully.</p></div>
             <?php endif; ?>

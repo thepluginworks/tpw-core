@@ -41,8 +41,12 @@ class TPW_Payments_Admin {
         wp_send_json_success( [ 'message' => 'Order updated' ] );
     }
 
-    public static function render_page() {
-        error_log('TPW_Payments_Admin::render_page() called');
+    /**
+     * Render the Manage Payment Methods UI (form + list) without page wrappers.
+     *
+     * This is used by the standalone admin page and also by the TPW Core Settings tab.
+     */
+    public static function render_manage_methods_content() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('tpw_update_payment_methods')) {
             global $wpdb;
             $table = $wpdb->prefix . 'tpw_payment_methods';
@@ -80,8 +84,8 @@ class TPW_Payments_Admin {
                 'created_at' => current_time('mysql'),
             ] );
         }
-    $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY sort_order ASC, name ASC");
-    $sort_nonce = wp_create_nonce('tpw_update_payment_sort');
+        $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY sort_order ASC, name ASC");
+        $sort_nonce = wp_create_nonce('tpw_update_payment_sort');
 
         foreach ($methods as $index => $method) {
             if ($method->slug === 'cheque-cash') {
@@ -107,23 +111,6 @@ class TPW_Payments_Admin {
             }
         }
 
-        ?>
-        <?php
-        if ( function_exists( 'tpw_admin_output_header' ) ) {
-            tpw_admin_output_header(
-                __( 'Manage Payment Methods', 'tpw-core' ),
-                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
-            );
-            echo '<div class="tpw-admin-ui"><div class="wrap">';
-        } elseif ( function_exists( 'flexievent_output_header' ) ) {
-            flexievent_output_header(
-                __( 'Manage Payment Methods', 'tpw-core' ),
-                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
-            );
-            echo '<div class="tpw-admin-ui"><div class="wrap">';
-        } else {
-            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html__( 'Manage Payment Methods', 'tpw-core' ) . '</h1>';
-        }
         ?>
             <form method="post">
                 <?php wp_nonce_field('tpw_update_payment_methods'); ?>
@@ -236,7 +223,6 @@ class TPW_Payments_Admin {
                 <?php submit_button('Save Changes'); ?>
             </form>
             <div id="tpw-sort-feedback" style="margin-top:8px; display:none;"></div>
-        </div></div>
         <style>
             .tpw-payments-list { counter-reset: rownum; }
             .tpw-pay-row { display:flex; align-items:center; gap:12px; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px; background:#fff; }
@@ -273,6 +259,30 @@ class TPW_Payments_Admin {
         })(jQuery);
         </script>
         <?php
+    }
+
+    public static function render_page() {
+        error_log('TPW_Payments_Admin::render_page() called');
+
+        if ( function_exists( 'tpw_admin_output_header' ) ) {
+            tpw_admin_output_header(
+                __( 'Manage Payment Methods', 'tpw-core' ),
+                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
+            );
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
+        } elseif ( function_exists( 'flexievent_output_header' ) ) {
+            flexievent_output_header(
+                __( 'Manage Payment Methods', 'tpw-core' ),
+                __( 'Enable, disable, and configure payment methods for your events. For Admins and Treasurers.', 'tpw-core' )
+            );
+            echo '<div class="tpw-admin-ui"><div class="wrap">';
+        } else {
+            echo '<div class="tpw-admin-ui"><div class="wrap"><h1>' . esc_html__( 'Manage Payment Methods', 'tpw-core' ) . '</h1>';
+        }
+
+        self::render_manage_methods_content();
+
+        echo '</div></div>';
     }
 }
 
