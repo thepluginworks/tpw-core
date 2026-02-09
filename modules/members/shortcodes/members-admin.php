@@ -260,20 +260,31 @@ add_action('template_redirect', function(){
     $download_selected = get_option( 'tpw_member_field_download', [] );
     if ( ! is_array( $download_selected ) ) { $download_selected = []; }
 
-    // Back-compat / safety: if no Download fields configured, export enabled fields by default.
-    // This prevents an empty (blank) CSV.
+    // Build enabled field list (core + custom) from Field Settings.
+    $enabled_fields = [];
+    $fs_table = $wpdb->prefix . 'tpw_field_settings';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    $enabled_fields = (array) $wpdb->get_col( "SELECT field_key FROM {$fs_table} WHERE is_enabled = 1 ORDER BY sort_order ASC" );
+    $enabled_fields = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $enabled_fields ) ) ) );
+    $enabled_fields = array_values( array_diff( $enabled_fields, [ 'password_hash' ] ) );
+
+    // If no Download fields configured, export all enabled fields by default.
+    // If Download fields are configured, export only those that are enabled.
     if ( empty( $download_selected ) ) {
-        $fs_table = $wpdb->prefix . 'tpw_field_settings';
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $download_selected = (array) $wpdb->get_col( "SELECT field_key FROM {$fs_table} WHERE is_enabled = 1 ORDER BY sort_order ASC" );
+        $download_selected = $enabled_fields;
+    } else {
+        $download_selected = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $download_selected ) ) ) );
+        if ( ! empty( $enabled_fields ) ) {
+            $download_selected = array_values( array_intersect( $download_selected, $enabled_fields ) );
+        }
+        $download_selected = array_values( array_diff( $download_selected, [ 'password_hash' ] ) );
+    }
+
+    // Final fallback: if settings table has no enabled fields for any reason, export core fields.
+    if ( empty( $download_selected ) && class_exists( 'TPW_Member_Field_Loader' ) && method_exists( 'TPW_Member_Field_Loader', 'get_core_fields' ) ) {
+        $download_selected = array_keys( (array) TPW_Member_Field_Loader::get_core_fields() );
         $download_selected = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $download_selected ) ) ) );
         $download_selected = array_values( array_diff( $download_selected, [ 'password_hash' ] ) );
-
-        if ( empty( $download_selected ) && class_exists( 'TPW_Member_Field_Loader' ) && method_exists( 'TPW_Member_Field_Loader', 'get_core_fields' ) ) {
-            $download_selected = array_keys( (array) TPW_Member_Field_Loader::get_core_fields() );
-            $download_selected = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $download_selected ) ) ) );
-            $download_selected = array_values( array_diff( $download_selected, [ 'password_hash' ] ) );
-        }
     }
 
     // Determine all columns of the members table to separate core vs meta

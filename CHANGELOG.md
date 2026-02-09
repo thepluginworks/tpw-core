@@ -2,6 +2,11 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.2] - 2026-02-09
+### Fixed
+- Members Admin: Export CSV now exports all enabled fields (including custom fields) when no Download fields are selected.
+- Members Admin: When Download fields are selected, Export CSV now includes only those selected fields that are enabled.
+
 ## [1.8.1] - 2026-02-09
 ### Fixed
 - Members Admin: Export CSV no longer downloads blank output when no Download fields have been configured.
