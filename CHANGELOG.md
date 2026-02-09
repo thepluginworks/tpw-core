@@ -2,6 +2,10 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.1] - 2026-02-09
+### Fixed
+- Members Admin: Export CSV no longer downloads blank output when no Download fields have been configured.
+
 ## [1.8.0] - 2026-02-03
 ### Added
 - Settings: new “Payment Methods” tab under TPW Core Settings.
