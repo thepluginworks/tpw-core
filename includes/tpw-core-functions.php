@@ -152,6 +152,206 @@ function tpw_core_get_currency_code() {
 }
 
 /**
+ * Core permissions bridge (Step 1).
+ *
+ * This helper centralises *read-only* permission checks for other TPW plugins to
+ * depend on, while preserving all existing behaviour in Core.
+ *
+ * IMPORTANT (staged rollout):
+ * - Additive only: this does not replace any checks elsewhere yet.
+ * - No role/cap changes, no DB writes, no side effects.
+ * - Each ability implemented here MUST delegate 1:1 to an existing runtime
+ *   enforcement check already present in Core today.
+ *
+ * @param string $ability A Core ability/capability key (e.g. 'tpw_members_manage').
+ * @param int    $user_id Optional. User ID to evaluate; 0 uses current user.
+ * @return bool
+ */
+if ( ! function_exists( 'tpw_core_user_can' ) ) {
+    function tpw_core_user_can( string $ability, int $user_id = 0 ): bool {
+        $ability = strtolower( trim( $ability ) );
+        if ( $ability === '' ) {
+            return false;
+        }
+
+        $user_id = $user_id > 0 ? $user_id : (int) get_current_user_id();
+        if ( $user_id <= 0 ) {
+            // Logged-out users do not possess capabilities.
+            return false;
+        }
+
+        // --- Local helpers (pure, no global user switching) ---
+        $wp_user_can = static function( int $uid, string $cap ): bool {
+            return function_exists( 'user_can' ) ? (bool) user_can( $uid, $cap ) : false;
+        };
+
+        // Load TPW Members access helper when needed (safe require).
+        $ensure_member_access = static function(): void {
+            if ( class_exists( 'TPW_Member_Access', false ) ) {
+                return;
+            }
+            $path = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php' : '';
+            if ( $path && file_exists( $path ) ) {
+                require_once $path;
+            }
+        };
+
+        // Mirror TPW_Member_Access::is_admin_current() for a specific user_id.
+        // Delegates to:
+        // - current_user_can('manage_options') (via user_can)
+        // - tpw_members/wp_admin_is_full_admin filter
+        // - tpw_members.is_admin flag fallback when filter disables WP-admin override
+        $tpw_members_is_admin_user = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
+            $ensure_member_access();
+
+            if ( ! $wp_user_can( $uid, 'manage_options' ) ) {
+                return false;
+            }
+
+            $wp_admin_is_enough = (bool) apply_filters( 'tpw_members/wp_admin_is_full_admin', true );
+            if ( $wp_admin_is_enough ) {
+                return true;
+            }
+
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
+                $member = TPW_Member_Access::get_member_by_user_id( $uid );
+                return ( $member && isset( $member->is_admin ) && (int) $member->is_admin === 1 );
+            }
+            return false;
+        };
+
+        // Mirror TPW_Control_UI::is_committee()/is_match_manager()/is_noticeboard_admin() for a given user_id.
+        // Delegates to the same filters + tpw_members table lookup used in TPW Control today.
+        $tpw_flag_from_members_table = static function( int $uid, string $flag_key, string $filter_name ): bool {
+            $is = apply_filters( $filter_name, null, $uid );
+            if ( null !== $is ) {
+                return (bool) $is;
+            }
+            global $wpdb;
+            if ( ! $wpdb || ! isset( $wpdb->prefix ) ) {
+                return false;
+            }
+            $table = $wpdb->prefix . 'tpw_members';
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $row = $wpdb->get_row( $wpdb->prepare( "SELECT {$flag_key} FROM {$table} WHERE user_id = %d LIMIT 1", $uid ) );
+            return ( $row && isset( $row->$flag_key ) && (int) $row->$flag_key === 1 );
+        };
+
+        // Members module "manager" permission as currently enforced by the manage-members shortcode + export.
+        // Delegates to:
+        // - current_user_can('manage_options') override
+        // - tpw_members_manage_access option allowing committee access
+        // - tpw_members.is_committee flag (linked member row)
+        $tpw_members_can_manage = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
+            if ( $wp_user_can( $uid, 'manage_options' ) ) {
+                return true;
+            }
+            $manage_setting = (string) get_option( 'tpw_members_manage_access', 'admins_only' );
+            if ( $manage_setting !== 'admins_committee' ) {
+                return false;
+            }
+            $ensure_member_access();
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
+                $member = TPW_Member_Access::get_member_by_user_id( $uid );
+                return ( $member && ! empty( $member->is_committee ) && (int) $member->is_committee === 1 );
+            }
+            return false;
+        };
+
+        // Members directory eligibility as currently enforced by the manage-members shortcode.
+        // Delegates to:
+        // - TPW_Member_Access::get_allowed_statuses()
+        // - member.status in tpw_members
+        $tpw_members_can_view_directory = static function( int $uid ) use ( $ensure_member_access ): bool {
+            $ensure_member_access();
+            if ( ! class_exists( 'TPW_Member_Access', false ) || ! method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
+                return false;
+            }
+            $member = TPW_Member_Access::get_member_by_user_id( $uid );
+            if ( ! $member ) {
+                return false;
+            }
+            $status_norm = strtolower( trim( (string) ( $member->status ?? '' ) ) );
+            $allowed = method_exists( 'TPW_Member_Access', 'get_allowed_statuses' )
+                ? (array) TPW_Member_Access::get_allowed_statuses()
+                : ( defined( 'TPW_Member_Access::ALLOWED_STATUSES' ) ? (array) TPW_Member_Access::ALLOWED_STATUSES : [] );
+            $allowed_norm = array_map( 'strtolower', array_map( 'trim', array_map( 'strval', $allowed ) ) );
+            return in_array( $status_norm, $allowed_norm, true );
+        };
+
+        // --- Ability mapping (Step 1 only; add more only when there is an existing enforcement point) ---
+        switch ( $ability ) {
+            // === Members ===
+            // Existing enforcement point: modules/members/shortcodes/members-admin.php
+            // - $can_manage = manage_options OR (admins_committee && member.is_committee)
+            case 'tpw_members_manage':
+            case 'tpw_members_create':
+            case 'tpw_members_import':
+            case 'tpw_members_status_manage':
+            case 'tpw_members_roles_manage':
+            case 'tpw_members_userlink_manage':
+                return $tpw_members_can_manage( $user_id );
+
+            // Existing enforcement point: modules/members/shortcodes/members-admin.php
+            // - Access allowed when $can_manage OR (member.status is in TPW_Member_Access::get_allowed_statuses())
+            case 'tpw_members_view':
+                return $tpw_members_can_manage( $user_id ) || $tpw_members_can_view_directory( $user_id );
+
+            // === Payments ===
+            // Existing enforcement points: Payments settings/admin pages currently gate on manage_options.
+            // (No finer-grained separation exists in Core today; keep behaviour identical.)
+            case 'tpw_payments_view':
+            case 'tpw_payments_manage':
+            case 'tpw_payments_methods_view':
+            case 'tpw_payments_methods_manage':
+                return $wp_user_can( $user_id, 'manage_options' );
+
+            // === Menus (meal choices library) ===
+            // Existing enforcement points: modules/menus/* admin pages gate on manage_options.
+            case 'tpw_menus_view':
+            case 'tpw_menus_manage':
+                return $wp_user_can( $user_id, 'manage_options' );
+
+            // === Notices / Noticeboard ===
+            // Existing enforcement points: modules/notices/* gates management actions on manage_options.
+            // Note: the TPW member flag is_noticeboard_admin is currently *not* an enforcement path here.
+            case 'tpw_notices_manage':
+                return $wp_user_can( $user_id, 'manage_options' );
+
+            // === Gallery ===
+            // Existing enforcement points: modules/gallery/* gates admin actions on a filterable cap.
+            // Delegates to tpw_gallery_manage_capability() (default: 'manage_options').
+            case 'tpw_gallery_upload':
+            case 'tpw_gallery_manage_own':
+            case 'tpw_gallery_manage_all':
+            case 'tpw_gallery_settings_manage':
+                $cap = function_exists( 'tpw_gallery_manage_capability' ) ? (string) tpw_gallery_manage_capability() : 'manage_options';
+                $cap = $cap !== '' ? $cap : 'manage_options';
+                return $wp_user_can( $user_id, $cap );
+
+            // === TPW Control ===
+            // Existing enforcement points:
+            // - Menu Manager section requires admin marker (__tpw_control_is_admin__)
+            // - Upload Pages section requires committee OR admin marker (__tpw_control_is_committee_or_admin__)
+            // Delegates to the same members flags + filters used by TPW Control today.
+            case 'tpw_control_menu_view':
+            case 'tpw_control_menu_manage':
+                return $tpw_members_is_admin_user( $user_id );
+
+            case 'tpw_control_archive_view':
+            case 'tpw_control_archive_upload':
+            case 'tpw_control_archive_manage':
+            case 'tpw_control_archive_settings_manage':
+                $is_committee = $tpw_flag_from_members_table( $user_id, 'is_committee', 'tpw_control/is_committee_user' );
+                return $tpw_members_is_admin_user( $user_id ) || $is_committee;
+        }
+
+        // Unknown ability: conservative default (Step 1).
+        return false;
+    }
+}
+
+/**
  * Get the TPW Core Settings URL for the Payment Methods tab.
  *
  * Used by other TPW plugins to link to the single source of truth for

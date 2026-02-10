@@ -2,6 +2,13 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.4] - 2026-02-10
+### Added
+- Permissions: added `tpw_core_user_can()` bridge helper (additive only; no behaviour change).
+
+### Changed
+- Maintenance: version bump to 1.8.4.
+
 ## [1.8.3] - 2026-02-10
 ### Changed
 - Maintenance: version bump to 1.8.3.
