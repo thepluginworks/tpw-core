@@ -2,6 +2,10 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.3] - 2026-02-10
+### Changed
+- Maintenance: version bump to 1.8.3.
+
 ## [1.8.2] - 2026-02-09
 ### Fixed
 - Members Admin: Export CSV now exports all enabled fields (including custom fields) when no Download fields are selected.
