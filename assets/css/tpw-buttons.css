@@ -11,6 +11,8 @@
   --tpw-btn-dark: #343a40;
   --tpw-btn-text-light: #fff;
   --tpw-btn-text-dark: #000;
+  --tpw-btn-warning: #f59e0b;
+  --tpw-btn-text-warning: #000;
   /* Action colours (module UIs) */
   --tpw-action-edit: #2d7ff9;
   --tpw-btn-radius: 7px;
@@ -40,6 +42,7 @@
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration-line: none;
   transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease-in-out;
 }
 
@@ -165,6 +168,7 @@ input[type="button"].tpw-btn.tpw-btn-secondary,
 input[type="reset"].tpw-btn.tpw-btn-secondary {
   background: var(--tpw-btn-secondary);
   color: var(--tpw-btn-text-light);
+  padding: var(--tpw-btn-padding);
 }
 
 .tpw-btn-danger {
@@ -177,6 +181,20 @@ input[type="button"].tpw-btn.tpw-btn-danger,
 input[type="reset"].tpw-btn.tpw-btn-danger {
   background: var(--tpw-btn-danger);
   color: var(--tpw-btn-text-light);
+  padding: var(--tpw-btn-padding);
+}
+
+.tpw-btn-warning {
+  background: var(--tpw-btn-warning);
+  color: var(--tpw-btn-text-warning);
+}
+button.tpw-btn.tpw-btn-warning,
+input[type="submit"].tpw-btn.tpw-btn-warning,
+input[type="button"].tpw-btn.tpw-btn-warning,
+input[type="reset"].tpw-btn.tpw-btn-warning {
+  background: var(--tpw-btn-warning);
+  color: var(--tpw-btn-text-warning);
+  padding: var(--tpw-btn-padding);
 }
 
 .tpw-btn-light {
