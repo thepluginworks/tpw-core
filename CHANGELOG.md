@@ -2,6 +2,11 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.7] - 2026-02-13
+### Changed
+- UI: removed `all: revert-layer` from the scoped Admin UI CSS to avoid impacting other plugins/themes.
+- Maintenance: version bump to 1.8.7.
+
 ## [1.8.6] - 2026-02-13
 ### Changed
 - UI: tidied Member Profile / My Payments navigation hierarchy (Tier-1 tabs + Tier-2 sidebar) and payments hub layout polish (no behaviour change).

@@ -36,7 +36,6 @@
 
   /* Reset inherited styles inside the namespace, then apply consistent box model and font */
   .tpw-admin-ui * {
-    all: revert-layer;
     box-sizing: border-box;
   }
   .tpw-admin-ui *::before,
@@ -173,7 +172,6 @@
 
   /* Ensure .tpw-btn-* variants keep their global styling (from tpw-buttons.css) */
   .tpw-admin-ui .tpw-btn[class*="tpw-btn-"] {
-    all: revert-layer;
     font: inherit;
     box-sizing: border-box;
   }
