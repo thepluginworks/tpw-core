@@ -3,6 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 // Expect: $sources (array), $active_type (string)
 ?>
 <aside class="tpw-sidebar" aria-label="Payments navigation">
+  <div class="tpw-sidebar-heading" role="heading" aria-level="3"><?php echo esc_html__( 'Payment types', 'tpw-core' ); ?></div>
   <nav>
     <ul class="tpw-menu">
       <?php foreach ( $sources as $slug => $source ) :

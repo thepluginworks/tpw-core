@@ -1,9 +1,55 @@
 /* TPW Admin Tabs (centralized) */
-.tpw-tabs { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 12px; padding: 0; }
+.tpw-tabs {
+	display:flex;
+	gap:8px;
+	flex-wrap:wrap;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
 .tpw-tabs .tpw-tab,
-.tpw-tab { display:inline-flex; align-items:center; justify-content:center; height: 32px; padding: 0 12px; border-radius: 8px; text-decoration:none; border: 1px solid #c3c4c7; background: #f6f7f7; color: #1d2327; font-weight: 600; font-size: 13px; line-height: 1; }
-.tpw-tabs .tpw-tab:hover { filter: brightness(0.98); }
-.tpw-tabs .tpw-tab.active { background: #2271b1; border-color: #2271b1; color: #fff; }
+.tpw-tab {
+	--tpw-tab-accent: var(--tpw-accent-color, var(--tpw-primary, #2271b1));
+	--tpw-tab-border: var(--tpw-border-color, var(--tpw-border, #ccd0d4));
+	--tpw-tab-bg: var(--tpw-bg-color, var(--tpw-bg-light, #f6f7f7));
+	--tpw-tab-text: var(--tpw-text-color, var(--tpw-text-dark, #1d2327));
+
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 999px;
+	text-decoration:none;
+	border: 1px solid var(--tpw-tab-border);
+	background: var(--tpw-tab-bg);
+	color: var(--tpw-tab-text);
+	font-weight: 600;
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+}
+.tpw-tabs .tpw-tab:hover { text-decoration: none; filter: brightness(0.99); }
+.tpw-tabs .tpw-tab:focus-visible {
+	outline: 2px solid color-mix(in oklab, var(--tpw-tab-accent) 45%, white 55%);
+	outline-offset: 2px;
+}
+
+/* Active tab: uses bottom accent (distinct from sidebar's left accent) */
+.tpw-tabs .tpw-tab.active,
+.tpw-tabs .tpw-tab.is-active {
+	background: color-mix(in oklab, var(--tpw-tab-accent) 12%, var(--tpw-tab-bg));
+	border-color: color-mix(in oklab, var(--tpw-tab-accent) 35%, var(--tpw-tab-border));
+	box-shadow: inset 0 -2px 0 0 var(--tpw-tab-accent);
+}
 
 /* Compact variant for tight spaces */
 .tpw-tabs.is-compact .tpw-tab { height: 28px; padding: 0 10px; border-radius: 6px; font-size: 12px; }
+
+/* Member Profile: separation between Tier-1 tabs and the Payments hub */
+.tpw-member-profile-nav {
+	margin: 0 0 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tpw-border-color, var(--tpw-border, #ccd0d4));
+}
+.tpw-member-profile-nav .tpw-tabs { margin-bottom: 0; }

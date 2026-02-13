@@ -25,7 +25,6 @@ $active_source = isset($active_source) ? $active_source : null;
 
 if ( empty( $sources ) ) {
     echo '<div class="tpw-card">';
-    echo '  <h2>' . esc_html__( 'My Payments', 'tpw-core' ) . '</h2>';
     echo '  <p>' . esc_html__( 'No payment modules are active.', 'tpw-core' ) . '</p>';
     echo '</div>';
     echo '</div>';
@@ -42,9 +41,7 @@ if ( ! $single ) {
 
 // Content area
 echo '<main class="tpw-content" role="region" aria-label="Payments content">';
-echo '  <div class="tpw-card" style="margin-bottom:12px;">';
-echo '    <h2>' . esc_html__( 'My Payments', 'tpw-core' ) . '</h2>';
-echo '  </div>';
+echo '  <h2 class="tpw-sr-only">' . esc_html__( 'My Payments', 'tpw-core' ) . '</h2>';
 
 if ( $active_type && is_array( $active_source ) ) {
     $cb = $active_source['callback'] ?? null;

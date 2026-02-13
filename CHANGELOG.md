@@ -2,6 +2,11 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.6] - 2026-02-13
+### Changed
+- UI: tidied Member Profile / My Payments navigation hierarchy (Tier-1 tabs + Tier-2 sidebar) and payments hub layout polish (no behaviour change).
+- Maintenance: version bump to 1.8.6.
+
 ## [1.8.5] - 2026-02-12
 ### Added
 - UI: added `.tpw-btn-warning` variant to the global button system.

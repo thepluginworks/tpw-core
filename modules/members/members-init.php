@@ -78,7 +78,8 @@ if ( $tpw_members_active ) {
             }
         }
     }
-    // Enqueue shared TPW button styles for all public-facing Members screens
+    // Enqueue shared TPW UI styles for all public-facing Members screens
+    // Priority is high so theme/global styles are enqueued first.
     add_action( 'wp_enqueue_scripts', function() {
         global $post;
         $has_members_ui = false;
@@ -96,15 +97,33 @@ if ( $tpw_members_active ) {
         if ( ! $has_members_ui ) {
             return;
         }
-        // Enqueue the shared buttons CSS from TPW Core
-        $css_file = TPW_CORE_PATH . 'assets/css/tpw-buttons.css';
-        wp_enqueue_style(
-            'tpw-buttons',
-            TPW_CORE_URL . 'assets/css/tpw-buttons.css',
-            [],
-            file_exists( $css_file ) ? filemtime( $css_file ) : null
-        );
-    }, 100 );
+
+        // Core UI helpers (tokens), scoped admin UI (layout/resets), buttons, and tabs.
+        $ui_file       = TPW_CORE_PATH . 'assets/css/tpw-ui.css';
+        $admin_ui_file = TPW_CORE_PATH . 'assets/css/tpw-admin-ui.css';
+        $buttons_file  = TPW_CORE_PATH . 'assets/css/tpw-buttons.css';
+        $tabs_file     = TPW_CORE_PATH . 'assets/css/tpw-admin-tabs.css';
+
+        $ui_ver       = file_exists( $ui_file ) ? filemtime( $ui_file ) : null;
+        $admin_ui_ver = file_exists( $admin_ui_file ) ? filemtime( $admin_ui_file ) : null;
+        $buttons_ver  = file_exists( $buttons_file ) ? filemtime( $buttons_file ) : null;
+        $tabs_ver     = file_exists( $tabs_file ) ? filemtime( $tabs_file ) : null;
+
+        if ( function_exists( 'wp_style_is' ) ) {
+            if ( ! wp_style_is( 'tpw-ui', 'enqueued' ) ) {
+                wp_enqueue_style( 'tpw-ui', TPW_CORE_URL . 'assets/css/tpw-ui.css', [], $ui_ver );
+            }
+            if ( ! wp_style_is( 'tpw-admin-ui', 'enqueued' ) ) {
+                wp_enqueue_style( 'tpw-admin-ui', TPW_CORE_URL . 'assets/css/tpw-admin-ui.css', [ 'tpw-ui' ], $admin_ui_ver );
+            }
+            if ( ! wp_style_is( 'tpw-buttons', 'enqueued' ) ) {
+                wp_enqueue_style( 'tpw-buttons', TPW_CORE_URL . 'assets/css/tpw-buttons.css', [ 'tpw-ui' ], $buttons_ver );
+            }
+            if ( ! wp_style_is( 'tpw-admin-tabs', 'enqueued' ) ) {
+                wp_enqueue_style( 'tpw-admin-tabs', TPW_CORE_URL . 'assets/css/tpw-admin-tabs.css', [ 'tpw-ui' ], $tabs_ver );
+            }
+        }
+    }, 999 );
 
     add_action( 'wp_logout', function() {
         wp_safe_redirect( home_url() );
