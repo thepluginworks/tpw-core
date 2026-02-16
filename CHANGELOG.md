@@ -2,6 +2,15 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.9] - 2026-02-16
+### Added
+- Menus: introduced the official logout placeholder URL `/?tpw_action=logout` for menu Custom Links.
+- Menus: placeholder is rewritten at render-time into a fresh `wp_logout_url( home_url('/') )` so logout is immediate and no WordPress confirmation screen appears.
+- Docs: documented the Logout URL Standard contract for admins and developers.
+
+### Changed
+- Maintenance: version bump to 1.8.9.
+
 ## [1.8.8] - 2026-02-16
 ### Changed
 - Members: removed the “Payment Methods” panel from the member-facing My Profile → My Payments hub.

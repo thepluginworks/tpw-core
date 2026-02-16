@@ -1,4 +1,4 @@
-# TPW Core (v1.8.8)
+# TPW Core (v1.8.9)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,12 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Menus / Logout updates (1.8.9)
+- Menus: introduced the official logout placeholder URL `/?tpw_action=logout` for menu Custom Links.
+- Menus: placeholder is rewritten at render-time into a fresh `wp_logout_url( home_url('/') )` so logout is immediate and no WordPress confirmation screen appears.
+- Docs: documented the Logout URL Standard contract for admins and developers.
+- Maintenance: version bump to 1.8.9.
 
 ### Members updates (1.8.8)
 - My Profile: removed the “Payment Methods” panel from the member-facing My Payments hub.
@@ -180,6 +186,36 @@ Custom link text:
 ```plaintext
 [tpw_logout_link]Sign out[/tpw_logout_link]
 ```
+
+## Logout URL Standard
+
+TPW Core does not support hardcoded WordPress logout URLs such as `wp-login.php?action=logout`.
+
+WordPress logout URLs contain a security nonce. If a nonce-bearing logout URL is saved into a WordPress menu, that nonce will eventually expire. When it does, users will see the default WordPress confirmation screen (“Are you sure you want to log out?”) instead of being logged out immediately.
+
+The official TPW Core logout URL contract is:
+
+`/?tpw_action=logout`
+
+When this URL is used in a WordPress menu:
+
+- It is rewritten at render time into `wp_logout_url( home_url('/') )`
+- A fresh nonce is generated per user/session
+- Logout happens immediately
+- The user is redirected to the homepage
+- No confirmation screen appears
+
+### Admin Instruction
+
+To add Logout to a menu:
+
+1. Go to Appearance → Menus
+2. Add a Custom Link
+3. URL: `/?tpw_action=logout`
+4. Link text: Logout
+5. Save
+
+Admins must not paste `wp-login.php?action=logout` URLs into menus.
 
 ### `[tpw-control]`
 ### `[tpw_profile_badge]`

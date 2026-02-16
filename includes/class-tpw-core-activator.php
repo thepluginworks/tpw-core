@@ -214,7 +214,8 @@ class TPW_Core_Activator {
 
                     if ( $menu_id > 0 && function_exists( 'wp_update_nav_menu_item' ) ) {
                         // Add a basic Logout item for convenience if menu is new/empty
-                        $logout_url = function_exists( 'wp_logout_url' ) ? wp_logout_url( home_url( '/' ) ) : home_url( '/?logout=1' );
+                        // Store a placeholder (not a nonce URL) so it can be rewritten at render-time.
+                        $logout_url = '/?tpw_action=logout';
                         wp_update_nav_menu_item( $menu_id, 0, [
                             'menu-item-title'  => __( 'Logout', 'tpw-core' ),
                             'menu-item-url'    => esc_url_raw( $logout_url ),

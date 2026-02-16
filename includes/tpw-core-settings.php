@@ -1696,6 +1696,64 @@ add_filter( 'wp_nav_menu_objects', function( $items, $args ) {
     return $out;
 }, 10, 2 );
 
+// Logout URL contract (public): /?tpw_action=logout
+//
+// We use a stable placeholder URL and do NOT persist nonce-bearing WordPress logout URLs in the database.
+// WordPress logout links include a security nonce that expires; if saved into menus, users eventually see
+// the WP confirmation screen instead of being logged out.
+//
+// This filter rewrites the placeholder at render-time into wp_logout_url( home_url('/') ) so a fresh nonce
+// is generated per user/session and logout happens immediately.
+//
+// This is a public contract; do not change the placeholder without backward-compatibility consideration.
+// Placeholder (exact match when normalised): /?tpw_action=logout (allow absolute or relative)
+add_filter( 'wp_nav_menu_objects', function( $items, $args ) {
+    if ( is_admin() ) return $items;
+    if ( ! is_user_logged_in() ) return $items;
+    if ( empty( $items ) || ! is_array( $items ) ) return $items;
+
+    foreach ( $items as $it ) {
+        if ( empty( $it->url ) ) {
+            continue;
+        }
+
+        $raw = html_entity_decode( trim( (string) $it->url ), ENT_QUOTES, 'UTF-8' );
+        if ( $raw === '' ) {
+            continue;
+        }
+
+        $parsed = function_exists( 'wp_parse_url' ) ? wp_parse_url( $raw ) : parse_url( $raw );
+        if ( ! is_array( $parsed ) ) {
+            continue;
+        }
+
+        $path  = isset( $parsed['path'] ) ? (string) $parsed['path'] : '';
+        $query = isset( $parsed['query'] ) ? (string) $parsed['query'] : '';
+
+        // Treat a bare domain + query as root path.
+        if ( $path === '' ) {
+            $path = '/';
+        }
+
+        if ( $path !== '/' || $query === '' ) {
+            continue;
+        }
+
+        parse_str( $query, $qv );
+        if ( ! is_array( $qv ) || count( $qv ) !== 1 ) {
+            continue;
+        }
+
+        if ( ! isset( $qv['tpw_action'] ) || (string) $qv['tpw_action'] !== 'logout' ) {
+            continue;
+        }
+
+        $it->url = wp_logout_url( home_url( '/' ) );
+    }
+
+    return $items;
+}, 20, 2 );
+
 // Admin notice: prompt to configure profile page if feature is being used but not configured
 add_action( 'admin_notices', function() {
     if ( ! current_user_can( 'manage_options' ) ) return;
@@ -1786,7 +1844,8 @@ add_action( 'admin_init', function () {
     }
 
     if ( $menu_id > 0 && function_exists( 'wp_update_nav_menu_item' ) ) {
-        $logout_url = function_exists( 'wp_logout_url' ) ? wp_logout_url( home_url( '/' ) ) : home_url( '/?logout=1' );
+        // Store a placeholder (not a nonce URL) so it can be rewritten at render-time.
+        $logout_url = '/?tpw_action=logout';
         wp_update_nav_menu_item( $menu_id, 0, [
             'menu-item-title'  => __( 'Logout', 'tpw-core' ),
             'menu-item-url'    => esc_url_raw( $logout_url ),
