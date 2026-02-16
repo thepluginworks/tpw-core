@@ -149,6 +149,12 @@ class TPW_Member_Payments {
         }
         // Prepare dynamic sources
         $sources = self::get_registered_sources();
+
+        // Member-facing hub: do not expose the default "Payment Methods" panel.
+        // This keeps gateway processing + admin Payment Methods management unchanged.
+        if ( isset( $sources['methods'] ) ) {
+            unset( $sources['methods'] );
+        }
         $active_type_raw = isset($_GET['type']) ? (string) $_GET['type'] : '';
         $active_type = $active_type_raw !== '' ? sanitize_key( $active_type_raw ) : '';
         // Robust lookup: try common variants (dash/underscore, lowercased)

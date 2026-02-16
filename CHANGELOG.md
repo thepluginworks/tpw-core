@@ -2,6 +2,11 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.8.8] - 2026-02-16
+### Changed
+- Members: removed the “Payment Methods” panel from the member-facing My Profile → My Payments hub.
+- Maintenance: version bump to 1.8.8.
+
 ## [1.8.7] - 2026-02-13
 ### Changed
 - UI: removed `all: revert-layer` from the scoped Admin UI CSS to avoid impacting other plugins/themes.

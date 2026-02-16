@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.7
+Stable tag: 1.8.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,10 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.8.8 =
+- Members: removed the "Payment Methods" panel from the member-facing My Profile → My Payments hub.
+- Maintenance: version bump to 1.8.8.
 
 = 1.8.7 =
 - UI: removed `all: revert-layer` from the scoped Admin UI CSS to avoid impacting other plugins/themes.
