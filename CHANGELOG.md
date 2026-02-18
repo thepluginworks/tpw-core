@@ -2,6 +2,15 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.9.1] - 2026-02-18
+### Fixed
+- Admin: normalized Core Settings notice handling (no Settings API notice plumbing) and removed notice relocation JS.
+- Admin: eliminated flicker and duplicate notices on Core Settings.
+
+### Changed
+- Admin: Core Settings uses the standard TPW branded header strip.
+- Maintenance: version bump to 1.9.1.
+
 ## [1.9.0] - 2026-02-18
 ### Added
 - Admin: TPW Core Settings now uses the standard TPW header strip (icon, title/subtitle, and TPW logo).

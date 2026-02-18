@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.9.1 =
+- Admin: Core Settings now uses the standard TPW branded header strip.
+- Admin: removed notice relocation JS and normalized notice handling.
+- Admin: removed Settings API notice usage for Core Settings (no add_settings_error/settings_errors plumbing).
+- Admin: eliminated flicker and duplicate notices on Core Settings.
 
 = 1.9.0 =
 - Admin: TPW Core Settings now uses the standard TPW header strip (icon, title/subtitle, and TPW logo).
