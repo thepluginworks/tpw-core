@@ -101,6 +101,36 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             return;
         }
 
+        $tpw_core_debug_header_placement = ( defined( 'TPW_CORE_DEBUG_HEADER_PLACEMENT' ) && TPW_CORE_DEBUG_HEADER_PLACEMENT );
+        $tpw_core_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $tpw_core_screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        $tpw_core_screen_id = ( $tpw_core_screen && isset( $tpw_core_screen->id ) ) ? (string) $tpw_core_screen->id : '';
+
+        // Scope logs strictly to Core Settings.
+        $tpw_core_debug_header_placement = ( $tpw_core_debug_header_placement && $tpw_core_page === 'tpw-core-settings' );
+
+        $tpw_core_debug_tail = '';
+        $tpw_core_debug_ob_start_level = 0;
+
+        if ( $tpw_core_debug_header_placement ) {
+            $tpw_core_debug_ob_start_level = ob_get_level();
+
+            // Rolling tail of output so we can inspect what is being emitted around the header call.
+            ob_start( function ( $chunk ) use ( &$tpw_core_debug_tail ) {
+                $tpw_core_debug_tail .= (string) $chunk;
+                if ( strlen( $tpw_core_debug_tail ) > 800 ) {
+                    $tpw_core_debug_tail = substr( $tpw_core_debug_tail, -800 );
+                }
+                return $chunk;
+            } );
+
+            error_log(
+                'TPW CORE HEADER PLACEMENT: render_start; current_filter=' . (string) current_filter() .
+                '; screen_id=' . $tpw_core_screen_id .
+                '; page=' . $tpw_core_page
+            );
+        }
+
         // Build tabs (extensible)
         $tabs = apply_filters( 'tpw_core_settings_tabs', [
             'branding'    => __( 'Branding', 'tpw-core' ),
@@ -120,10 +150,113 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
     ?>
         <?php
         if ( function_exists( 'tpw_core_render_settings_header' ) ) {
+            if ( $tpw_core_debug_header_placement ) {
+                $errors_before = get_settings_errors();
+                $codes_before = [];
+                foreach ( array_slice( (array) $errors_before, 0, 2 ) as $e ) {
+                    if ( isset( $e['code'] ) ) {
+                        $codes_before[] = (string) $e['code'];
+                    }
+                }
+
+                $tail_before = substr( preg_replace( '/\s+/', ' ', $tpw_core_debug_tail ), -200 );
+
+                error_log(
+                    'TPW CORE HEADER PLACEMENT: before_header; current_filter=' . (string) current_filter() .
+                    '; screen_id=' . $tpw_core_screen_id .
+                    '; page=' . $tpw_core_page .
+                    '; settings_errors_count=' . count( (array) $errors_before ) .
+                    '; first_codes=' . implode( ',', $codes_before ) .
+                    '; out_tail=' . $tail_before
+                );
+
+                // List callbacks attached to notice output hooks.
+                $notice_hooks = [ 'admin_notices', 'all_admin_notices', 'network_admin_notices', 'user_admin_notices' ];
+                foreach ( $notice_hooks as $hook_name ) {
+                    $lines = 0;
+                    $count = 0;
+
+                    global $wp_filter;
+                    $hook_obj = isset( $wp_filter[ $hook_name ] ) ? $wp_filter[ $hook_name ] : null;
+                    $callbacks = null;
+                    if ( $hook_obj instanceof WP_Hook ) {
+                        $callbacks = $hook_obj->callbacks;
+                    } elseif ( is_array( $hook_obj ) ) {
+                        $callbacks = $hook_obj;
+                    }
+
+                    if ( empty( $callbacks ) || ! is_array( $callbacks ) ) {
+                        error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; callbacks=0' );
+                        continue;
+                    }
+
+                    foreach ( $callbacks as $priority => $bucket ) {
+                        if ( ! is_array( $bucket ) ) {
+                            continue;
+                        }
+                        foreach ( $bucket as $cb ) {
+                            if ( ! is_array( $cb ) || ! isset( $cb['function'] ) ) {
+                                continue;
+                            }
+                            $count++;
+
+                            $fn = $cb['function'];
+                            $name = 'unknown';
+                            if ( is_string( $fn ) ) {
+                                $name = $fn;
+                            } elseif ( is_array( $fn ) && isset( $fn[0], $fn[1] ) ) {
+                                $class = is_object( $fn[0] ) ? get_class( $fn[0] ) : (string) $fn[0];
+                                $name = $class . '::' . (string) $fn[1];
+                            } elseif ( $fn instanceof Closure ) {
+                                $name = 'Closure';
+                            } elseif ( is_object( $fn ) && method_exists( $fn, '__invoke' ) ) {
+                                $name = get_class( $fn ) . '::__invoke';
+                            }
+
+                            // Avoid huge logs.
+                            if ( $lines < 60 ) {
+                                error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; priority=' . (string) $priority . '; cb=' . $name );
+                                $lines++;
+                            }
+                        }
+                    }
+
+                    error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; callbacks_total=' . (string) $count );
+                }
+            }
+
+            ob_start();
             tpw_core_render_settings_header(
                 __( 'TPW Core Settings', 'tpw-core' ),
                 __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
             );
+            $tpw_core_header_html = (string) ob_get_clean();
+
+            if ( $tpw_core_debug_header_placement ) {
+                $header_len = strlen( $tpw_core_header_html );
+                $header_head = substr( preg_replace( '/\s+/', ' ', $tpw_core_header_html ), 0, 200 );
+                error_log( 'TPW CORE HEADER PLACEMENT: header_html_len=' . $header_len . '; header_head=' . $header_head );
+            }
+
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Header function outputs trusted HTML.
+            echo $tpw_core_header_html;
+
+            if ( $tpw_core_debug_header_placement ) {
+                $errors_after = get_settings_errors();
+                $codes_after = [];
+                foreach ( array_slice( (array) $errors_after, 0, 2 ) as $e ) {
+                    if ( isset( $e['code'] ) ) {
+                        $codes_after[] = (string) $e['code'];
+                    }
+                }
+
+                $tail_after = substr( preg_replace( '/\s+/', ' ', $tpw_core_debug_tail ), -200 );
+                error_log(
+                    'TPW CORE HEADER PLACEMENT: after_header; settings_errors_count=' . count( (array) $errors_after ) .
+                    '; first_codes=' . implode( ',', $codes_after ) .
+                    '; out_tail=' . $tail_after
+                );
+            }
         }
         ?>
 
@@ -287,6 +420,11 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             ?>
         </div></div>
         <?php
+
+        if ( $tpw_core_debug_header_placement && ob_get_level() > $tpw_core_debug_ob_start_level ) {
+            error_log( 'TPW CORE HEADER PLACEMENT: render_end' );
+            ob_end_flush();
+        }
     }
 }
 
