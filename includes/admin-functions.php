@@ -80,6 +80,57 @@ add_action( 'admin_enqueue_scripts', function () {
     wp_enqueue_style( 'tpw-admin-ui', $ui_url, [], $ui_ver );
 }, 99);
 
+// TEMP (WP_DEBUG only): log all enqueued scripts/styles on the Core Settings screen.
+add_action( 'admin_enqueue_scripts', function ( $hook_suffix ) {
+    if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+        return;
+    }
+
+    if ( ! is_admin() ) {
+        return;
+    }
+
+    $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    if ( $page !== 'tpw-core-settings' ) {
+        return;
+    }
+
+    global $wp_scripts, $wp_styles;
+
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    $screen_id = $screen && isset( $screen->id ) ? (string) $screen->id : '';
+
+    error_log( 'TPW CORE: admin_enqueue_scripts – tpw-core-settings – hook_suffix=' . (string) $hook_suffix . ' – screen_id=' . $screen_id );
+
+    if ( $wp_scripts instanceof WP_Scripts ) {
+        foreach ( (array) $wp_scripts->queue as $handle ) {
+            $src = '';
+            if ( isset( $wp_scripts->registered[ $handle ] ) && isset( $wp_scripts->registered[ $handle ]->src ) ) {
+                $src = (string) $wp_scripts->registered[ $handle ]->src;
+                if ( $src !== '' ) {
+                    $src = $wp_scripts->base_url . $src;
+                    $src = $wp_scripts->set_url_scheme( $src );
+                }
+            }
+            error_log( 'TPW CORE: script: ' . $handle . ' – ' . $src );
+        }
+    }
+
+    if ( $wp_styles instanceof WP_Styles ) {
+        foreach ( (array) $wp_styles->queue as $handle ) {
+            $src = '';
+            if ( isset( $wp_styles->registered[ $handle ] ) && isset( $wp_styles->registered[ $handle ]->src ) ) {
+                $src = (string) $wp_styles->registered[ $handle ]->src;
+                if ( $src !== '' ) {
+                    $src = $wp_styles->base_url . $src;
+                    $src = $wp_styles->set_url_scheme( $src );
+                }
+            }
+            error_log( 'TPW CORE: style: ' . $handle . ' – ' . $src );
+        }
+    }
+}, 9999 );
+
 /**
  * Add CSS classes to <body> for styling on Core admin and CPT screens.
  *
