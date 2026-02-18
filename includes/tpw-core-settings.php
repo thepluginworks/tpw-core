@@ -62,7 +62,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
                             if (k) seen[k] = true;
                         });
 
-                        var nodes = root.querySelectorAll('.notice.settings-error, .notice.is-dismissible');
+                        var nodes = root.querySelectorAll('.notice');
                         Array.prototype.forEach.call(nodes, function(node){
                             if (!node || (node.closest && node.closest('.tpw-fe-notices'))) return;
                             var key = (node.className || '') + '|' + (node.textContent || '').trim();
