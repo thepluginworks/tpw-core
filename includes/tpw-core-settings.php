@@ -72,9 +72,18 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         $base_url = admin_url( 'options-general.php?page=tpw-core-settings' );
     ?>
     <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
+        <?php
+        if ( function_exists( 'tpw_core_output_header' ) ) {
+            tpw_core_output_header(
+                __( 'TPW Core Settings', 'tpw-core' ),
+                __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
+            );
+        } elseif ( function_exists( 'tpw_core_render_settings_header' ) ) {
+            tpw_core_render_settings_header( __( 'TPW Core Settings', 'tpw-core' ) );
+        }
+        ?>
+
         <div class="wrap">
-            <h1><?php esc_html_e( 'TPW Core Settings', 'tpw-core' ); ?></h1>
-            <?php settings_errors(); ?>
 
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
@@ -84,6 +93,8 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     <a href="<?php echo $url; ?>" class="nav-tab<?php echo esc_attr($active); ?>"><?php echo esc_html( $label ); ?></a>
                 <?php endforeach; ?>
             </h2>
+
+            <?php settings_errors(); ?>
 
             <?php $tpw_core_builtin_tab_rendered = false; ?>
 

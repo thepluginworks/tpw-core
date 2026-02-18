@@ -2,6 +2,16 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.9.0] - 2026-02-18
+### Added
+- Admin: TPW Core Settings now uses the standard TPW header strip (icon, title/subtitle, and TPW logo).
+
+### Fixed
+- Admin: added missing TPW Core icon asset for the header strip to prevent a broken image.
+
+### Changed
+- Maintenance: version bump to 1.9.0.
+
 ## [1.8.9] - 2026-02-16
 ### Added
 - Menus: introduced the official logout placeholder URL `/?tpw_action=logout` for menu Custom Links.
