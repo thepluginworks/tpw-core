@@ -71,7 +71,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
 
         $base_url = admin_url( 'options-general.php?page=tpw-core-settings' );
     ?>
-    <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <?php
         if ( function_exists( 'tpw_core_output_header' ) ) {
             tpw_core_output_header(
@@ -83,6 +82,7 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         }
         ?>
 
+    <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <div class="wrap">
 
             <h2 class="nav-tab-wrapper">
