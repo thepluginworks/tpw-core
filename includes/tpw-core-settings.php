@@ -38,6 +38,53 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
         if ( function_exists( 'wp_enqueue_media' ) ) {
             wp_enqueue_media();
         }
+
+        // Pin notices beneath the TPW header on this screen only.
+        add_action( 'admin_head', function () {
+            ?>
+            <style>
+                .tpw-fe-notices{clear:both;margin:12px 0 0;}
+                .tpw-fe-notices .notice{margin:8px 0 0;}
+            </style>
+            <script>
+                (function(){
+                    function tpwCoreMoveNotices(){
+                        var target = document.querySelector('.tpw-fe-notices');
+                        if (!target) return;
+
+                        var root = document.getElementById('wpbody-content') || document.body;
+                        if (!root) return;
+
+                        // Build a signature set from existing notices in the target.
+                        var seen = {};
+                        Array.prototype.forEach.call(target.querySelectorAll('.notice'), function(n){
+                            var k = (n.className || '') + '|' + (n.textContent || '').trim();
+                            if (k) seen[k] = true;
+                        });
+
+                        var nodes = root.querySelectorAll('.notice.settings-error, .notice.is-dismissible');
+                        Array.prototype.forEach.call(nodes, function(node){
+                            if (!node || (node.closest && node.closest('.tpw-fe-notices'))) return;
+                            var key = (node.className || '') + '|' + (node.textContent || '').trim();
+                            if (key && seen[key]) {
+                                if (node.parentNode) node.parentNode.removeChild(node);
+                                return;
+                            }
+                            if (key) seen[key] = true;
+                            target.appendChild(node);
+                        });
+                    }
+
+                    // Run immediately if possible, then again after load and after a short delay.
+                    tpwCoreMoveNotices();
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', tpwCoreMoveNotices);
+                    }
+                    setTimeout(tpwCoreMoveNotices, 120);
+                })();
+            </script>
+            <?php
+        }, 9999 );
     }
 } );
 
@@ -83,6 +130,8 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
     <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <div class="wrap">
 
+            <div class="tpw-fe-notices"></div>
+
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
                     $url = esc_url( add_query_arg( 'tab', $slug, $base_url ) );
@@ -92,31 +141,7 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 <?php endforeach; ?>
             </h2>
 
-            <?php
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'TPW CORE: settings_errors() START – ' . __FILE__ . ':' . __LINE__ );
-            }
-
-            // Deterministically capture notices so they can only be rendered once,
-            // beneath the tabs, and never inside the header strip.
-            ob_start();
-            settings_errors();
-            $tpw_notices_html = (string) ob_get_clean();
-
-            // If the header output path had to defensively strip notices, append them here.
-            if ( ! empty( $GLOBALS['tpw_core_settings_stripped_notices'] ) ) {
-                $tpw_notices_html = (string) $GLOBALS['tpw_core_settings_stripped_notices'] . $tpw_notices_html;
-                $GLOBALS['tpw_core_settings_stripped_notices'] = '';
-            }
-
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'TPW CORE: settings_errors() END – ' . __FILE__ . ':' . __LINE__ );
-                error_log( 'TPW CORE: settings_errors() HTML length=' . strlen( $tpw_notices_html ) );
-            }
-
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WordPress core outputs escaped notice markup.
-            echo $tpw_notices_html;
-            ?>
+            <?php settings_errors(); ?>
 
             <?php $tpw_core_builtin_tab_rendered = false; ?>
 
@@ -1422,14 +1447,6 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
     if ( ! $reset_b64 && ! empty( $incoming['fallback_logo_url'] ) && class_exists('TPW_Email_Logo_Helper') ) {
         $b64 = TPW_Email_Logo_Helper::generate_base64( $incoming['fallback_logo_url'] );
         if ( $b64 === '' ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                $bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 );
-                $frames = [];
-                foreach ( $bt as $f ) {
-                    $frames[] = ( $f['function'] ?? 'unknown' ) . ' @ ' . ( $f['file'] ?? 'unknown' ) . ':' . ( $f['line'] ?? 0 );
-                }
-                error_log( 'TPW CORE: add_settings_error(tpw_email_logo_b64_skipped) – ' . __FILE__ . ':' . __LINE__ . ' – ' . implode( ' | ', array_slice( $frames, 0, 5 ) ) );
-            }
             add_settings_error( 'tpw_core_email_settings', 'tpw_email_logo_b64_skipped', __( 'Base64 copy not created – image too large or incompatible format.', 'tpw-core' ), 'warning' );
         }
     }
@@ -1449,15 +1466,6 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
             // If empty, clear to fall back to Site Title
             delete_option( 'tpw_brand_title' );
         }
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 );
-            $frames = [];
-            foreach ( $bt as $f ) {
-                $frames[] = ( $f['function'] ?? 'unknown' ) . ' @ ' . ( $f['file'] ?? 'unknown' ) . ':' . ( $f['line'] ?? 0 );
-            }
-            error_log( 'TPW CORE: add_settings_error(tpw_email_saved) – ' . __FILE__ . ':' . __LINE__ . ' – ' . implode( ' | ', array_slice( $frames, 0, 5 ) ) );
-        }
-
         add_settings_error( 'tpw_core_email_settings', 'tpw_email_saved', __( 'Email settings saved.', 'tpw-core' ), 'updated' );
     } else {
         add_settings_error( 'tpw_core_email_settings', 'tpw_email_missing', __( 'Could not save. Email settings class missing.', 'tpw-core' ), 'error' );
