@@ -270,8 +270,14 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
                     <img class="tpw-fe-logo" src="<?php echo esc_url( $logo_url ); ?>" alt="The Plugin Works" />
                 </div>
             </div>
-            <?php do_action( 'tpw_core/admin_header/after', $title ); ?>
         </div>
+        <?php
+        // Allow extensions to output content after the header strip, but never on the
+        // Core Settings screen (that page controls its own notices and tab layout).
+        if ( $page !== 'tpw-core-settings' ) {
+            do_action( 'tpw_core/admin_header/after', $title );
+        }
+        ?>
         <?php
     }
 }
@@ -290,18 +296,20 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
  * @param string $title Header title text.
  */
 if ( ! function_exists( 'tpw_core_render_settings_header' ) ) {
-    function tpw_core_render_settings_header( string $title ): void {
-        // Reuse existing product header helpers if present
+    function tpw_core_render_settings_header( string $title, string $subtitle = '' ): void {
+        // Prefer Core's own header helper to avoid cross-plugin differences (e.g. notice output).
+        if ( function_exists( 'tpw_core_output_header' ) ) {
+            tpw_core_output_header( $title, $subtitle );
+            return;
+        }
+
+        // Fallbacks: reuse existing product header helpers if present
         if ( function_exists( 'tpw_admin_output_header' ) ) {
-            tpw_admin_output_header( $title, '' );
+            tpw_admin_output_header( $title, $subtitle );
             return;
         }
         if ( function_exists( 'flexievent_output_header' ) ) {
-            flexievent_output_header( $title, '' );
-            return;
-        }
-        if ( function_exists( 'tpw_core_output_header' ) ) {
-            tpw_core_output_header( $title, '' );
+            flexievent_output_header( $title, $subtitle );
             return;
         }
 
@@ -314,6 +322,9 @@ if ( ! function_exists( 'tpw_core_render_settings_header' ) ) {
                 <div class="tpw-fe-header-left">
                     <div class="tpw-fe-title-wrap">
                         <h1 class="tpw-fe-title"><?php echo esc_html( $title ); ?></h1>
+                        <?php if ( $subtitle !== '' ) : ?>
+                            <div class="tpw-fe-notice"><p><?php echo esc_html( $subtitle ); ?></p></div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="tpw-fe-header-right">

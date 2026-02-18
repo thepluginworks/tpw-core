@@ -72,13 +72,11 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         $base_url = admin_url( 'options-general.php?page=tpw-core-settings' );
     ?>
         <?php
-        if ( function_exists( 'tpw_core_output_header' ) ) {
-            tpw_core_output_header(
+        if ( function_exists( 'tpw_core_render_settings_header' ) ) {
+            tpw_core_render_settings_header(
                 __( 'TPW Core Settings', 'tpw-core' ),
                 __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
             );
-        } elseif ( function_exists( 'tpw_core_render_settings_header' ) ) {
-            tpw_core_render_settings_header( __( 'TPW Core Settings', 'tpw-core' ) );
         }
         ?>
 
