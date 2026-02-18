@@ -43,6 +43,11 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
             return;
         }
 
+        $tpw_core_debug_print_map = ( defined( 'TPW_CORE_DEBUG_PRINT_MAP' ) && TPW_CORE_DEBUG_PRINT_MAP );
+        if ( $tpw_core_debug_print_map ) {
+            error_log( 'TPW CORE PRINT MAP: admin_notices callback START; screen_id=' . (string) $screen->id );
+        }
+
         $groups = [
             'tpw_core_branding',
             'tpw_core_features',
@@ -53,7 +58,13 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
 
         $all = [];
         foreach ( $groups as $g ) {
+            if ( $tpw_core_debug_print_map ) {
+                error_log( 'TPW CORE PRINT MAP: before get_settings_errors(' . $g . ')' );
+            }
             $errs = get_settings_errors( $g );
+            if ( $tpw_core_debug_print_map ) {
+                error_log( 'TPW CORE PRINT MAP: after get_settings_errors(' . $g . '); count=' . ( is_array( $errs ) ? count( $errs ) : 0 ) );
+            }
             if ( ! empty( $errs ) && is_array( $errs ) ) {
                 $all = array_merge( $all, $errs );
             }
@@ -99,6 +110,10 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
 
             echo '<div id="setting-error-' . esc_attr( $code ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '"><p>' . wp_kses_post( $msg ) . '</p></div>';
         }
+
+        if ( $tpw_core_debug_print_map ) {
+            error_log( 'TPW CORE PRINT MAP: admin_notices callback END; printed_unique=' . count( $unique ) );
+        }
     }
 }
 
@@ -129,6 +144,13 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             return;
         }
 
+        $tpw_core_debug_print_map = ( defined( 'TPW_CORE_DEBUG_PRINT_MAP' ) && TPW_CORE_DEBUG_PRINT_MAP );
+        if ( $tpw_core_debug_print_map ) {
+            $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+            $sid = ( $screen && isset( $screen->id ) ) ? (string) $screen->id : '';
+            error_log( 'TPW CORE PRINT MAP: settings page render START; screen_id=' . $sid );
+        }
+
         // Build tabs (extensible)
         $tabs = apply_filters( 'tpw_core_settings_tabs', [
             'branding'    => __( 'Branding', 'tpw-core' ),
@@ -157,6 +179,12 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
 
     <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <div class="wrap">
+
+            <?php
+            if ( $tpw_core_debug_print_map ) {
+                error_log( 'TPW CORE PRINT MAP: tabs wrapper OUTPUT (nav-tab-wrapper)');
+            }
+            ?>
 
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
@@ -311,6 +339,10 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             ?>
         </div></div>
         <?php
+
+        if ( $tpw_core_debug_print_map ) {
+            error_log( 'TPW CORE PRINT MAP: settings page render END' );
+        }
     }
 }
 
