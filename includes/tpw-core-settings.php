@@ -55,12 +55,16 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
             $current_tab = 'member-menu';
         }
 
-        // Email tab success notice (Core Settings only).
+        // Success notice (Core Settings only).
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        $settings_updated = isset( $_GET['settings-updated'] ) ? (int) $_GET['settings-updated'] : 0;
+        $settings_updated = isset( $_GET['settings-updated'] ) ? absint( wp_unslash( $_GET['settings-updated'] ) ) : 0;
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
-        if ( $current_tab === 'email' && $settings_updated === 1 ) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Email settings saved.', 'tpw-core' ) . '</p></div>';
+        if ( $settings_updated === 1 ) {
+            $msg = ( $current_tab === 'email' )
+                ? __( 'Email settings saved.', 'tpw-core' )
+                : __( 'Settings saved.', 'tpw-core' );
+
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
         }
 
         // Warnings/errors carried across redirect via query arg.
