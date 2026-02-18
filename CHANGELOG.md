@@ -1,6 +1,15 @@
 # Changelog
 
-All notable changes to TPW Core will be documented in this file.
+## [1.9.3] - 2026-02-18
+### Fixed
+- Members Login: preserve full redirect destinations (including nested query args) through the front-end password reset email link and post-reset redirect.
+- Members Login: preserve redirect destination after failed login attempts (wrong username/password) so subsequent attempts still land on the intended page.
+
+### Security
+- Members Login: validate redirect targets via wp_validate_redirect before redirecting.
+
+### Changed
+- Maintenance: version bump to 1.9.3.
 
 ## [1.9.2] - 2026-02-18
 ### Fixed

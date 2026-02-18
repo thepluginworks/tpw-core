@@ -119,7 +119,7 @@ class TPW_Member_Login_Shortcode {
         $bundle = self::check_rate_limit();
         if (is_wp_error($bundle)) {
             self::store_message('error', $bundle->get_error_message());
-            return;
+            self::redirect_back_preserving_redirect();
         }
 
         $login = sanitize_text_field($_POST['login'] ?? '');
@@ -129,7 +129,7 @@ class TPW_Member_Login_Shortcode {
         if ($login === '' || $password === '') {
             self::bump_rate_limit($bundle);
             self::store_message('error', __('Please enter your email/username and password.', 'tpw-core'));
-            return;
+            self::redirect_back_preserving_redirect();
         }
 
         // Allow email or username
@@ -154,7 +154,7 @@ class TPW_Member_Login_Shortcode {
                 $msg = __('Invalid email/username or password.', 'tpw-core');
             }
             self::store_message('error', $msg);
-            return;
+            self::redirect_back_preserving_redirect();
         }
 
         // Success
@@ -169,7 +169,8 @@ class TPW_Member_Login_Shortcode {
 
         if ( $requested !== '' ) {
             // decode in case it was added with rawurlencode(), then sanitize
-            $target = esc_url_raw( rawurldecode( $requested ) );
+            $candidate = esc_url_raw( rawurldecode( $requested ) );
+            $target = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
             if ( $target !== '' ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                     error_log( '[TPW DEBUG] Member login redirect using redirect_to param: ' . $target );
@@ -301,7 +302,12 @@ class TPW_Member_Login_Shortcode {
             $requested = '';
         }
         if ( $requested !== '' ) {
-            $member_login_url = add_query_arg( 'redirect_to', $requested, $member_login_url );
+            // Normalize to a URL, validate, then encode for safe nesting as a query value.
+            $candidate = esc_url_raw( rawurldecode( $requested ) );
+            $valid = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
+            if ( $valid !== '' ) {
+                $member_login_url = add_query_arg( 'redirect_to', rawurlencode( $valid ), $member_login_url );
+            }
         }
         wp_safe_redirect( esc_url_raw( $member_login_url ) );
         exit;
@@ -322,9 +328,15 @@ class TPW_Member_Login_Shortcode {
             $member_login_url = site_url( '/member-login/' );
         }
 
-        // Preserve redirect_to if provided during the request that triggered this email
+        // Preserve redirect_to if provided during the request that triggered this email.
+        // Normalize + validate first, then encode so any nested query args remain within redirect_to.
         $redirect_to = isset($_REQUEST['redirect_to']) ? (string) wp_unslash( $_REQUEST['redirect_to'] ) : '';
-        $redirect_to = is_string($redirect_to) ? trim($redirect_to) : '';
+        $redirect_to = is_string( $redirect_to ) ? trim( $redirect_to ) : '';
+        $redirect_valid = '';
+        if ( $redirect_to !== '' ) {
+            $candidate = esc_url_raw( rawurldecode( $redirect_to ) );
+            $redirect_valid = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
+        }
 
         // Build our replacement link
         $new_url = add_query_arg( [
@@ -332,8 +344,8 @@ class TPW_Member_Login_Shortcode {
             'key'    => (string) $key,
             'login'  => (string) $user_login,
         ], $member_login_url );
-        if ( $redirect_to !== '' ) {
-            $new_url = add_query_arg( 'redirect_to', $redirect_to, $new_url );
+        if ( $redirect_valid !== '' ) {
+            $new_url = add_query_arg( 'redirect_to', rawurlencode( $redirect_valid ), $new_url );
         }
 
         // Try to detect and replace the original wp-login.php reset URL if present
@@ -377,7 +389,11 @@ class TPW_Member_Login_Shortcode {
             $requested = '';
         }
         if ( $requested !== '' ) {
-            $target = add_query_arg( 'redirect_to', $requested, $target );
+            $candidate = esc_url_raw( rawurldecode( $requested ) );
+            $valid = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
+            if ( $valid !== '' ) {
+                $target = add_query_arg( 'redirect_to', rawurlencode( $valid ), $target );
+            }
         }
         wp_safe_redirect( $target );
         exit;
@@ -398,7 +414,11 @@ class TPW_Member_Login_Shortcode {
             $requested = '';
         }
         if ( $requested !== '' ) {
-            $args['redirect_to'] = $requested;
+            $candidate = esc_url_raw( rawurldecode( $requested ) );
+            $valid = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
+            if ( $valid !== '' ) {
+                $args['redirect_to'] = rawurlencode( $valid );
+            }
         }
         $target = add_query_arg( $args, $target );
         wp_safe_redirect( $target );
