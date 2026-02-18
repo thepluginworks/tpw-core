@@ -109,20 +109,13 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         // Scope logs strictly to Core Settings.
         $tpw_core_debug_header_placement = ( $tpw_core_debug_header_placement && $tpw_core_page === 'tpw-core-settings' );
 
-        $tpw_core_debug_tail = '';
         $tpw_core_debug_ob_start_level = 0;
 
         if ( $tpw_core_debug_header_placement ) {
             $tpw_core_debug_ob_start_level = ob_get_level();
 
-            // Rolling tail of output so we can inspect what is being emitted around the header call.
-            ob_start( function ( $chunk ) use ( &$tpw_core_debug_tail ) {
-                $tpw_core_debug_tail .= (string) $chunk;
-                if ( strlen( $tpw_core_debug_tail ) > 800 ) {
-                    $tpw_core_debug_tail = substr( $tpw_core_debug_tail, -800 );
-                }
-                return $chunk;
-            } );
+            // Capture output from this point so we can snapshot the stream around the header call.
+            ob_start();
 
             error_log(
                 'TPW CORE HEADER PLACEMENT: render_start; current_filter=' . (string) current_filter() .
@@ -159,7 +152,8 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     }
                 }
 
-                $tail_before = substr( preg_replace( '/\s+/', ' ', $tpw_core_debug_tail ), -200 );
+                $stream_before = (string) ob_get_contents();
+                $tail_before = substr( preg_replace( '/\s+/', ' ', $stream_before ), -200 );
 
                 error_log(
                     'TPW CORE HEADER PLACEMENT: before_header; current_filter=' . (string) current_filter() .
@@ -167,6 +161,10 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     '; page=' . $tpw_core_page .
                     '; settings_errors_count=' . count( (array) $errors_before ) .
                     '; first_codes=' . implode( ',', $codes_before ) .
+                    '; did_admin_notices=' . (string) did_action( 'admin_notices' ) .
+                    '; did_all_admin_notices=' . (string) did_action( 'all_admin_notices' ) .
+                    '; did_network_admin_notices=' . (string) did_action( 'network_admin_notices' ) .
+                    '; did_user_admin_notices=' . (string) did_action( 'user_admin_notices' ) .
                     '; out_tail=' . $tail_before
                 );
 
@@ -213,9 +211,34 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                                 $name = get_class( $fn ) . '::__invoke';
                             }
 
+                            // For non-trivial callbacks, include minimal origin info if possible.
+                            $origin = '';
+                            if ( $fn instanceof Closure ) {
+                                try {
+                                    $rf = new ReflectionFunction( $fn );
+                                    $origin = basename( (string) $rf->getFileName() ) . ':' . (string) $rf->getStartLine();
+                                } catch ( Exception $ex ) {
+                                    $origin = '';
+                                }
+                            } elseif ( is_array( $fn ) && isset( $fn[0], $fn[1] ) ) {
+                                try {
+                                    $rm = new ReflectionMethod( $fn[0], (string) $fn[1] );
+                                    $origin = basename( (string) $rm->getFileName() ) . ':' . (string) $rm->getStartLine();
+                                } catch ( Exception $ex ) {
+                                    $origin = '';
+                                }
+                            } elseif ( is_object( $fn ) && method_exists( $fn, '__invoke' ) ) {
+                                try {
+                                    $rm = new ReflectionMethod( $fn, '__invoke' );
+                                    $origin = basename( (string) $rm->getFileName() ) . ':' . (string) $rm->getStartLine();
+                                } catch ( Exception $ex ) {
+                                    $origin = '';
+                                }
+                            }
+
                             // Avoid huge logs.
                             if ( $lines < 60 ) {
-                                error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; priority=' . (string) $priority . '; cb=' . $name );
+                                error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; priority=' . (string) $priority . '; cb=' . $name . ( $origin !== '' ? ( '; at=' . $origin ) : '' ) );
                                 $lines++;
                             }
                         }
@@ -250,10 +273,15 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     }
                 }
 
-                $tail_after = substr( preg_replace( '/\s+/', ' ', $tpw_core_debug_tail ), -200 );
+                $stream_after = (string) ob_get_contents();
+                $tail_after = substr( preg_replace( '/\s+/', ' ', $stream_after ), -200 );
                 error_log(
                     'TPW CORE HEADER PLACEMENT: after_header; settings_errors_count=' . count( (array) $errors_after ) .
                     '; first_codes=' . implode( ',', $codes_after ) .
+                    '; did_admin_notices=' . (string) did_action( 'admin_notices' ) .
+                    '; did_all_admin_notices=' . (string) did_action( 'all_admin_notices' ) .
+                    '; did_network_admin_notices=' . (string) did_action( 'network_admin_notices' ) .
+                    '; did_user_admin_notices=' . (string) did_action( 'user_admin_notices' ) .
                     '; out_tail=' . $tail_after
                 );
             }
