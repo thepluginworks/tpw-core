@@ -255,6 +255,10 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         $page   = isset($_GET['page']) ? sanitize_key( wp_unslash($_GET['page']) ) : '';
         $icon_url = apply_filters( 'tpw_core/header_icon_url', $icon_url, $screen, $page );
+
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'TPW CORE: HEADER OPEN – ' . __FILE__ . ':' . __LINE__ );
+        }
         ?>
         <div class="wrap tpw-fe-header">
             <div class="tpw-fe-header-inner">
@@ -276,6 +280,11 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
                 </div>
             </div>
         </div>
+        <?php
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'TPW CORE: HEADER CLOSE – ' . __FILE__ . ':' . __LINE__ );
+        }
+        ?>
         <?php
         // Allow extensions to output content after the header strip, but never on the
         // Core Settings screen (that page controls its own notices and tab layout).

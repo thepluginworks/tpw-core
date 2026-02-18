@@ -92,7 +92,17 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 <?php endforeach; ?>
             </h2>
 
-            <?php settings_errors(); ?>
+            <?php
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'TPW CORE: settings_errors() START – ' . __FILE__ . ':' . __LINE__ );
+            }
+
+            settings_errors();
+
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'TPW CORE: settings_errors() END – ' . __FILE__ . ':' . __LINE__ );
+            }
+            ?>
 
             <?php $tpw_core_builtin_tab_rendered = false; ?>
 
@@ -1398,6 +1408,14 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
     if ( ! $reset_b64 && ! empty( $incoming['fallback_logo_url'] ) && class_exists('TPW_Email_Logo_Helper') ) {
         $b64 = TPW_Email_Logo_Helper::generate_base64( $incoming['fallback_logo_url'] );
         if ( $b64 === '' ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                $bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 );
+                $frames = [];
+                foreach ( $bt as $f ) {
+                    $frames[] = ( $f['function'] ?? 'unknown' ) . ' @ ' . ( $f['file'] ?? 'unknown' ) . ':' . ( $f['line'] ?? 0 );
+                }
+                error_log( 'TPW CORE: add_settings_error(tpw_email_logo_b64_skipped) – ' . __FILE__ . ':' . __LINE__ . ' – ' . implode( ' | ', array_slice( $frames, 0, 5 ) ) );
+            }
             add_settings_error( 'tpw_core_email_settings', 'tpw_email_logo_b64_skipped', __( 'Base64 copy not created – image too large or incompatible format.', 'tpw-core' ), 'warning' );
         }
     }
@@ -1417,6 +1435,15 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
             // If empty, clear to fall back to Site Title
             delete_option( 'tpw_brand_title' );
         }
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 );
+            $frames = [];
+            foreach ( $bt as $f ) {
+                $frames[] = ( $f['function'] ?? 'unknown' ) . ' @ ' . ( $f['file'] ?? 'unknown' ) . ':' . ( $f['line'] ?? 0 );
+            }
+            error_log( 'TPW CORE: add_settings_error(tpw_email_saved) – ' . __FILE__ . ':' . __LINE__ . ' – ' . implode( ' | ', array_slice( $frames, 0, 5 ) ) );
+        }
+
         add_settings_error( 'tpw_core_email_settings', 'tpw_email_saved', __( 'Email settings saved.', 'tpw-core' ), 'updated' );
     } else {
         add_settings_error( 'tpw_core_email_settings', 'tpw_email_missing', __( 'Could not save. Email settings class missing.', 'tpw-core' ), 'error' );
