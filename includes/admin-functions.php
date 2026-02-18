@@ -107,9 +107,11 @@ add_action( 'admin_enqueue_scripts', function ( $hook_suffix ) {
             $src = '';
             if ( isset( $wp_scripts->registered[ $handle ] ) && isset( $wp_scripts->registered[ $handle ]->src ) ) {
                 $src = (string) $wp_scripts->registered[ $handle ]->src;
-                if ( $src !== '' ) {
+                if ( $src !== '' && ! preg_match( '#^(https?:)?//#', $src ) ) {
                     $src = $wp_scripts->base_url . $src;
-                    $src = $wp_scripts->set_url_scheme( $src );
+                }
+                if ( $src !== '' && function_exists( 'set_url_scheme' ) ) {
+                    $src = set_url_scheme( $src );
                 }
             }
             error_log( 'TPW CORE: script: ' . $handle . ' – ' . $src );
@@ -121,9 +123,11 @@ add_action( 'admin_enqueue_scripts', function ( $hook_suffix ) {
             $src = '';
             if ( isset( $wp_styles->registered[ $handle ] ) && isset( $wp_styles->registered[ $handle ]->src ) ) {
                 $src = (string) $wp_styles->registered[ $handle ]->src;
-                if ( $src !== '' ) {
+                if ( $src !== '' && ! preg_match( '#^(https?:)?//#', $src ) ) {
                     $src = $wp_styles->base_url . $src;
-                    $src = $wp_styles->set_url_scheme( $src );
+                }
+                if ( $src !== '' && function_exists( 'set_url_scheme' ) ) {
+                    $src = set_url_scheme( $src );
                 }
             }
             error_log( 'TPW CORE: style: ' . $handle . ' – ' . $src );
