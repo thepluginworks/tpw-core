@@ -30,8 +30,9 @@ if ( file_exists( TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pa
     require_once TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages-cli.php';
 }
 
+// Must run on/after init to avoid WP 6.7+ early textdomain JIT notices.
 // Register the Members "My Profile" page in the System Pages table (keeps existing logic intact)
-add_action( 'plugins_loaded', function() {
+add_action( 'init', function() {
     if ( class_exists( 'TPW_Core_System_Pages' ) ) {
         TPW_Core_System_Pages::register_page( 'my-profile', [
             'title'     => 'My Profile',
@@ -47,7 +48,7 @@ add_action( 'plugins_loaded', function() {
             'required'  => 1,
         ] );
     }
-}, 5 );
+} );
 
 // Module includes
 //require_once TPW_CORE_PATH . 'modules/guests/class-tpw-guests-cpt.php';

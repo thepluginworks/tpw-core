@@ -2,6 +2,14 @@
 
 All notable changes to TPW Core will be documented in this file.
 
+## [1.9.2] - 2026-02-18
+### Fixed
+- Admin: eliminated WP 6.7+ early textdomain JIT notices by deferring tpw-core translation calls until init.
+
+### Changed
+- System Pages: deferred System Pages registrations/bootstrapping to init (no functional change).
+- Maintenance: version bump to 1.9.2.
+
 ## [1.9.1] - 2026-02-18
 ### Fixed
 - Admin: normalized Core Settings notice handling (no Settings API notice plumbing) and removed notice relocation JS.

@@ -17,7 +17,7 @@ require_once __DIR__ . '/gallery-db.php';
 require_once __DIR__ . '/gallery-upload.php';
 
 // Phase 4 – Admin UI wiring (front-end admin only, no public shortcodes)
-add_action( 'plugins_loaded', function(){
+add_action( 'init', function(){
     // Register a front-end admin system page at /gallery-admin/ using System Pages API
     if ( class_exists( 'TPW_Core_System_Pages' ) ) {
         TPW_Core_System_Pages::register_page( 'gallery-admin', [

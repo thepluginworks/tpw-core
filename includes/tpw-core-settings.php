@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // 1) Register new menu location early
-add_action( 'after_setup_theme', function () {
+add_action( 'init', function () {
     // Avoid fatal if function unavailable very early
     if ( function_exists( 'register_nav_menu' ) ) {
         register_nav_menu( 'tpw_member_menu', __( 'TPW Member Menu', 'tpw-core' ) );
