@@ -31,9 +31,10 @@ add_action( 'admin_menu', function () {
     );
 } );
 
-// Output TPW Core settings notices in the normal WP admin notice region (Core Settings screen only).
-if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
-    function tpw_core_output_core_settings_notices(): void {
+// Output TPW Core *warnings* in the normal WP admin notice region (Core Settings screen only).
+// Do not render Settings API success notices here; rely on WP's native settings-updated notice.
+if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
+    function tpw_core_output_core_settings_warnings(): void {
         if ( ! is_admin() ) {
             return;
         }
@@ -46,6 +47,20 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
         $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'member-menu'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         if ( $current_tab === '' ) {
             $current_tab = 'member-menu';
+        }
+
+        // Warnings/errors carried across redirect via query arg.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $redirect_notice = isset( $_GET['tpw_core_notice'] ) ? sanitize_key( wp_unslash( $_GET['tpw_core_notice'] ) ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        if ( $redirect_notice !== '' ) {
+            if ( $redirect_notice === 'email_logo_b64_skipped' ) {
+                echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'Base64 copy not created – image too large or incompatible format.', 'tpw-core' ) . '</p></div>';
+            } elseif ( $redirect_notice === 'email_settings_class_missing' ) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not save. Email settings class missing.', 'tpw-core' ) . '</p></div>';
+            } elseif ( $redirect_notice === 'email_template_db_missing' ) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not save. Email Templates DB class missing.', 'tpw-core' ) . '</p></div>';
+            }
         }
 
         // Non-settings warnings that must appear in the normal WP notice region.
@@ -97,68 +112,11 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
                 }
             }
         }
-
-        $groups = [
-            'tpw_core_branding',
-            'tpw_core_features',
-            'tpw_core_member_menu',
-            'tpw_core_email_settings',
-            'tpw_email_templates',
-        ];
-
-        $all = [];
-        foreach ( $groups as $g ) {
-            $errs = get_settings_errors( $g );
-            if ( ! empty( $errs ) && is_array( $errs ) ) {
-                $all = array_merge( $all, $errs );
-            }
-        }
-
-        if ( empty( $all ) ) {
-            return;
-        }
-
-        $unique = [];
-        $seen = [];
-        foreach ( $all as $e ) {
-            $code = isset( $e['code'] ) ? (string) $e['code'] : '';
-            $msg  = isset( $e['message'] ) ? (string) $e['message'] : '';
-            $type = isset( $e['type'] ) ? (string) $e['type'] : '';
-            $key  = $code . '|' . $type . '|' . $msg;
-            if ( isset( $seen[ $key ] ) ) {
-                continue;
-            }
-            $seen[ $key ] = true;
-            $unique[] = $e;
-        }
-
-        foreach ( $unique as $e ) {
-            $code = isset( $e['code'] ) ? (string) $e['code'] : 'tpw-core-notice';
-            $msg  = isset( $e['message'] ) ? (string) $e['message'] : '';
-            $type = isset( $e['type'] ) ? (string) $e['type'] : 'info';
-
-            $classes = [ 'notice', 'settings-error', 'is-dismissible' ];
-
-            // Map legacy/varied types to standard WP notice classes.
-            if ( $type === 'updated' || $type === 'success' ) {
-                $classes[] = 'updated';
-                $classes[] = 'notice-success';
-            } elseif ( $type === 'error' ) {
-                $classes[] = 'error';
-                $classes[] = 'notice-error';
-            } elseif ( $type === 'warning' ) {
-                $classes[] = 'notice-warning';
-            } else {
-                $classes[] = 'notice-info';
-            }
-
-            echo '<div id="setting-error-' . esc_attr( $code ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '"><p>' . wp_kses_post( $msg ) . '</p></div>';
-        }
     }
 }
 
-if ( ! has_action( 'admin_notices', 'tpw_core_output_core_settings_notices' ) ) {
-    add_action( 'admin_notices', 'tpw_core_output_core_settings_notices', 20 );
+if ( ! has_action( 'admin_notices', 'tpw_core_output_core_settings_warnings' ) ) {
+    add_action( 'admin_notices', 'tpw_core_output_core_settings_warnings', 20 );
 }
 
 // Ensure media library scripts are available on our settings page
@@ -263,7 +221,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                         if ( ! is_array( $existing ) ) { $existing = []; }
                         $merged = array_merge( $existing, $save );
                         update_option( 'tpw_ui_theme_settings', $merged );
-                        add_settings_error( 'tpw_core_branding', 'tpw_ui_theme_saved', __( 'UI Theme settings saved.', 'tpw-core' ), 'updated' );
                         $ui = wp_parse_args( $merged, $ui_defaults );
                     }
                 }
@@ -761,14 +718,14 @@ add_action( 'admin_post_tpw_core_save_email_template', function() {
     $body    = $tpl['editable_body'] ? ( isset($_POST['body_override']) ? wp_kses_post( wp_unslash( $_POST['body_override'] ) ) : '' ) : '';
     $use_logo = isset($_POST['use_logo']) ? 1 : 0;
 
+    $args = [ 'page' => 'tpw-core-settings', 'tab' => 'email-templates', 'edit_template' => $key ];
     if ( class_exists('TPW_Email_Templates_DB') ) {
         TPW_Email_Templates_DB::upsert_override( $key, $tpl['group'], $tpl['label'], $subject, $body, $use_logo );
-        add_settings_error( 'tpw_email_templates', 'saved', __( 'Template saved.', 'tpw-core' ), 'updated' );
+        $args['settings-updated'] = '1';
+    } else {
+        $args['tpw_core_notice'] = 'email_template_db_missing';
     }
-
-    $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
-    $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'email-templates', 'edit_template' => $key, 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
+    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
     exit;
 } );
@@ -1247,7 +1204,6 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
 
     if ( isset($_POST['tpw_branding_reset']) && $_POST['tpw_branding_reset'] == '1' ) {
         update_option( 'tpw_core_branding', $defaults );
-        add_settings_error( 'tpw_core_branding', 'tpw_branding_reset', __( 'Branding reset to defaults.', 'tpw-core' ), 'updated' );
         // Also reset heading styles to defaults
         if ( function_exists('tpw_core_get_heading_defaults') ) {
             update_option( 'tpw_heading_styles', tpw_core_get_heading_defaults() );
@@ -1340,8 +1296,7 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
             }
         }
 
-        update_option( 'tpw_core_branding', $in );
-        add_settings_error( 'tpw_core_branding', 'tpw_branding_saved', __( 'Branding saved.', 'tpw-core' ), 'updated' );
+    update_option( 'tpw_core_branding', $in );
 
         // Also save the UI Theme fields and frontend inheritance toggle into tpw_ui_theme_settings
         $inherit_ui = isset($_POST['tpw_ui_inherit_global_frontend']) ? 1 : 0;
@@ -1415,8 +1370,6 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         update_option( 'tpw_heading_styles', $merged_h );
     }
 
-    $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
     $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'branding', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
     exit;
@@ -1428,13 +1381,14 @@ add_action( 'admin_post_tpw_core_reset_email_template', function() {
     check_admin_referer( 'tpw_reset_email_template', 'tpw_email_tmpl_nonce' );
 
     $key = isset($_GET['template_key']) ? strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) $_GET['template_key'] ) ) : '';
+    $args = [ 'page' => 'tpw-core-settings', 'tab' => 'email-templates' ];
     if ( $key && class_exists('TPW_Email_Templates_DB') ) {
         TPW_Email_Templates_DB::delete_override( $key );
-        add_settings_error( 'tpw_email_templates', 'reset', __( 'Template reset to default.', 'tpw-core' ), 'updated' );
+        $args['settings-updated'] = '1';
+    } elseif ( $key ) {
+        $args['tpw_core_notice'] = 'email_template_db_missing';
     }
-    $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
-    $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'email-templates', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
+    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
     exit;
 } );
@@ -1461,10 +1415,6 @@ add_action( 'admin_post_tpw_core_save_features', function() {
 
     update_option( 'tpw_core_default_login_page', $login_page );
     update_option( 'tpw_login_redirect_page_id', $redirect_page );
-
-    add_settings_error( 'tpw_core_features', 'tpw_features_saved', __( 'Features settings saved.', 'tpw-core' ), 'updated' );
-    $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
     wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'features', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
     exit;
 } );
@@ -1477,10 +1427,6 @@ add_action( 'admin_post_tpw_core_save_member_menu', function() {
     $location = isset( $_POST['tpw_member_menu_location'] ) ? sanitize_key( $_POST['tpw_member_menu_location'] ) : 'primary';
     if ( $location === '' ) { $location = 'primary'; }
     update_option( 'tpw_member_menu_location', $location );
-
-    add_settings_error( 'tpw_core_member_menu', 'tpw_member_menu_saved', __( 'Member Menu settings saved.', 'tpw-core' ), 'updated' );
-    $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
     wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'member-menu', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
     exit;
 } );
@@ -1518,12 +1464,15 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
 
     $reset_b64 = isset($_POST['reset_logo_base64']) && $_POST['reset_logo_base64'] == '1';
 
+    $redirect_notice = '';
+    $save_success = false;
+
     // Attempt base64 generation when a logo URL is provided and reset not requested
     $b64 = '';
     if ( ! $reset_b64 && ! empty( $incoming['fallback_logo_url'] ) && class_exists('TPW_Email_Logo_Helper') ) {
         $b64 = TPW_Email_Logo_Helper::generate_base64( $incoming['fallback_logo_url'] );
         if ( $b64 === '' ) {
-            add_settings_error( 'tpw_core_email_settings', 'tpw_email_logo_b64_skipped', __( 'Base64 copy not created – image too large or incompatible format.', 'tpw-core' ), 'warning' );
+            $redirect_notice = 'email_logo_b64_skipped';
         }
     }
 
@@ -1542,26 +1491,19 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
             // If empty, clear to fall back to Site Title
             delete_option( 'tpw_brand_title' );
         }
-        add_settings_error( 'tpw_core_email_settings', 'tpw_email_saved', __( 'Email settings saved.', 'tpw-core' ), 'updated' );
+        $save_success = true;
     } else {
-        add_settings_error( 'tpw_core_email_settings', 'tpw_email_missing', __( 'Could not save. Email settings class missing.', 'tpw-core' ), 'error' );
+        $redirect_notice = 'email_settings_class_missing';
     }
 
-    // Persist messages and redirect back to Email tab
-    $errors = get_settings_errors();
-    // De-dupe messages defensively (some environments may register the same error twice).
-    $seen = [];
-    $unique = [];
-    foreach ( $errors as $e ) {
-        $key = (string) ( $e['setting'] ?? '' ) . '|' . (string) ( $e['code'] ?? '' ) . '|' . (string) ( $e['message'] ?? '' );
-        if ( isset( $seen[ $key ] ) ) {
-            continue;
-        }
-        $seen[ $key ] = true;
-        $unique[] = $e;
+    $args = [ 'page' => 'tpw-core-settings', 'tab' => 'email' ];
+    if ( $save_success ) {
+        $args['settings-updated'] = '1';
     }
-    set_transient( 'settings_errors', $unique, 30 );
-    $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'email', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
+    if ( $redirect_notice !== '' ) {
+        $args['tpw_core_notice'] = $redirect_notice;
+    }
+    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
     exit;
 } );
