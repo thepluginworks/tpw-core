@@ -312,13 +312,15 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
         $icon_url = apply_filters( 'tpw_core/header_icon_url', $icon_url, $screen, $page );
 
         $is_core_settings = ( $page === 'tpw-core-settings' );
+        $is_debug = ( defined( 'WP_DEBUG' ) && WP_DEBUG );
+
         if ( $is_core_settings ) {
-            // Buffer the header render path so we can deterministically keep the header clean,
-            // even if other plugins/themes echo notices during header generation.
+            // Buffer the entire header output so we can (a) prove whether notices are injected
+            // during render-time, and (b) deterministically keep the header clean.
             ob_start();
         }
 
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        if ( $is_debug ) {
             error_log( 'TPW CORE: HEADER OPEN – ' . __FILE__ . ':' . __LINE__ );
         }
         ?>
@@ -343,7 +345,7 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
             </div>
         </div>
         <?php
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        if ( $is_debug ) {
             error_log( 'TPW CORE: HEADER CLOSE – ' . __FILE__ . ':' . __LINE__ );
         }
         ?>
@@ -356,6 +358,26 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
 
         if ( $is_core_settings ) {
             $raw = (string) ob_get_clean();
+
+            // TEMP debug proof (Core Settings only): did the header HTML itself contain notices?
+            if ( $is_debug ) {
+                $has_notice = (
+                    ( strpos( $raw, 'class="notice' ) !== false ) ||
+                    ( strpos( $raw, "class='notice" ) !== false ) ||
+                    ( strpos( $raw, 'settings-error' ) !== false )
+                );
+
+                error_log( 'TPW CORE: header_html_has_notice=' . ( $has_notice ? 'YES' : 'NO' ) );
+
+                $after_h1 = '';
+                $h1_close_pos = stripos( $raw, '</h1>' );
+                if ( $h1_close_pos !== false ) {
+                    $after_h1 = substr( $raw, $h1_close_pos + 5, 120 );
+                    $after_h1 = preg_replace( '/\s+/', ' ', (string) $after_h1 );
+                }
+                error_log( 'TPW CORE: header_html_after_h1=' . $after_h1 );
+            }
+
             $stripped = '';
 
             // Remove any WordPress admin notice blocks that might have been echoed into the
