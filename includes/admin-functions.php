@@ -256,7 +256,7 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
         $page   = isset($_GET['page']) ? sanitize_key( wp_unslash($_GET['page']) ) : '';
         $icon_url = apply_filters( 'tpw_core/header_icon_url', $icon_url, $screen, $page );
         ?>
-        <div class="wrap tpw-fe-header">
+        <div class="<?php echo $page === 'tpw-core-settings' ? 'tpw-fe-header' : 'wrap tpw-fe-header'; ?>">
             <div class="tpw-fe-header-inner">
                 <div class="tpw-fe-header-left">
                     <?php if ( ! empty( $icon_url ) ) : ?>

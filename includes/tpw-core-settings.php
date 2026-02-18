@@ -31,6 +31,20 @@ add_action( 'admin_menu', function () {
     );
 } );
 
+// Output Settings API notices in the normal WP admin notice region for Core Settings.
+add_action( 'admin_notices', function () {
+    if ( ! is_admin() ) {
+        return;
+    }
+
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    if ( ! $screen || ! isset( $screen->id ) || (string) $screen->id !== 'settings_page_tpw-core-settings' ) {
+        return;
+    }
+
+    settings_errors();
+}, 20 );
+
 // Ensure media library scripts are available on our settings page
 add_action( 'admin_enqueue_scripts', function( $hook ) {
     if ( $hook === 'settings_page_tpw-core-settings' ) {
@@ -38,53 +52,6 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
         if ( function_exists( 'wp_enqueue_media' ) ) {
             wp_enqueue_media();
         }
-
-        // Pin notices beneath the TPW header on this screen only.
-        add_action( 'admin_head', function () {
-            ?>
-            <style>
-                .tpw-fe-notices{clear:both;margin:12px 0 0;}
-                .tpw-fe-notices .notice{margin:8px 0 0;}
-            </style>
-            <script>
-                (function(){
-                    function tpwCoreMoveNotices(){
-                        var target = document.querySelector('.tpw-fe-notices');
-                        if (!target) return;
-
-                        var root = document.getElementById('wpbody-content') || document.body;
-                        if (!root) return;
-
-                        // Build a signature set from existing notices in the target.
-                        var seen = {};
-                        Array.prototype.forEach.call(target.querySelectorAll('.notice'), function(n){
-                            var k = (n.className || '') + '|' + (n.textContent || '').trim();
-                            if (k) seen[k] = true;
-                        });
-
-                        var nodes = root.querySelectorAll('.notice');
-                        Array.prototype.forEach.call(nodes, function(node){
-                            if (!node || (node.closest && node.closest('.tpw-fe-notices'))) return;
-                            var key = (node.className || '') + '|' + (node.textContent || '').trim();
-                            if (key && seen[key]) {
-                                if (node.parentNode) node.parentNode.removeChild(node);
-                                return;
-                            }
-                            if (key) seen[key] = true;
-                            target.appendChild(node);
-                        });
-                    }
-
-                    // Run immediately if possible, then again after load and after a short delay.
-                    tpwCoreMoveNotices();
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', tpwCoreMoveNotices);
-                    }
-                    setTimeout(tpwCoreMoveNotices, 120);
-                })();
-            </script>
-            <?php
-        }, 9999 );
     }
 } );
 
@@ -99,29 +66,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
     function tpw_core_render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
-        }
-
-        $tpw_core_debug_header_placement = ( defined( 'TPW_CORE_DEBUG_HEADER_PLACEMENT' ) && TPW_CORE_DEBUG_HEADER_PLACEMENT );
-        $tpw_core_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $tpw_core_screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-        $tpw_core_screen_id = ( $tpw_core_screen && isset( $tpw_core_screen->id ) ) ? (string) $tpw_core_screen->id : '';
-
-        // Scope logs strictly to Core Settings.
-        $tpw_core_debug_header_placement = ( $tpw_core_debug_header_placement && $tpw_core_page === 'tpw-core-settings' );
-
-        $tpw_core_debug_ob_start_level = 0;
-
-        if ( $tpw_core_debug_header_placement ) {
-            $tpw_core_debug_ob_start_level = ob_get_level();
-
-            // Capture output from this point so we can snapshot the stream around the header call.
-            ob_start();
-
-            error_log(
-                'TPW CORE HEADER PLACEMENT: render_start; current_filter=' . (string) current_filter() .
-                '; screen_id=' . $tpw_core_screen_id .
-                '; page=' . $tpw_core_page
-            );
         }
 
         // Build tabs (extensible)
@@ -143,155 +87,15 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
     ?>
         <?php
         if ( function_exists( 'tpw_core_render_settings_header' ) ) {
-            if ( $tpw_core_debug_header_placement ) {
-                $errors_before = get_settings_errors();
-                $codes_before = [];
-                foreach ( array_slice( (array) $errors_before, 0, 2 ) as $e ) {
-                    if ( isset( $e['code'] ) ) {
-                        $codes_before[] = (string) $e['code'];
-                    }
-                }
-
-                $stream_before = (string) ob_get_contents();
-                $tail_before = substr( preg_replace( '/\s+/', ' ', $stream_before ), -200 );
-
-                error_log(
-                    'TPW CORE HEADER PLACEMENT: before_header; current_filter=' . (string) current_filter() .
-                    '; screen_id=' . $tpw_core_screen_id .
-                    '; page=' . $tpw_core_page .
-                    '; settings_errors_count=' . count( (array) $errors_before ) .
-                    '; first_codes=' . implode( ',', $codes_before ) .
-                    '; did_admin_notices=' . (string) did_action( 'admin_notices' ) .
-                    '; did_all_admin_notices=' . (string) did_action( 'all_admin_notices' ) .
-                    '; did_network_admin_notices=' . (string) did_action( 'network_admin_notices' ) .
-                    '; did_user_admin_notices=' . (string) did_action( 'user_admin_notices' ) .
-                    '; out_tail=' . $tail_before
-                );
-
-                // List callbacks attached to notice output hooks.
-                $notice_hooks = [ 'admin_notices', 'all_admin_notices', 'network_admin_notices', 'user_admin_notices' ];
-                foreach ( $notice_hooks as $hook_name ) {
-                    $lines = 0;
-                    $count = 0;
-
-                    global $wp_filter;
-                    $hook_obj = isset( $wp_filter[ $hook_name ] ) ? $wp_filter[ $hook_name ] : null;
-                    $callbacks = null;
-                    if ( $hook_obj instanceof WP_Hook ) {
-                        $callbacks = $hook_obj->callbacks;
-                    } elseif ( is_array( $hook_obj ) ) {
-                        $callbacks = $hook_obj;
-                    }
-
-                    if ( empty( $callbacks ) || ! is_array( $callbacks ) ) {
-                        error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; callbacks=0' );
-                        continue;
-                    }
-
-                    foreach ( $callbacks as $priority => $bucket ) {
-                        if ( ! is_array( $bucket ) ) {
-                            continue;
-                        }
-                        foreach ( $bucket as $cb ) {
-                            if ( ! is_array( $cb ) || ! isset( $cb['function'] ) ) {
-                                continue;
-                            }
-                            $count++;
-
-                            $fn = $cb['function'];
-                            $name = 'unknown';
-                            if ( is_string( $fn ) ) {
-                                $name = $fn;
-                            } elseif ( is_array( $fn ) && isset( $fn[0], $fn[1] ) ) {
-                                $class = is_object( $fn[0] ) ? get_class( $fn[0] ) : (string) $fn[0];
-                                $name = $class . '::' . (string) $fn[1];
-                            } elseif ( $fn instanceof Closure ) {
-                                $name = 'Closure';
-                            } elseif ( is_object( $fn ) && method_exists( $fn, '__invoke' ) ) {
-                                $name = get_class( $fn ) . '::__invoke';
-                            }
-
-                            // For non-trivial callbacks, include minimal origin info if possible.
-                            $origin = '';
-                            if ( $fn instanceof Closure ) {
-                                try {
-                                    $rf = new ReflectionFunction( $fn );
-                                    $origin = basename( (string) $rf->getFileName() ) . ':' . (string) $rf->getStartLine();
-                                } catch ( Exception $ex ) {
-                                    $origin = '';
-                                }
-                            } elseif ( is_array( $fn ) && isset( $fn[0], $fn[1] ) ) {
-                                try {
-                                    $rm = new ReflectionMethod( $fn[0], (string) $fn[1] );
-                                    $origin = basename( (string) $rm->getFileName() ) . ':' . (string) $rm->getStartLine();
-                                } catch ( Exception $ex ) {
-                                    $origin = '';
-                                }
-                            } elseif ( is_object( $fn ) && method_exists( $fn, '__invoke' ) ) {
-                                try {
-                                    $rm = new ReflectionMethod( $fn, '__invoke' );
-                                    $origin = basename( (string) $rm->getFileName() ) . ':' . (string) $rm->getStartLine();
-                                } catch ( Exception $ex ) {
-                                    $origin = '';
-                                }
-                            }
-
-                            // Avoid huge logs.
-                            if ( $lines < 60 ) {
-                                error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; priority=' . (string) $priority . '; cb=' . $name . ( $origin !== '' ? ( '; at=' . $origin ) : '' ) );
-                                $lines++;
-                            }
-                        }
-                    }
-
-                    error_log( 'TPW CORE HEADER PLACEMENT: hook=' . $hook_name . '; callbacks_total=' . (string) $count );
-                }
-            }
-
-            ob_start();
             tpw_core_render_settings_header(
                 __( 'TPW Core Settings', 'tpw-core' ),
                 __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
             );
-            $tpw_core_header_html = (string) ob_get_clean();
-
-            if ( $tpw_core_debug_header_placement ) {
-                $header_len = strlen( $tpw_core_header_html );
-                $header_head = substr( preg_replace( '/\s+/', ' ', $tpw_core_header_html ), 0, 200 );
-                error_log( 'TPW CORE HEADER PLACEMENT: header_html_len=' . $header_len . '; header_head=' . $header_head );
-            }
-
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Header function outputs trusted HTML.
-            echo $tpw_core_header_html;
-
-            if ( $tpw_core_debug_header_placement ) {
-                $errors_after = get_settings_errors();
-                $codes_after = [];
-                foreach ( array_slice( (array) $errors_after, 0, 2 ) as $e ) {
-                    if ( isset( $e['code'] ) ) {
-                        $codes_after[] = (string) $e['code'];
-                    }
-                }
-
-                $stream_after = (string) ob_get_contents();
-                $tail_after = substr( preg_replace( '/\s+/', ' ', $stream_after ), -200 );
-                error_log(
-                    'TPW CORE HEADER PLACEMENT: after_header; settings_errors_count=' . count( (array) $errors_after ) .
-                    '; first_codes=' . implode( ',', $codes_after ) .
-                    '; did_admin_notices=' . (string) did_action( 'admin_notices' ) .
-                    '; did_all_admin_notices=' . (string) did_action( 'all_admin_notices' ) .
-                    '; did_network_admin_notices=' . (string) did_action( 'network_admin_notices' ) .
-                    '; did_user_admin_notices=' . (string) did_action( 'user_admin_notices' ) .
-                    '; out_tail=' . $tail_after
-                );
-            }
         }
         ?>
 
     <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <div class="wrap">
-
-            <div class="tpw-fe-notices"></div>
 
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
@@ -301,8 +105,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                     <a href="<?php echo $url; ?>" class="nav-tab<?php echo esc_attr($active); ?>"><?php echo esc_html( $label ); ?></a>
                 <?php endforeach; ?>
             </h2>
-
-            <?php settings_errors(); ?>
 
             <?php $tpw_core_builtin_tab_rendered = false; ?>
 
@@ -448,11 +250,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             ?>
         </div></div>
         <?php
-
-        if ( $tpw_core_debug_header_placement && ob_get_level() > $tpw_core_debug_ob_start_level ) {
-            error_log( 'TPW CORE HEADER PLACEMENT: render_end' );
-            ob_end_flush();
-        }
     }
 }
 

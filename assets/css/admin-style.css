@@ -266,6 +266,14 @@
     flex-direction: column;
 }
 
+/* Core Settings: keep WP notices in the normal position (above header) */
+body.tpw-core-settings-page.tpw-fe-embed #wpbody-content > .notice,
+body.tpw-core-settings-page.tpw-fe-embed #wpbody-content > .update-nag,
+body.tpw-core-settings-page.tpw-fe-embed #wpbody-content > .error,
+body.tpw-core-settings-page.tpw-fe-embed #wpbody-content > .updated {
+  order: -1;
+}
+
 /* Default: everything inside stacks after our key items */
 .tpw-fe-embed #wpbody-content > * {
     flex: 0 0 auto;
