@@ -111,7 +111,12 @@ add_filter('admin_body_class', function ($classes) {
     }
 
     if ($is_tpw) {
-        $classes .= ' tpw-fe-embed tpw-origin';
+        // Core Settings should behave like a normal WP admin screen (no flex ordering/layout embedding).
+        if ( $page === 'tpw-core-settings' || ( $screen && isset( $screen->id ) && (string) $screen->id === 'settings_page_tpw-core-settings' ) ) {
+            $classes .= ' tpw-origin';
+        } else {
+            $classes .= ' tpw-fe-embed tpw-origin';
+        }
     }
 
     // Settings page-specific marker class (used to guard any JS that manipulates .wrap or notices).

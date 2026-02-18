@@ -31,19 +31,80 @@ add_action( 'admin_menu', function () {
     );
 } );
 
-// Output Settings API notices in the normal WP admin notice region for Core Settings.
-add_action( 'admin_notices', function () {
-    if ( ! is_admin() ) {
-        return;
-    }
+// Output TPW Core settings notices in the normal WP admin notice region (Core Settings screen only).
+if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
+    function tpw_core_output_core_settings_notices(): void {
+        if ( ! is_admin() ) {
+            return;
+        }
 
-    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-    if ( ! $screen || ! isset( $screen->id ) || (string) $screen->id !== 'settings_page_tpw-core-settings' ) {
-        return;
-    }
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( ! $screen || ! isset( $screen->id ) || (string) $screen->id !== 'settings_page_tpw-core-settings' ) {
+            return;
+        }
 
-    settings_errors();
-}, 20 );
+        $groups = [
+            'tpw_core_branding',
+            'tpw_core_features',
+            'tpw_core_member_menu',
+            'tpw_core_email_settings',
+            'tpw_email_templates',
+        ];
+
+        $all = [];
+        foreach ( $groups as $g ) {
+            $errs = get_settings_errors( $g );
+            if ( ! empty( $errs ) && is_array( $errs ) ) {
+                $all = array_merge( $all, $errs );
+            }
+        }
+
+        if ( empty( $all ) ) {
+            return;
+        }
+
+        $unique = [];
+        $seen = [];
+        foreach ( $all as $e ) {
+            $code = isset( $e['code'] ) ? (string) $e['code'] : '';
+            $msg  = isset( $e['message'] ) ? (string) $e['message'] : '';
+            $type = isset( $e['type'] ) ? (string) $e['type'] : '';
+            $key  = $code . '|' . $type . '|' . $msg;
+            if ( isset( $seen[ $key ] ) ) {
+                continue;
+            }
+            $seen[ $key ] = true;
+            $unique[] = $e;
+        }
+
+        foreach ( $unique as $e ) {
+            $code = isset( $e['code'] ) ? (string) $e['code'] : 'tpw-core-notice';
+            $msg  = isset( $e['message'] ) ? (string) $e['message'] : '';
+            $type = isset( $e['type'] ) ? (string) $e['type'] : 'info';
+
+            $classes = [ 'notice', 'settings-error', 'is-dismissible' ];
+
+            // Map legacy/varied types to standard WP notice classes.
+            if ( $type === 'updated' || $type === 'success' ) {
+                $classes[] = 'updated';
+                $classes[] = 'notice-success';
+            } elseif ( $type === 'error' ) {
+                $classes[] = 'error';
+                $classes[] = 'notice-error';
+            } elseif ( $type === 'warning' ) {
+                $classes[] = 'notice-warning';
+            } else {
+                $classes[] = 'notice-info';
+            }
+
+            echo '<div id="setting-error-' . esc_attr( $code ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '"><p>' . wp_kses_post( $msg ) . '</p></div>';
+        }
+    }
+}
+
+if ( ! has_action( 'admin_notices', 'tpw_core_output_core_settings_notices' ) ) {
+    add_action( 'admin_notices', 'tpw_core_output_core_settings_notices', 20 );
+}
 
 // Ensure media library scripts are available on our settings page
 add_action( 'admin_enqueue_scripts', function( $hook ) {
