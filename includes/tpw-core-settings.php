@@ -31,10 +31,16 @@ add_action( 'admin_menu', function () {
     );
 } );
 
-// Output TPW Core *warnings* in the normal WP admin notice region (Core Settings screen only).
-// Do not render Settings API success notices here; rely on WP's native settings-updated notice.
+// Output TPW Core notices in the normal WP admin notice region (Core Settings screen only).
+// This intentionally does NOT use Settings API notice plumbing.
 if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
     function tpw_core_output_core_settings_warnings(): void {
+        static $did = false;
+        if ( $did ) {
+            return;
+        }
+        $did = true;
+
         if ( ! is_admin() ) {
             return;
         }
@@ -47,6 +53,14 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
         $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'member-menu'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         if ( $current_tab === '' ) {
             $current_tab = 'member-menu';
+        }
+
+        // Email tab success notice (Core Settings only).
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $settings_updated = isset( $_GET['settings-updated'] ) ? (int) $_GET['settings-updated'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        if ( $current_tab === 'email' && $settings_updated === 1 ) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Email settings saved.', 'tpw-core' ) . '</p></div>';
         }
 
         // Warnings/errors carried across redirect via query arg.
