@@ -43,9 +43,59 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
             return;
         }
 
-        $tpw_core_debug_print_map = ( defined( 'TPW_CORE_DEBUG_PRINT_MAP' ) && TPW_CORE_DEBUG_PRINT_MAP );
-        if ( $tpw_core_debug_print_map ) {
-            error_log( 'TPW CORE PRINT MAP: admin_notices callback START; screen_id=' . (string) $screen->id );
+        $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'member-menu'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( $current_tab === '' ) {
+            $current_tab = 'member-menu';
+        }
+
+        // Non-settings warnings that must appear in the normal WP notice region.
+        // These are intentionally printed here (not inside page/tab content) to avoid duplication and flicker.
+        if ( $current_tab === 'system-pages' ) {
+            $tpl = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'modules/system-pages/templates/system-pages.php' : '';
+            if ( ! ( $tpl && file_exists( $tpl ) ) ) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'System Pages template not found.', 'tpw-core' ) . '</p></div>';
+            }
+        }
+
+        if ( $current_tab === 'email' && ! class_exists( 'TPW_Core_Email_Settings' ) ) {
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email settings class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
+        }
+
+        if ( $current_tab === 'email-templates' ) {
+            if ( ! class_exists( 'TPW_Email_Template_Registry' ) ) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email Template Registry not loaded.', 'tpw-core' ) . '</p></div>';
+            } else {
+                $editing = isset( $_GET['edit_template'] ) ? strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) wp_unslash( $_GET['edit_template'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                if ( $editing !== '' ) {
+                    $tpl = TPW_Email_Template_Registry::get( $editing );
+                    if ( ! $tpl ) {
+                        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Unknown template key.', 'tpw-core' ) . '</p></div>';
+                    }
+                }
+            }
+        }
+
+        // Profile page configuration warnings (Core Settings screen only).
+        if ( function_exists( 'tpw_core_profile_page_is_configured' ) ) {
+            if ( ! tpw_core_profile_page_is_configured() ) {
+                $url = add_query_arg( 'tab', 'profile', admin_url( 'options-general.php?page=tpw-core-settings' ) );
+                echo '<div class="notice notice-warning is-dismissible"><p>'
+                    . esc_html__( 'TPW Core: The Member Profile page is not configured. ', 'tpw-core' )
+                    . '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Select a Profile page now', 'tpw-core' ) . '</a>'
+                    . '</p></div>';
+            } else {
+                $pid = (int) get_option( 'tpw_member_profile_page_id', 0 );
+                if ( $pid > 0 ) {
+                    $p = get_post( $pid );
+                    if ( $p && 'page' === $p->post_type && 'publish' !== $p->post_status ) {
+                        $edit = get_edit_post_link( $pid, '' );
+                        echo '<div class="notice notice-error is-dismissible"><p>'
+                            . esc_html__( 'TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published.', 'tpw-core' )
+                            . ( $edit ? ' <a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit page', 'tpw-core' ) . '</a>' : '' )
+                            . '</p></div>';
+                    }
+                }
+            }
         }
 
         $groups = [
@@ -58,13 +108,7 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
 
         $all = [];
         foreach ( $groups as $g ) {
-            if ( $tpw_core_debug_print_map ) {
-                error_log( 'TPW CORE PRINT MAP: before get_settings_errors(' . $g . ')' );
-            }
             $errs = get_settings_errors( $g );
-            if ( $tpw_core_debug_print_map ) {
-                error_log( 'TPW CORE PRINT MAP: after get_settings_errors(' . $g . '); count=' . ( is_array( $errs ) ? count( $errs ) : 0 ) );
-            }
             if ( ! empty( $errs ) && is_array( $errs ) ) {
                 $all = array_merge( $all, $errs );
             }
@@ -110,10 +154,6 @@ if ( ! function_exists( 'tpw_core_output_core_settings_notices' ) ) {
 
             echo '<div id="setting-error-' . esc_attr( $code ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '"><p>' . wp_kses_post( $msg ) . '</p></div>';
         }
-
-        if ( $tpw_core_debug_print_map ) {
-            error_log( 'TPW CORE PRINT MAP: admin_notices callback END; printed_unique=' . count( $unique ) );
-        }
     }
 }
 
@@ -144,13 +184,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             return;
         }
 
-        $tpw_core_debug_print_map = ( defined( 'TPW_CORE_DEBUG_PRINT_MAP' ) && TPW_CORE_DEBUG_PRINT_MAP );
-        if ( $tpw_core_debug_print_map ) {
-            $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-            $sid = ( $screen && isset( $screen->id ) ) ? (string) $screen->id : '';
-            error_log( 'TPW CORE PRINT MAP: settings page render START; screen_id=' . $sid );
-        }
-
         // Build tabs (extensible)
         $tabs = apply_filters( 'tpw_core_settings_tabs', [
             'branding'    => __( 'Branding', 'tpw-core' ),
@@ -179,12 +212,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
 
     <div class="tpw-admin-ui" style="<?php echo esc_attr( function_exists('tpw_core_build_ui_theme_style_attr') ? tpw_core_build_ui_theme_style_attr() : '' ); ?>">
         <div class="wrap">
-
-            <?php
-            if ( $tpw_core_debug_print_map ) {
-                error_log( 'TPW CORE PRINT MAP: tabs wrapper OUTPUT (nav-tab-wrapper)');
-            }
-            ?>
 
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
@@ -339,10 +366,6 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             ?>
         </div></div>
         <?php
-
-        if ( $tpw_core_debug_print_map ) {
-            error_log( 'TPW CORE PRINT MAP: settings page render END' );
-        }
     }
 }
 
@@ -454,7 +477,7 @@ if ( ! function_exists( 'tpw_core_render_system_pages_tab' ) ) {
         if ( $tpl && file_exists( $tpl ) ) {
             include $tpl;
         } else {
-            echo '<div class="notice notice-error"><p>' . esc_html__( 'System Pages template not found.', 'tpw-core' ) . '</p></div>';
+            return;
         }
     }
 }
@@ -469,7 +492,6 @@ if ( ! function_exists( 'tpw_core_render_email_settings_tab' ) ) {
      */
     function tpw_core_render_email_settings_tab() {
         if ( ! class_exists( 'TPW_Core_Email_Settings' ) ) {
-            echo '<div class="notice notice-error"><p>' . esc_html__( 'Email settings class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
             return;
         }
         $s = TPW_Core_Email_Settings::get();
@@ -606,7 +628,6 @@ if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
     function tpw_core_render_email_templates_tab() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         if ( ! class_exists('TPW_Email_Template_Registry') ) {
-            echo '<div class="notice notice-error"><p>' . esc_html__( 'Email Template Registry not loaded.', 'tpw-core' ) . '</p></div>';
             return;
         }
 
@@ -616,7 +637,6 @@ if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
         if ( $editing ) {
             $tpl = TPW_Email_Template_Registry::get( $editing );
             if ( ! $tpl ) {
-                echo '<div class="notice notice-error"><p>' . esc_html__( 'Unknown template key.', 'tpw-core' ) . '</p></div>';
                 return;
             }
 
@@ -1881,30 +1901,34 @@ add_filter( 'wp_nav_menu_objects', function( $items, $args ) {
 
 // Admin notice: prompt to configure profile page if feature is being used but not configured
 add_action( 'admin_notices', function() {
-    if ( ! current_user_can( 'manage_options' ) ) return;
-    // Only show on relevant admin screens once in a while
-    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-    $allowed_screens = [ 'settings_page_tpw-core-settings', 'nav-menus' ];
-    if ( $screen && ! in_array( $screen->id, $allowed_screens, true ) ) return;
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
 
-    // Warn if missing
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    if ( ! $screen || ! isset( $screen->id ) || (string) $screen->id !== 'nav-menus' ) {
+        return;
+    }
+
+    if ( ! function_exists( 'tpw_core_profile_page_is_configured' ) ) {
+        return;
+    }
+
     if ( ! tpw_core_profile_page_is_configured() ) {
-        $url = admin_url( 'options-general.php?page=tpw-core-settings' );
-        $url = add_query_arg( 'tab', 'profile', $url );
-        echo '<div class="notice notice-warning"><p>'
+        $url = add_query_arg( 'tab', 'profile', admin_url( 'options-general.php?page=tpw-core-settings' ) );
+        echo '<div class="notice notice-warning is-dismissible"><p>'
             . esc_html__( 'TPW Core: The Member Profile page is not configured. ', 'tpw-core' )
             . '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Select a Profile page now', 'tpw-core' ) . '</a>'
             . '</p></div>';
         return;
     }
 
-    // Also warn if selected page isn’t published (admins see it, members don’t)
-    $pid = (int) get_option('tpw_member_profile_page_id', 0);
+    $pid = (int) get_option( 'tpw_member_profile_page_id', 0 );
     if ( $pid > 0 ) {
         $p = get_post( $pid );
         if ( $p && 'page' === $p->post_type && 'publish' !== $p->post_status ) {
             $edit = get_edit_post_link( $pid, '' );
-            echo '<div class="notice notice-error"><p>'
+            echo '<div class="notice notice-error is-dismissible"><p>'
                 . esc_html__( 'TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published.', 'tpw-core' )
                 . ( $edit ? ' <a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit page', 'tpw-core' ) . '</a>' : '' )
                 . '</p></div>';
