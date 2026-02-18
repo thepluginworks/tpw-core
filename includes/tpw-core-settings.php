@@ -97,11 +97,25 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
                 error_log( 'TPW CORE: settings_errors() START – ' . __FILE__ . ':' . __LINE__ );
             }
 
+            // Deterministically capture notices so they can only be rendered once,
+            // beneath the tabs, and never inside the header strip.
+            ob_start();
             settings_errors();
+            $tpw_notices_html = (string) ob_get_clean();
+
+            // If the header output path had to defensively strip notices, append them here.
+            if ( ! empty( $GLOBALS['tpw_core_settings_stripped_notices'] ) ) {
+                $tpw_notices_html = (string) $GLOBALS['tpw_core_settings_stripped_notices'] . $tpw_notices_html;
+                $GLOBALS['tpw_core_settings_stripped_notices'] = '';
+            }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'TPW CORE: settings_errors() END – ' . __FILE__ . ':' . __LINE__ );
+                error_log( 'TPW CORE: settings_errors() HTML length=' . strlen( $tpw_notices_html ) );
             }
+
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WordPress core outputs escaped notice markup.
+            echo $tpw_notices_html;
             ?>
 
             <?php $tpw_core_builtin_tab_rendered = false; ?>

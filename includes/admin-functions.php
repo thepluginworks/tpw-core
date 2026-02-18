@@ -311,6 +311,13 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
         $page   = isset($_GET['page']) ? sanitize_key( wp_unslash($_GET['page']) ) : '';
         $icon_url = apply_filters( 'tpw_core/header_icon_url', $icon_url, $screen, $page );
 
+        $is_core_settings = ( $page === 'tpw-core-settings' );
+        if ( $is_core_settings ) {
+            // Buffer the header render path so we can deterministically keep the header clean,
+            // even if other plugins/themes echo notices during header generation.
+            ob_start();
+        }
+
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'TPW CORE: HEADER OPEN – ' . __FILE__ . ':' . __LINE__ );
         }
@@ -345,6 +352,42 @@ if ( ! function_exists( 'tpw_core_output_header' ) ) {
         // Core Settings screen (that page controls its own notices and tab layout).
         if ( $page !== 'tpw-core-settings' ) {
             do_action( 'tpw_core/admin_header/after', $title );
+        }
+
+        if ( $is_core_settings ) {
+            $raw = (string) ob_get_clean();
+            $stripped = '';
+
+            // Remove any WordPress admin notice blocks that might have been echoed into the
+            // header output stream. Keep .tpw-fe-notice (subtitle) intact.
+            $clean = preg_replace_callback(
+                '#<div\b[^>]*\bclass=("|\')([^"\']*)(\1)[^>]*>.*?</div>#si',
+                function( array $m ) use ( &$stripped ) {
+                    $class_attr = trim( (string) $m[2] );
+                    if ( $class_attr === '' ) {
+                        return $m[0];
+                    }
+                    $tokens = preg_split( '/\s+/', $class_attr );
+                    foreach ( (array) $tokens as $t ) {
+                        $t = (string) $t;
+                        if ( $t === 'notice' || strpos( $t, 'notice-' ) === 0 || $t === 'settings-error' ) {
+                            $stripped .= $m[0] . "\n";
+                            return '';
+                        }
+                    }
+                    return $m[0];
+                },
+                $raw
+            );
+
+            if ( $stripped !== '' ) {
+                $existing = isset( $GLOBALS['tpw_core_settings_stripped_notices'] ) ? (string) $GLOBALS['tpw_core_settings_stripped_notices'] : '';
+                $GLOBALS['tpw_core_settings_stripped_notices'] = $existing . $stripped;
+            }
+
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Contains HTML built by this function.
+            echo (string) $clean;
+            return;
         }
         ?>
         <?php
