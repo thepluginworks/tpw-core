@@ -114,6 +114,11 @@ add_filter('admin_body_class', function ($classes) {
         $classes .= ' tpw-fe-embed tpw-origin';
     }
 
+    // Settings page-specific marker class (used to guard any JS that manipulates .wrap or notices).
+    if ( $page === 'tpw-core-settings' ) {
+        $classes .= ' tpw-core-settings-page';
+    }
+
     return $classes;
 }, 10);
 

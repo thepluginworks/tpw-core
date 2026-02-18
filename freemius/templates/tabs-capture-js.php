@@ -20,6 +20,9 @@
 <script type="text/javascript">
 	(function ($) {
 		$(document).ready(function () {
+			if (document.body && document.body.classList && document.body.classList.contains('tpw-core-settings-page')) {
+				return;
+			}
 		    var $wrap = $( '.wrap' );
 		    if ( 0 === $wrap.length ) {
 		        $wrap = $( '<div class="wrap">' );
