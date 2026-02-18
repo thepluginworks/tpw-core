@@ -1424,7 +1424,18 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
 
     // Persist messages and redirect back to Email tab
     $errors = get_settings_errors();
-    set_transient( 'settings_errors', $errors, 30 );
+    // De-dupe messages defensively (some environments may register the same error twice).
+    $seen = [];
+    $unique = [];
+    foreach ( $errors as $e ) {
+        $key = (string) ( $e['setting'] ?? '' ) . '|' . (string) ( $e['code'] ?? '' ) . '|' . (string) ( $e['message'] ?? '' );
+        if ( isset( $seen[ $key ] ) ) {
+            continue;
+        }
+        $seen[ $key ] = true;
+        $unique[] = $e;
+    }
+    set_transient( 'settings_errors', $unique, 30 );
     $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'email', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
     exit;
