@@ -807,10 +807,25 @@ if ( ! function_exists('tpw_core_build_branding_css') ) {
 
 // Output CSS variables in admin and front-end heads
 add_action( 'admin_head', function(){
+    if ( function_exists( 'tpw_core_is_tpw_admin_request' ) && ! tpw_core_is_tpw_admin_request() ) {
+        return;
+    }
     $css = tpw_core_build_branding_css( true );
     if ( $css ) { echo '<style id="tpw-core-branding-vars">' . $css . '</style>'; }
 });
 add_action( 'wp_head', function(){
+    $should_output = false;
+    if ( function_exists( 'wp_style_is' ) ) {
+        $should_output =
+            wp_style_is( 'tpw-buttons', 'enqueued' ) ||
+            wp_style_is( 'tpw-admin-ui', 'enqueued' ) ||
+            wp_style_is( 'tpw-ui', 'enqueued' ) ||
+            wp_style_is( 'tpw-core-admin-ui', 'enqueued' );
+    }
+    $should_output = (bool) apply_filters( 'tpw_core/should_output_branding_vars', $should_output );
+    if ( ! $should_output ) {
+        return;
+    }
     $css = tpw_core_build_branding_css( true );
     if ( $css ) { echo '<style id="tpw-core-branding-vars">' . $css . '</style>'; }
 });
@@ -875,10 +890,25 @@ if ( ! function_exists( 'tpw_core_build_heading_css' ) ) {
 
 // Output heading CSS variables in admin and front-end heads
 add_action( 'admin_head', function(){
+    if ( function_exists( 'tpw_core_is_tpw_admin_request' ) && ! tpw_core_is_tpw_admin_request() ) {
+        return;
+    }
     $css = tpw_core_build_heading_css( true );
     if ( $css ) { echo '<style id="tpw-core-heading-vars">' . $css . '</style>'; }
 });
 add_action( 'wp_head', function(){
+    $should_output = false;
+    if ( function_exists( 'wp_style_is' ) ) {
+        $should_output =
+            wp_style_is( 'tpw-buttons', 'enqueued' ) ||
+            wp_style_is( 'tpw-admin-ui', 'enqueued' ) ||
+            wp_style_is( 'tpw-ui', 'enqueued' ) ||
+            wp_style_is( 'tpw-core-admin-ui', 'enqueued' );
+    }
+    $should_output = (bool) apply_filters( 'tpw_core/should_output_heading_vars', $should_output );
+    if ( ! $should_output ) {
+        return;
+    }
     $css = tpw_core_build_heading_css( true );
     if ( $css ) { echo '<style id="tpw-core-heading-vars">' . $css . '</style>'; }
 });

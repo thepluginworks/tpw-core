@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.4] - 2026-02-19
+### Changed
+- Admin UI: added `tpw_core_is_tpw_admin_request()` helper to consistently detect TPW wp-admin screens (supports both `tpw-` and `tpw_` slugs).
+- Admin UI: `tpw-origin` body class is now applied to all TPW admin screens; `tpw-fe-embed` is opt-in via the `tpw_core_admin_fe_embed_pages` filter.
+- Branding: branding/heading CSS variables are now only output on TPW admin screens; on the front-end they output only when TPW styles are enqueued (filters: `tpw_core/should_output_branding_vars`, `tpw_core/should_output_heading_vars`).
+- Maintenance: version bump to 1.9.4.
+
 ## [1.9.3] - 2026-02-18
 ### Fixed
 - Members Login: preserve full redirect destinations (including nested query args) through the front-end password reset email link and post-reset redirect.

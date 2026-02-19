@@ -29,6 +29,82 @@ if ( ! function_exists( 'tpw_core_is_admin_screen' ) ) {
 	}
 }
 
+if ( ! function_exists( 'tpw_core_is_tpw_admin_request' ) ) {
+    /**
+     * Single-source-of-truth: detect whether the current wp-admin request is a TPW screen.
+     *
+     * IMPORTANT: This is UI-only detection used to gate styling and marker classes.
+     * It recognises both `tpw-` and `tpw_` page slugs.
+     *
+     * @since 1.0.0
+     * @param string|null $page   Optional page slug (defaults from $_GET['page']).
+     * @param WP_Screen|null $screen Optional screen object (defaults from get_current_screen()).
+     * @return bool
+     */
+    function tpw_core_is_tpw_admin_request( $page = null, $screen = null ) {
+        if ( ! is_admin() ) {
+            return false;
+        }
+
+        if ( null === $page ) {
+            $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        } elseif ( is_string( $page ) ) {
+            $page = sanitize_key( $page );
+        } else {
+            $page = '';
+        }
+
+        if ( null === $screen && function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+        }
+
+        $allow = apply_filters( 'tpw_core_admin_pages', [
+            'tpw-lodge-rsvp-submissions',
+            // add more slugs here as needed
+        ] );
+        $allow = is_array( $allow ) ? $allow : [];
+
+        $is_tpw = false;
+
+        // A) Plugin pages by slug (allow hyphen or underscore)
+        if ( $page !== '' ) {
+            if (
+                0 === strpos( $page, 'tpw-' ) ||
+                0 === strpos( $page, 'tpw_' ) ||
+                in_array( $page, $allow, true )
+            ) {
+                $is_tpw = true;
+            }
+        }
+
+        // B) Screen-based detection (menu placement, CPTs, etc.)
+        if ( ! $is_tpw && $screen ) {
+            $id     = isset( $screen->id ) ? (string) $screen->id : '';
+            $parent = isset( $screen->parent_base ) ? (string) $screen->parent_base : '';
+
+            if ( $id !== '' ) {
+                $is_tpw =
+                    strpos( $id, 'flexievent_page_tpw-' ) === 0 ||
+                    strpos( $id, 'flexievent_page_tpw_' ) === 0 ||
+                    strpos( $id, 'admin_page_tpw-' ) === 0 ||
+                    strpos( $id, 'admin_page_tpw_' ) === 0 ||
+                    strpos( $id, 'toplevel_page_tpw-' ) === 0 ||
+                    strpos( $id, 'toplevel_page_tpw_' ) === 0;
+            }
+
+            if ( ! $is_tpw && isset( $screen->post_type ) && 0 === strpos( (string) $screen->post_type, 'tpw_' ) ) {
+                $is_tpw = true;
+            }
+
+            if ( ! $is_tpw && $parent === 'tpw-flexievent-dashboard' ) {
+                $is_tpw = true;
+            }
+        }
+
+        return (bool) apply_filters( 'tpw_core/is_tpw_admin_request', $is_tpw, $page, $screen );
+    }
+}
+
 /**
  * Enqueue admin CSS for TPW Core pages and CPT screens only.
  *
@@ -36,31 +112,9 @@ if ( ! function_exists( 'tpw_core_is_admin_screen' ) ) {
  */
 add_action( 'admin_enqueue_scripts', function () {
 
-    // Detect our TPW page (?page=tpw-... or tpw_...) or TPW CPT screens.
-    $is_tpw = false;
-
-    // A) Custom plugin pages by slug (allow hyphen or underscore)
-    if ( isset( $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $page = sanitize_key( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-        // Allow-list of TPW pages (filterable)
-        $allow = apply_filters( 'tpw_core_admin_pages', [
-            'tpw-lodge-rsvp-submissions',
-            // add more slugs here as needed
-        ] );
-
-        if ( 0 === strpos( $page, 'tpw-' ) || 0 === strpos( $page, 'tpw_' ) || in_array( $page, $allow, true ) ) {
-            $is_tpw = true;
-        }
-    }
-
-    // B) TPW CPTs (optional; keep if you also want CPT styling)
-    if ( function_exists( 'get_current_screen' ) ) {
-        $s = get_current_screen();
-        if ( $s && isset( $s->post_type ) && 0 === strpos( $s->post_type, 'tpw_' ) ) {
-            $is_tpw = true;
-        }
-    }
+    $page   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    $is_tpw = function_exists( 'tpw_core_is_tpw_admin_request' ) ? tpw_core_is_tpw_admin_request( $page, $screen ) : false;
 
     if ( ! $is_tpw ) {
         return;
@@ -88,34 +142,21 @@ add_action( 'admin_enqueue_scripts', function () {
  * @return string Modified body classes.
  */
 add_filter('admin_body_class', function ($classes) {
-    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-    $page   = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    $page   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
-    $is_tpw = false;
+    $is_tpw = function_exists( 'tpw_core_is_tpw_admin_request' ) ? tpw_core_is_tpw_admin_request( $page, $screen ) : false;
 
-    if ($screen) {
-        $id     = $screen->id;
-        $parent = (string) $screen->parent_base;
-
-        $is_tpw =
-            strpos($id, 'flexievent_page_tpw-') === 0 ||   // TPW under FlexiEvent menu
-            strpos($id, 'admin_page_tpw-') === 0 ||        // TPW pages via admin.php?page=
-            strpos($id, 'toplevel_page_tpw-') === 0 ||     // TPW top-level menu pages
-            (isset($screen->post_type) && strpos($screen->post_type, 'tpw_') === 0) ||
-            $parent === 'tpw-flexievent-dashboard';
-    }
-
-    // Fallback: page param starts with tpw-
-    if (!$is_tpw && $page && strpos($page, 'tpw-') === 0) {
-        $is_tpw = true;
-    }
-
-    if ($is_tpw) {
-        // Core Settings should behave like a normal WP admin screen (no flex ordering/layout embedding).
-        if ( $page === 'tpw-core-settings' || ( $screen && isset( $screen->id ) && (string) $screen->id === 'settings_page_tpw-core-settings' ) ) {
+    if ( $is_tpw ) {
+        // WP Admin: TPW screens get tpw-origin only. Reserve tpw-fe-embed for explicit allow-listed cases.
+        if ( strpos( $classes, 'tpw-origin' ) === false ) {
             $classes .= ' tpw-origin';
-        } else {
-            $classes .= ' tpw-fe-embed tpw-origin';
+        }
+
+        $fe_embed_pages = apply_filters( 'tpw_core_admin_fe_embed_pages', [] );
+        $fe_embed_pages = is_array( $fe_embed_pages ) ? $fe_embed_pages : [];
+        if ( $page !== '' && in_array( $page, $fe_embed_pages, true ) ) {
+            $classes .= ' tpw-fe-embed';
         }
     }
 
