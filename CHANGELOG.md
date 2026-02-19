@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.5] - 2026-02-19
+### Changed
+- Admin UI: scope WP admin tabs styling to `wp-core-ui`-scoped TPW screens.
+- Maintenance: version bump to 1.9.5.
+
 ## [1.9.4] - 2026-02-19
 ### Changed
 - Admin UI: added `tpw_core_is_tpw_admin_request()` helper to consistently detect TPW wp-admin screens (supports both `tpw-` and `tpw_` slugs).

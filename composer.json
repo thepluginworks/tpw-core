@@ -1,5 +1,5 @@
 {
-    "version": "1.9.4",
+    "version": "1.9.5",
     "require": {
         "guzzlehttp/guzzle": "^7.9",
         "square/square": "^43.0"

@@ -386,14 +386,27 @@
 .wp-core-ui.tpw-origin .button-link:hover,
 .wp-core-ui.tpw-fe-embed .button-link:hover { color: var(--tpw-primary-600); }
 
-/* Tabs */
-.tpw-origin .nav-tab,
-.tpw-fe-embed .nav-tab { border-radius: var(--tpw-radius); }
-.tpw-origin .nav-tab-active,
-.tpw-fe-embed .nav-tab-active {
+/* Tabs (WP-like baseline + TPW active state) */
+.wp-core-ui.tpw-origin .nav-tab-wrapper {
+  border-bottom: 1px solid #c3c4c7;
+}
+
+.wp-core-ui.tpw-origin .nav-tab {
+  /* top corners only */
+  border-radius: var(--tpw-radius) var(--tpw-radius) 0 0;
+  background: #f6f7f7;
+}
+
+.wp-core-ui.tpw-origin .nav-tab-active {
   border-color: var(--tpw-primary-700);
-  background: rgba(47,1,148,.07);
+  background: rgba(47,1,148,.05);
   color: var(--tpw-primary);
+
+  /* Key: make active tab “cut” the baseline so it joins the content */
+  border-bottom-color: #f0f0f1;
+
+  position: relative;
+  z-index: 1;
 }
 
 /* Form controls – focus + checkbox/radio accent */
