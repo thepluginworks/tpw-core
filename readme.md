@@ -1,4 +1,4 @@
-# TPW Core (v1.9.5)
+# TPW Core (v1.10.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Gallery updates (1.10.0)
+- Added a same-page gallery browser via the `tpw_gallery_index` shortcode and a dedicated Gallery Index Elementor widget.
+- Clicking a gallery card now hides the index and renders only the selected gallery with a Back to Galleries action on the same page.
+- Gallery index pages now enqueue the shared TPW button stylesheet so embedded browser controls render correctly.
 
 ### Maintenance updates (1.9.5)
 - Admin UI: scope WP admin tabs styling to `wp-core-ui`-scoped TPW screens.

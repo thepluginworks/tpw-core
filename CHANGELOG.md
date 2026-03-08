@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.0] - 2026-03-08
+### Added
+- Gallery: added a same-page gallery browser via `tpw_gallery_index` and a dedicated Gallery Index Elementor widget.
+
+### Changed
+- Gallery: clicking a gallery card now switches the same page into a single-gallery view with a Back to Galleries action, reusing the existing gallery renderer.
+- Gallery: public gallery index pages now enqueue `tpw-buttons.css` so TPW button styles are available for the embedded browser controls.
+- Maintenance: version bump to 1.10.0.
+
 ## [1.9.5] - 2026-02-19
 ### Changed
 - Admin UI: scope WP admin tabs styling to `wp-core-ui`-scoped TPW screens.

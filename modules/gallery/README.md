@@ -74,6 +74,24 @@ Performance safeguards for large galleries (optional):
 Pagination uses a per-gallery query arg like `?tpw_gallery_page_123=2` so multiple galleries on the same page can paginate independently.
 ```
 
+### [tpw_gallery_index]
+Renders a same-page gallery browser using each gallery's first image as the card thumbnail. By default it shows the gallery index only. Clicking a card reloads the same page with a gallery selection query arg, hides the index, and renders only the selected gallery with a Back to Galleries button above it using the existing public gallery renderer.
+
+Attributes:
+- layout: (string) `grid` or `list`. Default: `grid`.
+- columns: (int) 1..6. Used when `layout="grid"`. Default: 3.
+- detail_view: (string) `grid`, `list`, or `story` for the selected gallery. Default: `grid`.
+- detail_columns: (int) 1..6. Used when `detail_view="grid"`. Default: 3.
+- show_gallery_heading: (`"0"|"1"`) Show the selected gallery title/description above its images. Default: `1`.
+
+Examples:
+
+```text
+[tpw_gallery_index]
+[tpw_gallery_index layout="list" detail_view="story"]
+[tpw_gallery_index columns="4" detail_view="grid" detail_columns="4" show_gallery_heading="0"]
+```
+
 ### [tpw_gallery_categories]
 Renders a list of all gallery categories as links.
 

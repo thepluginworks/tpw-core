@@ -18,9 +18,14 @@ function tpw_gallery_elementor_register_widget( $widgets_manager ) {
     }
 
     require_once __DIR__ . '/class-tpw-elementor-widget-gallery.php';
+    require_once __DIR__ . '/class-tpw-elementor-widget-gallery-index.php';
 
     if ( class_exists( 'TPW_Elementor_Widget_Gallery' ) ) {
         $widgets_manager->register( new TPW_Elementor_Widget_Gallery() );
+    }
+
+    if ( class_exists( 'TPW_Elementor_Widget_Gallery_Index' ) ) {
+        $widgets_manager->register( new TPW_Elementor_Widget_Gallery_Index() );
     }
 }
 

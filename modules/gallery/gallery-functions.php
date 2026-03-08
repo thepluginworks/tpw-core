@@ -590,7 +590,15 @@ function tpw_gallery_all_with_counts(): array {
     $g = $wpdb->prefix . 'tpw_galleries';
     $i = $wpdb->prefix . 'tpw_gallery_images';
     $c = $wpdb->prefix . 'tpw_gallery_categories';
-    $sql = "SELECT g.*, COALESCE(cnt.c,0) AS image_count, COALESCE(cat.name,'') AS category_name FROM {$g} g
+    $sql = "SELECT g.*, COALESCE(cnt.c,0) AS image_count, COALESCE(cat.name,'') AS category_name,
+                   (
+                       SELECT gi.attachment_id
+                       FROM {$i} gi
+                       WHERE gi.gallery_id = g.gallery_id
+                       ORDER BY gi.sort_order ASC, gi.image_id ASC
+                       LIMIT 1
+                   ) AS cover_attachment_id
+            FROM {$g} g
             LEFT JOIN (SELECT gallery_id, COUNT(*) c FROM {$i} GROUP BY gallery_id) cnt ON cnt.gallery_id = g.gallery_id
             LEFT JOIN {$c} cat ON cat.category_id = g.category_id
             ORDER BY g.created_at DESC";
