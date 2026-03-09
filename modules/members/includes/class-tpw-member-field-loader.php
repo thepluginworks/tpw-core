@@ -41,6 +41,7 @@ class TPW_Member_Field_Loader {
             'is_match_manager'      => 'Is Match Manager',
             'is_admin'              => 'Is Admin',
             'is_noticeboard_admin'  => 'Is Noticeboard Admin',
+            'is_volunteer'          => 'Volunteer',
             'username'              => 'Username',
             'password_hash'         => 'Password Hash',
         ];
@@ -104,6 +105,7 @@ class TPW_Member_Field_Loader {
             'is_match_manager'     => 'checkbox',
             'is_admin'             => 'checkbox',
             'is_noticeboard_admin' => 'checkbox',
+            'is_volunteer'         => 'checkbox',
             // FlexiGolf additions
             'whi'                  => 'text',
             'whi_updated'          => 'date',

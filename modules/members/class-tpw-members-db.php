@@ -39,6 +39,7 @@ class TPW_Members_DB {
             is_match_manager TINYINT(1) DEFAULT 0,
             is_admin TINYINT(1) DEFAULT 0,
             is_noticeboard_admin TINYINT(1) DEFAULT 0,
+            is_volunteer TINYINT(1) DEFAULT 0,
 
             username VARCHAR(100),
             password_hash VARCHAR(255),
@@ -56,23 +57,7 @@ class TPW_Members_DB {
             dbDelta($sql);
         }
 
-        // Safety net: ensure the member_photo column exists even if dbDelta skipped it
-        $has_member_photo = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'member_photo'",
-            $table_name
-        ) );
-        if ( ! $has_member_photo ) {
-            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN member_photo VARCHAR(255) NULL AFTER landline" );
-        }
-
-        // Safety net: ensure the dob column exists even if dbDelta skipped it
-        $has_dob = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'dob'",
-            $table_name
-        ) );
-        if ( ! $has_dob ) {
-            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN dob DATE NULL AFTER country" );
-        }
+        self::ensure_members_table_columns( $table_name );
 
         // New table: members household
         $sql_household = "CREATE TABLE {$wpdb->prefix}tpw_members_household (
@@ -177,6 +162,47 @@ class TPW_Members_DB {
         if ( ! $has_meta_kv_index ) {
             // Best-effort – ignore errors silently
             $wpdb->query( "ALTER TABLE {$table_name_meta} ADD INDEX meta_key_value (meta_key, meta_value(50))" );
+        }
+    }
+
+    public static function ensure_core_schema() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'tpw_members';
+        $exists_members = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+        if ( $exists_members === $table_name ) {
+            self::ensure_members_table_columns( $table_name );
+        }
+    }
+
+    private static function ensure_members_table_columns( $table_name ) {
+        global $wpdb;
+
+        // Safety net: ensure the member_photo column exists even if dbDelta skipped it
+        $has_member_photo = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'member_photo'",
+            $table_name
+        ) );
+        if ( ! $has_member_photo ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN member_photo VARCHAR(255) NULL AFTER landline" );
+        }
+
+        // Safety net: ensure the dob column exists even if dbDelta skipped it
+        $has_dob = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'dob'",
+            $table_name
+        ) );
+        if ( ! $has_dob ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN dob DATE NULL AFTER country" );
+        }
+
+        // Safety net: ensure the is_volunteer column exists for upgraded installs
+        $has_is_volunteer = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_volunteer'",
+            $table_name
+        ) );
+        if ( ! $has_is_volunteer ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_volunteer TINYINT(1) NOT NULL DEFAULT 0 AFTER is_noticeboard_admin" );
         }
     }
 }

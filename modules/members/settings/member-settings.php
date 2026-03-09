@@ -146,7 +146,7 @@ $editable_selected = get_option( 'tpw_member_editable_fields', [] );
 $editable_selected = is_array($editable_selected) ? $editable_selected : [];
 $viewable_selected = get_option( 'tpw_member_viewable_fields', [] );
 $viewable_selected = is_array($viewable_selected) ? $viewable_selected : [];
-$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'password_hash', 'user_id', 'society_id' ];
+$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
 $never_view_keys = [ 'password_hash', 'user_id', 'society_id' ];
 $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
 

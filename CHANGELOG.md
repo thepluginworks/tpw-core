@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.0] - 2026-03-09
+### Added
+- Members: added a new core boolean member field `is_volunteer` with the label `Volunteer`.
+
+### Changed
+- Members: `is_volunteer` now follows the same Core handling pattern as `is_committee` and `is_noticeboard_admin` across field settings, add/edit forms, Member Details modal, profile protections, and checkbox-based directory search/filtering.
+- Members: new installs and upgraded sites now ensure the `tpw_members.is_volunteer` column exists with a default value of `0`.
+- Maintenance: version bump to 1.11.0.
+
 ## [1.10.0] - 2026-03-08
 ### Added
 - Gallery: added a same-page gallery browser via `tpw_gallery_index` and a dedicated Gallery Index Elementor widget.

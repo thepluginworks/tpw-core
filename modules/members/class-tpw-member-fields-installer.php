@@ -28,6 +28,7 @@ class TPW_Member_Fields_Installer {
 			'is_match_manager'      => 'Match Manager',
 			'is_admin'              => 'Administrator',
 			'is_noticeboard_admin' => 'Noticeboard Admin',
+			'is_volunteer'         => 'Volunteer',
 			'username'              => 'Username',
 			'password_hash'         => 'Password Hash',
 		];
@@ -35,11 +36,12 @@ class TPW_Member_Fields_Installer {
 		$sort = 0;
 		foreach ( $core_fields as $field_key => $label ) {
 			if ( ! in_array( $field_key, $existing, true ) ) {
+				$is_enabled = ( 'is_volunteer' === $field_key ) ? 0 : 1;
 					$wpdb->insert(
 						$table,
 						[
 							'field_key'    => $field_key,
-							'is_enabled'   => 1,
+							'is_enabled'   => $is_enabled,
 							'custom_label' => $label,
 							'sort_order'   => $sort++,
 						],

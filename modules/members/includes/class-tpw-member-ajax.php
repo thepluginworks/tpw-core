@@ -580,7 +580,7 @@ class TPW_Member_Ajax {
 
                 // Fetch all meta for this member
                 $meta = TPW_Member_Meta::get_all_meta( $requested_id );
-                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin' ];
+                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer' ];
 
                 ob_start();
                 ?>

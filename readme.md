@@ -1,4 +1,4 @@
-# TPW Core (v1.10.0)
+# TPW Core (v1.11.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Members updates (1.11.0)
+- Added a new core boolean member field `is_volunteer` with the label `Volunteer`.
+- `is_volunteer` now follows the same Core handling pattern as `is_committee` and `is_noticeboard_admin` across field settings, add/edit forms, Member Details modal, profile protections, and checkbox-based directory search/filtering.
+- Upgraded sites now ensure the `tpw_members.is_volunteer` column exists with a default value of `0`.
 
 ### Gallery updates (1.10.0)
 - Added a same-page gallery browser via the `tpw_gallery_index` shortcode and a dedicated Gallery Index Elementor widget.

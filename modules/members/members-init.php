@@ -18,6 +18,9 @@ if ( defined( 'TPW_MEMBERS_ACTIVE' ) && TPW_MEMBERS_ACTIVE ) {
 }
 
 if ( $tpw_members_active ) {
+    require_once TPW_CORE_PATH . 'modules/members/class-tpw-members-db.php';
+    add_action( 'admin_init', [ 'TPW_Members_DB', 'ensure_core_schema' ], 5 );
+
     if ( ! function_exists('tpw_members_get_display_name') ) {
         /**
          * Build a display name for a member object based on configured format.

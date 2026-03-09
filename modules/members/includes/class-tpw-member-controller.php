@@ -239,6 +239,7 @@ class TPW_Member_Controller {
             'is_match_manager'      => isset($data['is_match_manager']) ? $data['is_match_manager'] : 0,
             'is_admin'              => isset($data['is_admin']) ? $data['is_admin'] : 0,
             'is_noticeboard_admin'  => isset($data['is_noticeboard_admin']) ? $data['is_noticeboard_admin'] : 0,
+            'is_volunteer'          => isset($data['is_volunteer']) ? $data['is_volunteer'] : 0,
             'username'              => isset($data['username']) ? $data['username'] : '',
             'password_hash'         => isset($data['password_hash']) ? $data['password_hash'] : '',
             'created_at'            => current_time( 'mysql' ),
@@ -302,6 +303,7 @@ class TPW_Member_Controller {
             'is_match_manager',
             'is_admin',
             'is_noticeboard_admin',
+            'is_volunteer',
             'username',
             'password_hash',
         ];
