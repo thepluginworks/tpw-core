@@ -1,4 +1,4 @@
-# TPW Core (v1.11.1)
+# TPW Core (v1.11.2)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Scheduler updates (1.11.2)
+- Added `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.
+- `schedule_single()` now records branch-specific debug metadata, raw scheduler return values, and optional admin-only debug log events around each scheduling call.
+- Short-circuited `pre_as_schedule_single_action` responses now preserve explicit success/failure diagnostics.
 
 ### Scheduler updates (1.11.1)
 - `TPW_Core_Scheduler::schedule_single()` now records richer attempt context for successful and failed scheduling requests.

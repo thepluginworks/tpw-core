@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.2] - 2026-03-09
+### Added
+- Scheduler: added wrapper diagnostics via `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.
+
+### Changed
+- Scheduler: `TPW_Core_Scheduler::schedule_single()` now records branch-specific debug metadata, raw scheduler return values, and optional admin-only debug log events for before/after call tracing.
+- Scheduler: short-circuited `pre_as_schedule_single_action` responses now capture explicit success/failure diagnostics instead of returning an unqualified false value.
+- Maintenance: version bump to 1.11.2.
+
 ## [1.11.1] - 2026-03-09
 ### Added
 - Scheduler: added request-scoped diagnostics helpers via `TPW_Core_Scheduler::get_last_error()`, `get_last_schedule_debug()`, and `get_schedule_debug_history()`.

@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.11.1
+Stable tag: 1.11.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.11.2 =
+- Scheduler: added `TPW_Core_Scheduler::get_wrapper_diagnostics()` for support/debugging insight into the loaded wrapper, detected Action Scheduler source/version, and pre-filter registration state.
+- Scheduler: `schedule_single()` now records branch-specific debug metadata, raw scheduler return values, and optional admin-only debug log events around scheduling calls.
+- Scheduler: short-circuited `pre_as_schedule_single_action` responses now retain explicit success/failure diagnostics.
+- Maintenance: version bump to 1.11.2.
 
 = 1.11.1 =
 - Scheduler: `TPW_Core_Scheduler::schedule_single()` now records richer debug context for failed and successful scheduling attempts.
