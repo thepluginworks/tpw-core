@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.1] - 2026-03-09
+### Added
+- Scheduler: added request-scoped diagnostics helpers via `TPW_Core_Scheduler::get_last_error()`, `get_last_schedule_debug()`, and `get_schedule_debug_history()`.
+
+### Changed
+- Scheduler: `TPW_Core_Scheduler::schedule_single()` now records richer debug context for successful and failed scheduling attempts.
+- Scheduler: unique single scheduling now detects existing hook/args/group matches before re-requesting the same action from Action Scheduler.
+- Maintenance: version bump to 1.11.1.
+
 ## [1.11.0] - 2026-03-09
 ### Added
 - Members: added a new core boolean member field `is_volunteer` with the label `Volunteer`.
