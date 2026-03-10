@@ -40,6 +40,7 @@ class TPW_Members_DB {
             is_admin TINYINT(1) DEFAULT 0,
             is_noticeboard_admin TINYINT(1) DEFAULT 0,
             is_gallery_admin TINYINT(1) DEFAULT 0,
+            is_manage_members TINYINT(1) DEFAULT 0,
             is_volunteer TINYINT(1) DEFAULT 0,
 
             username VARCHAR(100),
@@ -214,13 +215,23 @@ class TPW_Members_DB {
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_gallery_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER is_noticeboard_admin" );
         }
 
+        // Safety net: ensure the is_manage_members column exists for upgraded installs
+        $has_is_manage_members = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_manage_members'",
+            $table_name
+        ) );
+        if ( ! $has_is_manage_members ) {
+            $after_column = $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin';
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_manage_members TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
+        }
+
         // Safety net: ensure the is_volunteer column exists for upgraded installs
         $has_is_volunteer = $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_volunteer'",
             $table_name
         ) );
         if ( ! $has_is_volunteer ) {
-            $after_column = $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin';
+            $after_column = $has_is_manage_members ? 'is_manage_members' : ( $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin' );
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_volunteer TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
         }
     }
@@ -228,43 +239,62 @@ class TPW_Members_DB {
     private static function ensure_member_field_settings_rows( $table_name ) {
         global $wpdb;
 
-        $has_gallery_admin = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table_name} WHERE field_key = %s",
-            'is_gallery_admin'
-        ) );
-        if ( $has_gallery_admin > 0 ) {
-            return;
+        $rows = $wpdb->get_results( "SELECT field_key, sort_order FROM {$table_name}" );
+        $sort_map = [];
+        foreach ( (array) $rows as $row ) {
+            $sort_map[ $row->field_key ] = (int) $row->sort_order;
         }
 
-        $noticeboard_sort = $wpdb->get_var( $wpdb->prepare(
-            "SELECT sort_order FROM {$table_name} WHERE field_key = %s LIMIT 1",
-            'is_noticeboard_admin'
-        ) );
-        $volunteer_sort = $wpdb->get_var( $wpdb->prepare(
-            "SELECT sort_order FROM {$table_name} WHERE field_key = %s LIMIT 1",
-            'is_volunteer'
-        ) );
-        $max_sort = (int) $wpdb->get_var( "SELECT COALESCE(MAX(sort_order), -1) FROM {$table_name}" );
-
-        $insert_sort = $max_sort + 1;
-        if ( null !== $noticeboard_sort ) {
-            $insert_sort = (int) $noticeboard_sort + 1;
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
-        } elseif ( null !== $volunteer_sort ) {
-            $insert_sort = (int) $volunteer_sort;
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
-        }
-
-        $wpdb->insert(
-            $table_name,
+        $ensure_fields = [
             [
                 'field_key'    => 'is_gallery_admin',
-                'is_enabled'   => 1,
                 'custom_label' => 'Gallery Admin',
-                'field_type'   => 'checkbox',
-                'sort_order'   => $insert_sort,
+                'insert_after' => [ 'is_noticeboard_admin' ],
             ],
-            [ '%s', '%d', '%s', '%s', '%d' ]
-        );
+            [
+                'field_key'    => 'is_manage_members',
+                'custom_label' => 'Members Manager',
+                'insert_after' => [ 'is_gallery_admin', 'is_noticeboard_admin' ],
+            ],
+        ];
+
+        $max_sort = (int) $wpdb->get_var( "SELECT COALESCE(MAX(sort_order), -1) FROM {$table_name}" );
+
+        foreach ( $ensure_fields as $field ) {
+            $field_key = $field['field_key'];
+            if ( isset( $sort_map[ $field_key ] ) ) {
+                continue;
+            }
+
+            $insert_sort = $max_sort + 1;
+            foreach ( $field['insert_after'] as $anchor_key ) {
+                if ( isset( $sort_map[ $anchor_key ] ) ) {
+                    $insert_sort = (int) $sort_map[ $anchor_key ] + 1;
+                    break;
+                }
+            }
+
+            $wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+            foreach ( $sort_map as $existing_key => $existing_sort ) {
+                if ( $existing_sort >= $insert_sort ) {
+                    $sort_map[ $existing_key ] = $existing_sort + 1;
+                }
+            }
+
+            $wpdb->insert(
+                $table_name,
+                [
+                    'field_key'    => $field_key,
+                    'is_enabled'   => 1,
+                    'custom_label' => $field['custom_label'],
+                    'field_type'   => 'checkbox',
+                    'sort_order'   => $insert_sort,
+                ],
+                [ '%s', '%d', '%s', '%s', '%d' ]
+            );
+
+            $sort_map[ $field_key ] = $insert_sort;
+            $max_sort++;
+        }
     }
 }

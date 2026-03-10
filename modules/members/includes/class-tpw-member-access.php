@@ -14,6 +14,201 @@ class TPW_Member_Access {
     const ALLOWED_STATUSES = [ 'Active', 'Honorary', 'Life Member' ];
 
     /**
+     * Protected member permission fields.
+     *
+     * These fields may only be edited by WordPress admins or TPW Core admins.
+     * Members Managers can view them, but cannot modify them.
+     *
+     * @return string[]
+     */
+    public static function get_protected_member_permission_fields() {
+        return [ 'is_admin', 'is_manage_members' ];
+    }
+
+    /**
+     * Check whether a field key is a protected member permission field.
+     *
+     * @param string $field_key Field key to check.
+     * @return bool
+     */
+    public static function is_protected_member_permission_field( $field_key ) {
+        return in_array( sanitize_key( (string) $field_key ), self::get_protected_member_permission_fields(), true );
+    }
+
+    /**
+     * Resolve a user ID, defaulting to the current user.
+     *
+     * @param int $user_id Optional user ID.
+     * @return int
+     */
+    protected static function normalize_user_id( $user_id = 0 ) {
+        $user_id = (int) $user_id;
+        if ( $user_id > 0 ) {
+            return $user_id;
+        }
+
+        return is_user_logged_in() ? (int) get_current_user_id() : 0;
+    }
+
+    /**
+     * Check whether the user is a WordPress admin.
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function user_is_wp_admin( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        return function_exists( 'user_can' ) ? (bool) user_can( $user_id, 'manage_options' ) : false;
+    }
+
+    /**
+     * Check whether a linked TPW member row has a specific boolean flag enabled.
+     *
+     * @param string $flag_key Member table flag key.
+     * @param int    $user_id  Optional user ID.
+     * @return bool
+     */
+    public static function user_has_member_flag( $flag_key, $user_id = 0 ) {
+        $flag_key = sanitize_key( (string) $flag_key );
+        $allowed_flags = [
+            'is_admin',
+            'is_committee',
+            'is_match_manager',
+            'is_noticeboard_admin',
+            'is_gallery_admin',
+            'is_manage_members',
+            'is_volunteer',
+        ];
+        if ( ! in_array( $flag_key, $allowed_flags, true ) ) {
+            return false;
+        }
+
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        $member = self::get_member_by_user_id( $user_id );
+        return ( $member && isset( $member->$flag_key ) && (int) $member->$flag_key === 1 );
+    }
+
+    /**
+     * Check if a user is a TPW Core admin in members context.
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function is_admin_user( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        $wp_admin_is_enough = (bool) apply_filters( 'tpw_members/wp_admin_is_full_admin', true );
+        if ( self::user_is_wp_admin( $user_id ) && $wp_admin_is_enough ) {
+            return true;
+        }
+
+        return self::user_has_member_flag( 'is_admin', $user_id );
+    }
+
+    /**
+     * Check if a user can manage the members admin interface.
+     *
+     * Access is granted to:
+     * - WordPress admins
+     * - TPW Core admins via tpw_members.is_admin
+     * - Members managers via tpw_members.is_manage_members
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function can_manage_members_user( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        if ( self::user_is_wp_admin( $user_id ) ) {
+            return true;
+        }
+
+        return self::user_has_member_flag( 'is_admin', $user_id )
+            || self::user_has_member_flag( 'is_manage_members', $user_id );
+    }
+
+    /**
+     * Check whether the current user can manage members.
+     *
+     * @return bool
+     */
+    public static function can_manage_members_current() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        return self::can_manage_members_user( (int) get_current_user_id() );
+    }
+
+    /**
+     * Check whether a user can edit protected member permission fields.
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function can_edit_protected_member_permission_fields_user( $user_id = 0 ) {
+        return self::is_admin_user( $user_id );
+    }
+
+    /**
+     * Check whether the current user can edit protected member permission fields.
+     *
+     * @return bool
+     */
+    public static function can_edit_protected_member_permission_fields_current() {
+        return self::can_edit_protected_member_permission_fields_user();
+    }
+
+    /**
+     * Apply protected member permission field rules to submitted member data.
+     *
+     * If the current actor cannot edit protected permission fields, any attempted
+     * changes to those fields are ignored. Existing values are preserved on
+     * updates, and forced to 0 for new records.
+     *
+     * @param array            $data            Submitted member data.
+     * @param object|array|null $existing_member Optional existing member row for updates.
+     * @param int              $user_id         Optional user ID.
+     * @return array
+     */
+    public static function apply_protected_member_permission_field_rules( array $data, $existing_member = null, $user_id = 0 ) {
+        if ( self::can_edit_protected_member_permission_fields_user( $user_id ) ) {
+            return $data;
+        }
+
+        foreach ( self::get_protected_member_permission_fields() as $field_key ) {
+            if ( ! array_key_exists( $field_key, $data ) ) {
+                continue;
+            }
+
+            $fallback = 0;
+            if ( is_object( $existing_member ) && isset( $existing_member->$field_key ) ) {
+                $fallback = (int) $existing_member->$field_key;
+            } elseif ( is_array( $existing_member ) && array_key_exists( $field_key, $existing_member ) ) {
+                $fallback = (int) $existing_member[ $field_key ];
+            }
+
+            $data[ $field_key ] = $fallback;
+        }
+
+        return $data;
+    }
+
+    /**
      * Get normalized list of allowed statuses (lowercased, trimmed).
      *
      * @since 1.0.0
@@ -105,20 +300,7 @@ class TPW_Member_Access {
      * @return bool
      */
     public static function is_admin_current() {
-        if ( ! is_user_logged_in() ) return false;
-        // WordPress admins have full access by default.
-        // Sites can force requiring tpw_members.is_admin via filter.
-        $wp_admin_is_enough = apply_filters( 'tpw_members/wp_admin_is_full_admin', true );
-        if ( current_user_can( 'manage_options' ) && $wp_admin_is_enough ) {
-            return true;
-        }
-
-        if ( ! current_user_can( 'manage_options' ) ) return false;
-
-        // Fallback to stricter check when filter disables WP-admin override
-        $user = wp_get_current_user();
-        $member = self::get_member_by_user_id( (int) $user->ID );
-        return ( $member && (int)$member->is_admin === 1 );
+        return self::is_admin_user();
     }
 
     /**

@@ -21,22 +21,11 @@ class TPW_Member_Admin_Actions {
      * @return bool
      */
     protected static function user_can_manage() {
-        if ( current_user_can( 'manage_options' ) ) {
-            return true;
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
         }
 
-        $setting = get_option( 'tpw_members_manage_access', 'admins_only' );
-        if ( 'admins_committee' === $setting && is_user_logged_in() ) {
-            if ( ! class_exists( 'TPW_Member_Access' ) ) {
-                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-            }
-            $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
-            if ( $m && ! empty( $m->is_committee ) && 1 === (int) $m->is_committee ) {
-                return true;
-            }
-        }
-
-        return false;
+        return TPW_Member_Access::can_manage_members_current();
     }
 
     /**
@@ -681,7 +670,7 @@ class TPW_Member_Admin_Actions {
      * Handle manual creation/linking of a WP user for a member.
      * Preconditions:
      * - Nonce: tpw_create_wp_user
-     * - Capability: manage_options (aligns with Members admin UI security)
+    * - Capability: members admin access (WP admin, TPW admin, or members manager)
      * - Member exists, has email, and has no linked user_id
      */
     public static function handle_create_wp_user() {
@@ -689,16 +678,11 @@ class TPW_Member_Admin_Actions {
         if ( ! is_user_logged_in() ) {
             wp_die( 'Permission denied.', 403 );
         }
-        // Align capability with Members admin UI: WP admins always; optionally committee managers
-        $can_manage = current_user_can( 'manage_options' );
-        if ( ! $can_manage ) {
-            $manage_setting = get_option('tpw_members_manage_access', 'admins_only');
-            if ( $manage_setting === 'admins_committee' ) {
-                require_once plugin_dir_path(__FILE__) . 'class-tpw-member-access.php';
-                $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
-                $can_manage = $m && ! empty($m->is_committee) && (int) $m->is_committee === 1;
-            }
+        // Align capability with the members admin UI.
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path(__FILE__) . 'class-tpw-member-access.php';
         }
+        $can_manage = TPW_Member_Access::can_manage_members_current();
         if ( ! $can_manage ) { wp_die( 'Permission denied.', 403 ); }
         check_admin_referer( 'tpw_create_wp_user' );
 

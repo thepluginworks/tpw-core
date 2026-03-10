@@ -17,6 +17,8 @@ $default_status = get_option('tpw_default_member_status', '');
 // Fields already come sorted by tpw_field_settings.sort_order. Do not reorder here.
 
 $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
+$can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
+$protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
 ?>
 
 <div class="tpw-member-form">
@@ -33,7 +35,11 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
             <div class="form-group">
                 <?php
                 $label_text = ($field['key'] === 'status') ? 'Member Status' : $field['label'];
-                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_volunteer'], true);
+                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_manage_members','is_volunteer'], true);
+                $is_protected_permission_field = in_array( $field['key'], $protected_permission_fields, true );
+                $is_disabled_permission_field = $is_protected_permission_field && ! $can_edit_protected_permission_fields;
+                $disabled_attr = $is_disabled_permission_field ? ' disabled aria-disabled="true"' : '';
+                $wrapper_style = $is_disabled_permission_field ? 'display:flex;align-items:center;gap:8px;opacity:0.6;' : 'display:flex;align-items:center;gap:8px;';
                 // For inline checkbox fields, we'll render a combined label wrapping the input in the checkbox case block
                 if ( ! $is_inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
                     echo '<label for="' . esc_attr($field['key']) . '">' . esc_html($label_text) . '</label>';
@@ -42,7 +48,7 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 
                 <?php
                 // Force known tinyint fields to checkbox if type is not explicitly set
-                $tinyint_flags = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
+                $tinyint_flags = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer'];
                 if (in_array($field['key'], $tinyint_flags, true)) {
                     $field['type'] = 'checkbox';
                 }
@@ -90,12 +96,15 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 
                     case 'checkbox':
                         if ( $is_inline_checkbox ) {
-                            echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
-                                . '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1">'
+                            echo '<div class="tpw-inline-checkbox" style="' . esc_attr( $wrapper_style ) . '">'
+                                . '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1"' . $disabled_attr . '>'
                                 . '<label for="' . esc_attr($field['key']) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
                                 . '</div>';
                         } else {
-                            echo '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1">';
+                            echo '<input type="checkbox" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '" value="1"' . $disabled_attr . '>';
+                        }
+                        if ( $is_disabled_permission_field ) {
+                            echo '<div class="description" style="margin-top:4px;">Only Administrators can change this field.</div>';
                         }
                         echo '<div class="form-error" aria-live="polite"></div>';
                         break;

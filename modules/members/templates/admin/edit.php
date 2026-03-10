@@ -11,10 +11,12 @@ $member = $controller->get_member($member_id);
 $meta = TPW_Member_Meta::get_all_meta($member_id);
 
 // Precompute Create WP User availability and ids for detached form wiring
-$can_show_create_wp_user = ( empty($member->user_id) && ! empty($member->email) && current_user_can('manage_options') );
+$can_show_create_wp_user = ( empty($member->user_id) && ! empty($member->email) && TPW_Member_Access::can_manage_members_current() );
 $create_wp_form_id = 'tpw-create-wp-user-form-' . (int) $member_id;
 $create_wp_btn_id  = 'tpw-create-wp-user-btn-' . (int) $member_id;
 $create_wp_admin_post = admin_url('admin-post.php');
+$can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
+$protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
 
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 $fields = array_filter($fields, fn($field) => $field['key'] !== 'password_hash');
@@ -51,7 +53,7 @@ if ( ! $member ) {
         ?>
 
         <?php 
-        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
+        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer'];
         // Group by section after sorting
         $grouped = [];
         foreach ($fields as $f) {
@@ -83,7 +85,11 @@ if ( ! $member ) {
                 <?php
                     $label_text = ($key === 'status') ? 'Member Status' : $field['label'];
                     if ($key === 'username') { $label_text .= ' (cannot be changed)'; }
-                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_volunteer'], true);
+                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_manage_members','is_volunteer'], true);
+                    $is_protected_permission_field = in_array( $key, $protected_permission_fields, true );
+                    $is_disabled_permission_field = $is_protected_permission_field && ! $can_edit_protected_permission_fields;
+                    $disabled_attr = $is_disabled_permission_field ? ' disabled aria-disabled="true"' : '';
+                    $wrapper_style = $is_disabled_permission_field ? 'display:flex;align-items:center;gap:8px;opacity:0.6;' : 'display:flex;align-items:center;gap:8px;';
                     // For inline checkbox fields we'll render a combined label in the checkbox branches below
                     if ( ! $inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
                         echo '<label for="' . esc_attr($key) . '">' . esc_html($label_text) . '</label>';
@@ -143,12 +149,15 @@ if ( ! $member ) {
                     case 'checkbox':
                         $checked = $value == '1' ? 'checked' : '';
                         if ( $inline_checkbox ) {
-                            echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
-                                . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>'
+                            echo '<div class="tpw-inline-checkbox" style="' . esc_attr( $wrapper_style ) . '">'
+                                . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>'
                                 . '<label for="' . esc_attr($key) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
                                 . '</div>';
                         } else {
-                            echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                            echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>';
+                        }
+                        if ( $is_disabled_permission_field ) {
+                            echo '<div class="description" style="margin-top:4px;">Only Administrators can change this field.</div>';
                         }
                         break;
 
@@ -186,12 +195,15 @@ if ( ! $member ) {
                         } elseif ( in_array( $key, $known_checkbox_fields ) ) {
                             $checked = $value == '1' ? 'checked' : '';
                             if ( $inline_checkbox ) {
-                                echo '<div class="tpw-inline-checkbox" style="display:flex;align-items:center;gap:8px;">'
-                                    . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>'
+                                echo '<div class="tpw-inline-checkbox" style="' . esc_attr( $wrapper_style ) . '">'
+                                    . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>'
                                     . '<label for="' . esc_attr($key) . '" style="margin:0;">' . esc_html($label_text) . '</label>'
                                     . '</div>';
                             } else {
-                                echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . '>';
+                                echo '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>';
+                            }
+                            if ( $is_disabled_permission_field ) {
+                                echo '<div class="description" style="margin-top:4px;">Only Administrators can change this field.</div>';
                             }
                         } else {
                             // Postcode field gets a Lookup button next to the input

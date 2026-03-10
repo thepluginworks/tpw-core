@@ -6,22 +6,11 @@ class TPW_Member_Form_Handler {
      * Aligns with AJAX permissions (admins always, optionally committee based on setting).
      */
     protected static function user_can_manage() {
-        // WP admins always allowed
-        if ( current_user_can( 'manage_options' ) ) {
-            return true;
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
         }
-        // Optional: allow committee members to manage if setting enabled
-        $setting = get_option( 'tpw_members_manage_access', 'admins_only' );
-        if ( $setting === 'admins_committee' && is_user_logged_in() ) {
-            if ( ! class_exists( 'TPW_Member_Access' ) ) {
-                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-            }
-            $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
-            if ( $m && ! empty( $m->is_committee ) && (int) $m->is_committee === 1 ) {
-                return true;
-            }
-        }
-        return false;
+
+        return TPW_Member_Access::can_manage_members_current();
     }
 
     /**
@@ -62,6 +51,21 @@ class TPW_Member_Form_Handler {
         return $map[ $key ] ?? $status; // if already canonical, keep as-is
     }
 
+    /**
+     * Apply protected member permission field rules to submitted core data.
+     *
+     * @param array             $core_data Submitted core field data.
+     * @param object|array|null $existing_member Optional existing member row.
+     * @return array
+     */
+    protected static function apply_protected_permission_field_rules( array $core_data, $existing_member = null ) {
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+        }
+
+        return TPW_Member_Access::apply_protected_member_permission_field_rules( $core_data, $existing_member );
+    }
+
     public static function handle_add_form() {
         if ( ! isset($_POST['tpw_add_member_nonce']) || ! wp_verify_nonce($_POST['tpw_add_member_nonce'], 'tpw_add_member_action') ) {
             error_log('[TPW Members] Add form blocked: invalid or missing nonce.');
@@ -79,7 +83,7 @@ class TPW_Member_Form_Handler {
         $meta_data = [];
 
         // Core boolean flags that should always be normalized to 0/1
-        $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
+        $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer' ];
 
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
@@ -117,6 +121,7 @@ class TPW_Member_Form_Handler {
         // Fallback in case username or email are not enabled fields
     $core_data['username'] = $core_data['username'] ?? sanitize_user( isset($_POST['username']) ? wp_unslash($_POST['username']) : '' );
     $core_data['email'] = $core_data['email'] ?? sanitize_email( isset($_POST['email']) ? wp_unslash($_POST['email']) : '' );
+        $core_data = self::apply_protected_permission_field_rules( $core_data );
 
         error_log('[TPW DEBUG] handle_add_form() triggered');
         if ( empty($core_data['username']) || empty($core_data['email']) ) {
@@ -280,7 +285,7 @@ class TPW_Member_Form_Handler {
         $meta_data = [];
 
     // Core boolean flags that should always be normalized to 0/1
-    $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
+    $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer' ];
 
         // Ensure these IDs are preserved even if not part of enabled fields
         $core_data['user_id'] = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
@@ -327,6 +332,8 @@ class TPW_Member_Form_Handler {
                 }
             }
         }
+
+        $core_data = self::apply_protected_permission_field_rules( $core_data, $member_before );
 
         // If WHI changed, set whi_updated to today
         if ( method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() ) {

@@ -44,10 +44,6 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
                 $email = sanitize_email( wp_unslash( $_POST['tpw_member_change_notify_email'] ) );
                 update_option( 'tpw_member_change_notify_email', $email );
             }
-            // New: Who can manage the Member Directory (admins_only | admins_committee)
-            $manage_access = isset($_POST['tpw_members_manage_access']) ? sanitize_key($_POST['tpw_members_manage_access']) : 'admins_only';
-            if (!in_array($manage_access, ['admins_only','admins_committee'], true)) { $manage_access = 'admins_only'; }
-            update_option( 'tpw_members_manage_access', $manage_access );
             // New: default view (list|card)
             $def_view = isset($_POST['tpw_members_default_view']) ? sanitize_text_field($_POST['tpw_members_default_view']) : 'list';
             if ( $def_view !== 'card' ) { $def_view = 'list'; }
@@ -146,7 +142,7 @@ $editable_selected = get_option( 'tpw_member_editable_fields', [] );
 $editable_selected = is_array($editable_selected) ? $editable_selected : [];
 $viewable_selected = get_option( 'tpw_member_viewable_fields', [] );
 $viewable_selected = is_array($viewable_selected) ? $viewable_selected : [];
-$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
+$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
 $never_view_keys = [ 'password_hash', 'user_id', 'society_id' ];
 $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
 
@@ -218,14 +214,8 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
         </p>
 
             <p>
-                <label for="tpw_members_manage_access"><strong>Who can manage the Member Directory</strong></label><br>
-                <?php $manage_access = get_option('tpw_members_manage_access', 'admins_only'); ?>
-                <select name="tpw_members_manage_access" id="tpw_members_manage_access" style="width:auto; min-width: 220px; max-width: 320px;">
-                    <option value="admins_only" <?php selected( $manage_access, 'admins_only' ); ?>>Admins only</option>
-                    <option value="admins_committee" <?php selected( $manage_access, 'admins_committee' ); ?>>Admins and Committee</option>
-                </select>
-                <br>
-                <small class="description">Choose which group can manage member records and field settings. This only affects management rights — not directory visibility.</small>
+                <strong>Members management access</strong><br>
+                <small class="description">Access to the members management interface is granted to WordPress admins, TPW Core admins with the is_admin flag, and members with the Members Manager flag. Directory visibility remains controlled separately.</small>
             </p>
 
             <p>

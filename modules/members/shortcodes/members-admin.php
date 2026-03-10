@@ -175,15 +175,7 @@ add_action('template_redirect', function(){
     $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
     if ( $action !== 'export_csv' ) return;
 
-    // Restrict to managers per setting: WP admins always; committee if enabled
-    $manage_setting = get_option('tpw_members_manage_access', 'admins_only');
-    $wp_admin = current_user_can('manage_options');
-    $is_committee = false;
-    if ( is_user_logged_in() ) {
-        $member_obj = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
-        $is_committee = $member_obj && ! empty($member_obj->is_committee) && (int)$member_obj->is_committee === 1;
-    }
-    $can_manage = $wp_admin || ( $manage_setting === 'admins_committee' && $is_committee );
+    $can_manage = TPW_Member_Access::can_manage_members_current();
     if ( ! $can_manage ) {
         wp_die( 'Access denied.', 403 );
     }
@@ -420,11 +412,6 @@ add_shortcode('tpw_manage_members', function() {
         return '';
     }
 
-    // Determine management access per setting
-    $manage_setting = get_option('tpw_members_manage_access', 'admins_only');
-    $wp_admin = current_user_can('manage_options');
-    $is_admin  = TPW_Member_Access::is_admin_current(); // keeps WP admin override unless filtered off
-
     // Committee flag (from linked member row)
     $is_committee = false; $member_obj = null;
     if ( function_exists('wp_get_current_user') && is_user_logged_in() ) {
@@ -432,10 +419,7 @@ add_shortcode('tpw_manage_members', function() {
         $is_committee = $member_obj && ! empty($member_obj->is_committee) && (int)$member_obj->is_committee === 1;
     }
 
-    // Management access:
-    // - Always allow WordPress admins (manage_options)
-    // - If setting allows, also allow committee members
-    $can_manage = $wp_admin || ( $manage_setting === 'admins_committee' && $is_committee );
+    $can_manage = TPW_Member_Access::can_manage_members_current();
 
     // Directory eligibility: Active/Honorary/Life Member statuses
     $can_view_directory = false;

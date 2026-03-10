@@ -84,6 +84,7 @@ class TPW_Member_Fields {
 			'is_admin'              => [ 'label' => 'Administrator', 'type' => 'tinyint(1)' ],
 			'is_noticeboard_admin' => [ 'label' => 'Noticeboard Admin', 'type' => 'tinyint(1)' ],
 			'is_gallery_admin'     => [ 'label' => 'Gallery Admin', 'type' => 'tinyint(1)' ],
+			'is_manage_members'    => [ 'label' => 'Members Manager', 'type' => 'tinyint(1)' ],
 			'is_volunteer'         => [ 'label' => 'Volunteer', 'type' => 'tinyint(1)' ],
 			'username'              => [ 'label' => 'Username', 'type' => 'varchar(100)' ],
 			'password_hash'         => [ 'label' => 'Password Hash', 'type' => 'varchar(255)' ],
@@ -480,6 +481,15 @@ class TPW_Member_Fields {
 					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
 				} elseif ( 'is_gallery_admin' === $field_key && isset( $sort_map['is_noticeboard_admin'] ) ) {
 					$insert_sort = (int) $sort_map['is_noticeboard_admin'] + 1;
+					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+				} elseif ( 'is_manage_members' === $field_key && isset( $sort_map['is_gallery_admin'] ) ) {
+					$insert_sort = (int) $sort_map['is_gallery_admin'] + 1;
+					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+				} elseif ( 'is_manage_members' === $field_key && isset( $sort_map['is_noticeboard_admin'] ) ) {
+					$insert_sort = (int) $sort_map['is_noticeboard_admin'] + 1;
+					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+				} elseif ( 'is_volunteer' === $field_key && isset( $sort_map['is_manage_members'] ) ) {
+					$insert_sort = (int) $sort_map['is_manage_members'] + 1;
 					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
 				} elseif ( 'is_volunteer' === $field_key && isset( $sort_map['is_gallery_admin'] ) ) {
 					$insert_sort = (int) $sort_map['is_gallery_admin'] + 1;

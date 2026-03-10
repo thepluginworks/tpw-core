@@ -15,7 +15,10 @@ require_once TPW_CORE_PATH . 'modules/members/includes/admin-settings-tabs.php';
   </p>
 
   <?php
-  if ( ! current_user_can('manage_options') ) {
+  if ( ! class_exists( 'TPW_Member_Access' ) ) {
+      require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
+  }
+  if ( ! TPW_Member_Access::can_manage_members_current() ) {
       echo '<div class="notice notice-error"><p>Access denied.</p></div>';
       return;
   }

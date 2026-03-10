@@ -196,28 +196,15 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
             }
         };
 
-        // Mirror TPW_Member_Access::is_admin_current() for a specific user_id.
-        // Delegates to:
-        // - current_user_can('manage_options') (via user_can)
-        // - tpw_members/wp_admin_is_full_admin filter
-        // - tpw_members.is_admin flag fallback when filter disables WP-admin override
+        // Mirror TPW_Member_Access::is_admin_user() for a specific user_id.
         $tpw_members_is_admin_user = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
             $ensure_member_access();
 
-            if ( ! $wp_user_can( $uid, 'manage_options' ) ) {
-                return false;
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'is_admin_user' ) ) {
+                return TPW_Member_Access::is_admin_user( $uid );
             }
 
-            $wp_admin_is_enough = (bool) apply_filters( 'tpw_members/wp_admin_is_full_admin', true );
-            if ( $wp_admin_is_enough ) {
-                return true;
-            }
-
-            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
-                $member = TPW_Member_Access::get_member_by_user_id( $uid );
-                return ( $member && isset( $member->is_admin ) && (int) $member->is_admin === 1 );
-            }
-            return false;
+            return $wp_user_can( $uid, 'manage_options' );
         };
 
         // Mirror TPW_Control_UI::is_committee()/is_match_manager()/is_noticeboard_admin() for a given user_id.
@@ -237,25 +224,15 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
             return ( $row && isset( $row->$flag_key ) && (int) $row->$flag_key === 1 );
         };
 
-        // Members module "manager" permission as currently enforced by the manage-members shortcode + export.
-        // Delegates to:
-        // - current_user_can('manage_options') override
-        // - tpw_members_manage_access option allowing committee access
-        // - tpw_members.is_committee flag (linked member row)
+        // Members module manager permission.
+        // Delegates to the shared Members access helper when available.
         $tpw_members_can_manage = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
-            if ( $wp_user_can( $uid, 'manage_options' ) ) {
-                return true;
-            }
-            $manage_setting = (string) get_option( 'tpw_members_manage_access', 'admins_only' );
-            if ( $manage_setting !== 'admins_committee' ) {
-                return false;
-            }
             $ensure_member_access();
-            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
-                $member = TPW_Member_Access::get_member_by_user_id( $uid );
-                return ( $member && ! empty( $member->is_committee ) && (int) $member->is_committee === 1 );
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_members_user' ) ) {
+                return TPW_Member_Access::can_manage_members_user( $uid );
             }
-            return false;
+
+            return $wp_user_can( $uid, 'manage_options' );
         };
 
         // Members directory eligibility as currently enforced by the manage-members shortcode.
@@ -282,8 +259,6 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
         // --- Ability mapping (Step 1 only; add more only when there is an existing enforcement point) ---
         switch ( $ability ) {
             // === Members ===
-            // Existing enforcement point: modules/members/shortcodes/members-admin.php
-            // - $can_manage = manage_options OR (admins_committee && member.is_committee)
             case 'tpw_members_manage':
             case 'tpw_members_create':
             case 'tpw_members_import':

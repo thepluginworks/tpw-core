@@ -29,6 +29,7 @@ class TPW_Member_Fields_Installer {
 			'is_admin'              => 'Administrator',
 			'is_noticeboard_admin' => 'Noticeboard Admin',
 			'is_gallery_admin'     => 'Gallery Admin',
+			'is_manage_members'    => 'Members Manager',
 			'is_volunteer'         => 'Volunteer',
 			'username'              => 'Username',
 			'password_hash'         => 'Password Hash',

@@ -37,24 +37,17 @@ class TPW_Member_Ajax {
     }
 
     /**
-     * Whether the current user can manage members (admin or committee per setting).
+    * Whether the current user can manage members.
      *
      * @since 1.0.0
      * @return bool
      */
     protected static function user_can_manage() {
-        // Managers: WP admins always; optionally committee based on setting
-        $wp_admin = current_user_can( 'manage_options' );
-        if ( $wp_admin ) return true;
-        $setting = get_option( 'tpw_members_manage_access', 'admins_only' );
-        if ( $setting === 'admins_committee' && is_user_logged_in() ) {
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
             require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-            $m = TPW_Member_Access::get_member_by_user_id( get_current_user_id() );
-            if ( $m && ! empty( $m->is_committee ) && (int) $m->is_committee === 1 ) {
-                return true;
-            }
         }
-        return false;
+
+        return TPW_Member_Access::can_manage_members_current();
     }
 
     /**
@@ -226,7 +219,7 @@ class TPW_Member_Ajax {
     public static function dependent_options() {
         // Visibility + basic nonce bypass: allow logged in or public with limited access? For now require member or admin.
         require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-        $is_admin = TPW_Member_Access::is_admin_current();
+        $is_admin = TPW_Member_Access::can_manage_members_current();
         $is_member = TPW_Member_Access::is_member_current();
         if ( ! $is_admin && ! $is_member ) {
             wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
@@ -496,7 +489,7 @@ class TPW_Member_Ajax {
      */
     protected static function member_or_admin_required() {
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-                $is_admin  = TPW_Member_Access::is_admin_current();
+                $is_admin  = TPW_Member_Access::can_manage_members_current();
                 $is_member = TPW_Member_Access::is_member_current();
                 if ( ! $is_admin && ! $is_member ) {
                         wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
@@ -542,7 +535,7 @@ class TPW_Member_Ajax {
                 error_log('[tpw] get_details: requested_id=' . $requested_id . ' found=' . (int)$m->id . ' filters_applied=no reason=ok SQL=' . $sql);
 
                 // Build safe HTML for details modal using configured field sort order
-                $is_admin = TPW_Member_Access::is_admin_current();
+                $is_admin = TPW_Member_Access::can_manage_members_current();
 
                 // Directory/profile safety: Non-admins can only view primary members.
                 // Hard rule: dependants/children must never be visible to other members.
@@ -580,7 +573,7 @@ class TPW_Member_Ajax {
 
                 // Fetch all meta for this member
                 $meta = TPW_Member_Meta::get_all_meta( $requested_id );
-                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
+                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer' ];
 
                 ob_start();
                 ?>
@@ -747,7 +740,7 @@ class TPW_Member_Ajax {
             // Directory safety: non-admin members can only contact primary members.
             // Hard rule: dependants/children must never be reachable via directory endpoints.
             require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-            $is_admin = TPW_Member_Access::is_admin_current();
+            $is_admin = TPW_Member_Access::can_manage_members_current();
             if ( ! $is_admin ) {
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-household-repository.php';
                 $repo = new TPW_Member_Household_Repository();
@@ -836,6 +829,14 @@ class TPW_Member_Ajax {
             $field_value = isset($_POST['field_value']) ? wp_unslash($_POST['field_value']) : '';
             if ( $field_key === '' ) {
                 wp_send_json_error(['message'=>'Missing field_key'], 400);
+            }
+
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+            if (
+                TPW_Member_Access::is_protected_member_permission_field( $field_key )
+                && ! TPW_Member_Access::can_edit_protected_member_permission_fields_current()
+            ) {
+                wp_send_json_error(['message'=>'You do not have permission to edit this field'], 403);
             }
 
             $editable = get_option('tpw_member_editable_fields', []);
