@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.13.0 =
+- Email: added a persistent dispatcher log table recording timestamp, recipient, subject, context, status, error details, and send duration.
+- Email: added an Email Logs tab in TPW Core Settings showing the latest 100 log entries with a clear-logs action.
+- Email: dispatcher logging now captures real `wp_mail()` failures and applies automatic 30-day retention cleanup.
+- Docs: documented central email logging, optional context usage, retention behaviour, and admin viewing guidance.
+- Maintenance: version bump to 1.13.0.
 
 = 1.12.0 =
 - Members: My Profile tabs now render from a pluggable section registry, allowing TPW add-ons to register their own tabs with `tpw_core_register_profile_sections`.

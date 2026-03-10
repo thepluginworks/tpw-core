@@ -18,34 +18,58 @@ class TPW_Email {
      * @param string|array $to
      * @param string       $subject
      * @param string       $message
-     * @param string|array $headers
-     * @param array        $attachments
-     * @param array        $context
-     * @return bool
+    * @param string|array $headers
+    * @param array        $attachments
+    * @param string|array $context
+    * @return bool
      */
     public static function dispatch_mail( $to, $subject, $message, $headers = [], $attachments = [], $context = [] ) {
         $subject_clean    = wp_strip_all_tags( (string) $subject );
         $message_body     = (string) $message;
         $headers_for_send = is_array( $headers ) ? $headers : (string) $headers;
         $attachments_list = is_array( $attachments ) ? array_values( array_filter( $attachments ) ) : [];
-        $dispatch_context = is_array( $context ) ? $context : [];
+        $dispatch_context = self::normalise_dispatch_context( $context );
 
         $slot = self::reserve_dispatch_slot();
         if ( ! empty( $slot['wait_seconds'] ) ) {
             self::sleep_for_seconds( (float) $slot['wait_seconds'] );
         }
 
-        $sent = wp_mail( $to, $subject_clean, $message_body, $headers_for_send, $attachments_list );
+        $attempted_at = gmdate( 'Y-m-d H:i:s' );
+        $started_at   = microtime( true );
+        $mail_error   = null;
+        $capture_failure = static function( $wp_error ) use ( &$mail_error ) {
+            if ( is_wp_error( $wp_error ) ) {
+                $mail_error = implode( '; ', $wp_error->get_error_messages() );
+            }
+        };
+
+        add_action( 'wp_mail_failed', $capture_failure, 10, 1 );
+        try {
+            $sent = wp_mail( $to, $subject_clean, $message_body, $headers_for_send, $attachments_list );
+        } finally {
+            remove_action( 'wp_mail_failed', $capture_failure, 10 );
+        }
+
+        $duration_ms = max( 0, (int) round( ( microtime( true ) - $started_at ) * 1000 ) );
+        if ( ! $sent && empty( $mail_error ) ) {
+            $mail_error = __( 'wp_mail() returned false.', 'tpw-core' );
+        }
 
         self::log_email(
             array_merge(
                 [
                     'dispatcher'            => 'TPW_Email::dispatch_mail',
+                    'timestamp'             => $attempted_at,
                     'to'                    => $to,
                     'subject'               => $subject_clean,
+                    'context'               => self::extract_log_context_label( $dispatch_context ),
                     'headers'               => is_array( $headers_for_send ) ? $headers_for_send : preg_split( '/\r\n|\r|\n/', (string) $headers_for_send ),
                     'attachments'           => $attachments_list,
                     'sent'                  => (bool) $sent,
+                    'status'                => $sent ? 'sent' : 'failed',
+                    'error_message'         => $mail_error,
+                    'duration_ms'           => $duration_ms,
                     'throttling_enabled'    => ! empty( $slot['applied'] ),
                     'throttle_wait_seconds' => isset( $slot['wait_seconds'] ) ? (float) $slot['wait_seconds'] : 0.0,
                     'scheduled_send_at'     => isset( $slot['scheduled_at'] ) ? (float) $slot['scheduled_at'] : microtime( true ),
@@ -546,7 +570,6 @@ class TPW_Email {
             return;
         }
         do_action( 'tpw_email/log', $details );
-        // Optionally write to a log table/file later via hooked listeners.
     }
 
     /**
@@ -566,10 +589,35 @@ class TPW_Email {
         }
         $tpl = TPW_Email_Template_Manager::get_rendered_template( $template_key, is_array($token_values) ? $token_values : [] );
         $res = self::send_email( $to, $from, (string) $tpl['subject'], (string) $tpl['body'], $attachments, $send_copy, ! empty( $tpl['use_logo'] ) );
-        // Annotate log with template key via action for listeners if needed
-        if ( has_action( 'tpw_email/log' ) ) {
-            self::log_email( [ 'template_key' => (string) $template_key, 'note' => 'template_send' ] );
-        }
         return $res;
+    }
+
+    /**
+     * @param mixed $context
+     * @return array<string, mixed>
+     */
+    protected static function normalise_dispatch_context( $context ) {
+        if ( is_string( $context ) ) {
+            $context = trim( $context );
+            return $context === '' ? [] : [ 'context' => $context ];
+        }
+
+        return is_array( $context ) ? $context : [];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return string
+     */
+    protected static function extract_log_context_label( array $context ) {
+        if ( isset( $context['context'] ) && is_string( $context['context'] ) ) {
+            return sanitize_text_field( $context['context'] );
+        }
+
+        if ( isset( $context['source'] ) && is_string( $context['source'] ) ) {
+            return sanitize_text_field( $context['source'] );
+        }
+
+        return '';
     }
 }

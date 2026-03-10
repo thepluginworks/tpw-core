@@ -123,12 +123,14 @@ require_once TPW_CORE_PATH . 'modules/notices/noticeboard-handler.php';
 require_once TPW_CORE_PATH . 'modules/notices/shortcodes/noticeboard-list.php';
 // Email module (reusable across plugins)
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-core-email-settings.php';
+require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-logs.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-logo-helper.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-templates-db.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-template-registry.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-template-manager.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email.php';
 require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-form.php';
+TPW_Email_Logs::init();
 TPW_Email_Form::init();
 
 // Register Members email templates

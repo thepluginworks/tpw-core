@@ -78,6 +78,10 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not save. Email settings class missing.', 'tpw-core' ) . '</p></div>';
             } elseif ( $redirect_notice === 'email_template_db_missing' ) {
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not save. Email Templates DB class missing.', 'tpw-core' ) . '</p></div>';
+            } elseif ( $redirect_notice === 'email_logs_cleared' ) {
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Email logs cleared.', 'tpw-core' ) . '</p></div>';
+            } elseif ( $redirect_notice === 'email_logs_class_missing' ) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs are unavailable. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
             }
         }
 
@@ -93,6 +97,10 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
         if ( $current_tab === 'email' && ! class_exists( 'TPW_Core_Email_Settings' ) ) {
             echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email settings class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
         }
+
+		if ( $current_tab === 'email-logs' && ! class_exists( 'TPW_Email_Logs' ) ) {
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
+		}
 
         if ( $current_tab === 'email-templates' ) {
             if ( ! class_exists( 'TPW_Email_Template_Registry' ) ) {
@@ -166,6 +174,7 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             'member-menu' => __( 'Member Menu', 'tpw-core' ),
             'features'    => __( 'Features', 'tpw-core' ),
             'email'       => __( 'Email Settings', 'tpw-core' ),
+            'email-logs'  => __( 'Email Logs', 'tpw-core' ),
             'email-templates' => __( 'Email Templates', 'tpw-core' ),
             'payment-methods' => __( 'Payment Methods', 'tpw-core' ),
             'system-pages' => __( 'System Pages', 'tpw-core' ),
@@ -209,6 +218,9 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
             <?php elseif ( 'email-templates' === $current_tab ) : ?>
                 <?php $tpw_core_builtin_tab_rendered = true; ?>
                 <?php tpw_core_render_email_templates_tab(); ?>
+            <?php elseif ( 'email-logs' === $current_tab ) : ?>
+                <?php $tpw_core_builtin_tab_rendered = true; ?>
+                <?php tpw_core_render_email_logs_tab(); ?>
             <?php elseif ( 'branding' === $current_tab ) : ?>
                 <?php
                 $tpw_core_builtin_tab_rendered = true;
@@ -454,6 +466,64 @@ if ( ! function_exists( 'tpw_core_render_system_pages_tab' ) ) {
         } else {
             return;
         }
+    }
+}
+
+if ( ! function_exists( 'tpw_core_render_email_logs_tab' ) ) {
+    /**
+     * Render Email Logs tab content.
+     *
+     * @return void
+     */
+    function tpw_core_render_email_logs_tab() {
+        if ( ! class_exists( 'TPW_Email_Logs' ) ) {
+            return;
+        }
+
+        $logs = TPW_Email_Logs::get_recent();
+        $action = esc_url( admin_url( 'admin-post.php' ) );
+        ?>
+        <div class="tpw-email-logs-tab">
+            <p><?php esc_html_e( 'Recent email dispatch attempts recorded by the central core dispatcher. The latest 100 entries are shown, newest first, and logs older than 30 days are removed automatically.', 'tpw-core' ); ?></p>
+
+            <form method="post" action="<?php echo $action; ?>" style="margin: 0 0 1rem;">
+                <?php wp_nonce_field( 'tpw_core_clear_email_logs', 'tpw_core_email_logs_nonce' ); ?>
+                <input type="hidden" name="action" value="tpw_core_clear_email_logs" />
+                <?php submit_button( __( 'Clear Logs', 'tpw-core' ), 'delete', 'tpw_clear_email_logs', false, [ 'onclick' => "return confirm('Are you sure you want to clear all email logs?');" ] ); ?>
+            </form>
+
+            <table class="widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php esc_html_e( 'Timestamp', 'tpw-core' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Recipient', 'tpw-core' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Subject', 'tpw-core' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Context', 'tpw-core' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Status', 'tpw-core' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Error', 'tpw-core' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ( empty( $logs ) ) : ?>
+                        <tr>
+                            <td colspan="6"><?php esc_html_e( 'No email log entries found.', 'tpw-core' ); ?></td>
+                        </tr>
+                    <?php else : ?>
+                        <?php foreach ( $logs as $log ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( TPW_Email_Logs::format_display_timestamp( (string) $log->timestamp ) ); ?></td>
+                                <td><?php echo esc_html( (string) $log->recipient ); ?></td>
+                                <td><?php echo esc_html( (string) $log->subject ); ?></td>
+                                <td><?php echo esc_html( (string) $log->context ); ?></td>
+                                <td><?php echo esc_html( ucfirst( (string) $log->status ) ); ?></td>
+                                <td><?php echo esc_html( (string) $log->error_message ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php
     }
 }
 
@@ -1553,6 +1623,26 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
     }
     $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
     wp_safe_redirect( $url );
+    exit;
+} );
+
+add_action( 'admin_post_tpw_core_clear_email_logs', function() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( __( 'You do not have permission to manage settings.', 'tpw-core' ) );
+    }
+
+    check_admin_referer( 'tpw_core_clear_email_logs', 'tpw_core_email_logs_nonce' );
+
+    $args = [ 'page' => 'tpw-core-settings', 'tab' => 'email-logs' ];
+
+    if ( class_exists( 'TPW_Email_Logs' ) ) {
+        TPW_Email_Logs::clear_all();
+        $args['tpw_core_notice'] = 'email_logs_cleared';
+    } else {
+        $args['tpw_core_notice'] = 'email_logs_class_missing';
+    }
+
+    wp_safe_redirect( add_query_arg( $args, admin_url( 'options-general.php' ) ) );
     exit;
 } );
 

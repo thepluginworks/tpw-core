@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.13.0] - 2026-03-10
+### Added
+- Email: added a persistent core email log table for dispatcher activity, including timestamp, recipient, subject, context, status, error detail, and duration.
+- Email: added a new Email Logs tab in TPW Core Settings to inspect the latest 100 dispatcher entries and clear logs when needed.
+- Docs: documented the central email logging flow, logged fields, optional dispatcher context usage, retention policy, and admin viewing location.
+
+### Changed
+- Email: `TPW_Email::dispatch_mail()` now records real send outcomes around `wp_mail()` and captures failure detail from WordPress mail errors when available.
+- Email: log retention is enforced automatically with a daily cleanup that removes entries older than 30 days.
+- Maintenance: version bump to 1.13.0.
+
 ## [1.12.0] - 2026-03-10
 ### Added
 - Members: My Profile tabs now render from a pluggable profile sections registry, allowing add-on plugins to register their own front-end profile tabs through `tpw_core_register_profile_sections`.

@@ -1,4 +1,4 @@
-# TPW Core (v1.12.0)
+# TPW Core (v1.13.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -68,6 +68,13 @@ If you build new TPW add‑ons, depend on this plugin and use the extension poin
 - Added `TPW_Email::dispatch_mail()` as the shared outbound email dispatcher with throttling-aware slot reservation and centralized logging hooks.
 - Feedback submissions and member notification emails now use the shared dispatcher when it is available.
 - Docs now include the My Profile tab extension contract and example integration guidance for future TPW plugins.
+
+### Email logging updates (1.13.0)
+- Added a persistent core email log table that records timestamp, recipient, subject, context, status, error detail, and send duration for dispatcher activity.
+- Added an Email Logs tab in TPW Core Settings so administrators can inspect the latest 100 log entries and clear logs when required.
+- `TPW_Email::dispatch_mail()` now captures actual `wp_mail()` failure details when available and records operational outcomes centrally.
+- Email log retention now runs automatically each day and removes entries older than 30 days.
+- Docs now cover central email logging, optional dispatcher context values, retention behaviour, and where to view logs.
 
 ### Scheduler updates (1.11.2)
 - Added `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.

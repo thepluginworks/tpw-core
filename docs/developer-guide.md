@@ -180,6 +180,66 @@ Reference for actions and filters provided by TPW Core modules. For usage exampl
 	- File: `modules/email/class-tpw-email-form.php`
 	- Since: 1.0.0
 
+### Email Logging
+
+TPW Core provides a central outbound email dispatcher in `TPW_Email::dispatch_mail()`.
+All TPW Core email sends should pass through this method directly, or through helpers such as `TPW_Email::send_email()` and `TPW_Email::send_with_template()` that eventually call the dispatcher.
+
+Dispatcher flow:
+
+- Sanitizes the subject and normalizes headers and attachments.
+- Applies the shared throttling rules from Core Email Settings.
+- Calls WordPress `wp_mail()`.
+- Records a lightweight operational log entry when Email Logging is enabled in Core Email Settings.
+
+Optional context:
+
+The dispatcher accepts an optional context argument as either a string or an array.
+For logging, Core stores a single context label using `context` when present, otherwise `source` when present.
+
+Example:
+
+```php
+TPW_Email::dispatch_mail(
+	$to,
+	$subject,
+	$message,
+	$headers,
+	[],
+	[
+		'context' => 'membership-renewal-reminder',
+		'source'  => 'My_Module::send_reminder',
+	]
+);
+```
+
+Logged fields:
+
+- `timestamp` — UTC datetime for the dispatch attempt.
+- `recipient` — Recipient email address, or a comma-separated list when multiple recipients are passed.
+- `subject` — Sanitized subject line.
+- `context` — Optional operational label derived from the dispatcher context.
+- `status` — `sent` or `failed`.
+- `error_message` — Failure detail from WordPress mail handling when available.
+- `duration_ms` — Approximate time spent inside the `wp_mail()` call.
+
+Storage:
+
+- Table: `{$wpdb->prefix}tpw_email_logs`
+- Core does not store full email bodies in the log table.
+- The table is intended for operational troubleshooting only.
+
+Retention:
+
+- Core keeps email logs for 30 days by default.
+- A daily scheduled cleanup removes rows older than the retention window.
+
+Admin access:
+
+- WordPress Admin → Settings → TPW Core → Email Logs
+- The screen shows the latest 100 log entries, newest first.
+- Administrators can clear the log table from this tab.
+
 ---
 
 ### Reusable Email Module
@@ -218,6 +278,8 @@ echo TPW_Email_Form::render([
 ```
 
 On submission, the form posts to the secured `tpw_email_send` AJAX action. The handler validates the request and calls `TPW_Email::send_email()` with sanitized data. Errors are surfaced to the user and success is acknowledged.
+
+If Email Logging is enabled in Core Email Settings, sends routed through these helpers are also recorded in the central email log.
 
 Programmatic send:
 

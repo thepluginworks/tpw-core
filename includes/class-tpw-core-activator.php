@@ -68,6 +68,19 @@ class TPW_Core_Activator {
             }
         }
 
+        // Create Email Logs table and schedule retention cleanup.
+        try {
+            require_once TPW_CORE_PATH . 'modules/email/class-tpw-email-logs.php';
+            if ( class_exists( 'TPW_Email_Logs' ) ) {
+                TPW_Email_Logs::create_table();
+                TPW_Email_Logs::schedule_cleanup();
+            }
+        } catch ( \Throwable $e ) {
+            if ( function_exists( 'error_log' ) ) {
+                error_log( 'TPW Core activation: email logs setup failed - ' . $e->getMessage() );
+            }
+        }
+
         // Set default currency settings if not already set
         $settings = get_option( 'flexievent_settings', [] );
 
