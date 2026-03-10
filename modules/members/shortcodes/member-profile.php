@@ -249,7 +249,7 @@ function tpw_member_profile_render_profile_section( $member ) {
 
   foreach ( $fields as $f ) {
     $key = $f['key'];
-    if ( in_array( $key, ['password_hash','is_admin','is_committee','is_match_manager','is_noticeboard_admin','is_volunteer','status'], true ) ) {
+    if ( in_array( $key, ['password_hash','is_admin','is_committee','is_match_manager','is_noticeboard_admin','is_gallery_admin','is_volunteer','status'], true ) ) {
       // hide system/admin control fields
       continue;
     }

@@ -51,7 +51,7 @@ if ( ! $member ) {
         ?>
 
         <?php 
-        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer'];
+        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
         // Group by section after sorting
         $grouped = [];
         foreach ($fields as $f) {
@@ -83,7 +83,7 @@ if ( ! $member ) {
                 <?php
                     $label_text = ($key === 'status') ? 'Member Status' : $field['label'];
                     if ($key === 'username') { $label_text .= ' (cannot be changed)'; }
-                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_volunteer'], true);
+                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_volunteer'], true);
                     // For inline checkbox fields we'll render a combined label in the checkbox branches below
                     if ( ! $inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
                         echo '<label for="' . esc_attr($key) . '">' . esc_html($label_text) . '</label>';

@@ -33,7 +33,7 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
             <div class="form-group">
                 <?php
                 $label_text = ($field['key'] === 'status') ? 'Member Status' : $field['label'];
-                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_volunteer'], true);
+                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_volunteer'], true);
                 // For inline checkbox fields, we'll render a combined label wrapping the input in the checkbox case block
                 if ( ! $is_inline_checkbox || (isset($field['type']) && $field['type'] !== 'checkbox') ) {
                     echo '<label for="' . esc_attr($field['key']) . '">' . esc_html($label_text) . '</label>';
@@ -42,7 +42,7 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 
                 <?php
                 // Force known tinyint fields to checkbox if type is not explicitly set
-                $tinyint_flags = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer'];
+                $tinyint_flags = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
                 if (in_array($field['key'], $tinyint_flags, true)) {
                     $field['type'] = 'checkbox';
                 }

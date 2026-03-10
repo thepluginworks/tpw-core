@@ -79,7 +79,7 @@ class TPW_Member_Form_Handler {
         $meta_data = [];
 
         // Core boolean flags that should always be normalized to 0/1
-        $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer' ];
+        $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
 
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
@@ -280,7 +280,7 @@ class TPW_Member_Form_Handler {
         $meta_data = [];
 
     // Core boolean flags that should always be normalized to 0/1
-    $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_volunteer' ];
+    $known_core_checkboxes = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
 
         // Ensure these IDs are preserved even if not part of enabled fields
         $core_data['user_id'] = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;

@@ -41,6 +41,7 @@ class TPW_Member_Field_Loader {
             'is_match_manager'      => 'Is Match Manager',
             'is_admin'              => 'Is Admin',
             'is_noticeboard_admin'  => 'Is Noticeboard Admin',
+            'is_gallery_admin'      => 'Gallery Admin',
             'is_volunteer'          => 'Volunteer',
             'username'              => 'Username',
             'password_hash'         => 'Password Hash',
@@ -105,6 +106,7 @@ class TPW_Member_Field_Loader {
             'is_match_manager'     => 'checkbox',
             'is_admin'             => 'checkbox',
             'is_noticeboard_admin' => 'checkbox',
+            'is_gallery_admin'     => 'checkbox',
             'is_volunteer'         => 'checkbox',
             // FlexiGolf additions
             'whi'                  => 'text',
@@ -119,6 +121,9 @@ class TPW_Member_Field_Loader {
         foreach ( $results as $row ) {
             $is_core = array_key_exists( $row->field_key, $core_fields );
             $type = $row->field_type;
+            if ( $is_core && isset( $core_default_types[ $row->field_key ] ) && $type === 'tinyint(1)' ) {
+                $type = $core_default_types[ $row->field_key ];
+            }
             // If type is missing or generic, fall back to sensible defaults for core fields
             if ( ! $type || $type === 'text' ) {
                 if ( $is_core && isset( $core_default_types[ $row->field_key ] ) ) {

@@ -39,6 +39,7 @@ class TPW_Members_DB {
             is_match_manager TINYINT(1) DEFAULT 0,
             is_admin TINYINT(1) DEFAULT 0,
             is_noticeboard_admin TINYINT(1) DEFAULT 0,
+            is_gallery_admin TINYINT(1) DEFAULT 0,
             is_volunteer TINYINT(1) DEFAULT 0,
 
             username VARCHAR(100),
@@ -129,6 +130,8 @@ class TPW_Members_DB {
             $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN field_options TEXT NULL" );
         }
 
+        self::ensure_member_field_settings_rows( $fs_table );
+
         // New table: member field visibility per group
         $sql_visibility = "CREATE TABLE {$wpdb->prefix}tpw_member_field_visibility (
             id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -173,6 +176,12 @@ class TPW_Members_DB {
         if ( $exists_members === $table_name ) {
             self::ensure_members_table_columns( $table_name );
         }
+
+        $field_settings_table = $wpdb->prefix . 'tpw_field_settings';
+        $exists_field_settings = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $field_settings_table ) );
+        if ( $exists_field_settings === $field_settings_table ) {
+            self::ensure_member_field_settings_rows( $field_settings_table );
+        }
     }
 
     private static function ensure_members_table_columns( $table_name ) {
@@ -196,13 +205,66 @@ class TPW_Members_DB {
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN dob DATE NULL AFTER country" );
         }
 
+        // Safety net: ensure the is_gallery_admin column exists for upgraded installs
+        $has_is_gallery_admin = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_gallery_admin'",
+            $table_name
+        ) );
+        if ( ! $has_is_gallery_admin ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_gallery_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER is_noticeboard_admin" );
+        }
+
         // Safety net: ensure the is_volunteer column exists for upgraded installs
         $has_is_volunteer = $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_volunteer'",
             $table_name
         ) );
         if ( ! $has_is_volunteer ) {
-            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_volunteer TINYINT(1) NOT NULL DEFAULT 0 AFTER is_noticeboard_admin" );
+            $after_column = $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin';
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_volunteer TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
         }
+    }
+
+    private static function ensure_member_field_settings_rows( $table_name ) {
+        global $wpdb;
+
+        $has_gallery_admin = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE field_key = %s",
+            'is_gallery_admin'
+        ) );
+        if ( $has_gallery_admin > 0 ) {
+            return;
+        }
+
+        $noticeboard_sort = $wpdb->get_var( $wpdb->prepare(
+            "SELECT sort_order FROM {$table_name} WHERE field_key = %s LIMIT 1",
+            'is_noticeboard_admin'
+        ) );
+        $volunteer_sort = $wpdb->get_var( $wpdb->prepare(
+            "SELECT sort_order FROM {$table_name} WHERE field_key = %s LIMIT 1",
+            'is_volunteer'
+        ) );
+        $max_sort = (int) $wpdb->get_var( "SELECT COALESCE(MAX(sort_order), -1) FROM {$table_name}" );
+
+        $insert_sort = $max_sort + 1;
+        if ( null !== $noticeboard_sort ) {
+            $insert_sort = (int) $noticeboard_sort + 1;
+            $wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+        } elseif ( null !== $volunteer_sort ) {
+            $insert_sort = (int) $volunteer_sort;
+            $wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+        }
+
+        $wpdb->insert(
+            $table_name,
+            [
+                'field_key'    => 'is_gallery_admin',
+                'is_enabled'   => 1,
+                'custom_label' => 'Gallery Admin',
+                'field_type'   => 'checkbox',
+                'sort_order'   => $insert_sort,
+            ],
+            [ '%s', '%d', '%s', '%s', '%d' ]
+        );
     }
 }

@@ -320,11 +320,14 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
 
             // === Gallery ===
             // Existing enforcement points: modules/gallery/* gates admin actions on a filterable cap.
-            // Delegates to tpw_gallery_manage_capability() (default: 'manage_options').
+            // Delegates to tpw_gallery_user_can_manage() when available.
             case 'tpw_gallery_upload':
             case 'tpw_gallery_manage_own':
             case 'tpw_gallery_manage_all':
             case 'tpw_gallery_settings_manage':
+                if ( function_exists( 'tpw_gallery_user_can_manage' ) ) {
+                    return tpw_gallery_user_can_manage( $user_id );
+                }
                 $cap = function_exists( 'tpw_gallery_manage_capability' ) ? (string) tpw_gallery_manage_capability() : 'manage_options';
                 $cap = $cap !== '' ? $cap : 'manage_options';
                 return $wp_user_can( $user_id, $cap );

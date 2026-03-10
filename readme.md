@@ -1,4 +1,4 @@
-# TPW Core (v1.13.2)
+# TPW Core (v1.13.3)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,12 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Members and Gallery updates (1.13.3)
+- Added a new core boolean member field `is_gallery_admin` with the label `Gallery Admin`.
+- `is_gallery_admin` now follows the same Core checkbox-style handling pattern as `is_noticeboard_admin` across schema upgrade, field settings, profile protections, add/edit forms, and the member details modal.
+- The active front-end gallery admin shortcode and gallery management AJAX/template paths now allow only WordPress admins with `manage_options`, TPW members with `is_admin = 1`, or TPW members with `is_gallery_admin = 1`.
+- Gallery admin access now resolves through a shared helper so page rendering and action handlers stay aligned.
 
 ### Members and Email updates (1.12.0)
 - My Profile tabs now render from a shared profile sections registry, so add-on plugins can register their own member-facing tabs via `tpw_core_register_profile_sections`.

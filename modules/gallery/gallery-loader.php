@@ -45,7 +45,7 @@ add_action( 'init', function(){
 
 // Shortcode renders the admin wrapper plus list/categories
 add_shortcode( 'tpw_gallery_admin', function( $atts ){
-    if ( ! is_user_logged_in() || ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) {
+    if ( ! is_user_logged_in() || ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) {
         return '<div class="tpw-notice tpw-notice--error">' . esc_html__( 'You do not have permission to access the Gallery admin.', 'tpw-core' ) . '</div>';
     }
     ob_start();
@@ -115,7 +115,7 @@ add_shortcode( 'tpw_gallery_admin', function( $atts ){
 
 // Shortcode: gallery help page
 add_shortcode( 'tpw_gallery_help', function( $atts ){
-    if ( ! is_user_logged_in() || ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) {
+    if ( ! is_user_logged_in() || ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) {
         return '<div class="tpw-notice tpw-notice--error">' . esc_html__( 'You do not have permission to access the Gallery help.', 'tpw-core' ) . '</div>';
     }
     // Enqueue base admin UI styles for consistent look
@@ -135,7 +135,7 @@ add_shortcode( 'tpw_gallery_help', function( $atts ){
 
 // AJAX: delete gallery
 add_action( 'wp_ajax_tpw_gallery_delete', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
     $res = tpw_gallery_delete( $id );
@@ -145,7 +145,7 @@ add_action( 'wp_ajax_tpw_gallery_delete', function(){
 
 // AJAX: create gallery
 add_action( 'wp_ajax_tpw_gallery_create', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $title = isset($_POST['title']) ? sanitize_text_field( wp_unslash($_POST['title']) ) : '';
     $description = isset($_POST['description']) ? wp_kses_post( wp_unslash($_POST['description']) ) : '';
@@ -162,7 +162,7 @@ add_action( 'wp_ajax_tpw_gallery_create', function(){
 
 // AJAX: update gallery
 add_action( 'wp_ajax_tpw_gallery_update', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $gallery_id = isset($_POST['gallery_id']) ? (int) $_POST['gallery_id'] : 0;
     $title = isset($_POST['title']) ? sanitize_text_field( wp_unslash($_POST['title']) ) : null;
@@ -180,7 +180,7 @@ add_action( 'wp_ajax_tpw_gallery_update', function(){
 
 // AJAX: get gallery (for edit prefill)
 add_action( 'wp_ajax_tpw_gallery_get', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
     if ( ! $id ) wp_send_json_error( 'Invalid ID' );
@@ -192,7 +192,7 @@ add_action( 'wp_ajax_tpw_gallery_get', function(){
 
 // AJAX: upload a file directly to this gallery (stores in uploads/tpw-galleries/{slug})
 add_action( 'wp_ajax_tpw_gallery_upload_image', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $gid = isset($_POST['gallery_id']) ? (int) $_POST['gallery_id'] : 0;
     if ( $gid <= 0 ) wp_send_json_error( 'Invalid gallery ID' );
@@ -205,7 +205,7 @@ add_action( 'wp_ajax_tpw_gallery_upload_image', function(){
 
 // AJAX: add selected media library attachments to a gallery
 add_action( 'wp_ajax_tpw_gallery_add_attachments', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $gid = isset($_POST['gallery_id']) ? (int) $_POST['gallery_id'] : 0;
     $ids = isset($_POST['ids']) ? explode( ',', (string) $_POST['ids'] ) : [];
@@ -217,7 +217,7 @@ add_action( 'wp_ajax_tpw_gallery_add_attachments', function(){
 
 // AJAX: add category
 add_action( 'wp_ajax_tpw_gallery_add_category', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $name = isset($_POST['name']) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
     $res = tpw_gallery_add_category( $name );
@@ -227,7 +227,7 @@ add_action( 'wp_ajax_tpw_gallery_add_category', function(){
 
 // AJAX: delete category
 add_action( 'wp_ajax_tpw_gallery_delete_category', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
     $res = tpw_gallery_delete_category( $id );
@@ -237,7 +237,7 @@ add_action( 'wp_ajax_tpw_gallery_delete_category', function(){
 
 // AJAX: delete a single image (remove from gallery)
 add_action( 'wp_ajax_tpw_gallery_delete_image', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $image_id = isset($_POST['image_id']) ? (int) $_POST['image_id'] : 0;
     if ( $image_id <= 0 ) wp_send_json_error( 'Invalid image ID' );
@@ -249,7 +249,7 @@ add_action( 'wp_ajax_tpw_gallery_delete_image', function(){
 
 // AJAX: permanently delete image (attachment + row)
 add_action( 'wp_ajax_tpw_gallery_delete_image_permanently', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $image_id = isset($_POST['image_id']) ? (int) $_POST['image_id'] : 0;
     if ( $image_id <= 0 ) wp_send_json_error( 'Invalid image ID' );
@@ -261,7 +261,7 @@ add_action( 'wp_ajax_tpw_gallery_delete_image_permanently', function(){
 
 // AJAX: update caption for an image (updates DB row and Media Library caption)
 add_action( 'wp_ajax_tpw_gallery_update_caption', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $image_id = isset($_POST['image_id']) ? (int) $_POST['image_id'] : 0;
     $caption  = isset($_POST['caption']) ? wp_unslash( (string) $_POST['caption'] ) : '';
@@ -274,7 +274,7 @@ add_action( 'wp_ajax_tpw_gallery_update_caption', function(){
 
 // AJAX: update image focal point (focus_x, focus_y ratios 0..1)
 add_action( 'wp_ajax_tpw_gallery_update_image_focus', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $image_id = isset($_POST['image_id']) ? (int) $_POST['image_id'] : 0;
     $fx = isset($_POST['focus_x']) ? (float) $_POST['focus_x'] : null;
@@ -288,7 +288,7 @@ add_action( 'wp_ajax_tpw_gallery_update_image_focus', function(){
 
 // AJAX: reorder images within a gallery (saves to sort_order)
 add_action( 'wp_ajax_tpw_gallery_reorder_images', function(){
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) wp_send_json_error( __( 'Permission denied', 'tpw-core' ) );
     check_ajax_referer( 'tpw_gallery' );
     $gallery_id = isset($_POST['gallery_id']) ? (int) $_POST['gallery_id'] : 0;
     $order_raw  = isset($_POST['order']) ? (string) $_POST['order'] : '';

@@ -34,6 +34,38 @@ if ( ! function_exists( 'tpw_gallery_module_enabled' ) ) {
     }
 }
 
+if ( ! function_exists( 'tpw_gallery_user_can_manage' ) ) {
+    function tpw_gallery_user_can_manage( ?int $user_id = null ): bool {
+        $user_id = null === $user_id ? (int) get_current_user_id() : (int) $user_id;
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        if ( function_exists( 'user_can' ) && user_can( $user_id, 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! class_exists( 'TPW_Member_Access', false ) ) {
+            $path = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php' : '';
+            if ( $path && file_exists( $path ) ) {
+                require_once $path;
+            }
+        }
+
+        if ( ! class_exists( 'TPW_Member_Access', false ) || ! method_exists( 'TPW_Member_Access', 'get_member_by_user_id' ) ) {
+            return false;
+        }
+
+        $member = TPW_Member_Access::get_member_by_user_id( $user_id );
+        if ( ! $member ) {
+            return false;
+        }
+
+        return ( ! empty( $member->is_admin ) && (int) $member->is_admin === 1 )
+            || ( ! empty( $member->is_gallery_admin ) && (int) $member->is_gallery_admin === 1 );
+    }
+}
+
 if ( ! function_exists( 'tpw_gallery_get_info' ) ) {
     function tpw_gallery_get_info(): array {
         if ( function_exists( 'tpw_get_registered_modules' ) ) {

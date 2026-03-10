@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - term (string) + page (int): paginated search (20 per page)
  */
 add_action( 'wp_ajax_tpw_gallery_elementor_search', function() {
-    if ( ! current_user_can( function_exists('tpw_gallery_manage_capability') ? tpw_gallery_manage_capability() : 'manage_options' ) ) {
+    if ( ! function_exists( 'tpw_gallery_user_can_manage' ) || ! tpw_gallery_user_can_manage() ) {
         wp_send_json_error( [ 'message' => __( 'Permission denied', 'tpw-core' ) ] );
     }
 

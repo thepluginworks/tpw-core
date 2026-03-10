@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.13.2
+Stable tag: 1.13.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.13.3 =
+- Members: added a new core boolean member field `is_gallery_admin` with the label `Gallery Admin`.
+- Members: `is_gallery_admin` now follows the same Core checkbox-style handling pattern as `is_noticeboard_admin` across schema upgrade, field settings, profile protections, add/edit forms, and the member details modal.
+- Gallery: the active front-end gallery admin shortcode and gallery management AJAX/template paths now allow only WordPress admins with `manage_options`, TPW members with `is_admin = 1`, or TPW members with `is_gallery_admin = 1`.
+- Gallery: gallery admin access now resolves through a shared helper so page rendering and action handlers stay aligned.
+- Maintenance: version bump to 1.13.3.
 
 = 1.13.2 =
 - Members: added `TPW_Member_Field_Loader::get_condition_eligible_custom_fields()` to return enabled custom checkbox fields that are also allowed for conditional field logic.

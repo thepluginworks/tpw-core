@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.13.3] - 2026-03-10
+### Added
+- Members: added a new core boolean member field `is_gallery_admin` with the label `Gallery Admin`.
+
+### Changed
+- Members: `is_gallery_admin` now follows the same Core checkbox-style handling pattern as `is_noticeboard_admin` across schema upgrade, field settings, profile protections, add/edit forms, and the member details modal.
+- Gallery: the active front-end gallery admin shortcode and gallery management AJAX/template paths now allow only WordPress admins with `manage_options`, TPW members with `is_admin = 1`, or TPW members with `is_gallery_admin = 1`.
+- Gallery: gallery admin access now resolves through a shared helper so page rendering and action handlers stay aligned.
+- Maintenance: version bump to 1.13.3.
+
 ## [1.13.2] - 2026-03-10
 ### Added
 - Members: added `TPW_Member_Field_Loader::get_condition_eligible_custom_fields()` to return enabled custom checkbox fields that are explicitly allowed for conditional field logic.
