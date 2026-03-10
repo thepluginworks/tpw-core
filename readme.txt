@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.11.2
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,14 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.12.0 =
+- Members: My Profile tabs now render from a pluggable section registry, allowing TPW add-ons to register their own tabs with `tpw_core_register_profile_sections`.
+- Members: built-in Profile and Payments sections now share the same normalized tab registry and priority-based rendering flow.
+- Email: added `TPW_Email::dispatch_mail()` as the shared outbound dispatcher with throttling-aware slot reservation and centralized logging support.
+- Email: feedback and member notification emails now route through the shared dispatcher when available.
+- Docs: documented the My Profile tab extension contract and add-on integration guidance.
+- Maintenance: version bump to 1.12.0.
 
 = 1.11.2 =
 - Scheduler: added `TPW_Core_Scheduler::get_wrapper_diagnostics()` for support/debugging insight into the loaded wrapper, detected Action Scheduler source/version, and pre-filter registration state.

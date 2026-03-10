@@ -305,7 +305,14 @@ if ( ! class_exists( 'TPW_Feedback' ) ) {
                 ];
                 $body = implode( "\n", $body_lines );
                 $headers = [ 'Content-Type: text/plain; charset=UTF-8' ];
-                wp_mail( $to, $subject, $body, $headers );
+                if ( class_exists( 'TPW_Email' ) ) {
+                    TPW_Email::dispatch_mail( $to, $subject, $body, $headers, [], [
+                        'source'       => 'TPW_Feedback::ajax_submit',
+                        'message_type' => 'plain',
+                    ] );
+                } else {
+                    wp_mail( $to, $subject, $body, $headers );
+                }
 
                 wp_send_json_success( [ 'message' => __( 'Saved', 'tpw-core' ) ] );
             } else {

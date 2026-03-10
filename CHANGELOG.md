@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.12.0] - 2026-03-10
+### Added
+- Members: My Profile tabs now render from a pluggable profile sections registry, allowing add-on plugins to register their own front-end profile tabs through `tpw_core_register_profile_sections`.
+- Docs: added the My Profile tab extension contract and production integration guidance for TPW add-on plugins.
+
+### Changed
+- Members: the built-in Profile and Payments sections now use the same normalized section registry, priority sorting, and active-section rendering flow.
+- Email: added `TPW_Email::dispatch_mail()` as the shared outbound dispatcher with support for throttling, centralized logging, and slot reservation.
+- Email: feedback submissions and member-facing plain-text notifications now route through the shared dispatcher when available.
+- Maintenance: version bump to 1.12.0.
+
 ## [1.11.2] - 2026-03-09
 ### Added
 - Scheduler: added wrapper diagnostics via `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.

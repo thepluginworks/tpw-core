@@ -2,10 +2,61 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class TPW_Email {
+    const THROTTLE_STATE_OPTION = 'tpw_core_email_throttle_state';
+    const THROTTLE_LOCK_OPTION  = 'tpw_core_email_throttle_lock';
+
     // Security hygiene: In wrap_html(), the variables $logo_html, $title_html, and $body
     // are constructed from sanitized sources (logo src via esc_url/esc_attr, title via esc_html,
     // and message body via wp_kses_post + wpautop). They are therefore safe to echo in the
     // template block without additional escaping.
+    /**
+     * Central low-level dispatcher for TPW emails.
+     *
+     * This is the single point where TPW Core enforces outbound email throttling
+     * before handing off to WordPress' wp_mail().
+     *
+     * @param string|array $to
+     * @param string       $subject
+     * @param string       $message
+     * @param string|array $headers
+     * @param array        $attachments
+     * @param array        $context
+     * @return bool
+     */
+    public static function dispatch_mail( $to, $subject, $message, $headers = [], $attachments = [], $context = [] ) {
+        $subject_clean    = wp_strip_all_tags( (string) $subject );
+        $message_body     = (string) $message;
+        $headers_for_send = is_array( $headers ) ? $headers : (string) $headers;
+        $attachments_list = is_array( $attachments ) ? array_values( array_filter( $attachments ) ) : [];
+        $dispatch_context = is_array( $context ) ? $context : [];
+
+        $slot = self::reserve_dispatch_slot();
+        if ( ! empty( $slot['wait_seconds'] ) ) {
+            self::sleep_for_seconds( (float) $slot['wait_seconds'] );
+        }
+
+        $sent = wp_mail( $to, $subject_clean, $message_body, $headers_for_send, $attachments_list );
+
+        self::log_email(
+            array_merge(
+                [
+                    'dispatcher'            => 'TPW_Email::dispatch_mail',
+                    'to'                    => $to,
+                    'subject'               => $subject_clean,
+                    'headers'               => is_array( $headers_for_send ) ? $headers_for_send : preg_split( '/\r\n|\r|\n/', (string) $headers_for_send ),
+                    'attachments'           => $attachments_list,
+                    'sent'                  => (bool) $sent,
+                    'throttling_enabled'    => ! empty( $slot['applied'] ),
+                    'throttle_wait_seconds' => isset( $slot['wait_seconds'] ) ? (float) $slot['wait_seconds'] : 0.0,
+                    'scheduled_send_at'     => isset( $slot['scheduled_at'] ) ? (float) $slot['scheduled_at'] : microtime( true ),
+                ],
+                $dispatch_context
+            )
+        );
+
+        return (bool) $sent;
+    }
+
     /**
      * Send an HTML email with optional attachments and optional copy to sender.
      *
@@ -56,16 +107,13 @@ class TPW_Email {
         $headers[] = 'Content-Type: text/html; charset=UTF-8';
         $headers[] = 'Reply-To: ' . ( $from_name ? ( $from_name . ' ' ) : '' ) . '<' . $from_email . '>';
 
-        // Send main email
-        $sent = wp_mail( $to_email, $subject_clean, $wrapped, $headers, $validated_paths );
-        self::log_email( [
+        // Send main email through the shared dispatcher so throttling is enforced.
+        $sent = self::dispatch_mail( $to_email, $subject_clean, $wrapped, $headers, $validated_paths, [
             'direction'  => 'outbound',
-            'to'         => $to_email,
             'from_email' => $from_email,
             'from_name'  => $from_name,
-            'subject'    => $subject_clean,
-            'attachments'=> $validated_paths,
-            'sent'       => (bool) $sent,
+            'message_type' => 'html',
+            'source'     => 'TPW_Email::send_email',
         ] );
 
         if ( ! $sent ) {
@@ -77,19 +125,200 @@ class TPW_Email {
             $copy_subject = '[Copy] ' . $subject_clean;
             $copy_body    = self::wrap_html( '<p>' . esc_html__( 'This is a copy of your message.', 'tpw-core' ) . '</p>' . $html_message, $from_name, (bool) $use_logo );
             // Sender copy: no attachments by default for safety
-            $copy_sent = wp_mail( $from_email, $copy_subject, $copy_body, $headers );
-            self::log_email( [
-                'direction'  => 'copy',
-                'to'         => $from_email,
-                'from_email' => $from_email,
-                'from_name'  => $from_name,
-                'subject'    => $copy_subject,
-                'attachments'=> [],
-                'sent'       => (bool) $copy_sent,
+            self::dispatch_mail( $from_email, $copy_subject, $copy_body, $headers, [], [
+                'direction'    => 'copy',
+                'from_email'   => $from_email,
+                'from_name'    => $from_name,
+                'message_type' => 'html',
+                'source'       => 'TPW_Email::send_email',
             ] );
         }
 
         return [ 'success' => true, 'message' => __( 'Email sent successfully.', 'tpw-core' ) ];
+    }
+
+    /**
+     * Reserve the next available outbound email slot.
+     *
+     * The reservation is made under a short-lived lock so concurrent requests
+     * share one rolling schedule without introducing a separate queue system.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function reserve_dispatch_slot() {
+        $settings = self::get_dispatch_settings();
+        $now      = microtime( true );
+
+        if ( empty( $settings['enable_throttling'] ) ) {
+            return [
+                'applied'      => false,
+                'wait_seconds' => 0.0,
+                'scheduled_at' => $now,
+                'settings'     => $settings,
+            ];
+        }
+
+        $lock_token = self::acquire_dispatch_lock();
+        if ( '' === $lock_token ) {
+            return [
+                'applied'      => false,
+                'wait_seconds' => 0.0,
+                'scheduled_at' => $now,
+                'settings'     => $settings,
+                'reason'       => 'lock_timeout',
+            ];
+        }
+
+        try {
+            $state      = get_option( self::THROTTLE_STATE_OPTION, [] );
+            $timestamps = self::normalise_dispatch_timestamps( isset( $state['scheduled'] ) ? $state['scheduled'] : [] );
+            $timestamps = array_values( array_filter( $timestamps, function( $timestamp ) use ( $now ) {
+                return $timestamp >= ( $now - 60 );
+            } ) );
+            sort( $timestamps, SORT_NUMERIC );
+
+            $last_scheduled_at = isset( $state['last_scheduled_at'] ) ? (float) $state['last_scheduled_at'] : 0.0;
+            $candidate         = max( $now, $last_scheduled_at );
+            $delay_seconds     = max( 0, (int) $settings['delay_between_emails'] );
+            $max_per_minute    = max( 1, (int) $settings['max_emails_per_minute'] );
+
+            if ( $delay_seconds > 0 ) {
+                $candidate = max( $candidate, $last_scheduled_at + (float) $delay_seconds );
+            }
+
+            while ( true ) {
+                $window = array_values( array_filter( $timestamps, function( $timestamp ) use ( $candidate ) {
+                    return $timestamp > ( $candidate - 60 ) && $timestamp <= $candidate;
+                } ) );
+
+                if ( count( $window ) < $max_per_minute ) {
+                    break;
+                }
+
+                $candidate = max( $candidate, (float) reset( $window ) + 60.0 );
+            }
+
+            $timestamps[] = $candidate;
+            sort( $timestamps, SORT_NUMERIC );
+
+            update_option( self::THROTTLE_STATE_OPTION, [
+                'scheduled'         => $timestamps,
+                'last_scheduled_at' => $candidate,
+                'updated_at'        => $now,
+            ] );
+
+            return [
+                'applied'      => true,
+                'wait_seconds' => max( 0.0, $candidate - $now ),
+                'scheduled_at' => $candidate,
+                'settings'     => $settings,
+            ];
+        } finally {
+            self::release_dispatch_lock( $lock_token );
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function get_dispatch_settings() {
+        $settings = class_exists( 'TPW_Core_Email_Settings' ) ? TPW_Core_Email_Settings::get() : [];
+
+        $enable_throttling = ! empty( $settings['enable_throttling'] );
+        $max_per_minute    = isset( $settings['max_emails_per_minute'] ) ? (int) $settings['max_emails_per_minute'] : 60;
+        $delay_seconds     = isset( $settings['delay_between_emails'] ) ? (int) $settings['delay_between_emails'] : 0;
+
+        return [
+            'enable_throttling'    => (bool) apply_filters( 'tpw_email/enable_throttling', $enable_throttling, $settings ),
+            'max_emails_per_minute'=> max( 1, (int) apply_filters( 'tpw_email/max_emails_per_minute', $max_per_minute, $settings ) ),
+            'delay_between_emails' => max( 0, (int) apply_filters( 'tpw_email/delay_between_emails', $delay_seconds, $settings ) ),
+        ];
+    }
+
+    /**
+     * @param mixed $timestamps
+     * @return array<int, float>
+     */
+    protected static function normalise_dispatch_timestamps( $timestamps ) {
+        if ( ! is_array( $timestamps ) ) {
+            return [];
+        }
+
+        $normalised = [];
+        foreach ( $timestamps as $timestamp ) {
+            if ( is_numeric( $timestamp ) ) {
+                $normalised[] = (float) $timestamp;
+            }
+        }
+
+        sort( $normalised, SORT_NUMERIC );
+        return $normalised;
+    }
+
+    /**
+     * @param float $timeout_seconds
+     * @return string
+     */
+    protected static function acquire_dispatch_lock( $timeout_seconds = 5.0 ) {
+        $token    = function_exists( 'wp_generate_uuid4' ) ? wp_generate_uuid4() : uniqid( 'tpw-email-', true );
+        $deadline = microtime( true ) + max( 0.1, (float) $timeout_seconds );
+
+        while ( microtime( true ) < $deadline ) {
+            $now  = microtime( true );
+            $lock = [
+                'token'      => $token,
+                'expires_at' => $now + 15.0,
+            ];
+
+            if ( add_option( self::THROTTLE_LOCK_OPTION, $lock, '', false ) ) {
+                return $token;
+            }
+
+            $existing = get_option( self::THROTTLE_LOCK_OPTION, [] );
+            $expired  = ! is_array( $existing ) || empty( $existing['expires_at'] ) || (float) $existing['expires_at'] < $now;
+
+            if ( $expired ) {
+                delete_option( self::THROTTLE_LOCK_OPTION );
+                continue;
+            }
+
+            usleep( 100000 );
+        }
+
+        return '';
+    }
+
+    /**
+     * @param string $token
+     * @return void
+     */
+    protected static function release_dispatch_lock( $token ) {
+        $existing = get_option( self::THROTTLE_LOCK_OPTION, [] );
+        if ( is_array( $existing ) && isset( $existing['token'] ) && (string) $existing['token'] === (string) $token ) {
+            delete_option( self::THROTTLE_LOCK_OPTION );
+        }
+    }
+
+    /**
+     * @param float $seconds
+     * @return void
+     */
+    protected static function sleep_for_seconds( $seconds ) {
+        $seconds = max( 0.0, (float) $seconds );
+        if ( $seconds <= 0 ) {
+            return;
+        }
+
+        $whole_seconds = (int) floor( $seconds );
+        $microseconds  = (int) round( ( $seconds - $whole_seconds ) * 1000000 );
+
+        if ( $whole_seconds > 0 ) {
+            sleep( $whole_seconds );
+        }
+
+        if ( $microseconds > 0 ) {
+            usleep( $microseconds );
+        }
     }
 
     /**
@@ -313,6 +542,9 @@ class TPW_Email {
      * Placeholder for future logging.
      */
     public static function log_email( $details ) {
+        if ( class_exists( 'TPW_Core_Email_Settings' ) && ! TPW_Core_Email_Settings::get( 'enable_logging' ) ) {
+            return;
+        }
         do_action( 'tpw_email/log', $details );
         // Optionally write to a log table/file later via hooked listeners.
     }

@@ -780,7 +780,12 @@ class TPW_Member_Ajax {
             $site_name = wp_specialchars_decode( get_bloginfo('name'), ENT_QUOTES );
             $subject = sprintf( '[%s] Message from %s', $site_name, $from_name );
             $body = wp_strip_all_tags( $message );
-            $sent = wp_mail( $m->email, $subject, $body, $headers );
+            $sent = class_exists( 'TPW_Email' )
+                ? TPW_Email::dispatch_mail( $m->email, $subject, $body, $headers, [], [
+                    'source'       => 'TPW_Member_Ajax::email_member',
+                    'message_type' => 'plain',
+                ] )
+                : wp_mail( $m->email, $subject, $body, $headers );
             if ( ! $sent ) wp_send_json_error(['message'=>'Failed to send email'],500);
             wp_send_json_success(['message'=>'Sent']);
         }
@@ -934,7 +939,14 @@ class TPW_Member_Ajax {
                     }
 
                     // Send and ignore failures silently (log if desired)
-                    @wp_mail( $notify_to, $subject, $body, $headers );
+                    if ( class_exists( 'TPW_Email' ) ) {
+                        TPW_Email::dispatch_mail( $notify_to, $subject, $body, $headers, [], [
+                            'source'       => 'TPW_Member_Ajax::profile_update',
+                            'message_type' => 'plain',
+                        ] );
+                    } else {
+                        @wp_mail( $notify_to, $subject, $body, $headers );
+                    }
                 }
             }
             wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);

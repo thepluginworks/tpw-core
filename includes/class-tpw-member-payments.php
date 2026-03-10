@@ -26,10 +26,13 @@ class TPW_Member_Payments {
         $active_methods = class_exists( 'TPW_Payments_Manager' ) ? (array) TPW_Payments_Manager::get_active_methods() : [];
         if ( ! empty( $active_methods ) ) {
             $sections['payments'] = [
+                'slug'     => 'payments',
                 'label'    => __( 'My Payments', 'tpw-core' ),
+                'callback' => [ __CLASS__, 'render_profile_payments' ],
                 'template' => 'members/profile/payments/index.php',
                 'icon'     => 'credit-card',
                 'priority' => 40,
+                'show'     => true,
             ];
         }
         return $sections;

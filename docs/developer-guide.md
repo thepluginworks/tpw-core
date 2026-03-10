@@ -509,6 +509,118 @@ do_action( 'tpw_members_admin_form_after_save', string $context, int $member_id 
 ```
 
 Runs after core fields and meta are saved for both add and edit submissions, allowing you to persist any extra fields you rendered.
+
+## My Profile Tab Extension Hook
+
+Add-on plugins can register new tabs on the front-end My Profile screen by filtering the profile sections registry used by Core.
+
+### Register Hook
+
+Filter: `tpw_core_register_profile_sections`
+
+Signature:
+
+```php
+apply_filters( 'tpw_core_register_profile_sections', array $sections )
+```
+
+Core treats `profile` as a built-in section and may also register other built-in sections such as `payments`. Add-on plugins should append their own keyed entry and return the full array.
+
+### Supported Section Shape
+
+Each section entry should use this structure:
+
+```php
+$sections['policy'] = [
+	'slug'       => 'policy',
+	'label'      => __( 'My Policies', 'your-plugin' ),
+	'icon'       => 'dashicons dashicons-shield-alt',
+	'priority'   => 50,
+	'callback'   => 'your_plugin_render_policy_section',
+	'capability' => 'read',
+	'show'       => true,
+];
+```
+
+Field contract:
+- `slug` — optional when it matches the array key; use a unique tab slug.
+- `label` — required tab label.
+- `icon` — optional icon HTML or CSS classes. Prefer Dashicons class strings when needed.
+- `priority` — optional integer sort order; lower values render first.
+- `callback` — recommended. A callable that renders the tab content.
+- `template` — optional alternative to `callback`; intended for Core-safe template resolution.
+- `capability` — optional; section is hidden when the current user lacks the capability.
+- `show` — optional boolean; set false to suppress a section.
+
+Invalid sections are skipped safely. If the requested tab slug is unknown, Core falls back to `profile`.
+
+### Callback Contract
+
+Profile section callbacks receive the raw member row object returned from the `tpw_members` table lookup. This is the direct result of `SELECT * FROM {$wpdb->prefix}tpw_members WHERE user_id = %d LIMIT 1`.
+
+Practical guarantees:
+- `$member->id` is the TPW member primary key.
+- `$member->user_id` is the linked WordPress user ID.
+- Other direct properties map to columns on `tpw_members`.
+- Member meta is not merged into the object automatically; load it separately when needed.
+
+Core will pass up to three callback arguments depending on what your callable accepts:
+
+```php
+function your_plugin_render_policy_section( $member, $section = [], $sections = [] ) {
+	if ( ! is_object( $member ) || empty( $member->id ) || empty( $member->user_id ) ) {
+		return '<div class="tpw-error">' . esc_html__( 'Member record unavailable.', 'your-plugin' ) . '</div>';
+	}
+
+	$member_id = (int) $member->id;
+	$user_id   = (int) $member->user_id;
+
+	ob_start();
+	echo '<div class="tpw-section">';
+	echo '<h2>' . esc_html__( 'My Policies', 'your-plugin' ) . '</h2>';
+	echo '<p>' . sprintf( esc_html__( 'Rendering for member #%d (user #%d).', 'your-plugin' ), $member_id, $user_id ) . '</p>';
+	echo '</div>';
+	return ob_get_clean();
+}
+```
+
+If your plugin stores additional member-linked values in TPW member meta, load them explicitly using the TPW member ID:
+
+```php
+$meta = class_exists( 'TPW_Member_Meta' ) ? TPW_Member_Meta::get_all_meta( (int) $member->id ) : [];
+```
+
+### Production Example
+
+Register the section from a front-end-loaded file in your plugin, not an admin-only include:
+
+```php
+add_filter( 'tpw_core_register_profile_sections', 'your_plugin_register_policy_profile_tab' );
+
+function your_plugin_register_policy_profile_tab( $sections ) {
+	if ( ! is_array( $sections ) ) {
+		$sections = [];
+	}
+
+	$sections['policy'] = [
+		'slug'     => 'policy',
+		'label'    => __( 'My Policies', 'your-plugin' ),
+		'icon'     => 'dashicons dashicons-shield-alt',
+		'priority' => 50,
+		'callback' => 'your_plugin_render_policy_section',
+		'show'     => true,
+	];
+
+	return $sections;
+}
+```
+
+Recommended placement in an add-on plugin:
+- Main plugin bootstrap, or
+- a dedicated front-end integration file included by the bootstrap, for example `includes/frontend/class-your-plugin-profile-policy-section.php`
+
+Do not place this integration in an admin-only file, because the My Profile screen is front-end rendered.
+
 ## Members module activation and system pages
 
 - To enable the Members module UI from an add-on plugin, define the constant `TPW_MEMBERS_ACTIVE` as true as early as possible in your plugin bootstrap. Core provides a convenience helper:

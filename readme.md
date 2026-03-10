@@ -1,4 +1,4 @@
-# TPW Core (v1.11.2)
+# TPW Core (v1.12.0)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,13 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Members and Email updates (1.12.0)
+- My Profile tabs now render from a shared profile sections registry, so add-on plugins can register their own member-facing tabs via `tpw_core_register_profile_sections`.
+- Built-in Profile and Payments sections now use the same normalized tab registry and priority ordering.
+- Added `TPW_Email::dispatch_mail()` as the shared outbound email dispatcher with throttling-aware slot reservation and centralized logging hooks.
+- Feedback submissions and member notification emails now use the shared dispatcher when it is available.
+- Docs now include the My Profile tab extension contract and example integration guidance for future TPW plugins.
 
 ### Scheduler updates (1.11.2)
 - Added `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.

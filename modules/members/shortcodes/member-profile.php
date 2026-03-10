@@ -6,62 +6,220 @@ require_once plugin_dir_path(__FILE__) . '../includes/class-tpw-member-controlle
 require_once plugin_dir_path(__FILE__) . '../includes/class-tpw-member-field-loader.php';
 require_once plugin_dir_path(__FILE__) . '../includes/class-tpw-member-meta.php';
 
-add_shortcode('tpw_member_profile', function(){
+function tpw_member_profile_get_builtin_sections() {
+  return [
+    'profile' => [
+      'slug'     => 'profile',
+      'label'    => __( 'My Profile', 'tpw-core' ),
+      'icon'     => '',
+      'priority' => 10,
+      'callback' => 'tpw_member_profile_render_profile_section',
+      'show'     => true,
+    ],
+  ];
+}
+
+function tpw_member_profile_get_registered_sections() {
+  $built_in_sections = tpw_member_profile_get_builtin_sections();
+  $filtered_sections = apply_filters( 'tpw_core_register_profile_sections', $built_in_sections );
+
+  if ( ! is_array( $filtered_sections ) ) {
+    $filtered_sections = [];
+  }
+
+  $sections = array_replace( $built_in_sections, $filtered_sections );
+  $sections = tpw_member_profile_normalize_sections( $sections );
+
+  if ( ! isset( $sections['profile'] ) ) {
+    $profile_section = tpw_member_profile_normalize_sections( tpw_member_profile_get_builtin_sections() );
+    if ( isset( $profile_section['profile'] ) ) {
+      $sections['profile'] = $profile_section['profile'];
+      uasort( $sections, 'tpw_member_profile_sort_sections' );
+    }
+  }
+
+  return $sections;
+}
+
+function tpw_member_profile_normalize_sections( array $sections ) {
+  $normalized = [];
+
+  foreach ( $sections as $key => $section ) {
+    if ( ! is_array( $section ) ) {
+      continue;
+    }
+
+    $slug = sanitize_key( isset( $section['slug'] ) ? (string) $section['slug'] : (string) $key );
+    if ( $slug === '' ) {
+      continue;
+    }
+
+    $show = array_key_exists( 'show', $section ) ? (bool) $section['show'] : true;
+    if ( ! $show ) {
+      continue;
+    }
+
+    $capability = isset( $section['capability'] ) ? (string) $section['capability'] : '';
+    if ( $capability !== '' && ! current_user_can( $capability ) ) {
+      continue;
+    }
+
+    $label = isset( $section['label'] ) ? trim( (string) $section['label'] ) : '';
+    if ( $label === '' ) {
+      continue;
+    }
+
+    $callback = $section['callback'] ?? null;
+    $template = isset( $section['template'] ) ? tpw_member_profile_resolve_section_template( (string) $section['template'] ) : '';
+
+    if ( ! is_callable( $callback ) && $template === '' ) {
+      continue;
+    }
+
+    $normalized[ $slug ] = [
+      'slug'       => $slug,
+      'label'      => $label,
+      'icon'       => isset( $section['icon'] ) ? (string) $section['icon'] : '',
+      'priority'   => isset( $section['priority'] ) ? (int) $section['priority'] : 50,
+      'callback'   => $callback,
+      'template'   => $template,
+      'capability' => $capability,
+      'show'       => $show,
+    ];
+  }
+
+  uasort( $normalized, 'tpw_member_profile_sort_sections' );
+
+  return $normalized;
+}
+
+function tpw_member_profile_sort_sections( array $left, array $right ) {
+  $left_priority = isset( $left['priority'] ) ? (int) $left['priority'] : 50;
+  $right_priority = isset( $right['priority'] ) ? (int) $right['priority'] : 50;
+
+  if ( $left_priority === $right_priority ) {
+    return strcasecmp( (string) $left['label'], (string) $right['label'] );
+  }
+
+  return ( $left_priority < $right_priority ) ? -1 : 1;
+}
+
+function tpw_member_profile_resolve_section_template( $template ) {
+  $template = trim( (string) $template );
+  if ( $template === '' ) {
+    return '';
+  }
+
+  if ( file_exists( $template ) ) {
+    return $template;
+  }
+
+  $core_template = trailingslashit( TPW_CORE_PATH ) . ltrim( $template, '/' );
+  if ( file_exists( $core_template ) ) {
+    return $core_template;
+  }
+
+  return '';
+}
+
+function tpw_member_profile_get_active_section_slug( array $sections ) {
+  $requested = isset( $_GET['section'] ) ? sanitize_key( (string) $_GET['section'] ) : 'profile';
+
+  if ( $requested !== '' && isset( $sections[ $requested ] ) ) {
+    return $requested;
+  }
+
+  if ( isset( $sections['profile'] ) ) {
+    return 'profile';
+  }
+
+  $first_slug = array_key_first( $sections );
+  return is_string( $first_slug ) ? $first_slug : 'profile';
+}
+
+function tpw_member_profile_get_section_url( $slug ) {
+  if ( $slug === 'profile' ) {
+    return remove_query_arg( 'section' );
+  }
+
+  return add_query_arg( 'section', $slug );
+}
+
+function tpw_member_profile_get_section_icon_html( $icon ) {
+  $icon = trim( (string) $icon );
+  if ( $icon === '' ) {
+    return '';
+  }
+
+  if ( strpos( $icon, '<' ) !== false ) {
+    return '<span class="tpw-member-profile-icon" aria-hidden="true">' . wp_kses_post( $icon ) . '</span>';
+  }
+
+  if ( strpos( $icon, 'dashicons' ) === false && strpos( $icon, ' ' ) === false ) {
+    return '';
+  }
+
+  return '<span class="tpw-member-profile-icon ' . esc_attr( $icon ) . '" aria-hidden="true"></span>';
+}
+
+function tpw_member_profile_render_section_nav( array $sections, $active_slug ) {
+  echo '<nav class="tpw-member-profile-nav" aria-label="Profile sections">';
+  echo '  <ul class="tpw-tabs tpw-member-profile-menu">';
+
+  foreach ( $sections as $slug => $section ) {
+    $is_active = ( $slug === $active_slug );
+    $link = tpw_member_profile_get_section_url( $slug );
+    $icon_html = tpw_member_profile_get_section_icon_html( $section['icon'] ?? '' );
+
+    echo '    <li><a class="tpw-tab tpw-member-profile-link' . ( $is_active ? ' active' : '' ) . '"' . ( $is_active ? ' aria-current="page"' : '' ) . ' href="' . esc_url( $link ) . '">';
+    if ( $icon_html !== '' ) {
+      echo $icon_html;
+    }
+    echo '<span>' . esc_html( $section['label'] ) . '</span>';
+    echo '</a></li>';
+  }
+
+  echo '  </ul>';
+  echo '</nav>';
+}
+
+function tpw_member_profile_invoke_section_callback( $callback, array $args ) {
+  try {
+    if ( is_array( $callback ) ) {
+      $reflection = new ReflectionMethod( $callback[0], $callback[1] );
+    } else {
+      $reflection = new ReflectionFunction( $callback );
+    }
+
+    $accepted = $reflection->isVariadic() ? count( $args ) : $reflection->getNumberOfParameters();
+    return call_user_func_array( $callback, array_slice( $args, 0, $accepted ) );
+  } catch ( Throwable $exception ) {
+    return call_user_func( $callback, $args[0] ?? null );
+  }
+}
+
+function tpw_member_profile_render_active_section( array $section, $member, array $sections ) {
+  ob_start();
+
+  if ( isset( $section['callback'] ) && is_callable( $section['callback'] ) ) {
+    $result = tpw_member_profile_invoke_section_callback( $section['callback'], [ $member, $section, $sections ] );
+    if ( is_string( $result ) && $result !== '' ) {
+      echo $result;
+    }
+  } elseif ( ! empty( $section['template'] ) ) {
+    $active_section = $section;
+    $profile_sections = $sections;
+    include $section['template'];
+  }
+
+  return ob_get_clean();
+}
+
+function tpw_member_profile_render_profile_section( $member ) {
   // Settings-driven date/time formats
   $settings = get_option( 'flexievent_settings', [] );
   $date_format = $settings['date_format'] ?? 'd-m-Y';
   $time_format = $settings['time_format'] ?? 'H:i';
-    // Must be logged-in. Admins can be allowed to view via filter.
-    if ( ! is_user_logged_in() ) {
-        return '<div class="tpw-error">' . esc_html__('Access Denied', 'tpw-core') . '</div>';
-    }
-
-    $admin_can_view = apply_filters('tpw_members/wp_admin_can_view_profile', true);
-    $allow_all_statuses = apply_filters('tpw_members/profile_allow_all_statuses', true);
-
-    $current = wp_get_current_user();
-    $controller = new TPW_Member_Controller();
-    $member = $controller->get_member_by_user_id( (int) $current->ID );
-
-    // If no linked member record, deny (admins get a clearer message)
-    if ( ! $member ) {
-        if ( current_user_can('manage_options') ) {
-            return '<div class="tpw-error">' . esc_html__('Member record not found for your user. As an admin you can still preview via this page, but creating a member record is recommended.', 'tpw-core') . '</div>';
-        }
-        return '<div class="tpw-error">' . esc_html__('Member record not found for your user.', 'tpw-core') . '</div>';
-    }
-
-    // Enforce status only when opted-in via filter; admins can always view
-    if ( ! ( current_user_can('manage_options') && $admin_can_view ) ) {
-        if ( ! $allow_all_statuses && ! TPW_Member_Access::is_member_current() ) {
-            return '<div class="tpw-error">' . esc_html__('Access Denied', 'tpw-core') . '</div>';
-        }
-    }
-
-    // UI styles are enqueued centrally in modules/members/members-init.php (late priority).
-
-  // Section routing: when explicitly on My Payments, render the Payments Hub instead of the default profile
-  $section = isset($_GET['section']) ? sanitize_key( (string) $_GET['section'] ) : '';
-  if ( $section === 'payments' && class_exists('TPW_Member_Payments') ) {
-    // Before switching, render a small in-page navigation so users can return to profile easily
-    $sections = apply_filters( 'tpw_core_register_profile_sections', [] );
-    $has_payments = is_array($sections) && isset($sections['payments']);
-    ob_start();
-    echo '<nav class="tpw-member-profile-nav" aria-label="Profile sections">';
-    echo '  <ul class="tpw-tabs tpw-member-profile-menu">';
-    // My Profile link
-    $profile_url = remove_query_arg( 'section' );
-    echo '    <li><a class="tpw-tab tpw-member-profile-link" href="' . esc_url( $profile_url ) . '">' . esc_html__('My Profile','tpw-core') . '</a></li>';
-    if ( $has_payments ) {
-      $payments_url = add_query_arg( 'section', 'payments' );
-      echo '    <li><a class="tpw-tab tpw-member-profile-link active" aria-current="page" href="' . esc_url( $payments_url ) . '">' . esc_html__('My Payments','tpw-core') . '</a></li>';
-    }
-    echo '  </ul>';
-    echo '</nav>';
-    // Render the hub after the nav
-    TPW_Member_Payments::render_profile_payments( $member );
-    return ob_get_clean();
-  }
 
   $editable = get_option( 'tpw_member_editable_fields', [] );
   $editable = is_array($editable) ? $editable : [];
@@ -71,55 +229,38 @@ add_shortcode('tpw_member_profile', function(){
   // controlled solely by the Profile tab settings (tpw_member_viewable_fields).
   // If viewable is empty, default is to show nothing.
 
-    $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
-    $meta   = TPW_Member_Meta::get_all_meta( (int) $member->id );
+  $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
+  $meta   = TPW_Member_Meta::get_all_meta( (int) $member->id );
 
-    ob_start();
-    echo '<div class="tpw-profile">';
-  // Top navigation: show sections including Payments when active
-  $sections = apply_filters( 'tpw_core_register_profile_sections', [] );
-  $has_payments = is_array($sections) && isset($sections['payments']);
-  echo '<nav class="tpw-member-profile-nav" aria-label="Profile sections">';
-  echo '  <ul class="tpw-tabs tpw-member-profile-menu">';
-  // My Profile tab
-  $is_profile_active = ($section !== 'payments');
-  $profile_url = remove_query_arg( 'section' );
-  echo '    <li><a class="tpw-tab tpw-member-profile-link' . ( $is_profile_active ? ' active' : '' ) . '"' . ( $is_profile_active ? ' aria-current="page"' : '' ) . ' href="' . esc_url( $profile_url ) . '">' . esc_html__('My Profile','tpw-core') . '</a></li>';
-  if ( $has_payments ) {
-    $payments_url = add_query_arg( 'section', 'payments' );
-    $is_pay_active = ($section === 'payments');
-    echo '    <li><a class="tpw-tab tpw-member-profile-link' . ( $is_pay_active ? ' active' : '' ) . '"' . ( $is_pay_active ? ' aria-current="page"' : '' ) . ' href="' . esc_url( $payments_url ) . '">' . esc_html__('My Payments','tpw-core') . '</a></li>';
-  }
-  echo '  </ul>';
-  echo '</nav>';
+  ob_start();
   echo '<h2>' . esc_html__( 'My Profile', 'tpw-core' ) . '</h2>';
 
-    echo '<div class="tpw-table">';
+  echo '<div class="tpw-table">';
   echo '  <div class="tpw-table-header"><div class="tpw-table-cell">' . esc_html__( 'Field', 'tpw-core' ) . '</div><div class="tpw-table-cell">' . esc_html__( 'Value', 'tpw-core' ) . '</div><div class="tpw-table-cell">&nbsp;</div></div>';
 
-    if ( empty($viewable) ) {
-      // When no viewable fields are configured, show no rows and display a simple note.
-      echo '<div class="tpw-table-row">';
-      echo '  <div class="tpw-table-cell"><em>No profile fields are currently available to view.</em></div>';
-      echo '  <div class="tpw-table-cell"></div>';
-      echo '  <div class="tpw-table-cell"></div>';
-      echo '</div>';
-    }
+  if ( empty($viewable) ) {
+    // When no viewable fields are configured, show no rows and display a simple note.
+    echo '<div class="tpw-table-row">';
+    echo '  <div class="tpw-table-cell"><em>No profile fields are currently available to view.</em></div>';
+    echo '  <div class="tpw-table-cell"></div>';
+    echo '  <div class="tpw-table-cell"></div>';
+    echo '</div>';
+  }
 
   foreach ( $fields as $f ) {
-        $key = $f['key'];
+    $key = $f['key'];
     if ( in_array( $key, ['password_hash','is_admin','is_committee','is_match_manager','is_noticeboard_admin','is_volunteer','status'], true ) ) {
-            // hide system/admin control fields
-            continue;
-        }
+      // hide system/admin control fields
+      continue;
+    }
     // Respect 'Viewable by Member' setting; when empty, show nothing.
     // Directory visibility rules do not apply here.
     if ( empty($viewable) || ! in_array( $key, $viewable, true ) ) {
       continue;
     }
     $label = $f['label'];
-        $is_meta = ! property_exists( $member, $key );
-        $value = $is_meta ? ($meta[$key] ?? '') : ($member->$key ?? '');
+    $is_meta = ! property_exists( $member, $key );
+    $value = $is_meta ? ($meta[$key] ?? '') : ($member->$key ?? '');
 
     // Skip empty, non-editable fields on the My Profile page to avoid showing blank rows
     $is_editable = in_array( $key, $editable, true );
@@ -140,10 +281,10 @@ add_shortcode('tpw_member_profile', function(){
     if ( isset($f['type']) && $f['type'] === 'date' ) {
       $display_value = tpw_format_date( $value );
     }
-  echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
+    echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
     echo '  <div class="tpw-table-cell">';
     if ( in_array( $key, $editable, true ) ) {
-  echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">' . esc_html__( 'Edit', 'tpw-core' ) . '</button>';
+      echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">' . esc_html__( 'Edit', 'tpw-core' ) . '</button>';
     } else {
       echo '&nbsp;';
     }
@@ -160,7 +301,7 @@ add_shortcode('tpw_member_profile', function(){
       $disp = $raw !== '' ? tpw_format_date( $raw ) : '';
       echo '<div class="tpw-table-row"><div class="tpw-table-cell"></div><div class="tpw-table-cell"><em>' . esc_html__( 'Last updated:', 'tpw-core' ) . ' ' . esc_html($disp ?: '—') . '</em></div><div class="tpw-table-cell"></div></div>';
     }
-    }
+  }
   echo '</div>';
 
   // Insert point for additional profile sections (server-side). Downstream modules can hook here.
@@ -225,42 +366,40 @@ add_shortcode('tpw_member_profile', function(){
     echo '</div>';
   }
 
-    // Modal markup
-    ?>
-    <div id="tpw-profile-modal" class="tpw-dir-modal" hidden>
-      <div class="tpw-dir-modal__dialog">
-        <div class="tpw-dir-modal__header">
-          <h3>Edit Field</h3>
-          <button type="button" class="tpw-btn tpw-btn-light tpw-dir-modal-close">Close</button>
-        </div>
-        <div class="tpw-dir-modal__body">
-          <form id="tpw-profile-form">
-            <input type="hidden" name="field_key" value="">
-            <div class="tpw-field-row">
-              <label id="tpw-profile-label"></label>
-              <input type="text" name="field_value" value="" />
-            </div>
-            <div id="tpw-profile-result" style="margin-top:8px;"></div>
-            <div style="margin-top:10px;">
-              <button type="submit" class="tpw-btn tpw-btn-primary">Confirm</button>
-            </div>
-          </form>
-        </div>
+  // Modal markup
+  ?>
+  <div id="tpw-profile-modal" class="tpw-dir-modal" hidden>
+    <div class="tpw-dir-modal__dialog">
+      <div class="tpw-dir-modal__header">
+        <h3>Edit Field</h3>
+        <button type="button" class="tpw-btn tpw-btn-light tpw-dir-modal-close">Close</button>
+      </div>
+      <div class="tpw-dir-modal__body">
+        <form id="tpw-profile-form">
+          <input type="hidden" name="field_key" value="">
+          <div class="tpw-field-row">
+            <label id="tpw-profile-label"></label>
+            <input type="text" name="field_value" value="" />
+          </div>
+          <div id="tpw-profile-result" style="margin-top:8px;"></div>
+          <div style="margin-top:10px;">
+            <button type="submit" class="tpw-btn tpw-btn-primary">Confirm</button>
+          </div>
+        </form>
       </div>
     </div>
-    <?php
+  </div>
+  <?php
 
-    echo '</div>';
-
-    // Enqueue and localize assets
-    $handle = 'tpw-member-profile';
-    wp_enqueue_script( $handle, plugins_url('js/member-profile.js', __FILE__), ['jquery'], filemtime( plugin_dir_path(__FILE__) . 'js/member-profile.js' ), true );
+  // Enqueue and localize assets
+  $handle = 'tpw-member-profile';
+  wp_enqueue_script( $handle, plugins_url('js/member-profile.js', __FILE__), ['jquery'], filemtime( plugin_dir_path(__FILE__) . 'js/member-profile.js' ), true );
   wp_localize_script( $handle, 'TPW_MEMBER_PROFILE', [
-        'nonce'   => wp_create_nonce('tpw_member_profile_update'),
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],
-    ] );
-    wp_enqueue_style( 'tpw-member-admin-style', plugins_url('../assets/css/member-admin.css', __FILE__), [], filemtime( plugin_dir_path(__FILE__) . '../assets/css/member-admin.css' ) );
+    'nonce'   => wp_create_nonce('tpw_member_profile_update'),
+    'ajaxUrl' => admin_url('admin-ajax.php'),
+    'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],
+  ] );
+  wp_enqueue_style( 'tpw-member-admin-style', plugins_url('../assets/css/member-admin.css', __FILE__), [], filemtime( plugin_dir_path(__FILE__) . '../assets/css/member-admin.css' ) );
 
   // Inline JS for photo actions in edit mode (re-uses self-edit nonce)
   if ( $photos_enabled && $photo_mode === 'edit' ) {
@@ -356,5 +495,51 @@ add_shortcode('tpw_member_profile', function(){
     <?php
   }
 
-    return ob_get_clean();
+  return ob_get_clean();
+}
+
+add_shortcode('tpw_member_profile', function(){
+  // Must be logged-in. Admins can be allowed to view via filter.
+  if ( ! is_user_logged_in() ) {
+    return '<div class="tpw-error">' . esc_html__('Access Denied', 'tpw-core') . '</div>';
+  }
+
+  $admin_can_view = apply_filters('tpw_members/wp_admin_can_view_profile', true);
+  $allow_all_statuses = apply_filters('tpw_members/profile_allow_all_statuses', true);
+
+  $current = wp_get_current_user();
+  $controller = new TPW_Member_Controller();
+  $member = $controller->get_member_by_user_id( (int) $current->ID );
+
+  // If no linked member record, deny (admins get a clearer message)
+  if ( ! $member ) {
+    if ( current_user_can('manage_options') ) {
+      return '<div class="tpw-error">' . esc_html__('Member record not found for your user. As an admin you can still preview via this page, but creating a member record is recommended.', 'tpw-core') . '</div>';
+    }
+    return '<div class="tpw-error">' . esc_html__('Member record not found for your user.', 'tpw-core') . '</div>';
+  }
+
+  // Enforce status only when opted-in via filter; admins can always view
+  if ( ! ( current_user_can('manage_options') && $admin_can_view ) ) {
+    if ( ! $allow_all_statuses && ! TPW_Member_Access::is_member_current() ) {
+      return '<div class="tpw-error">' . esc_html__('Access Denied', 'tpw-core') . '</div>';
+    }
+  }
+
+  // UI styles are enqueued centrally in modules/members/members-init.php (late priority).
+  $sections = tpw_member_profile_get_registered_sections();
+  $active_slug = tpw_member_profile_get_active_section_slug( $sections );
+  $active_section = $sections[ $active_slug ] ?? $sections['profile'] ?? [];
+
+  if ( empty( $active_section ) ) {
+    return '<div class="tpw-error">' . esc_html__('Profile section unavailable.', 'tpw-core') . '</div>';
+  }
+
+  ob_start();
+  echo '<div class="tpw-profile">';
+  tpw_member_profile_render_section_nav( $sections, $active_slug );
+  echo tpw_member_profile_render_active_section( $active_section, $member, $sections );
+  echo '</div>';
+
+  return ob_get_clean();
 });
