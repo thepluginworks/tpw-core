@@ -1,4 +1,4 @@
-# TPW Core (v1.13.1)
+# TPW Core (v1.13.2)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -72,6 +72,10 @@ If you build new TPW add‑ons, depend on this plugin and use the extension poin
 ### Notices updates (1.13.1)
 - Active front-end noticeboard management now allows TPW noticeboard admins via `TPW_Control_UI::is_noticeboard_admin()` while preserving WordPress admin access.
 - The active notices shortcode render path and AJAX management actions now share the same permission check so front-end controls and endpoints stay aligned.
+
+### Members updates (1.13.2)
+- Added `TPW_Member_Field_Loader::get_condition_eligible_custom_fields()` to return enabled custom checkbox fields that are explicitly allowed for conditional field logic.
+- The helper exposes sanitized `key`, `label`, and `type` values so member-facing conditional UI can consume a single filtered field list.
 
 ### Email logging updates (1.13.0)
 - Added a persistent core email log table that records timestamp, recipient, subject, context, status, error detail, and send duration for dispatcher activity.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.2] - 2026-03-10
+### Added
+- Members: added `TPW_Member_Field_Loader::get_condition_eligible_custom_fields()` to return enabled custom checkbox fields that are explicitly allowed for conditional field logic.
+
+### Changed
+- Members: the loader now returns sanitized `key`, `label`, and `type` metadata for condition-eligible custom fields so front-end consumers can build conditional UI from a single filtered source.
+- Maintenance: version bump to 1.13.2.
+
 ## [1.13.1] - 2026-03-10
 ### Changed
 - Notices: active front-end noticeboard management now allows TPW noticeboard admins via `TPW_Control_UI::is_noticeboard_admin()` while preserving existing WordPress admin access.

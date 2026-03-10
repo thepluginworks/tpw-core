@@ -161,6 +161,35 @@ class TPW_Member_Field_Loader {
         return $enabled_fields;
     }
 
+    public static function get_condition_eligible_custom_fields() {
+        $conditional_fields = get_option( 'tpw_conditional_fields', [] );
+        $conditional_fields = is_array( $conditional_fields ) ? array_values( array_unique( array_filter( array_map( 'sanitize_key', $conditional_fields ) ) ) ) : [];
+        $allowed_lookup     = array_fill_keys( $conditional_fields, true );
+        $eligible_fields    = [];
+
+        foreach ( self::get_all_enabled_fields() as $field ) {
+            if ( ! empty( $field['is_core'] ) ) {
+                continue;
+            }
+
+            if ( 'checkbox' !== (string) $field['type'] ) {
+                continue;
+            }
+
+            if ( ! isset( $allowed_lookup[ $field['key'] ] ) ) {
+                continue;
+            }
+
+            $eligible_fields[] = [
+                'key'   => (string) $field['key'],
+                'label' => (string) $field['label'],
+                'type'  => (string) $field['type'],
+            ];
+        }
+
+        return $eligible_fields;
+    }
+
     /**
      * Get column names for a table.
      */
