@@ -1,4 +1,4 @@
-# TPW Core (v1.13.0)
+# TPW Core (v1.13.1)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -68,6 +68,10 @@ If you build new TPW add‑ons, depend on this plugin and use the extension poin
 - Added `TPW_Email::dispatch_mail()` as the shared outbound email dispatcher with throttling-aware slot reservation and centralized logging hooks.
 - Feedback submissions and member notification emails now use the shared dispatcher when it is available.
 - Docs now include the My Profile tab extension contract and example integration guidance for future TPW plugins.
+
+### Notices updates (1.13.1)
+- Active front-end noticeboard management now allows TPW noticeboard admins via `TPW_Control_UI::is_noticeboard_admin()` while preserving WordPress admin access.
+- The active notices shortcode render path and AJAX management actions now share the same permission check so front-end controls and endpoints stay aligned.
 
 ### Email logging updates (1.13.0)
 - Added a persistent core email log table that records timestamp, recipient, subject, context, status, error detail, and send duration for dispatcher activity.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.13.1] - 2026-03-10
+### Changed
+- Notices: active front-end noticeboard management now allows TPW noticeboard admins via `TPW_Control_UI::is_noticeboard_admin()` while preserving existing WordPress admin access.
+- Notices: the active notices shortcode render path and AJAX management actions now share the same permission check so front-end controls and endpoints stay aligned.
+- Maintenance: version bump to 1.13.1.
+
 ## [1.13.0] - 2026-03-10
 ### Added
 - Email: added a persistent core email log table for dispatcher activity, including timestamp, recipient, subject, context, status, error detail, and duration.

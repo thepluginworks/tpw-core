@@ -9,8 +9,23 @@ class TPW_Noticeboard_Handler {
         add_action('wp_ajax_tpw_notice_add_category', [__CLASS__, 'add_category']);
     }
 
+    public static function user_can_manage_notices() {
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! class_exists( 'TPW_Control_UI' ) ) {
+            $ui_path = TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-ui.php';
+            if ( file_exists( $ui_path ) ) {
+                require_once $ui_path;
+            }
+        }
+
+        return class_exists( 'TPW_Control_UI' ) && TPW_Control_UI::is_noticeboard_admin();
+    }
+
     private static function check_caps_and_nonce($action) {
-        if (!current_user_can('manage_options')) {
+        if ( ! self::user_can_manage_notices() ) {
             wp_send_json_error(['message' => __('Permission denied.', 'tpw-core')], 403);
         }
         $nonce = $_POST['_wpnonce'] ?? '';

@@ -11,6 +11,7 @@ class TPW_Noticeboard_List_Shortcode {
         if (!is_singular()) return;
         global $post; if (!$post) return;
         if (has_shortcode($post->post_content, 'tpw_noticeboard_list')) {
+            $can_manage = class_exists( 'TPW_Noticeboard_Handler' ) && TPW_Noticeboard_Handler::user_can_manage_notices();
             wp_enqueue_media();
             $base = TPW_CORE_URL . 'modules/notices/';
             wp_enqueue_script('tpw-noticeboard', $base . 'assets/js/noticeboard.js', ['jquery'], '1.0', true);
@@ -22,7 +23,10 @@ class TPW_Noticeboard_List_Shortcode {
                     'duplicate' => wp_create_nonce('tpw_notice_duplicate'),
                     'addCategory' => wp_create_nonce('tpw_notice_add_category'),
                 ],
-                'caps' => [ 'isAdmin' => current_user_can('manage_options') ],
+                'caps' => [
+                    'isAdmin' => current_user_can('manage_options'),
+                    'canManage' => $can_manage,
+                ],
             ]);
             wp_enqueue_style('tpw-noticeboard', $base . 'assets/css/noticeboard.css', [], '1.0');
             // Ensure the global UI CSS from Core is available so shared components (e.g., member avatar in nav) are styled
@@ -55,9 +59,10 @@ class TPW_Noticeboard_List_Shortcode {
             ]];
         }
         $q = new WP_Query($args);
+        $can_manage = class_exists( 'TPW_Noticeboard_Handler' ) && TPW_Noticeboard_Handler::user_can_manage_notices();
 
         ob_start();
-        if (current_user_can('manage_options')) {
+        if ( $can_manage ) {
             echo '<div class="tpw-notice-admin-actions">';
             echo '<button class="tpw-btn tpw-btn-primary tpw-notice-add">' . esc_html__('Add New Notice', 'tpw-core') . '</button>';
             echo '</div>';
@@ -86,7 +91,7 @@ class TPW_Noticeboard_List_Shortcode {
                 if ($excerpt) echo '<div class="tpw-notice-excerpt">' . esc_html($excerpt) . '</div>';
                 if ($atts['read_more'] === 'true') echo '<a class="tpw-notice-more" href="' . esc_url(get_permalink($id)) . '">' . esc_html__('Read More', 'tpw-core') . '</a>';
                 echo '</div>';
-                if (current_user_can('manage_options')) {
+                if ( $can_manage ) {
                     echo '<div class="tpw-notice-actions">';
                     echo '<button class="tpw-btn tpw-btn-secondary tpw-notice-edit">' . esc_html__('Edit', 'tpw-core') . '</button>';
                     echo '<button class="tpw-btn tpw-btn-secondary tpw-notice-duplicate">' . esc_html__('Duplicate', 'tpw-core') . '</button>';
@@ -101,7 +106,7 @@ class TPW_Noticeboard_List_Shortcode {
         }
         echo '</div>';
 
-        if (current_user_can('manage_options')) {
+        if ( $can_manage ) {
             include TPW_CORE_PATH . 'modules/notices/templates/form.php';
         }
 
