@@ -6,6 +6,13 @@ add_filter('flexievent_settings_tabs', function($tabs) {
     return $tabs;
 });
 
+add_filter('flexievent_settings_allowed_keys', function($allowed_keys) {
+    $allowed_keys[] = 'currency_symbol';
+    $allowed_keys[] = 'currency_code';
+
+    return array_values(array_unique($allowed_keys));
+});
+
 // Add content for the "Payments" tab
 add_action('flexievent_settings_tab_content_payments', function($settings) {
     // Define the settings fields inside the callback

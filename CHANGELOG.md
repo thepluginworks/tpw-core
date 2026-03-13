@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.14.1] - 2026-03-13
+### Changed
+- Payments: restored TPW Core Payments currency settings persistence in FlexiEvent settings by allowing `currency_symbol` and `currency_code` through the new `flexievent_settings_allowed_keys` filter.
+- Maintenance: version bump to 1.14.1.
+
 ## [1.14.0] - 2026-03-10
 ### Added
 - Members: added a new core boolean member field `is_manage_members` with the label `Members Manager`.
