@@ -15,7 +15,13 @@ function tpw_handle_sumup_callback() {
     }
 
     $gateway = new TPW_SumUp_Gateway();
-    $redirect_uri = admin_url('admin.php?page=tpw-core-payment-methods');
+
+    if ( ! function_exists( 'tpw_core_get_payment_methods_settings_url' ) ) {
+        wp_die( 'Payment Methods settings URL helper is unavailable.' );
+    }
+
+    $redirect_uri = admin_url('admin-post.php?action=tpw_sumup_callback');
+    $settings_url = tpw_core_get_payment_methods_settings_url();
 
     error_log('TPW SumUp Callback: Starting token exchange');
     $result = $gateway->exchange_code_for_token($code, $redirect_uri);
@@ -36,7 +42,7 @@ function tpw_handle_sumup_callback() {
     }
 
     error_log('TPW SumUp Callback: Redirecting to settings page');
-    wp_safe_redirect(add_query_arg('sumup_connected', '1', $redirect_uri));
+    wp_safe_redirect(add_query_arg('sumup_connected', '1', $settings_url));
     exit;
 }
 

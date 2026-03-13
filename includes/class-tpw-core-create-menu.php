@@ -46,8 +46,21 @@ class TPW_Core_Create_Menu {
                 'Payment Methods',
                 'Payment Methods',
                 'manage_options',
+                'options-general.php?page=tpw-core-settings&tab=payment-methods'
+            );
+
+            add_submenu_page(
+                'tpw-flexievent-dashboard',
+                'Payment Methods',
+                'Payment Methods',
+                'manage_options',
                 'tpw-core-payment-methods',
                 [__CLASS__, 'redirect_payment_methods_page']
+            );
+
+            remove_submenu_page(
+                'tpw-flexievent-dashboard',
+                'tpw-core-payment-methods'
             );
         }
     }
