@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.2] - 2026-03-13
+### Changed
+- Payments: the FlexiEvent Payment Methods submenu now opens the current TPW Core Settings Payment Methods tab directly.
+- Payments: removed the obsolete legacy Payment Methods compatibility route now that current TPW plugins use the shared settings destination.
+- Maintenance: version bump to 1.14.2.
+
 ## [1.14.1] - 2026-03-13
 ### Changed
 - Payments: restored TPW Core Payments currency settings persistence in FlexiEvent settings by allowing `currency_symbol` and `currency_code` through the new `flexievent_settings_allowed_keys` filter.

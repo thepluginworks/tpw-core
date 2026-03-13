@@ -1,4 +1,4 @@
-# TPW Core (v1.14.1)
+# TPW Core (v1.14.2)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,10 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Payments updates (1.14.2)
+- The Payment Methods item under the FlexiEvent admin menu now opens the current TPW Core Settings Payment Methods screen directly.
+- Removed the obsolete legacy Payment Methods compatibility route now that active TPW plugins use the shared destination.
 
 ### Payments updates (1.14.1)
 - Restored TPW Core Payments currency settings persistence in FlexiEvent settings by allowing `currency_symbol` and `currency_code` through the new `flexievent_settings_allowed_keys` filter.

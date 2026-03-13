@@ -48,34 +48,7 @@ class TPW_Core_Create_Menu {
                 'manage_options',
                 'options-general.php?page=tpw-core-settings&tab=payment-methods'
             );
-
-            add_submenu_page(
-                'tpw-flexievent-dashboard',
-                'Payment Methods',
-                'Payment Methods',
-                'manage_options',
-                'tpw-core-payment-methods',
-                [__CLASS__, 'redirect_payment_methods_page']
-            );
-
-            remove_submenu_page(
-                'tpw-flexievent-dashboard',
-                'tpw-core-payment-methods'
-            );
         }
-    }
-
-    public static function redirect_payment_methods_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have permission to view this page.', 'tpw-core' ) );
-        }
-
-        if ( ! function_exists( 'tpw_core_get_payment_methods_settings_url' ) ) {
-            wp_die( esc_html__( 'Payment Methods settings URL helper is unavailable.', 'tpw-core' ) );
-        }
-
-        wp_safe_redirect( tpw_core_get_payment_methods_settings_url() );
-        exit;
     }
 
     public static function render_dining_menu_page() {
