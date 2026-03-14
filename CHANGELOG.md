@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.3] - 2026-03-14
+### Added
+- Documentation: added the TPW Core Sign-Up System design specification as the single architecture reference for the new onboarding framework.
+
+### Changed
+- Documentation: defined the generic Core lifecycle model for payment-first onboarding, recoverable signup attempts, plugin-defined sections and repeatable groups, admin recovery tools, and post-payment account creation.
+- Documentation: documented the extension contract used by FlexiSubscriptions and other TPW plugins, including plugin finalization callbacks and result-payload-based finalization references.
+- Maintenance: version bump to 1.14.3.
+
 ## [1.14.2] - 2026-03-13
 ### Changed
 - Payments: the FlexiEvent Payment Methods submenu now opens the current TPW Core Settings Payment Methods tab directly.
