@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.4] - 2026-03-14
+### Added
+- Members: added a new Core sign-up attempts table to store in-progress onboarding state, payment progress, retry data, lifecycle locks, and recovery timestamps before permanent account creation.
+- Members: added a generic Core signup attempts service for creating, loading, updating, and tracking sign-up attempts across future TPW onboarding flows.
+
+### Changed
+- Members: enforced strict lifecycle transitions for draft, payment, finalization, completion, expiry, and abandonment states so sign-up processing stays predictable and resumable.
+- Members: added generic helpers for public tokens, request fingerprints, UUID generation/validation, payment state updates, finalization locking, cleanup, and event logging.
+- Members: wired the new signup attempts engine into the Core activation and upgrade bootstrap so the schema is created consistently on new and upgraded sites.
+- Maintenance: version bump to 1.14.4.
+
 ## [1.14.3] - 2026-03-14
 ### Added
 - Documentation: added the TPW Core Sign-Up System design specification as the single architecture reference for the new onboarding framework.

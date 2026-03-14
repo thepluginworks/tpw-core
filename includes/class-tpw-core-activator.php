@@ -32,6 +32,8 @@ class TPW_Core_Activator {
         TPW_Members_DB::create_table();
         require_once TPW_CORE_PATH . 'modules/members/class-tpw-member-fields-installer.php';
         TPW_Member_Fields_Installer::insert_default_fields();
+        require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-db.php';
+        TPW_Signup_Attempts_DB::create_table();
 
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
 
