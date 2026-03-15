@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.7] - 2026-03-15
+### Added
+- Members: added a signup finalization service that converts eligible `members_join` signup attempts into WordPress users and TPW member records.
+- Members: added a schema-driven signup field mapper that splits allowed signup fields into WordPress user data, TPW member fields, and member meta values.
+
+### Changed
+- Members: finalization now persists created `wp_user_id` and `member_id` references into the signup attempt result payload as soon as they exist, so partial progress can be resumed safely.
+- Members: failures after finalization begins now mark the attempt as `finalization_failed` with structured error context instead of leaving the attempt stranded.
+- Members: finalized member accounts now apply the existing Core defaults for society resolution, member status, and member capability assignment.
+- Maintenance: version bump to 1.14.7.
+
 ## [1.14.6] - 2026-03-15
 ### Added
 - Members: added public Join page auto-provisioning and the public `[tpw_join_form]` shortcode for the Branch 3 sign-up flow.

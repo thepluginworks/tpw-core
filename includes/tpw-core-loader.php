@@ -71,6 +71,8 @@ require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-sections.
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-field-schema.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-db.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-service.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-field-mapper.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-finalizer.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-join-page.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-form-validator.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-payload-builder.php';
