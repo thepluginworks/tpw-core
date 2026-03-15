@@ -29,6 +29,7 @@ if ( ! function_exists( 'tpw_members_render_settings_tabs' ) ) {
 
 	echo '<h3 class="tpw-tabs">';
 	echo $mk( __( 'General', 'tpw-core' ), 'general', [ 'action' => 'settings', 'tab' => 'general' ] );
+	echo $mk( __( 'Sign-Ups', 'tpw-core' ), 'signups', [ 'action' => 'settings', 'tab' => 'signups' ] );
 	echo $mk( __( 'Field Settings', 'tpw-core' ), 'field_settings', [ 'action' => 'field_settings' ] );
 	echo $mk( __( 'Directory Field Visibility', 'tpw-core' ), 'visibility', [ 'action' => 'member-field-visibility' ] );
 	echo $mk( __( 'Member Profile', 'tpw-core' ), 'profile', [ 'action' => 'settings', 'tab' => 'profile' ] );

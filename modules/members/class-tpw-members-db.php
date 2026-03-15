@@ -96,6 +96,11 @@ class TPW_Members_DB {
             custom_label VARCHAR(255) DEFAULT NULL,
             field_type VARCHAR(50) DEFAULT 'text',
             basic_search TINYINT(1) NOT NULL DEFAULT 0,
+            signup_safe TINYINT(1) NOT NULL DEFAULT 0,
+            signup_enabled TINYINT(1) NOT NULL DEFAULT 0,
+            signup_required TINYINT(1) NOT NULL DEFAULT 0,
+            signup_section VARCHAR(100) DEFAULT NULL,
+            signup_order INT(11) UNSIGNED NOT NULL DEFAULT 999,
             sort_order INT(11) UNSIGNED NOT NULL DEFAULT 0,
             UNIQUE KEY society_field (society_id, field_key),
             PRIMARY KEY  (id)
@@ -129,6 +134,46 @@ class TPW_Members_DB {
         ) );
         if ( ! $has_field_options ) {
             $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN field_options TEXT NULL" );
+        }
+
+        $has_signup_safe = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'signup_safe'",
+            $fs_table
+        ) );
+        if ( ! $has_signup_safe ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN signup_safe TINYINT(1) NOT NULL DEFAULT 0 AFTER basic_search" );
+        }
+
+        $has_signup_enabled = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'signup_enabled'",
+            $fs_table
+        ) );
+        if ( ! $has_signup_enabled ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN signup_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER signup_safe" );
+        }
+
+        $has_signup_required = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'signup_required'",
+            $fs_table
+        ) );
+        if ( ! $has_signup_required ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN signup_required TINYINT(1) NOT NULL DEFAULT 0 AFTER signup_enabled" );
+        }
+
+        $has_signup_section = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'signup_section'",
+            $fs_table
+        ) );
+        if ( ! $has_signup_section ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN signup_section VARCHAR(100) NULL AFTER signup_required" );
+        }
+
+        $has_signup_order = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'signup_order'",
+            $fs_table
+        ) );
+        if ( ! $has_signup_order ) {
+            $wpdb->query( "ALTER TABLE {$fs_table} ADD COLUMN signup_order INT(11) UNSIGNED NOT NULL DEFAULT 999 AFTER signup_section" );
         }
 
         self::ensure_member_field_settings_rows( $fs_table );

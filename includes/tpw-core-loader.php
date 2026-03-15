@@ -67,6 +67,8 @@ TPW_Menus::init();
 //member modules
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-household-repository.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-fields.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-sections.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-field-schema.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-db.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-service.php';
 add_action( 'admin_init', [ 'TPW_Signup_Attempts_DB', 'ensure_core_schema' ], 5 );

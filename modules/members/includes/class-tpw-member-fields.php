@@ -203,15 +203,16 @@ class TPW_Member_Fields {
 			if (!is_array($sections_map)) { $sections_map = []; }
 			foreach ( $_POST['fields'] as $key => $field ) {
 				$key = sanitize_key($key);
+				$field = is_array( $field ) ? wp_unslash( $field ) : array();
 				// Prevent disabling of critical core fields
 				$always_enabled = [ 'username', 'first_name', 'surname', 'status' ];
 				if ( in_array( $key, $always_enabled, true ) ) {
 					$is_enabled = 1;
 				} else {
-					$is_enabled = (!empty($field['is_enabled']) || $field['is_enabled'] === '0') ? 1 : 0;
+					$is_enabled = isset( $field['is_enabled'] ) ? 1 : 0;
 				}
-				$custom_label = sanitize_text_field($field['custom_label']);
-				$sort_order = intval($field['sort_order']);
+				$custom_label = isset( $field['custom_label'] ) ? sanitize_text_field($field['custom_label']) : '';
+				$sort_order = isset( $field['sort_order'] ) ? intval($field['sort_order']) : 0;
 				$basic_search = isset($field['basic_search']) ? 1 : 0;
 				$depends_on = isset($field['depends_on']) ? sanitize_key($field['depends_on']) : '';
 				if ( $depends_on === '' ) { $depends_on = null; }
@@ -223,20 +224,36 @@ class TPW_Member_Fields {
 					if ( $parent_dep === $key ) { $depends_on = null; }
 				}
 
-				$wpdb->replace(
-					$table,
-					[
-						'field_key'     => $key,
-						'is_enabled'    => $is_enabled,
-						'custom_label'  => $custom_label,
-						'sort_order'    => $sort_order,
-						'basic_search'  => $basic_search,
-						'depends_on'    => $depends_on,
-					],
-					[
-						'%s', '%d', '%s', '%d', '%d', '%s'
-					]
-				);
+				$existing_field = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE field_key = %s", $key ) );
+
+				if ( $existing_field ) {
+					$wpdb->update(
+						$table,
+						[
+							'is_enabled'   => $is_enabled,
+							'custom_label' => $custom_label,
+							'sort_order'   => $sort_order,
+							'basic_search' => $basic_search,
+							'depends_on'   => $depends_on,
+						],
+						[ 'field_key' => $key ],
+						[ '%d', '%s', '%d', '%d', '%s' ],
+						[ '%s' ]
+					);
+				} else {
+					$wpdb->insert(
+						$table,
+						[
+							'field_key'    => $key,
+							'is_enabled'   => $is_enabled,
+							'custom_label' => $custom_label,
+							'sort_order'   => $sort_order,
+							'basic_search' => $basic_search,
+							'depends_on'   => $depends_on,
+						],
+						[ '%s', '%d', '%s', '%d', '%d', '%s' ]
+					);
+				}
 
 				// Persist optional section in a separate option mapping (no DB schema change)
 				if ( isset($field['section']) ) {
@@ -278,8 +295,8 @@ class TPW_Member_Fields {
 
 		// Save new custom field label, if provided
 		if ( ! empty($_POST['new_meta_label']) ) {
-			$label = sanitize_text_field($_POST['new_meta_label']);
-			$field_type = sanitize_text_field($_POST['new_meta_type']);
+			$label = sanitize_text_field( wp_unslash( $_POST['new_meta_label'] ) );
+			$field_type = isset( $_POST['new_meta_type'] ) ? sanitize_text_field( wp_unslash( $_POST['new_meta_type'] ) ) : 'text';
 			$base_key = 'tpw_' . sanitize_key( strtolower( $label ) );
 			$meta_key = $base_key;
 			$suffix = 1;
@@ -346,6 +363,7 @@ class TPW_Member_Fields {
 			if (!is_array($sections_map)) { $sections_map = []; }
 			foreach ($_POST['custom_fields'] as $meta_key => $field) {
 				$meta_key = sanitize_key($meta_key);
+				$field    = is_array( $field ) ? wp_unslash( $field ) : array();
 
 				$in_use = $wpdb->get_var( $wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->prefix}tpw_member_meta WHERE meta_key = %s", $meta_key
@@ -385,9 +403,9 @@ class TPW_Member_Fields {
 							}
 						}
 					}
-					$new_label  = sanitize_text_field($field['custom_label']);
+					$new_label  = isset( $field['custom_label'] ) ? sanitize_text_field($field['custom_label']) : '';
 					$sort_order = isset($field['sort_order']) ? intval($field['sort_order']) : 999;
-					$is_enabled = (!empty($field['is_enabled']) || $field['is_enabled'] === '0') ? 1 : 0;
+					$is_enabled = isset($field['is_enabled']) ? 1 : 0;
 					$basic_search = isset($field['basic_search']) ? 1 : 0;
 					$depends_on = isset($field['depends_on']) ? sanitize_key($field['depends_on']) : '';
 					if ( $depends_on === '' ) { $depends_on = null; }

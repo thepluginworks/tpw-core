@@ -127,6 +127,11 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
                 $tpw_settings_saved = true;
             }
         }
+
+        if ( $current_tab_post === 'signups' ) {
+            TPW_Signup_Field_Schema::save_members_signup_settings_from_request( $_POST );
+            $tpw_settings_saved = true;
+        }
 }
 
 // Tabs
@@ -155,6 +160,8 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
             <?php
             if ( $current_tab === 'general' ) {
                 echo esc_html__( 'General Settings', 'tpw-core' );
+            } elseif ( $current_tab === 'signups' ) {
+                echo esc_html__( 'Sign-Ups', 'tpw-core' );
             } elseif ( $current_tab === 'profile' ) {
                 echo esc_html__( 'Member Profile', 'tpw-core' );
             } elseif ( $current_tab === 'postcodes' ) {
@@ -294,6 +301,8 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 <br>
                 <small class="description">Default: Surname, First Name. This affects how names render in the Members list and card views.</small>
             </p>
+        <?php elseif ( $current_tab === 'signups' ) : ?>
+            <?php include TPW_CORE_PATH . 'modules/members/settings/member-signups-settings.php'; ?>
         <?php elseif ( $current_tab === 'profile' ) : ?>
             <p>Select which fields members are allowed to edit on their profile.</p>
             <div class="tpw-table">
