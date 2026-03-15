@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.5
+Stable tag: 1.14.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.6 =
+- Members: added Branch 3 of the Join flow with automatic Join page provisioning and the public `[tpw_join_form]` shortcode.
+- Members: added schema-driven Join form rendering with field validation, sticky values, and a clearer public confirmation message with a shortened reference code.
+- Members: successful Join submissions now create a signup attempt only; no TPW member record or WordPress user is created at this stage.
+- Members: Sign-Ups settings now show only public-safe fields, apply better default field handling, and support drag-and-drop field ordering with improved initial grouping.
+- Maintenance: version bump to 1.14.6.
 
 = 1.14.5 =
 - Members: added the Core signup schema layer for standard and custom member fields, including signup-safe, enabled, required, section, and ordering settings.

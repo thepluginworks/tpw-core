@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.14.6] - 2026-03-15
+### Added
+- Members: added public Join page auto-provisioning and the public `[tpw_join_form]` shortcode for the Branch 3 sign-up flow.
+- Members: added schema-driven Join form rendering with section-aware field output, validation, sticky values, and a public confirmation state with a shortened reference code.
+
+### Changed
+- Members: valid Join submissions now create and redirect to a recoverable signup attempt confirmation without creating a TPW member record or WordPress user in this branch.
+- Members: Sign-Ups settings now expose only public-safe fields, remove the Signup Safe admin column, apply better default field enablement and ordering, and support drag-and-drop field ordering with improved initial grouped display.
+- Maintenance: version bump to 1.14.6.
+
 ## [1.14.5] - 2026-03-15
 ### Added
 - Members: added the Core signup schema layer for standard and custom member fields, including signup-safe, enabled, required, section, and ordering metadata.

@@ -1,4 +1,4 @@
-# TPW Core (v1.14.5)
+# TPW Core (v1.14.6)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,12 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Join form updates (1.14.6)
+- Added automatic provisioning for the public Join page and support for the public `[tpw_join_form]` shortcode.
+- Added schema-driven Join form rendering with validation, sticky values, and a clearer public confirmation message using a shortened reference code.
+- Successful Join submissions now create a signup request record only; this stage does not create TPW members or WordPress users.
+- Sign-Ups settings now focus on public-safe fields, better default field handling, and drag-and-drop field ordering with cleaner initial grouping.
 
 ### Sign-up schema and settings updates (1.14.5)
 - Added the next stage of the TPW Core sign-up system by extending standard and custom member fields with sign-up configuration.
