@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.5] - 2026-03-15
+### Added
+- Members: added the Core signup schema layer for standard and custom member fields, including signup-safe, enabled, required, section, and ordering metadata.
+- Members: added a fixed Core signup section registry covering Account Details, Personal Details, Address, and Emergency Contact.
+- Members: added a Sign-Ups tab in Member Settings with sign-up enablement, sign-up page selection, and field configuration controls.
+
+### Changed
+- Members: existing field settings rows now carry sign-up configuration for both standard and custom fields while keeping the existing Members field system as the single source of truth.
+- Members: added a normalized sign-up field schema read path for later branches without introducing public form rendering or lifecycle coupling.
+- Maintenance: version bump to 1.14.5.
+
 ## [1.14.4] - 2026-03-14
 ### Added
 - Members: added a new Core sign-up attempts table to store in-progress onboarding state, payment progress, retry data, lifecycle locks, and recovery timestamps before permanent account creation.

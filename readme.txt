@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.4
+Stable tag: 1.14.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.5 =
+- Members: added the Core signup schema layer for standard and custom member fields, including signup-safe, enabled, required, section, and ordering settings.
+- Members: added fixed Core signup sections for Account Details, Personal Details, Address, and Emergency Contact.
+- Members: added a Sign-Ups tab in Member Settings with sign-up enablement, sign-up page selection, and field configuration controls.
+- Maintenance: version bump to 1.14.5.
 
 = 1.14.4 =
 - Members: added the Core signup attempts engine foundation for future payment-first sign-up flows.
