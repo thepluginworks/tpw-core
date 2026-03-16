@@ -10,7 +10,7 @@ Identity architecture defines who a person is in the platform and how identity i
 
 Identity determines who a person is.
 
-Identity documentation will be added under `docs/architecture/identity/` as the architecture work progresses.
+The canonical identity specification is [docs/architecture/identity/identity-model.md](identity/identity-model.md).
 
 ## Permissions Architecture
 
@@ -18,7 +18,7 @@ Permissions architecture defines capabilities, permission roles, and how authori
 
 Permissions determine what a person can do.
 
-The permissions documentation currently lives under `docs/architecture/permissions/`.
+The canonical permissions specification is [docs/architecture/permissions/tpw-core.permissions.md](permissions/tpw-core.permissions.md).
 
 ## Architectural Separation
 

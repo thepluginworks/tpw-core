@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.10] - 2026-03-16
+### Added
+- Documentation: added the first formal TPW Identity Architecture specification under `docs/architecture/identity/identity-model.md`.
+
+### Changed
+- Documentation: updated the architecture overview to link identity and permissions as separate platform architecture domains.
+- Maintenance: version bump to 1.14.10.
+
 ## [1.14.9] - 2026-03-16
 ### Changed
 - Documentation: introduced `docs/architecture/` as the new home for TPW platform architecture documentation.

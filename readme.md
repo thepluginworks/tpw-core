@@ -1,4 +1,4 @@
-# TPW Core (v1.14.9)
+# TPW Core (v1.14.10)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Identity architecture updates (1.14.10)
+- Added the first formal TPW Identity Architecture specification under `docs/architecture/identity/identity-model.md`.
+- Defined TPW Core as the canonical owner of platform identity and clarified the separation between identity and permissions.
+- Documented the canonical `tpw_members` member record as the source of truth for membership identity, with WordPress identity roles treated as synchronised projections.
 
 ### Architecture documentation updates (1.14.9)
 - Introduced a dedicated `docs/architecture/` section for platform architecture documentation.
