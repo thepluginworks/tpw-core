@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.14] - 2026-03-16
+### Added
+- Documentation: added [docs/architecture/identity/role-classification-model.md](docs/architecture/identity/role-classification-model.md) as the formal TPW Role Classification Model for the TPW ecosystem.
+
+### Changed
+- Documentation: updated [docs/architecture/README.md](docs/architecture/README.md) to link the role classification reference alongside the existing identity architecture materials.
+- Maintenance: version bump to 1.14.14.
+
 ## [1.14.13] - 2026-03-16
 ### Changed
 - Documentation: clarified that TPW Core owns the full lifecycle of projected identity roles in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md).

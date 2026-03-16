@@ -12,6 +12,8 @@ Identity determines who a person is.
 
 The canonical identity specification is [docs/architecture/identity/identity-model.md](identity/identity-model.md).
 
+The canonical role classification reference is [docs/architecture/identity/role-classification-model.md](identity/role-classification-model.md).
+
 The audit-backed identity and permissions decision pack is [docs/architecture/identity/identity-permissions-decisions.md](identity/identity-permissions-decisions.md).
 
 The phased implementation roadmap is [docs/architecture/identity/identity-permissions-implementation-roadmap.md](identity/identity-permissions-implementation-roadmap.md).

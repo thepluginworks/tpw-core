@@ -1,4 +1,4 @@
-# TPW Core (v1.14.13)
+# TPW Core (v1.14.14)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Role classification architecture reference (1.14.14)
+- Added a formal TPW Role Classification Model under `docs/architecture/identity/role-classification-model.md`.
+- Clarified the distinction between platform identity roles, shared responsibility roles, plugin-local responsibility roles, capabilities, domain assignments, third-party roles, and legacy or unknown roles.
+- Added architecture guidance to help future plugin design classify concepts such as Match Manager without mixing identity and permissions.
 
 ### Identity projection lifecycle clarification (1.14.13)
 - Clarified in the architecture docs that TPW Core owns the full lifecycle of projected identity roles when those roles are retained.
