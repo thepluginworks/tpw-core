@@ -40,6 +40,10 @@ Priority outputs in this phase include:
 
 The goal of this phase is to make current-state reality visible across live clubs and development environments. No later permissions or identity cleanup should start until the migration surface is measurable.
 
+Initial TPW Core implementation note:
+
+- TPW Core now provides a read-only Identity Audit screen under TPW Core Settings to report user/member linkage, weak-linkage fallback, projected identity roles, unknown roles, member status distribution, and drift indicators without changing runtime identity behaviour.
+
 ## 4. Phase 2 - Core Identity Hardening
 
 The second phase should harden TPW Core as the sole canonical identity owner before feature plugins are migrated.

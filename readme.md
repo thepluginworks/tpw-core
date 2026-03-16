@@ -1,4 +1,4 @@
-# TPW Core (v1.14.14)
+# TPW Core (v1.14.15)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Identity audit tooling (1.14.15)
+- Added a new read-only Identity Audit screen under TPW Core Settings for Phase 1 of the identity and permissions implementation roadmap.
+- The audit reports user to member linkage, weak-linkage fallback matches, identity role projections, unknown assigned roles, member status distribution, and current drift indicators.
+- This release adds diagnostics only and does not change runtime identity ownership, role assignment, or permission enforcement behaviour.
 
 ### Role classification architecture reference (1.14.14)
 - Added a formal TPW Role Classification Model under `docs/architecture/identity/role-classification-model.md`.

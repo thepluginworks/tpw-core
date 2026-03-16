@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.15] - 2026-03-16
+### Added
+- Identity: added a new read-only Identity Audit screen under TPW Core Settings as the first Phase 1 safety tooling for the identity and permissions implementation roadmap.
+- Identity: the audit reports user/member linkage, weak-linkage fallback matches, projected identity roles, unknown assigned roles, member status distribution, and drift indicators without modifying data.
+
+### Changed
+- Documentation: updated [docs/architecture/identity/identity-permissions-implementation-roadmap.md](docs/architecture/identity/identity-permissions-implementation-roadmap.md) to reference the new TPW Core Identity Audit tooling.
+- Maintenance: version bump to 1.14.15.
+
 ## [1.14.14] - 2026-03-16
 ### Added
 - Documentation: added [docs/architecture/identity/role-classification-model.md](docs/architecture/identity/role-classification-model.md) as the formal TPW Role Classification Model for the TPW ecosystem.
