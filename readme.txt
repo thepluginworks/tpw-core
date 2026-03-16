@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.17
+Stable tag: 1.14.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.18 =
+- Documentation: clarified that `tpw_members.is_admin` is a Core administrative elevation signal rather than an ordinary compatibility-era responsibility flag.
+- Documentation: recorded that `is_admin` affects WordPress Administrator assignment and site-level authority, so migration work must preserve its semantics.
+- Documentation: documented that any redesign of TPW-managed WordPress Administrator assignment requires an explicit architecture decision.
+- Maintenance: version bump to 1.14.18.
 
 = 1.14.17 =
 - Identity: added the first Phase 2A helper-layer scaffolding with a new `TPW_Identity` helper for canonical member lookup, raw and normalized status access, linkage reporting, and canonical membership checks.

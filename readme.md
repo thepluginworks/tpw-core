@@ -1,4 +1,4 @@
-# TPW Core (v1.14.17)
+# TPW Core (v1.14.18)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Architecture clarification update (1.14.18)
+- Clarified in the identity architecture docs that `tpw_members.is_admin` is a Core-managed administrative elevation signal rather than an ordinary compatibility-era responsibility flag.
+- Documented that `is_admin` affects WordPress Administrator assignment and site-level authority, so its semantics must remain behaviour-preserving during migration.
+- Recorded that any redesign of WordPress Administrator assignment must be handled as an explicit architecture decision rather than as helper migration or responsibility-flag cleanup.
 
 ### Identity helper layer update (1.14.17)
 - Added the first Phase 2A identity helper-layer scaffolding with `TPW_Identity` for canonical member lookup, raw and normalized status reads, linkage-mode reporting, and canonical membership checks.

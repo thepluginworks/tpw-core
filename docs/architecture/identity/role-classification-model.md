@@ -178,7 +178,28 @@ They must not be removed casually.
 
 Migration planning must treat them as live-site compatibility concerns until they are classified, owned, and handled safely.
 
-## 11. Decision Flow
+## 11. Core Administrative Elevation Signals
+
+Some signals in the TPW ecosystem represent privileged elevation into site-level authority rather than identity or responsibility.
+
+The primary current example is the `is_admin` field in `tpw_members`.
+
+These signals control elevation into WordPress administrative roles.
+
+They must be treated as security-sensitive signals.
+
+They remain owned by TPW Core.
+
+They are not interchangeable with responsibility roles or capabilities.
+
+They must not be modified without careful architectural consideration because they can affect:
+
+- site administration
+- plugin management
+- user management
+- security boundaries
+
+## 12. Decision Flow
 
 When a new role-like concept appears, ask the following questions:
 
@@ -200,7 +221,9 @@ If the concept is owned by WordPress core or another plugin, classify it under C
 
 If it already exists on live sites but has no clear current owner or classification, treat it as Category 7 - Legacy / Unknown Roles until audit work resolves it.
 
-## 12. Design Guidance
+Signals that elevate a person into WordPress `administrator` authority are not classified by the role flow above. They must instead be treated as Core administrative elevation signals and assessed with explicit security and architecture review.
+
+## 13. Design Guidance
 
 Future design work should follow these rules:
 
@@ -212,7 +235,7 @@ Future design work should follow these rules:
 
 This guidance exists to keep identity ownership stable, permission enforcement precise, and plugin data models proportionate to the responsibilities they represent.
 
-## 13. Relationship to Other Architecture Docs
+## 14. Relationship to Other Architecture Docs
 
 This document should be read together with the rest of the TPW identity and permissions architecture set.
 

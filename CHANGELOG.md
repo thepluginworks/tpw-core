@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.18] - 2026-03-16
+### Changed
+- Documentation: clarified in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md) that `tpw_members.is_admin` is a Core administrative elevation signal rather than an ordinary compatibility-era responsibility flag.
+- Documentation: added [docs/architecture/identity/role-classification-model.md](docs/architecture/identity/role-classification-model.md) guidance for Core administrative elevation signals that affect WordPress Administrator assignment and site-level authority.
+- Documentation: recorded that any redesign of TPW-managed WordPress Administrator assignment must be handled as an explicit architecture decision, not helper migration or flag cleanup.
+- Maintenance: version bump to 1.14.18.
+
 ## [1.14.17] - 2026-03-16
 ### Added
 - Identity: added `TPW_Identity` as the first Phase 2A helper-layer scaffold for canonical member lookup, raw and normalized status access, linkage-mode reporting, and canonical membership checks.

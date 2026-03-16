@@ -113,6 +113,28 @@ Once the Core compatibility layer helpers are introduced, plugins must use those
 
 This abstraction is required so the ecosystem can later relocate, normalise, or redesign responsibility storage without breaking plugin behaviour.
 
+### Core Administrative Elevation Signal
+
+The `is_admin` field in `tpw_members` is a special-case administrative elevation signal.
+
+It is not an identity role.
+
+It is not a plugin responsibility flag.
+
+It indicates that the linked TPW member should be granted WordPress `administrator` privileges.
+
+Because of that, this signal affects site-level authority rather than only plugin behaviour.
+
+This signal remains owned by TPW Core.
+
+Its semantics must remain behaviour-preserving during migration phases.
+
+It must not be casually refactored alongside other compatibility-era responsibility flags.
+
+Any future redesign of how TPW assigns WordPress Administrator privileges must be handled as an explicit architecture decision.
+
+That redesign must not be folded into helper-layer migration work or general responsibility-flag cleanup.
+
 ## 8. Subscriptions and Membership Status
 
 The audit confirmed that TPW Subscriptions currently writes `tpw_members.status`.
