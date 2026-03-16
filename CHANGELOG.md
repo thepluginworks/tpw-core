@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.14.17] - 2026-03-16
+### Added
+- Identity: added `TPW_Identity` as the first Phase 2A helper-layer scaffold for canonical member lookup, raw and normalized status access, linkage-mode reporting, and canonical membership checks.
+- Identity: added `TPW_Identity_Compat` to centralize compatibility-era member-flag reads plus legacy WordPress role and identity-alias checks.
+
+### Changed
+- Identity: preserved the current weak-linkage compatibility path by resolving members through direct `user_id` linkage first, then the existing email and username fallback paths when enabled.
+- Identity: loaded the new helper classes through the existing Core members bootstrap without broad internal call-site migration.
+- Maintenance: version bump to 1.14.17.
+
 ## [1.14.16] - 2026-03-16
 ### Changed
 - Documentation: added Phase 2 migration guardrails for legacy member responsibility flags in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md).

@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.16
+Stable tag: 1.14.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.17 =
+- Identity: added the first Phase 2A helper-layer scaffolding with a new `TPW_Identity` helper for canonical member lookup, raw and normalized status access, linkage reporting, and canonical membership checks.
+- Identity: added a new `TPW_Identity_Compat` helper for centralized legacy member-flag access plus compatibility checks for current WordPress role slugs and legacy identity aliases such as `tpw_member`.
+- Identity: preserved the current weak-linkage compatibility path by resolving member records through direct `user_id` linkage first, then the existing email and username fallbacks when enabled.
+- Maintenance: version bump to 1.14.17.
 
 = 1.14.16 =
 - Documentation: strengthened the identity architecture docs with Phase 2 migration guardrails for legacy member responsibility flags such as `is_committee`, `is_match_manager`, and `is_admin`.
