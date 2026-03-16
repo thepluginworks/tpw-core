@@ -97,6 +97,22 @@ Future implementation work must define one explicit owner for these roles and th
 
 The audit indicates that current ownership sits largely in TPW Access Control, but the long-term architectural boundary for responsibility-role ownership is still pending and must be formalised during implementation planning.
 
+### Legacy Responsibility Flags
+
+Certain responsibility indicators currently exist as fields on the TPW Core member record, including examples such as `is_committee`, `is_match_manager`, and `is_admin`.
+
+These fields are not identity signals.
+
+They are historical responsibility markers used by earlier plugin designs, and their presence in the Core schema reflects historical convenience rather than architectural ownership.
+
+During Phase 2 migration, these fields must be treated as compatibility-era signals.
+
+Plugins must not introduce new direct reads of these raw member fields going forward.
+
+Once the Core compatibility layer helpers are introduced, plugins must use those helpers instead of reading the fields directly.
+
+This abstraction is required so the ecosystem can later relocate, normalise, or redesign responsibility storage without breaking plugin behaviour.
+
 ## 8. Subscriptions and Membership Status
 
 The audit confirmed that TPW Subscriptions currently writes `tpw_members.status`.

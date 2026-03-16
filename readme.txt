@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.15
+Stable tag: 1.14.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.16 =
+- Documentation: strengthened the identity architecture docs with Phase 2 migration guardrails for legacy member responsibility flags such as `is_committee`, `is_match_manager`, and `is_admin`.
+- Documentation: clarified that these legacy responsibility flags are compatibility-era signals, must move behind Core compatibility helpers, and must not become broad cross-plugin permission shortcuts.
+- Documentation: documented the privilege-escalation risk of reusing broad responsibility labels inconsistently across plugins during migration.
+- Maintenance: version bump to 1.14.16.
 
 = 1.14.15 =
 - Identity: added a new read-only Identity Audit screen under TPW Core Settings as the first Phase 1 safety tooling for the identity and permissions roadmap.

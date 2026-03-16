@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.16] - 2026-03-16
+### Changed
+- Documentation: added Phase 2 migration guardrails for legacy member responsibility flags in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md).
+- Documentation: clarified in [docs/architecture/identity/role-classification-model.md](docs/architecture/identity/role-classification-model.md) that historical responsibility flags stored in Core are legacy compatibility signals rather than long-term ownership.
+- Documentation: updated [docs/architecture/identity/identity-permissions-implementation-roadmap.md](docs/architecture/identity/identity-permissions-implementation-roadmap.md) with compatibility-layer rules to prevent new direct dependencies and reduce privilege escalation risk during migration.
+- Maintenance: version bump to 1.14.16.
+
 ## [1.14.15] - 2026-03-16
 ### Added
 - Identity: added a new read-only Identity Audit screen under TPW Core Settings as the first Phase 1 safety tooling for the identity and permissions implementation roadmap.

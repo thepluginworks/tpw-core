@@ -58,6 +58,18 @@ Priority work in this phase includes:
 
 This phase should produce explicit rules for how Core determines canonical membership identity, how projection is synchronised into WordPress, and how broken or ambiguous links are surfaced and repaired without unsafe lockouts.
 
+### Legacy Flag Compatibility Guardrails
+
+Phase 2 implementation work must apply the following guardrails for legacy member responsibility flags:
+
+- no new direct reads of raw member responsibility flags should be introduced in plugins
+- existing reads of fields such as `is_committee` or `is_match_manager` should be migrated to compatibility helper methods once available
+- broad business group labels such as committee must not silently become universal permission signals across plugins
+
+The compatibility layer introduced in Phase 2 should centralise interpretation of these legacy signals so permission behaviour remains stable while migration occurs.
+
+This guardrail reduces the risk of privilege escalation caused by responsibility flags being reused inconsistently across the ecosystem.
+
 ## 5. Phase 3 - Responsibility Role Boundary
 
 The third phase should settle the ownership and lifecycle model for responsibility roles such as Secretary, Treasurer, Committee, Match Manager, and similar office or operational roles.

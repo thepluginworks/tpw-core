@@ -77,6 +77,18 @@ They must not be used to infer membership identity.
 
 Current ownership of these roles is mixed across the ecosystem. The exact long-term ownership model remains subject to implementation planning.
 
+### Historical Responsibility Flags in Core
+
+Some responsibility indicators currently exist as fields in the TPW Core members table, including examples such as committee membership and match manager status.
+
+Their current storage location does not imply long-term architectural ownership by TPW Core.
+
+These fields are treated as legacy compatibility signals rather than the target responsibility-role model.
+
+Responsibility roles may ultimately move to plugin-owned storage or to more structured assignment models where that better reflects the domain.
+
+During migration, the compatibility layer should abstract access to these signals so plugins are no longer coupled directly to the Core schema.
+
 ## 6. Category 3 - Plugin-Local Responsibility Roles
 
 Plugin-local responsibility roles are roles that exist only within a specific plugin domain.
