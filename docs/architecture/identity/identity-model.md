@@ -1,6 +1,6 @@
 # TPW Identity Architecture Specification
 
-**Status:** Authoritative architectural direction  
+**Status:** Current architectural direction (subject to ecosystem audit and migration validation).  
 **Applies to:** TPW Core and all dependent TPW plugins  
 **Audience:** Developers, maintainers, architects, QA
 

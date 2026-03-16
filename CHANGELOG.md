@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.14.11] - 2026-03-16
+### Changed
+- Documentation: refined the TPW Identity Architecture specification status wording to clarify that the current design direction remains subject to ecosystem audit and migration validation.
+- Maintenance: version bump to 1.14.11.
+
 ## [1.14.10] - 2026-03-16
 ### Added
 - Documentation: added the first formal TPW Identity Architecture specification under `docs/architecture/identity/identity-model.md`.
