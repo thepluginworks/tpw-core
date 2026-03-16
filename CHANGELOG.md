@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.12] - 2026-03-16
+### Added
+- Documentation: added `docs/architecture/identity/identity-permissions-decisions.md` as the formal architecture decisions document for ecosystem identity and permissions alignment.
+- Documentation: added `docs/architecture/identity/identity-permissions-implementation-roadmap.md` as the phased implementation roadmap for safe identity and permissions migration.
+
+### Changed
+- Documentation: updated `docs/architecture/README.md` so the identity model, decisions document, roadmap, and permissions architecture references are linked together from the overview.
+- Maintenance: version bump to 1.14.12.
+
 ## [1.14.11] - 2026-03-16
 ### Changed
 - Documentation: refined the TPW Identity Architecture specification status wording to clarify that the current design direction remains subject to ecosystem audit and migration validation.

@@ -12,6 +12,10 @@ Identity determines who a person is.
 
 The canonical identity specification is [docs/architecture/identity/identity-model.md](identity/identity-model.md).
 
+The audit-backed identity and permissions decision pack is [docs/architecture/identity/identity-permissions-decisions.md](identity/identity-permissions-decisions.md).
+
+The phased implementation roadmap is [docs/architecture/identity/identity-permissions-implementation-roadmap.md](identity/identity-permissions-implementation-roadmap.md).
+
 ## Permissions Architecture
 
 Permissions architecture defines capabilities, permission roles, and how authority is enforced across plugins.
@@ -19,6 +23,11 @@ Permissions architecture defines capabilities, permission roles, and how authori
 Permissions determine what a person can do.
 
 The canonical permissions specification is [docs/architecture/permissions/tpw-core.permissions.md](permissions/tpw-core.permissions.md).
+
+Supporting permissions architecture references include:
+
+- [docs/architecture/permissions/role-capability-matrix.md](permissions/role-capability-matrix.md)
+- [docs/architecture/permissions/vc-permissions-implementation-playbook.md](permissions/vc-permissions-implementation-playbook.md)
 
 ## Architectural Separation
 
