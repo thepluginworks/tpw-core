@@ -66,6 +66,27 @@ The intended identity role direction is frozen as follows:
 
 This means identity projection remains a Core concern. No feature plugin should create, own, or redefine the canonical WordPress-facing identity projection for TPW membership.
 
+### Identity Role Lifecycle Ownership
+
+If projected identity roles are retained in the TPW platform, their full lifecycle must be owned by TPW Core.
+
+That lifecycle includes:
+
+- role creation
+- role assignment and synchronisation
+- role repair if drift occurs
+- role cleanup when identity changes
+
+Identity roles are projections of canonical Core identity. Because of that, their lifecycle must be controlled centrally by Core rather than by feature plugins.
+
+Feature plugins must not create or manage identity roles.
+
+Plugins should instead rely on Core identity checks or capabilities where they need to determine membership state or enforce authority.
+
+This rule does not apply to plugin-specific responsibility roles.
+
+Responsibility roles such as Match Manager, Secretary, Treasurer, or Committee may be owned by their respective plugins if they represent operational permissions rather than identity.
+
 ## 7. Responsibility / Permission Role Direction
 
 Roles such as Secretary, Treasurer, Committee, Match Manager, and similar club-office or operational roles are responsibility roles, not identity roles.

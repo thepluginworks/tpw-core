@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.13] - 2026-03-16
+### Changed
+- Documentation: clarified that TPW Core owns the full lifecycle of projected identity roles in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md).
+- Documentation: updated [docs/architecture/identity/identity-model.md](docs/architecture/identity/identity-model.md) to cross-reference the lifecycle ownership rule for identity projection.
+- Maintenance: version bump to 1.14.13.
+
 ## [1.14.12] - 2026-03-16
 ### Added
 - Documentation: added `docs/architecture/identity/identity-permissions-decisions.md` as the formal architecture decisions document for ecosystem identity and permissions alignment.

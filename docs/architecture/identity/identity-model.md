@@ -112,6 +112,14 @@ WordPress identity roles are a synchronised projection of Core identity. They ar
 
 Their purpose is to provide a practical WordPress-facing representation of Core identity where that projection is needed for platform integration, login experience, or compatibility.
 
+### Lifecycle Ownership of Identity Projection
+
+Projected identity roles are managed exclusively by TPW Core.
+
+If identity projection roles such as `member` are retained, Core owns their lifecycle, including projection, synchronisation, repair, and cleanup.
+
+See [Identity & Permissions Decisions](identity-permissions-decisions.md) for the detailed lifecycle-ownership rule.
+
 ## 9. Responsibility / Permission Roles
 
 Responsibility roles such as the following are not identity roles:

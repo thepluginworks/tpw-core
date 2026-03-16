@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.12
+Stable tag: 1.14.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.13 =
+- Documentation: clarified that TPW Core owns the lifecycle of projected identity roles in `docs/architecture/identity/identity-permissions-decisions.md`.
+- Documentation: updated `docs/architecture/identity/identity-model.md` to cross-reference the identity projection lifecycle ownership rule.
+- Maintenance: version bump to 1.14.13.
 
 = 1.14.12 =
 - Documentation: added `docs/architecture/identity/identity-permissions-decisions.md` as the formal identity and permissions decisions document.
