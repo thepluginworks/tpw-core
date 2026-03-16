@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.9] - 2026-03-16
+### Changed
+- Documentation: introduced `docs/architecture/` as the new home for TPW platform architecture documentation.
+- Documentation: separated platform architecture docs into `identity` and `permissions` domains.
+- Documentation: moved the existing permissions documentation into `docs/architecture/permissions/` and updated documentation references.
+- Maintenance: version bump to 1.14.9.
+
 ## [1.14.8] - 2026-03-16
 ### Added
 - Members: added a signup finalization service that converts eligible `members_join` signup attempts into WordPress users and TPW member records.
@@ -235,7 +242,7 @@
 ## [1.8.5] - 2026-02-12
 ### Added
 - UI: added `.tpw-btn-warning` variant to the global button system.
-- Docs: added permissions documentation under `docs/permissions/`.
+- Docs: added permissions documentation under `docs/architecture/permissions/`.
 
 ### Changed
 - UI: normalized padding for input-based button variants (secondary/danger/warning).

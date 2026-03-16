@@ -45,13 +45,13 @@ Before changing any code, Visual Core MUST:
 
 1. Identify the target plugin.
 2. Open the plugin’s permission spec:
-   - `docs/permissions/tpw-<plugin>.permissions.md`
+   - `docs/architecture/permissions/tpw-<plugin>.permissions.md`
 3. Identify:
    - the screen / action being changed
    - the required capability
    - any ownership or field‑level policy
 4. Cross‑check intent in:
-   - `tpw-core/docs/permissions/role-capability-matrix.md`
+   - `tpw-core/docs/architecture/permissions/role-capability-matrix.md`
 
 **If anything is unclear, do not code. Update the documentation first.**
 
@@ -176,8 +176,8 @@ Visual Core must STOP and ask for direction if:
 ## 9. Canonical References
 
 - Core capability contract: `tpw-core.permissions.md`
-- Plugin permission specs: `docs/permissions/tpw-<plugin>.permissions.md`
-- Default role mapping: `tpw-core/docs/permissions/role-capability-matrix.md`
+- Plugin permission specs: `docs/architecture/permissions/tpw-<plugin>.permissions.md`
+- Default role mapping: `tpw-core/docs/architecture/permissions/role-capability-matrix.md`
 
 ---
 

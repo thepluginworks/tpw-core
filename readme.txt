@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.8
+Stable tag: 1.14.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.9 =
+- Documentation: introduced `docs/architecture/` as the new home for TPW platform architecture documentation.
+- Documentation: separated the architecture structure into dedicated `identity` and `permissions` domains.
+- Documentation: moved the existing permissions documentation into `docs/architecture/permissions/` and updated repository documentation links.
+- Maintenance: version bump to 1.14.9.
 
 = 1.14.8 =
 - Members: added a complete Join finalization flow so eligible signup attempts can be turned into live WordPress users and TPW member records.
@@ -212,7 +218,7 @@ Yes. You can enable and configure methods like Bank Transfer and Cheque under TP
 
 = 1.8.5 =
 - UI: added `.tpw-btn-warning` variant to the global button system.
-- Docs: added permissions documentation under `docs/permissions/`.
+- Docs: added permissions documentation under `docs/architecture/permissions/`.
 - Maintenance: version bump to 1.8.5.
 
 = 1.8.4 =
