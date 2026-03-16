@@ -1,15 +1,18 @@
 # Changelog
 
-## [1.14.7] - 2026-03-15
+## [1.14.8] - 2026-03-16
 ### Added
 - Members: added a signup finalization service that converts eligible `members_join` signup attempts into WordPress users and TPW member records.
 - Members: added a schema-driven signup field mapper that splits allowed signup fields into WordPress user data, TPW member fields, and member meta values.
+- Members: added a controlled internal completion bridge and privileged recovery action so draft Join attempts can be advanced through a non-gateway success path before finalization.
+- Members: added a temporary Sign Ups (Debug) admin screen so privileged users can review signup attempts and trigger internal completion through WordPress.
 
 ### Changed
 - Members: finalization now persists created `wp_user_id` and `member_id` references into the signup attempt result payload as soon as they exist, so partial progress can be resumed safely.
 - Members: failures after finalization begins now mark the attempt as `finalization_failed` with structured error context instead of leaving the attempt stranded.
 - Members: finalized member accounts now apply the existing Core defaults for society resolution, member status, and member capability assignment.
-- Maintenance: version bump to 1.14.7.
+- Members: the internal completion path now records explicit non-gateway provenance in the signup attempt result payload and event log before the existing finalizer runs.
+- Maintenance: version bump to 1.14.8.
 
 ## [1.14.6] - 2026-03-15
 ### Added

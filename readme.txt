@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.7
+Stable tag: 1.14.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,12 +59,12 @@ Yes. You can enable and configure methods like Bank Transfer and Cheque under TP
 
 == Changelog ==
 
-= 1.14.7 =
-- Members: added a new signup finalization service that converts eligible Join signup attempts into live WordPress user accounts and TPW member records.
-- Members: added a schema-driven field mapper so approved signup fields are stored consistently across WordPress users, TPW members, and member meta.
-- Members: partial finalization progress is now written back to the signup attempt so created account references can be recovered safely if finalization fails.
-- Members: failed finalization runs now move into a recoverable finalization-failed state with structured error context for follow-up.
-- Maintenance: version bump to 1.14.7.
+= 1.14.8 =
+- Members: added a complete Join finalization flow so eligible signup attempts can be turned into live WordPress users and TPW member records.
+- Members: added an internal completion bridge for draft signup attempts, with clear non-gateway audit tracking in the attempt payload and event log.
+- Members: added a temporary Sign Ups (Debug) admin screen so administrators can trigger internal completion from WordPress without manual admin-post testing.
+- Members: finalization continues to persist created account references early and leaves failed runs in a recoverable finalization-failed state.
+- Maintenance: version bump to 1.14.8.
 
 = 1.14.6 =
 - Members: added Branch 3 of the Join flow with automatic Join page provisioning and the public `[tpw_join_form]` shortcode.

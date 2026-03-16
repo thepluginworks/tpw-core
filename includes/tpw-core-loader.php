@@ -73,6 +73,9 @@ require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-service.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-field-mapper.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-finalizer.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-completion-bridge.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-completion-actions.php';
+require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-attempts-admin.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-join-page.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-form-validator.php';
 require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-payload-builder.php';
@@ -81,6 +84,8 @@ require_once TPW_CORE_PATH . 'modules/members/signups/class-tpw-signup-form-cont
 add_action( 'admin_init', [ 'TPW_Signup_Attempts_DB', 'ensure_core_schema' ], 5 );
 TPW_Join_Page::init();
 TPW_Signup_Form_Controller::init();
+TPW_Signup_Completion_Actions::init();
+TPW_Signup_Attempts_Admin::init();
 new TPW_Member_Fields();
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/members-admin.php';
 require_once TPW_CORE_PATH . 'modules/members/shortcodes/member-login.php';

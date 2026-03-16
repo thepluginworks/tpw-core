@@ -83,6 +83,25 @@ class TPW_Signup_Finalizer {
 	}
 
 	/**
+	 * Check whether this finalizer supports the supplied attempt.
+	 *
+	 * @param array $attempt Loaded attempt.
+	 * @return true|WP_Error
+	 */
+	public function supports_attempt( $attempt ) {
+		if ( empty( $attempt['id'] ) ) {
+			return new WP_Error( 'tpw_signup_attempt_missing', 'The signup attempt could not be found.' );
+		}
+
+		$flow_key = isset( $attempt['flow_key'] ) ? sanitize_key( $attempt['flow_key'] ) : '';
+		if ( 'members_join' !== $flow_key ) {
+			return new WP_Error( 'tpw_signup_attempt_flow_unsupported', 'This finalizer currently supports only the members_join flow.' );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Run the Branch 4 finalization flow against a loaded attempt.
 	 *
 	 * @param array $attempt Loaded attempt.
@@ -199,18 +218,14 @@ class TPW_Signup_Finalizer {
 	 * @return array|WP_Error
 	 */
 	private function validate_attempt_for_finalization( $attempt ) {
-		if ( empty( $attempt['id'] ) ) {
-			return new WP_Error( 'tpw_signup_attempt_missing', 'The signup attempt could not be found.' );
+		$supported = $this->supports_attempt( $attempt );
+		if ( is_wp_error( $supported ) ) {
+			return $supported;
 		}
 
 		$status = isset( $attempt['status'] ) ? sanitize_key( $attempt['status'] ) : '';
 		if ( ! in_array( $status, array( 'payment_succeeded', 'finalization_failed' ), true ) ) {
 			return new WP_Error( 'tpw_signup_attempt_not_finalizable', 'This signup attempt is not eligible for finalization.' );
-		}
-
-		$flow_key = isset( $attempt['flow_key'] ) ? sanitize_key( $attempt['flow_key'] ) : '';
-		if ( 'members_join' !== $flow_key ) {
-			return new WP_Error( 'tpw_signup_attempt_flow_unsupported', 'This finalizer currently supports only the members_join flow.' );
 		}
 
 		return $attempt;
