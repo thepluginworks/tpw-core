@@ -265,9 +265,11 @@ class TPW_Identity_Audit_Admin {
 				continue;
 			}
 
-			$user_id       = (int) $user->ID;
-			$direct_member = isset( $member_indexes['direct_by_user_id'][ $user_id ] )
-				? $member_indexes['direct_by_user_id'][ $user_id ]
+			$user_id         = (int) $user->ID;
+			$resolved_member = TPW_Identity::get_member_record( $user_id );
+			$linkage_mode    = TPW_Identity::get_linkage_mode( $user_id );
+			$direct_member   = ( 'user_id' === $linkage_mode && is_object( $resolved_member ) )
+				? $resolved_member
 				: null;
 
 			$row = array(
@@ -285,6 +287,21 @@ class TPW_Identity_Audit_Admin {
 			}
 
 			$weak_matches = self::find_weak_matches_for_user( $user, $member_indexes );
+
+			if ( empty( $weak_matches ) && is_object( $resolved_member ) ) {
+				if ( 'email_fallback' === $linkage_mode ) {
+					$weak_matches[] = array(
+						'member'  => $resolved_member,
+						'methods' => array( 'email' ),
+					);
+				} elseif ( 'username_fallback' === $linkage_mode ) {
+					$weak_matches[] = array(
+						'member'  => $resolved_member,
+						'methods' => array( 'username' ),
+					);
+				}
+			}
+
 			if ( ! empty( $weak_matches ) ) {
 				$row['linkage_type']    = 'weak';
 				$row['weak_matches']    = $weak_matches;
@@ -397,12 +414,14 @@ class TPW_Identity_Audit_Admin {
 				continue;
 			}
 
-			foreach ( (array) $user->roles as $role ) {
-				if ( ! in_array( $role, $identity_roles, true ) ) {
+				$user_id = (int) $user->ID;
+
+			foreach ( $identity_roles as $role ) {
+				if ( ! TPW_Identity_Compat::has_legacy_role( $user_id, $role ) ) {
 					continue;
 				}
 
-				$analysis         = isset( $user_analysis[ (int) $user->ID ] ) ? $user_analysis[ (int) $user->ID ] : null;
+				$analysis         = isset( $user_analysis[ $user_id ] ) ? $user_analysis[ $user_id ] : null;
 				$roles[ $role ][] = array(
 					'user'          => $user,
 					'direct_member' => is_array( $analysis ) ? $analysis['direct_member'] : null,
@@ -430,7 +449,17 @@ class TPW_Identity_Audit_Admin {
 				continue;
 			}
 
+			$user_id = (int) $user->ID;
+
+			if ( empty( TPW_Identity_Compat::get_legacy_roles( $user_id ) ) ) {
+				continue;
+			}
+
 			foreach ( (array) $user->roles as $role ) {
+				if ( ! TPW_Identity_Compat::has_legacy_role( $user_id, $role ) ) {
+					continue;
+				}
+
 				if ( self::is_known_role( $role, $identity_roles ) ) {
 					continue;
 				}
@@ -504,11 +533,12 @@ class TPW_Identity_Audit_Admin {
 				continue;
 			}
 
-			$analysis          = isset( $user_analysis[ (int) $user->ID ] ) ? $user_analysis[ (int) $user->ID ] : null;
+			$user_id           = (int) $user->ID;
+			$analysis          = isset( $user_analysis[ $user_id ] ) ? $user_analysis[ $user_id ] : null;
 			$roles             = (array) $user->roles;
 			$has_identity_role = false;
-			foreach ( $roles as $role ) {
-				if ( in_array( $role, $identity_roles, true ) ) {
+			foreach ( $identity_roles as $role ) {
+				if ( TPW_Identity_Compat::has_legacy_role( $user_id, $role ) ) {
 					$has_identity_role = true;
 					break;
 				}

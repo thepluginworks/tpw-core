@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.18
+Stable tag: 1.14.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.19 =
+- Identity: adopted the Phase 2A helper layer inside the read-only Identity Audit admin screen for the first narrow internal Core usage of `TPW_Identity` and `TPW_Identity_Compat`.
+- Identity: migrated only the audit reporting paths for user linkage analysis, identity role projection, unknown role reporting, and drift reporting.
+- Identity: preserved existing audit behaviour and report semantics, with no permission, authority, role, or admin-elevation changes.
+- Maintenance: version bump to 1.14.19.
 
 = 1.14.18 =
 - Documentation: clarified that `tpw_members.is_admin` is a Core administrative elevation signal rather than an ordinary compatibility-era responsibility flag.

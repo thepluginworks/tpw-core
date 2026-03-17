@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.19] - 2026-03-17
+### Changed
+- Identity: adopted `TPW_Identity` and `TPW_Identity_Compat` inside the read-only Identity Audit admin class as the first narrow internal Core usage of the Phase 2A helper layer.
+- Identity: migrated only the audit-reporting methods for user linkage analysis, identity role projection, unknown role reporting, and drift reporting.
+- Identity: preserved the existing report semantics and avoided permission, authority, role, member-flag, or admin-elevation behaviour changes.
+- Maintenance: version bump to 1.14.19.
+
 ## [1.14.18] - 2026-03-16
 ### Changed
 - Documentation: clarified in [docs/architecture/identity/identity-permissions-decisions.md](docs/architecture/identity/identity-permissions-decisions.md) that `tpw_members.is_admin` is a Core administrative elevation signal rather than an ordinary compatibility-era responsibility flag.
