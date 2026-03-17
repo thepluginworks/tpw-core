@@ -574,6 +574,17 @@ class TPW_Member_Ajax {
                 // Fetch all meta for this member
                 $meta = TPW_Member_Meta::get_all_meta( $requested_id );
                 $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer' ];
+                if ( ! class_exists( 'TPW_Identity_Compat' ) ) {
+                    require_once plugin_dir_path( __FILE__ ) . 'class-tpw-identity-compat.php';
+                }
+                if ( ! class_exists( 'TPW_Identity' ) ) {
+                    require_once plugin_dir_path( __FILE__ ) . 'class-tpw-identity.php';
+                }
+                $compat_member_user_id = isset( $m->user_id ) ? (int) $m->user_id : 0;
+                $compat_member = null;
+                if ( $compat_member_user_id > 0 ) {
+                    $compat_member = TPW_Identity::get_member_record( $compat_member_user_id );
+                }
 
                 ob_start();
                 ?>
@@ -605,7 +616,19 @@ class TPW_Member_Ajax {
                             // Pull value from core object or meta
                             $value = '';
                             if ( $is_core ) {
-                                $value = isset($m->$key) ? $m->$key : '';
+                                if (
+                                    in_array( $key, $known_checkbox_fields, true )
+                                    && $compat_member_user_id > 0
+                                    && $compat_member
+                                    && isset( $compat_member->id )
+                                    && (int) $compat_member->id === (int) $m->id
+                                ) {
+                                    $value = TPW_Identity_Compat::has_member_flag( $compat_member_user_id, $key )
+                                        ? '1'
+                                        : ( isset( $compat_member->$key ) ? $compat_member->$key : '' );
+                                } else {
+                                    $value = isset($m->$key) ? $m->$key : '';
+                                }
                             } else {
                                 $value = isset($meta[$key]) ? $meta[$key] : '';
                             }

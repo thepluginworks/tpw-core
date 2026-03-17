@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.21] - 2026-03-17
+### Changed
+- Members: updated the Member Details modal flag-read path in [modules/members/includes/class-tpw-member-ajax.php](modules/members/includes/class-tpw-member-ajax.php) to source legacy member flags through the compatibility helper boundary.
+- Members: kept the existing Member Details modal labels, ordering, formatting, field visibility, and Yes/No rendering logic unchanged.
+- Members: preserved existing behaviour for direct-link, missing-member, email-fallback, and username-fallback scenarios by falling back to the original member row unless the compatibility lookup resolves back to the same member record.
+- Maintenance: version bump to 1.14.21.
+
 ## [1.14.20] - 2026-03-17
 ### Changed
 - Documentation: added [docs/architecture/identity/member-flag-ownership-model.md](docs/architecture/identity/member-flag-ownership-model.md) as the formal Phase 2C Member Flag Ownership & Classification Model.

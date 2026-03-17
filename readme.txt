@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.20
+Stable tag: 1.14.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.21 =
+- Members: updated the Member Details modal flag-read path in `modules/members/includes/class-tpw-member-ajax.php` so legacy member flags are sourced through the compatibility helper boundary.
+- Members: preserved the existing modal labels, ordering, formatting, field visibility, and Yes/No rendering behaviour.
+- Members: added a same-member guard so the modal falls back to the original loaded member row unless the compatibility lookup resolves back to that exact member record.
+- Maintenance: version bump to 1.14.21.
 
 = 1.14.20 =
 - Documentation: added `docs/architecture/identity/member-flag-ownership-model.md` as the formal Phase 2C Member Flag Ownership & Classification Model.
