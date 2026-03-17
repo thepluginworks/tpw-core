@@ -16,6 +16,8 @@ The canonical role classification reference is [docs/architecture/identity/role-
 
 The audit-backed identity and permissions decision pack is [docs/architecture/identity/identity-permissions-decisions.md](identity/identity-permissions-decisions.md).
 
+The Phase 2C member-flag ownership reference is [docs/architecture/identity/member-flag-ownership-model.md](identity/member-flag-ownership-model.md).
+
 The phased implementation roadmap is [docs/architecture/identity/identity-permissions-implementation-roadmap.md](identity/identity-permissions-implementation-roadmap.md).
 
 ## Permissions Architecture

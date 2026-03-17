@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.19
+Stable tag: 1.14.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.20 =
+- Documentation: added `docs/architecture/identity/member-flag-ownership-model.md` as the formal Phase 2C Member Flag Ownership & Classification Model.
+- Documentation: classified the current `tpw_members` member flags by ownership, system role, migration risk, and migration difficulty to freeze the safe migration boundary.
+- Documentation: clarified that member flags are not canonical identity and that this release does not change runtime behaviour.
+- Maintenance: version bump to 1.14.20.
 
 = 1.14.19 =
 - Identity: adopted the Phase 2A helper layer inside the read-only Identity Audit admin screen for the first narrow internal Core usage of `TPW_Identity` and `TPW_Identity_Compat`.

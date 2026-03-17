@@ -1,4 +1,4 @@
-# TPW Core (v1.14.19)
+# TPW Core (v1.14.20)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,11 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Member flag ownership model update (1.14.20)
+- Added the formal Phase 2C Member Flag Ownership & Classification Model under `docs/architecture/identity/member-flag-ownership-model.md`.
+- Classified the current `tpw_members` member flags by ownership, system role, migration risk, and migration difficulty so later migration planning can stay behaviour-preserving.
+- Clarified that these member flags are not canonical identity and that this release does not change runtime behaviour.
 
 ### Identity audit helper adoption (1.14.19)
 - Added the first narrow internal Core adoption of the Phase 2A helper layer by switching the read-only Identity Audit admin reporting paths to `TPW_Identity` and `TPW_Identity_Compat` where their behaviour already matched the existing audit logic.

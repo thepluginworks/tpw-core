@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.20] - 2026-03-17
+### Changed
+- Documentation: added [docs/architecture/identity/member-flag-ownership-model.md](docs/architecture/identity/member-flag-ownership-model.md) as the formal Phase 2C Member Flag Ownership & Classification Model.
+- Documentation: classified the current `tpw_members` member flags by ownership, system role, migration risk, and migration difficulty to freeze the safe migration boundary.
+- Documentation: clarified that these member flags are compatibility-era signals rather than canonical identity and that the release does not change runtime behaviour.
+- Documentation: updated [docs/architecture/README.md](docs/architecture/README.md) to link the new member-flag ownership reference alongside the existing identity architecture set.
+- Maintenance: version bump to 1.14.20.
+
 ## [1.14.19] - 2026-03-17
 ### Changed
 - Identity: adopted `TPW_Identity` and `TPW_Identity_Compat` inside the read-only Identity Audit admin class as the first narrow internal Core usage of the Phase 2A helper layer.
