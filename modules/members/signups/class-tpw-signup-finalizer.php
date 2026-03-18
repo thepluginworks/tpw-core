@@ -111,6 +111,15 @@ class TPW_Signup_Finalizer {
 		$this->ensure_member_dependencies();
 
 		$attempt = is_array( $attempt ) ? $attempt : array();
+		$completed_result = $this->maybe_return_completed_result( $attempt );
+		if ( is_wp_error( $completed_result ) ) {
+			return $completed_result;
+		}
+
+		if ( is_array( $completed_result ) ) {
+			return $completed_result;
+		}
+
 		$attempt = $this->validate_attempt_for_finalization( $attempt );
 		if ( is_wp_error( $attempt ) ) {
 			return $attempt;
@@ -167,12 +176,14 @@ class TPW_Signup_Finalizer {
 		$attempt = $updated_attempt;
 
 		$stage     = 'member';
-		$member_id = $this->resolve_or_create_member( $attempt, $mapped_data['member_data'], $wp_user );
-		if ( is_wp_error( $member_id ) ) {
-			return $this->handle_finalization_failure( $attempt, $lock_token, $stage, $member_id, $partial_result );
+		$member_result = $this->resolve_or_create_member( $attempt, $mapped_data['member_data'], $wp_user );
+		if ( is_wp_error( $member_result ) ) {
+			return $this->handle_finalization_failure( $attempt, $lock_token, $stage, $member_result, $partial_result );
 		}
 
-		$partial_result['member_id'] = (int) $member_id;
+		$member_id                    = (int) $member_result['member_id'];
+		$partial_result['member_id']  = $member_id;
+		$partial_result['member_status'] = $member_result['member_status'];
 		$updated_attempt             = $this->persist_partial_result( $attempt, $partial_result );
 		if ( is_wp_error( $updated_attempt ) ) {
 			return $this->handle_finalization_failure( $attempt, $lock_token, 'result_payload_member', $updated_attempt, $partial_result );
@@ -185,10 +196,11 @@ class TPW_Signup_Finalizer {
 			return $this->handle_finalization_failure( $attempt, $lock_token, $stage, $meta_saved, $partial_result );
 		}
 
-		TPW_Member_Roles::ensure_member_cap( (int) $wp_user->ID );
+		$identity_role = TPW_Member_Roles::sync_identity_projection( (int) $wp_user->ID, $member_result['member_status'] );
 
 		$completed_result                       = $partial_result;
 		$completed_result['finalization_error'] = null;
+		$completed_result['identity_role']      = $identity_role;
 
 		$completed_attempt = $this->attempts_service->mark_completed(
 			$attempt_id,
@@ -201,13 +213,12 @@ class TPW_Signup_Finalizer {
 			return $this->handle_finalization_failure( $attempt, $lock_token, 'mark_completed', $completed_attempt, $partial_result );
 		}
 
-		return array(
-			'success'    => true,
-			'attempt_id' => $attempt_id,
-			'status'     => isset( $completed_attempt['status'] ) ? $completed_attempt['status'] : 'completed',
-			'wp_user_id' => (int) $wp_user->ID,
-			'member_id'  => (int) $member_id,
-			'attempt'    => $completed_attempt,
+		return $this->build_success_result(
+			$completed_attempt,
+			(int) $wp_user->ID,
+			$member_id,
+			$member_result['member_status'],
+			$identity_role
 		);
 	}
 
@@ -335,7 +346,6 @@ class TPW_Signup_Finalizer {
 			'user_login'   => $user_login,
 			'user_email'   => $email,
 			'user_pass'    => wp_generate_password(),
-			'role'         => 'member',
 			'display_name' => isset( $wp_user_data['display_name'] ) ? sanitize_text_field( $wp_user_data['display_name'] ) : '',
 			'first_name'   => isset( $wp_user_data['first_name'] ) ? sanitize_text_field( $wp_user_data['first_name'] ) : '',
 			'last_name'    => isset( $wp_user_data['last_name'] ) ? sanitize_text_field( $wp_user_data['last_name'] ) : '',
@@ -360,26 +370,32 @@ class TPW_Signup_Finalizer {
 	 * @param array   $attempt      Loaded attempt.
 	 * @param array   $member_data  Mapped member data.
 	 * @param WP_User $wp_user      Resolved WP user.
-	 * @return int|WP_Error
+	 * @return array<string, mixed>|WP_Error
 	 */
 	private function resolve_or_create_member( $attempt, $member_data, $wp_user ) {
 		$controller       = new TPW_Member_Controller();
 		$result_payload   = $this->get_existing_result_payload( $attempt );
 		$stored_member_id = isset( $result_payload['member_id'] ) ? absint( $result_payload['member_id'] ) : 0;
+		$member_data      = is_array( $member_data ) ? $member_data : array();
+		$matched_member   = $this->find_existing_member_record( $controller, $stored_member_id, $member_data, $wp_user );
+		if ( is_wp_error( $matched_member ) ) {
+			return $matched_member;
+		}
 
-		if ( $stored_member_id > 0 ) {
-			$stored_member = $controller->get_member( $stored_member_id );
-			if ( $stored_member && isset( $stored_member->id ) ) {
-				return (int) $stored_member->id;
+		if ( $matched_member ) {
+			$updated_member = $this->update_existing_member_record( $controller, $matched_member, $member_data, $wp_user );
+			if ( is_wp_error( $updated_member ) ) {
+				return $updated_member;
 			}
+
+			return array(
+				'member_id'     => (int) $updated_member->id,
+				'member_status' => $this->resolve_member_status_for_existing_record( $updated_member ),
+				'action'        => 'updated',
+			);
 		}
 
-		$existing_member = $controller->get_member_by_user_id( (int) $wp_user->ID );
-		if ( $existing_member && isset( $existing_member->id ) ) {
-			return new WP_Error( 'tpw_signup_member_exists', 'A TPW member already exists for the resolved WordPress user.' );
-		}
-
-		$insert_data                = is_array( $member_data ) ? $member_data : array();
+		$insert_data                = $member_data;
 		$insert_data['society_id']  = $this->resolve_default_society_id();
 		$insert_data['user_id']     = (int) $wp_user->ID;
 		$insert_data['email']       = isset( $insert_data['email'] ) && '' !== $insert_data['email'] ? sanitize_email( $insert_data['email'] ) : sanitize_email( $wp_user->user_email );
@@ -396,7 +412,202 @@ class TPW_Signup_Finalizer {
 			return new WP_Error( 'tpw_signup_member_create_failed', 'The TPW member record could not be created.' );
 		}
 
-		return (int) $member_id;
+		return array(
+			'member_id'     => (int) $member_id,
+			'member_status' => $insert_data['status'],
+			'action'        => 'created',
+		);
+	}
+
+	/**
+	 * Return an idempotent success result for already-completed attempts.
+	 *
+	 * @param array $attempt Loaded attempt.
+	 * @return array<string, mixed>|WP_Error|null
+	 */
+	private function maybe_return_completed_result( $attempt ) {
+		$status = isset( $attempt['status'] ) ? sanitize_key( $attempt['status'] ) : '';
+		if ( 'completed' !== $status ) {
+			return null;
+		}
+
+		$result_payload = $this->get_existing_result_payload( $attempt );
+		$wp_user_id     = isset( $result_payload['wp_user_id'] ) ? absint( $result_payload['wp_user_id'] ) : 0;
+		$member_id      = isset( $result_payload['member_id'] ) ? absint( $result_payload['member_id'] ) : 0;
+
+		if ( $wp_user_id <= 0 || $member_id <= 0 ) {
+			return new WP_Error( 'tpw_signup_attempt_completed_incomplete', 'The signup attempt is marked completed but its finalization references are incomplete.' );
+		}
+
+		$member_controller = new TPW_Member_Controller();
+		$member            = $member_controller->get_member( $member_id );
+		$wp_user           = get_user_by( 'ID', $wp_user_id );
+
+		if ( ! $member || ! isset( $member->id ) || ! ( $wp_user instanceof WP_User ) ) {
+			return new WP_Error( 'tpw_signup_attempt_completed_missing_refs', 'The signup attempt is marked completed but its finalized user or member record could not be loaded.' );
+		}
+
+		$member_status = isset( $member->status ) ? $this->normalize_member_status( $member->status ) : '';
+		$identity_role = TPW_Member_Roles::get_identity_role_for_status( $member_status );
+
+		return $this->build_success_result( $attempt, $wp_user_id, $member_id, $member_status, $identity_role );
+	}
+
+	/**
+	 * Build a normalized finalization success payload.
+	 *
+	 * @param array       $attempt        Loaded attempt.
+	 * @param int         $wp_user_id     Resolved WordPress user ID.
+	 * @param int         $member_id      Canonical TPW member ID.
+	 * @param string      $member_status  Canonical TPW member status.
+	 * @param string|null $identity_role  Projected Core identity role.
+	 * @return array<string, mixed>
+	 */
+	private function build_success_result( $attempt, $wp_user_id, $member_id, $member_status, $identity_role ) {
+		return array(
+			'success'       => true,
+			'attempt_id'    => isset( $attempt['id'] ) ? (int) $attempt['id'] : 0,
+			'status'        => isset( $attempt['status'] ) ? $attempt['status'] : 'completed',
+			'wp_user_id'    => (int) $wp_user_id,
+			'member_id'     => (int) $member_id,
+			'member_status' => $member_status,
+			'identity_role' => $identity_role,
+			'attempt'       => $attempt,
+		);
+	}
+
+	/**
+	 * Find an existing member row that should be reused for this attempt.
+	 *
+	 * @param TPW_Member_Controller $controller       Member controller.
+	 * @param int                   $stored_member_id Previously stored member ID.
+	 * @param array                 $member_data      Mapped member data.
+	 * @param WP_User               $wp_user          Resolved WordPress user.
+	 * @return object|WP_Error|null
+	 */
+	private function find_existing_member_record( $controller, $stored_member_id, $member_data, $wp_user ) {
+		if ( $stored_member_id > 0 ) {
+			$stored_member = $controller->get_member( $stored_member_id );
+			if ( $stored_member && isset( $stored_member->id ) ) {
+				if ( ! empty( $stored_member->user_id ) && (int) $stored_member->user_id !== (int) $wp_user->ID ) {
+					return new WP_Error( 'tpw_signup_member_conflict', 'The stored member reference is linked to a different WordPress user.' );
+				}
+
+				return $stored_member;
+			}
+		}
+
+		$existing_member = $controller->get_member_by_user_id( (int) $wp_user->ID );
+		if ( $existing_member && isset( $existing_member->id ) ) {
+			return $existing_member;
+		}
+
+		$matches = array();
+		$email   = isset( $member_data['email'] ) && '' !== $member_data['email'] ? sanitize_email( $member_data['email'] ) : sanitize_email( $wp_user->user_email );
+		if ( '' !== $email ) {
+			$email_match = TPW_Member_Access::get_member_by_email( $email );
+			if ( $email_match && isset( $email_match->id ) ) {
+				$matches[ (int) $email_match->id ] = $email_match;
+			}
+		}
+
+		$username = isset( $member_data['username'] ) && '' !== $member_data['username'] ? sanitize_user( $member_data['username'], true ) : sanitize_user( $wp_user->user_login, true );
+		if ( '' !== $username ) {
+			$username_match = TPW_Member_Access::get_member_by_username( $username );
+			if ( $username_match && isset( $username_match->id ) ) {
+				$matches[ (int) $username_match->id ] = $username_match;
+			}
+		}
+
+		if ( count( $matches ) > 1 ) {
+			return new WP_Error( 'tpw_signup_member_ambiguous', 'Multiple existing TPW member records match this signup attempt.' );
+		}
+
+		if ( empty( $matches ) ) {
+			return null;
+		}
+
+		$matched_member = reset( $matches );
+		if ( ! empty( $matched_member->user_id ) && (int) $matched_member->user_id !== (int) $wp_user->ID ) {
+			return new WP_Error( 'tpw_signup_member_link_conflict', 'The matched TPW member record is already linked to a different WordPress user.' );
+		}
+
+		return $matched_member;
+	}
+
+	/**
+	 * Update an existing member row without creating duplicates.
+	 *
+	 * @param TPW_Member_Controller $controller      Member controller.
+	 * @param object                $existing_member Existing member row.
+	 * @param array                 $member_data     Mapped member data.
+	 * @param WP_User               $wp_user         Resolved WordPress user.
+	 * @return object|WP_Error
+	 */
+	private function update_existing_member_record( $controller, $existing_member, $member_data, $wp_user ) {
+		$update_data = array(
+			'user_id'   => (int) $wp_user->ID,
+			'email'     => isset( $member_data['email'] ) && '' !== $member_data['email'] ? sanitize_email( $member_data['email'] ) : sanitize_email( $wp_user->user_email ),
+			'username'  => isset( $member_data['username'] ) && '' !== $member_data['username'] ? sanitize_user( $member_data['username'], true ) : sanitize_user( $wp_user->user_login, true ),
+			'status'    => $this->resolve_member_status_for_existing_record( $existing_member ),
+		);
+
+		$fields_to_fill = array(
+			'first_name',
+			'surname',
+			'initials',
+			'title',
+			'decoration',
+			'mobile',
+			'landline',
+			'member_photo',
+			'address1',
+			'address2',
+			'town',
+			'county',
+			'postcode',
+			'country',
+			'dob',
+		);
+
+		foreach ( $fields_to_fill as $field_key ) {
+			if ( ! isset( $member_data[ $field_key ] ) || '' === $member_data[ $field_key ] || null === $member_data[ $field_key ] ) {
+				continue;
+			}
+
+			$update_data[ $field_key ] = $member_data[ $field_key ];
+		}
+
+		if ( empty( $existing_member->date_joined ) ) {
+			$update_data['date_joined'] = gmdate( 'Y-m-d' );
+		}
+
+		$updated = $controller->update_member( (int) $existing_member->id, $update_data );
+		if ( false === $updated ) {
+			return new WP_Error( 'tpw_signup_member_update_failed', 'The TPW member record could not be updated.' );
+		}
+
+		$reloaded_member = $controller->get_member( (int) $existing_member->id );
+		if ( ! $reloaded_member || ! isset( $reloaded_member->id ) ) {
+			return new WP_Error( 'tpw_signup_member_reload_failed', 'The updated TPW member record could not be reloaded.' );
+		}
+
+		return $reloaded_member;
+	}
+
+	/**
+	 * Resolve the canonical member status for an existing record.
+	 *
+	 * @param object $existing_member Existing member row.
+	 * @return string
+	 */
+	private function resolve_member_status_for_existing_record( $existing_member ) {
+		$current_status = isset( $existing_member->status ) ? $this->normalize_member_status( $existing_member->status ) : '';
+		if ( '' !== $current_status ) {
+			return $current_status;
+		}
+
+		return $this->get_default_member_status();
 	}
 
 	/**
@@ -593,6 +804,8 @@ class TPW_Signup_Finalizer {
 	 */
 	private function ensure_member_dependencies() {
 		$dependency_map = array(
+			'TPW_Identity'          => TPW_CORE_PATH . 'modules/members/includes/class-tpw-identity.php',
+			'TPW_Member_Access'     => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php',
 			'TPW_Member_Controller' => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-controller.php',
 			'TPW_Member_Meta'       => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-meta.php',
 			'TPW_Member_Roles'      => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-roles.php',

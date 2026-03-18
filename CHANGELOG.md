@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.22] - 2026-03-18
+### Changed
+- Members: aligned the signup finalizer in [modules/members/signups/class-tpw-signup-finalizer.php](modules/members/signups/class-tpw-signup-finalizer.php) with the Core identity architecture so canonical `tpw_members` creation or linking now happens before any WordPress identity projection is applied.
+- Members: signup finalization now reuses or links an existing canonical member row for the resolved WordPress user, including weak-linkage repair by email or username where that resolves unambiguously, instead of failing or creating duplicate member records.
+- Members: signup finalization now preserves an existing member record's canonical status when one already exists, writes the configured default status only when a member row is newly created or missing status, and returns normalized `member_status` plus projected `identity_role` in the success result.
+- Members: signup finalization is now idempotent for already-completed attempts with valid stored refs, and new WordPress users created through the signup path no longer receive the `member` role before the canonical member status is known.
+- Identity: added a narrow Core-owned projection helper in [modules/members/includes/class-tpw-member-roles.php](modules/members/includes/class-tpw-member-roles.php) so the signup path assigns `member` only for membership-bearing statuses and removes legacy identity roles for non-membership-bearing statuses.
+- Maintenance: version bump to 1.14.22.
+
 ## [1.14.21] - 2026-03-17
 ### Changed
 - Members: updated the Member Details modal flag-read path in [modules/members/includes/class-tpw-member-ajax.php](modules/members/includes/class-tpw-member-ajax.php) to source legacy member flags through the compatibility helper boundary.
