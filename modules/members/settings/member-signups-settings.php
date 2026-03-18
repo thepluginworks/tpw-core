@@ -14,6 +14,7 @@ wp_enqueue_script(
 $signup_settings = TPW_Signup_Field_Schema::get_members_signup_settings();
 $signup_fields   = TPW_Signup_Field_Schema::get_signup_field_settings_rows();
 $signup_sections = TPW_Signup_Sections::get_sections();
+$join_providers  = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::get_registered_providers() : array();
 ?>
 <p class="description">Configure whether Members sign-ups are enabled, which existing member fields are allowed on the public Join form, and which page is managed as the Join entry point.</p>
 
@@ -39,6 +40,17 @@ $signup_sections = TPW_Signup_Sections::get_sections();
 	?>
 	<br>
 	<small class="description"><?php echo esc_html__( 'When Sign-Ups are enabled, TPW Core will provision or reuse a Join page automatically and store it here. You can also point the feature at an existing page and the Join shortcode will be added if needed.', 'tpw-core' ); ?></small>
+</p>
+
+<p>
+	<label for="tpw_members_join_provider_key"><strong><?php echo esc_html__( 'Active Join Provider', 'tpw-core' ); ?></strong></label><br>
+	<select name="tpw_members_settings[join_provider_key]" id="tpw_members_join_provider_key">
+		<?php foreach ( $join_providers as $provider ) : ?>
+			<option value="<?php echo esc_attr( $provider['key'] ); ?>" <?php selected( $signup_settings['join_provider_key'], $provider['key'] ); ?>><?php echo esc_html( $provider['label'] ); ?></option>
+		<?php endforeach; ?>
+	</select>
+	<br>
+	<small class="description"><?php echo esc_html__( 'Select which registered provider tpw_join_form dispatches to on the managed Join page. The page content itself is not rewritten.', 'tpw-core' ); ?></small>
 </p>
 
 <hr>

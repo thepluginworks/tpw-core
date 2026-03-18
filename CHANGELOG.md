@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.14.23] - 2026-03-18
+### Added
+- Members: added a runtime Join provider registry so the Core-owned Join page can keep using `[tpw_join_form]` while dispatching to the active Join experience.
+
+### Changed
+- Members: `tpw_join_form` now dispatches safely between the built-in Core Join flow and registered external shortcode-based providers, while keeping Core as the default and fallback provider.
+- Members: added an Active Join Provider setting to the existing Members sign-up settings and stored the provider key inside the existing `tpw_members_settings` option.
+- Members: hardened the managed Join page so it sends no-cache headers even when an external Join provider is active, reducing stale cached Join content after provider switches.
+- Maintenance: version bump to 1.14.23.
+
 ## [1.14.22] - 2026-03-18
 ### Changed
 - Members: aligned the signup finalizer in [modules/members/signups/class-tpw-signup-finalizer.php](modules/members/signups/class-tpw-signup-finalizer.php) with the Core identity architecture so canonical `tpw_members` creation or linking now happens before any WordPress identity projection is applied.

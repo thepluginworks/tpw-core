@@ -77,6 +77,7 @@ class TPW_Signup_Form_Controller {
 		add_action( 'template_redirect', array( $instance, 'maybe_handle_submission' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'maybe_enqueue_assets' ), 999 );
 		add_action( 'send_headers', array( $instance, 'maybe_disable_cache' ) );
+		add_filter( 'tpw_subscriptions/base_url', array( $instance, 'filter_subscriptions_base_url' ) );
 	}
 
 	/**
@@ -95,6 +96,21 @@ class TPW_Signup_Form_Controller {
 	 * @return string
 	 */
 	public function render_shortcode() {
+		$provider = TPW_Join_Page::resolve_active_provider();
+
+		if ( isset( $provider['key'] ) && TPW_Join_Page::CORE_PROVIDER_KEY === $provider['key'] ) {
+			return $this->render_core_experience();
+		}
+
+		return $this->render_provider_shortcode( $provider );
+	}
+
+	/**
+	 * Render the built-in Core Join experience.
+	 *
+	 * @return string
+	 */
+	public function render_core_experience() {
 		if ( ! TPW_Signup_Field_Schema::signups_enabled() ) {
 			return $this->renderer->render_disabled();
 		}
@@ -128,7 +144,7 @@ class TPW_Signup_Form_Controller {
 	 * @return void
 	 */
 	public function maybe_handle_submission() {
-		if ( ! $this->is_join_submission() || ! $this->page_contains_join_form() || ! TPW_Signup_Field_Schema::signups_enabled() ) {
+		if ( ! $this->is_core_provider_request() || ! $this->is_join_submission() || ! TPW_Signup_Field_Schema::signups_enabled() ) {
 			return;
 		}
 
@@ -153,7 +169,7 @@ class TPW_Signup_Form_Controller {
 	 * @return void
 	 */
 	public function maybe_enqueue_assets() {
-		if ( ! $this->page_contains_join_form() ) {
+		if ( ! $this->is_core_provider_request() ) {
 			return;
 		}
 
@@ -172,7 +188,7 @@ class TPW_Signup_Form_Controller {
 	 * @return void
 	 */
 	public function maybe_disable_cache() {
-		if ( ! $this->page_contains_join_form() ) {
+		if ( ! $this->is_join_dispatch_request() ) {
 			return;
 		}
 
@@ -311,6 +327,98 @@ class TPW_Signup_Form_Controller {
 		}
 
 		return false !== strpos( $content, '[' . TPW_Join_Page::SHORTCODE_TAG );
+	}
+
+	/**
+	 * Check whether the current request should use the built-in Core provider.
+	 *
+	 * @return bool
+	 */
+	private function is_core_provider_request() {
+		if ( ! $this->page_contains_join_form() ) {
+			return false;
+		}
+
+		$provider = TPW_Join_Page::resolve_active_provider();
+
+		return isset( $provider['key'] ) && TPW_Join_Page::CORE_PROVIDER_KEY === $provider['key'];
+	}
+
+	/**
+	 * Check whether the current request is the managed Join dispatcher page.
+	 *
+	 * @return bool
+	 */
+	private function is_join_dispatch_request() {
+		return $this->page_contains_join_form();
+	}
+
+	/**
+	 * Render an external shortcode-based provider.
+	 *
+	 * @param array<string, string> $provider Provider definition.
+	 * @return string
+	 */
+	private function render_provider_shortcode( $provider ) {
+		$render_target = isset( $provider['render_target'] ) ? trim( (string) $provider['render_target'] ) : '';
+		if ( '' === $render_target ) {
+			return $this->render_core_experience();
+		}
+
+		$shortcode_tag = $this->parse_shortcode_tag( $render_target );
+		if ( '' === $shortcode_tag || TPW_Join_Page::SHORTCODE_TAG === $shortcode_tag ) {
+			return $this->render_core_experience();
+		}
+
+		if ( function_exists( 'shortcode_exists' ) && ! shortcode_exists( $shortcode_tag ) ) {
+			return $this->render_core_experience();
+		}
+
+		return do_shortcode( $render_target );
+	}
+
+	/**
+	 * Override the Subscriptions base URL to the managed Join page when needed.
+	 *
+	 * @param string $url Current base URL.
+	 * @return string
+	 */
+	public function filter_subscriptions_base_url( $url ) {
+		$provider = TPW_Join_Page::resolve_active_provider();
+		if ( empty( $provider['key'] ) || 'subscriptions' !== $provider['key'] ) {
+			return $url;
+		}
+
+		$join_page_id    = TPW_Join_Page::get_join_page_id();
+		$current_page_id = get_queried_object_id();
+		if ( $join_page_id < 1 || ( $current_page_id > 0 && $current_page_id !== $join_page_id && ! $this->page_contains_join_form() ) ) {
+			return $url;
+		}
+
+		$join_url = $current_page_id > 0 ? get_permalink( $current_page_id ) : '';
+		if ( ! is_string( $join_url ) || '' === $join_url ) {
+			$join_url     = $join_page_id > 0 ? get_permalink( $join_page_id ) : '';
+		}
+
+		return is_string( $join_url ) && '' !== $join_url ? $join_url : $url;
+	}
+
+	/**
+	 * Parse the first shortcode tag from a shortcode string.
+	 *
+	 * @param string $shortcode Shortcode string.
+	 * @return string
+	 */
+	private function parse_shortcode_tag( $shortcode ) {
+		if ( ! is_string( $shortcode ) || '' === trim( $shortcode ) ) {
+			return '';
+		}
+
+		if ( preg_match( '/\[([A-Za-z0-9_-]+)/', $shortcode, $matches ) ) {
+			return sanitize_key( $matches[1] );
+		}
+
+		return '';
 	}
 
 	/**

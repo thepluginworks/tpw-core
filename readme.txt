@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.21
+Stable tag: 1.14.23
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.23 =
+- Added a managed Join provider registry so the Core-owned Join page can keep using `[tpw_join_form]` while dispatching to the active Join experience.
+- Updated `[tpw_join_form]` to switch safely between the built-in Core Join flow and registered external providers, with Core remaining the default and fallback.
+- Added an Active Join Provider setting to the Members sign-up settings and stored the provider choice in the existing plugin settings.
+- Hardened the managed Join page so it is not cached when an external Join provider is active, reducing stale Join content after provider changes.
+- Maintenance: version bump to 1.14.23.
 
 = 1.14.21 =
 - Members: updated the Member Details modal flag-read path in `modules/members/includes/class-tpw-member-ajax.php` so legacy member flags are sourced through the compatibility helper boundary.

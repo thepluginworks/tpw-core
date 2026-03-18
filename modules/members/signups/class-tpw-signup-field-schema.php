@@ -17,6 +17,7 @@ class TPW_Signup_Field_Schema {
 	 */
 	public static function get_members_signup_settings() {
 		$settings = get_option( 'tpw_members_settings', array() );
+		$default_provider_key = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::CORE_PROVIDER_KEY : 'core';
 
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
@@ -25,6 +26,7 @@ class TPW_Signup_Field_Schema {
 		return array(
 			'enable_signups' => ! empty( $settings['enable_signups'] ) ? '1' : '0',
 			'signup_page_id' => isset( $settings['signup_page_id'] ) ? absint( $settings['signup_page_id'] ) : 0,
+			'join_provider_key' => isset( $settings['join_provider_key'] ) ? sanitize_key( (string) $settings['join_provider_key'] ) : $default_provider_key,
 		);
 	}
 
@@ -37,6 +39,7 @@ class TPW_Signup_Field_Schema {
 	public static function save_members_signup_settings_from_request( $request ) {
 		$request = is_array( $request ) ? $request : array();
 		$settings = get_option( 'tpw_members_settings', array() );
+		$default_provider_key = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::CORE_PROVIDER_KEY : 'core';
 
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
@@ -49,6 +52,7 @@ class TPW_Signup_Field_Schema {
 
 		$settings['enable_signups'] = isset( $posted_settings['enable_signups'] ) ? '1' : '0';
 		$settings['signup_page_id'] = isset( $posted_settings['signup_page_id'] ) ? absint( $posted_settings['signup_page_id'] ) : 0;
+		$settings['join_provider_key'] = isset( $posted_settings['join_provider_key'] ) ? sanitize_key( (string) $posted_settings['join_provider_key'] ) : $default_provider_key;
 
 		update_option( 'tpw_members_settings', $settings );
 

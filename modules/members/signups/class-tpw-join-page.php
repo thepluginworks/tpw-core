@@ -11,6 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TPW_Join_Page {
 	/**
+	 * Built-in Core provider key.
+	 */
+	const CORE_PROVIDER_KEY = 'core';
+
+	/**
 	 * Shortcode tag for the public Join form.
 	 */
 	const SHORTCODE_TAG = 'tpw_join_form';
@@ -21,13 +26,132 @@ class TPW_Join_Page {
 	const SYSTEM_PAGE_KEY = 'join';
 
 	/**
+	 * Runtime provider registry.
+	 *
+	 * @var array<string, array<string, string>>
+	 */
+	private static $providers = array();
+
+	/**
 	 * Initialize hooks.
 	 *
 	 * @return void
 	 */
 	public static function init() {
+		add_action( 'init', array( __CLASS__, 'register_builtin_provider' ), 15 );
 		add_action( 'init', array( __CLASS__, 'register_system_page' ), 20 );
 		add_action( 'init', array( __CLASS__, 'maybe_provision_join_page' ), 25 );
+	}
+
+	/**
+	 * Register a Join provider at runtime.
+	 *
+	 * @param string $provider_key Provider key.
+	 * @param array  $args Provider arguments.
+	 * @return void
+	 */
+	public static function register_provider( $provider_key, $args = array() ) {
+		$key = sanitize_key( (string) $provider_key );
+		if ( '' === $key ) {
+			return;
+		}
+
+		$args = is_array( $args ) ? $args : array();
+		$render_type = isset( $args['render_type'] ) ? sanitize_key( (string) $args['render_type'] ) : 'shortcode';
+		if ( ! in_array( $render_type, array( 'internal', 'shortcode' ), true ) ) {
+			$render_type = 'shortcode';
+		}
+
+		$render_target = isset( $args['render_target'] ) ? trim( (string) $args['render_target'] ) : '';
+		$label         = isset( $args['label'] ) ? sanitize_text_field( (string) $args['label'] ) : ucwords( str_replace( array( '-', '_' ), ' ', $key ) );
+		$plugin        = isset( $args['plugin'] ) ? sanitize_key( (string) $args['plugin'] ) : 'tpw-core';
+
+		self::$providers[ $key ] = array(
+			'key'           => $key,
+			'label'         => $label,
+			'plugin'        => $plugin,
+			'render_type'   => $render_type,
+			'render_target' => $render_target,
+		);
+	}
+
+	/**
+	 * Register the built-in Core provider.
+	 *
+	 * @return void
+	 */
+	public static function register_builtin_provider() {
+		self::register_provider(
+			self::CORE_PROVIDER_KEY,
+			array(
+				'label'         => __( 'Core', 'tpw-core' ),
+				'plugin'        => 'tpw-core',
+				'render_type'   => 'internal',
+				'render_target' => self::CORE_PROVIDER_KEY,
+			)
+		);
+	}
+
+	/**
+	 * Get all registered Join providers.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	public static function get_registered_providers() {
+		if ( empty( self::$providers ) || ! isset( self::$providers[ self::CORE_PROVIDER_KEY ] ) ) {
+			self::register_builtin_provider();
+		}
+
+		return self::$providers;
+	}
+
+	/**
+	 * Get the stored provider key.
+	 *
+	 * @return string
+	 */
+	public static function get_active_provider_key() {
+		$settings = self::normalize_settings();
+		$key      = isset( $settings['join_provider_key'] ) ? sanitize_key( (string) $settings['join_provider_key'] ) : '';
+
+		if ( '' === $key ) {
+			return self::CORE_PROVIDER_KEY;
+		}
+
+		return $key;
+	}
+
+	/**
+	 * Resolve the active Join provider, falling back to Core.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function resolve_active_provider() {
+		$providers = self::get_registered_providers();
+		$key       = self::get_active_provider_key();
+
+		if ( ! isset( $providers[ $key ] ) || ! is_array( $providers[ $key ] ) ) {
+			return $providers[ self::CORE_PROVIDER_KEY ];
+		}
+
+		$provider = $providers[ $key ];
+
+		if ( empty( $provider['render_type'] ) || empty( $provider['render_target'] ) ) {
+			return $providers[ self::CORE_PROVIDER_KEY ];
+		}
+
+		if ( 'shortcode' === $provider['render_type'] ) {
+			$shortcode_tag = self::parse_shortcode_tag( $provider['render_target'] );
+			if ( '' === $shortcode_tag ) {
+				return $providers[ self::CORE_PROVIDER_KEY ];
+			}
+
+			if ( function_exists( 'shortcode_exists' ) && ! shortcode_exists( $shortcode_tag ) ) {
+				return $providers[ self::CORE_PROVIDER_KEY ];
+			}
+		}
+
+		return $provider;
 	}
 
 	/**
@@ -135,6 +259,7 @@ class TPW_Join_Page {
 			return array(
 				'enable_signups' => ! empty( $settings['enable_signups'] ) ? '1' : '0',
 				'signup_page_id' => isset( $settings['signup_page_id'] ) ? absint( $settings['signup_page_id'] ) : 0,
+				'join_provider_key' => isset( $settings['join_provider_key'] ) ? sanitize_key( (string) $settings['join_provider_key'] ) : self::CORE_PROVIDER_KEY,
 			);
 		}
 
@@ -148,7 +273,26 @@ class TPW_Join_Page {
 		return array(
 			'enable_signups' => ! empty( $stored['enable_signups'] ) ? '1' : '0',
 			'signup_page_id' => isset( $stored['signup_page_id'] ) ? absint( $stored['signup_page_id'] ) : 0,
+			'join_provider_key' => isset( $stored['join_provider_key'] ) ? sanitize_key( (string) $stored['join_provider_key'] ) : self::CORE_PROVIDER_KEY,
 		);
+	}
+
+	/**
+	 * Parse the first shortcode tag from a render target.
+	 *
+	 * @param string $shortcode Shortcode string.
+	 * @return string
+	 */
+	private static function parse_shortcode_tag( $shortcode ) {
+		if ( ! is_string( $shortcode ) || '' === trim( $shortcode ) ) {
+			return '';
+		}
+
+		if ( preg_match( '/\[([A-Za-z0-9_-]+)/', $shortcode, $matches ) ) {
+			return sanitize_key( $matches[1] );
+		}
+
+		return '';
 	}
 
 	/**
