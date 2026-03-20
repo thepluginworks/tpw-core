@@ -19,6 +19,11 @@ class TPW_Core {
      */
     public static function init() {
         self::load_dependencies();
+
+        if ( class_exists( 'TPW_Payments_Manager' ) && method_exists( 'TPW_Payments_Manager', 'reconcile_square_runtime_state' ) ) {
+            add_action( 'init', [ 'TPW_Payments_Manager', 'reconcile_square_runtime_state' ], 20 );
+        }
+
         do_action('tpw_core_loaded');
     }
 

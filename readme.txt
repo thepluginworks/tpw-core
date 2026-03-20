@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.23
+Stable tag: 1.14.24
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.24 =
+- Payments: Core no longer ships the Square PHP SDK and now treats Square checkout ownership as an external TPW Square Gateway add-on concern.
+- Payments: preserved the existing Square slug, settings surface, and legacy gateway class boundary while replacing the in-Core Square gateway implementation with an unavailable compatibility shim when the add-on is not active.
+- Payments: front-end payment method discovery, payments page config, and checkout validation now keep Square unavailable when the add-on is inactive, preventing broken Square selection on forms.
+- Payments: the Payment Methods admin UI now keeps stored Square configuration visible, prevents re-enabling Square while the add-on is inactive, and restores the requested active state when the add-on becomes available again.
+- Maintenance: version bump to 1.14.24.
 
 = 1.14.23 =
 - Added a managed Join provider registry so the Core-owned Join page can keep using `[tpw_join_form]` while dispatching to the active Join experience.

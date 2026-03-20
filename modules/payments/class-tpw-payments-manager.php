@@ -3,6 +3,156 @@
 class TPW_Payments_Manager {
 
     /**
+     * Keep persisted Square availability coherent with runtime add-on state.
+     *
+     * When the add-on is inactive, Square should remain configured but not be
+     * persisted as an active front-end method. The prior requested state is
+     * preserved and restored when the add-on becomes active again.
+     *
+     * @return void
+     */
+    public static function reconcile_square_runtime_state() : void {
+        static $did_run = false;
+
+        if ( $did_run ) {
+            return;
+        }
+
+        $did_run = true;
+
+        global $wpdb;
+
+        if ( ! $wpdb || ! isset( $wpdb->prefix ) ) {
+            return;
+        }
+
+        $table = $wpdb->prefix . 'tpw_payment_methods';
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( $table_exists !== $table ) {
+            return;
+        }
+
+        $has_active = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'active'" );
+        if ( ! $has_active ) {
+            return;
+        }
+
+        $raw_active = $wpdb->get_var( $wpdb->prepare( "SELECT active FROM {$table} WHERE slug = %s LIMIT 1", 'square' ) );
+        if ( null === $raw_active ) {
+            return;
+        }
+
+        $addon_active = function_exists( 'tpw_core_is_square_gateway_addon_active' )
+            && tpw_core_is_square_gateway_addon_active();
+        $current_active = self::value_is_enabled( $raw_active ) ? '1' : '0';
+        $remembered_preference = get_option( 'tpw_square_requested_active', null );
+        $has_remembered_preference = false !== $remembered_preference && null !== $remembered_preference && '' !== $remembered_preference;
+
+        if ( ! $addon_active ) {
+            if ( ! $has_remembered_preference ) {
+                update_option( 'tpw_square_requested_active', $current_active, false );
+            }
+
+            if ( '1' === $current_active ) {
+                $wpdb->update( $table, [ 'active' => 0 ], [ 'slug' => 'square' ] );
+            }
+
+            if ( self::value_is_enabled( get_option( 'tpw_square_enabled', '0' ) ) ) {
+                update_option( 'tpw_square_enabled', '0', false );
+            }
+
+            return;
+        }
+
+        if ( ! $has_remembered_preference ) {
+            return;
+        }
+
+        $restore_active = self::value_is_enabled( $remembered_preference ) ? 1 : 0;
+        if ( (int) $raw_active !== $restore_active ) {
+            $wpdb->update( $table, [ 'active' => $restore_active ], [ 'slug' => 'square' ] );
+        }
+
+        update_option( 'tpw_square_enabled', (string) $restore_active, false );
+        delete_option( 'tpw_square_requested_active' );
+    }
+
+    /**
+     * Check whether the stored Square method is configured in Core settings.
+     *
+     * @return bool
+     */
+    public static function square_has_stored_configuration() : bool {
+        foreach ( [ 'tpw_square_app_id', 'tpw_square_access_token', 'tpw_square_location_id' ] as $option_name ) {
+            $value = get_option( $option_name, '' );
+            if ( is_string( $value ) && trim( $value ) !== '' ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether a stored flag value represents an enabled state.
+     *
+     * @param mixed $value Stored value.
+     * @return bool
+     */
+    private static function value_is_enabled( $value ) : bool {
+        return in_array( strtolower( (string) $value ), [ '1', 'yes', 'on', 'true', 'enabled' ], true );
+    }
+
+    /**
+     * Check whether a payment method is currently available for front-end use.
+     *
+     * Stored method rows/options remain intact for compatibility. This gate only
+     * controls runtime availability.
+     *
+     * @param string $slug Payment method slug.
+     * @return bool
+     */
+    public static function is_method_available( $slug ) : bool {
+        $slug = sanitize_key( (string) $slug );
+        if ( '' === $slug ) {
+            return false;
+        }
+
+        if ( 'square' === $slug ) {
+            return function_exists( 'tpw_core_is_square_gateway_addon_active' )
+                ? tpw_core_is_square_gateway_addon_active()
+                : false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Filter a method list down to runtime-available methods.
+     *
+     * @param array $methods List of method objects.
+     * @return array<int,object{slug:string,name:string}>
+     */
+    private static function filter_available_methods( array $methods ) : array {
+        $available = [];
+
+        foreach ( $methods as $method ) {
+            $slug = isset( $method->slug ) ? (string) $method->slug : '';
+            if ( '' === $slug ) {
+                continue;
+            }
+
+            if ( ! self::is_method_available( $slug ) ) {
+                continue;
+            }
+
+            $available[] = $method;
+        }
+
+        return $available;
+    }
+
+    /**
      * Return the list of active payment methods.
      * Prefers the tpw_payment_methods table (supports slug+active and legacy method_key+enabled)
      * and falls back to legacy options for older sites.
@@ -10,6 +160,8 @@ class TPW_Payments_Manager {
      * @return array<int,object{slug:string,name:string}>
      */
     public static function get_active_methods() {
+        self::reconcile_square_runtime_state();
+
         global $wpdb;
         $out = [];
 
@@ -62,7 +214,7 @@ class TPW_Payments_Manager {
             }
         }
 
-        return $out;
+        return self::filter_available_methods( $out );
     }
 
     /**

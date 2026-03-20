@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.24] - 2026-03-20
+### Changed
+- Payments: Core no longer ships the Square PHP SDK and now treats Square checkout ownership as an external TPW Square Gateway add-on concern.
+- Payments: preserved the existing Square slug, settings surface, and legacy gateway class boundary while replacing the in-Core Square gateway implementation with an unavailable compatibility shim when the add-on is not active.
+- Payments: front-end payment method discovery, payments page config, and checkout validation now keep Square unavailable when the add-on is inactive, preventing broken Square selection on forms.
+- Payments: the Payment Methods admin UI now keeps stored Square configuration visible, prevents re-enabling Square while the add-on is inactive, and restores the requested active state when the add-on becomes available again.
+- Maintenance: version bump to 1.14.24.
+
 ## [1.14.23] - 2026-03-18
 ### Added
 - Members: added a runtime Join provider registry so the Core-owned Join page can keep using `[tpw_join_form]` while dispatching to the active Join experience.

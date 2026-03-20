@@ -83,15 +83,6 @@ class TPW_Core_Payments {
 
         $data = wp_parse_args($args, $defaults);
 
-        // Conditionally include the Square SDK if it's enabled
-        $active_methods = get_option('tpw_active_payment_methods', []);
-        if (in_array('square', $active_methods, true)) {
-            $autoload_path = plugin_dir_path(__FILE__) . '/vendor/autoload.php';
-            if (file_exists($autoload_path)) {
-                require_once $autoload_path;
-            }
-        }
-
         $allow_zero_amount = (isset($data['guest_id']) && !empty($data['guest_id']));
 
         if (

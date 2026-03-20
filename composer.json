@@ -1,8 +1,7 @@
 {
-    "version": "1.14.7",
+    "version": "1.14.24",
     "require": {
-        "guzzlehttp/guzzle": "^7.9",
-        "square/square": "^43.0"
+        "guzzlehttp/guzzle": "^7.9"
     },
     "config": {
         "optimize-autoloader": true,

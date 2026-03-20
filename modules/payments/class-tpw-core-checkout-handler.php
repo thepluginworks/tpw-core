@@ -10,6 +10,24 @@ class TPW_Core_Checkout_Handler {
         $submission_id = absint($_GET['submission_id']);
         $payment_method = sanitize_text_field($_GET['payment_method']);
 
+        if ( class_exists( 'TPW_Payments_Manager' ) && method_exists( 'TPW_Payments_Manager', 'is_method_available' ) ) {
+            if ( ! TPW_Payments_Manager::is_method_available( $payment_method ) ) {
+                if ( 'square' === $payment_method ) {
+                    wp_die(
+                        esc_html__( 'Square payments are not available because the TPW Square Gateway add-on is not active. Please choose another payment method.', 'tpw-core' ),
+                        esc_html__( 'Square Unavailable', 'tpw-core' ),
+                        array( 'response' => 503 )
+                    );
+                }
+
+                wp_die(
+                    esc_html__( 'The selected payment method is not currently available. Please choose another payment method.', 'tpw-core' ),
+                    esc_html__( 'Payment Method Unavailable', 'tpw-core' ),
+                    array( 'response' => 400 )
+                );
+            }
+        }
+
         if ( $payment_method === 'woocommerce' ) {
             if ( ! class_exists('TPW_Gateway_WooCommerce') ) {
                 require_once plugin_dir_path(__FILE__) . 'gateways/class-tpw-woocommerce-gateway.php';

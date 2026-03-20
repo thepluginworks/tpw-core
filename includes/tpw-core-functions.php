@@ -152,6 +152,91 @@ function tpw_core_get_currency_code() {
 }
 
 /**
+ * Determine whether a future TPW Square Gateway addon is active.
+ *
+ * Staged rollout note:
+ * - Additive only: this helper does not change current Square behaviour.
+ * - Default remains false until an addon explicitly exposes a known marker.
+ *
+ * @return bool
+ */
+if ( ! function_exists( 'tpw_core_is_square_gateway_addon_active' ) ) {
+    function tpw_core_is_square_gateway_addon_active(): bool {
+        $active = false;
+
+        if ( defined( 'TPW_SQUARE_GATEWAY_VERSION' ) ) {
+            $active = true;
+        } elseif ( class_exists( 'TPW_Square_Gateway_Addon' ) ) {
+            $active = true;
+        } elseif ( class_exists( 'TPW_Square_Gateway' ) ) {
+            try {
+                $reflection = new ReflectionClass( 'TPW_Square_Gateway' );
+                $source     = $reflection->getFileName();
+                $core_shim   = defined( 'TPW_CORE_PATH' )
+                    ? wp_normalize_path( TPW_CORE_PATH . 'modules/payments/gateways/class-tpw-square-gateway.php' )
+                    : '';
+
+                if ( is_string( $source ) && '' !== $source ) {
+                    $source = wp_normalize_path( $source );
+                    $active = ( '' === $core_shim || $source !== $core_shim );
+                }
+            } catch ( Throwable $exception ) {
+                $active = false;
+            }
+        }
+
+        /**
+         * Filter whether an external TPW Square Gateway addon is active.
+         *
+         * @param bool $active Current detected addon state.
+         */
+        return (bool) apply_filters( 'tpw_core/square_gateway_addon_active', $active );
+    }
+}
+
+/**
+ * Determine who currently owns the Square settings route.
+ *
+ * Allowed values:
+ * - core  : TPW Core renders the existing Square settings page.
+ * - addon : A future addon may render the page via a compatibility hook.
+ *
+ * This is additive only and defaults to Core to preserve current behaviour.
+ *
+ * @return string
+ */
+if ( ! function_exists( 'tpw_core_get_square_settings_route_owner' ) ) {
+    function tpw_core_get_square_settings_route_owner(): string {
+        $owner = tpw_core_is_square_gateway_addon_active() ? 'addon' : 'core';
+        $owner = apply_filters( 'tpw_core/square_settings_route_owner', $owner );
+
+        return in_array( $owner, [ 'core', 'addon' ], true ) ? $owner : 'core';
+    }
+}
+
+/**
+ * Determine who currently owns the legacy TPW_Square_Gateway surface.
+ *
+ * Allowed values:
+ * - core  : TPW Core provides a retired compatibility shim when the add-on is absent.
+ * - addon : The TPW Square Gateway add-on owns the live Square surface.
+ *
+ * Core no longer provides live Square execution. When the add-on is absent,
+ * Core may still expose a compatibility shim to avoid fatal class-missing
+ * errors in legacy consumers.
+ *
+ * @return string
+ */
+if ( ! function_exists( 'tpw_core_get_square_gateway_legacy_owner' ) ) {
+    function tpw_core_get_square_gateway_legacy_owner(): string {
+        $owner = tpw_core_is_square_gateway_addon_active() ? 'addon' : 'core';
+        $owner = apply_filters( 'tpw_core/square_gateway_legacy_owner', $owner );
+
+        return in_array( $owner, [ 'core', 'addon' ], true ) ? $owner : 'core';
+    }
+}
+
+/**
  * Core permissions bridge (Step 1).
  *
  * This helper centralises *read-only* permission checks for other TPW plugins to
@@ -719,7 +804,89 @@ if ( ! function_exists( 'tpw_core_get_payments_page_config' ) ) {
          *
          * @param array $cfg
          */
-        return apply_filters( 'tpw_core/payments_page_config', $cfg );
+        $cfg = apply_filters( 'tpw_core/payments_page_config', $cfg );
+
+        $cfg = function_exists( 'tpw_core_sanitize_payments_page_config' )
+            ? tpw_core_sanitize_payments_page_config( $cfg )
+            : $cfg;
+
+        return $cfg;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_config_contains_payment_method' ) ) {
+    /**
+     * Determine whether a localized payments config exposes a given method slug.
+     *
+     * @param array  $config Payments config.
+     * @param string $slug   Payment method slug.
+     * @return bool
+     */
+    function tpw_core_config_contains_payment_method( array $config, string $slug ): bool {
+        $slug = sanitize_key( $slug );
+        if ( '' === $slug || empty( $config['activeMethods'] ) || ! is_array( $config['activeMethods'] ) ) {
+            return false;
+        }
+
+        foreach ( $config['activeMethods'] as $method ) {
+            if ( is_object( $method ) && isset( $method->slug ) && sanitize_key( (string) $method->slug ) === $slug ) {
+                return true;
+            }
+
+            if ( is_array( $method ) && isset( $method['slug'] ) && sanitize_key( (string) $method['slug'] ) === $slug ) {
+                return true;
+            }
+
+            if ( is_string( $method ) && sanitize_key( $method ) === $slug ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_sanitize_payments_page_config' ) ) {
+    /**
+     * Remove retired Square runtime availability from localized config when the
+     * external Square add-on is not active.
+     *
+     * @param array $config Payments config.
+     * @return array
+     */
+    function tpw_core_sanitize_payments_page_config( array $config ): array {
+        $addon_active = function_exists( 'tpw_core_is_square_gateway_addon_active' ) && tpw_core_is_square_gateway_addon_active();
+
+        if ( $addon_active ) {
+            return $config;
+        }
+
+        if ( ! empty( $config['activeMethods'] ) && is_array( $config['activeMethods'] ) ) {
+            $config['activeMethods'] = array_values(
+                array_filter(
+                    $config['activeMethods'],
+                    static function( $method ): bool {
+                        if ( is_object( $method ) && isset( $method->slug ) ) {
+                            return 'square' !== sanitize_key( (string) $method->slug );
+                        }
+
+                        if ( is_array( $method ) && isset( $method['slug'] ) ) {
+                            return 'square' !== sanitize_key( (string) $method['slug'] );
+                        }
+
+                        if ( is_string( $method ) ) {
+                            return 'square' !== sanitize_key( $method );
+                        }
+
+                        return true;
+                    }
+                )
+            );
+        }
+
+        $config['square'] = array();
+
+        return $config;
     }
 }
 
@@ -734,18 +901,6 @@ if ( ! function_exists( 'tpw_core_get_payments_page_config' ) ) {
  */
 if ( ! function_exists( 'tpw_core_enqueue_payments_assets' ) ) {
     function tpw_core_enqueue_payments_assets( ?array $config = null, array $context = [] ): void {
-        // Decide SDK URL by sandbox flag
-        $is_sandbox = ( get_option('tpw_square_sandbox_mode') === '1' );
-        $sdk_url = $is_sandbox
-            ? 'https://sandbox.web.squarecdn.com/v1/square.js'
-            : 'https://web.squarecdn.com/v1/square.js';
-
-        // Enqueue Square Web Payments SDK once
-        if ( ! wp_script_is( 'square-web-payments', 'enqueued' ) && ! wp_script_is( 'square-web-payments', 'registered' ) ) {
-            wp_register_script( 'square-web-payments', $sdk_url, [], null, true );
-        }
-        wp_enqueue_script( 'square-web-payments' );
-
         // Ensure the Core bootstrap is registered; admin-functions.php registers it, but provide a fallback here
         if ( ! wp_script_is( 'tpw-core-payments', 'registered' ) ) {
             if ( defined('TPW_CORE_PATH') && defined('TPW_CORE_URL') ) {
@@ -759,6 +914,36 @@ if ( ! function_exists( 'tpw_core_enqueue_payments_assets' ) ) {
         if ( wp_script_is( 'tpw-core-payments', 'registered' ) ) {
             // Localize config (merge default if none supplied)
             $cfg = is_array( $config ) ? $config : tpw_core_get_payments_page_config();
+            if ( function_exists( 'tpw_core_sanitize_payments_page_config' ) ) {
+                $cfg = tpw_core_sanitize_payments_page_config( $cfg );
+            }
+
+            $addon_active = function_exists( 'tpw_core_is_square_gateway_addon_active' )
+                && tpw_core_is_square_gateway_addon_active();
+            $square_in_active_methods = function_exists( 'tpw_core_config_contains_payment_method' )
+                && tpw_core_config_contains_payment_method( $cfg, 'square' );
+            $square_config_present = ! empty( $cfg['square'] );
+
+            $should_enqueue_square_sdk =
+                $addon_active
+                && (
+                    $square_in_active_methods
+                    || $square_config_present
+                );
+
+            if ( $should_enqueue_square_sdk ) {
+                $is_sandbox = ( get_option('tpw_square_sandbox_mode') === '1' );
+                $sdk_url = $is_sandbox
+                    ? 'https://sandbox.web.squarecdn.com/v1/square.js'
+                    : 'https://web.squarecdn.com/v1/square.js';
+
+                if ( ! wp_script_is( 'square-web-payments', 'enqueued' ) && ! wp_script_is( 'square-web-payments', 'registered' ) ) {
+                    wp_register_script( 'square-web-payments', $sdk_url, [], null, true );
+                }
+
+                wp_enqueue_script( 'square-web-payments' );
+            }
+
             // Provide a minimal context with page/type defaults
             $ctx = array_merge(
                 [

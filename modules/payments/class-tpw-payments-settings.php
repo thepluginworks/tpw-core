@@ -36,9 +36,20 @@ class TPW_Payments_Settings {
     }
 
     public static function register_settings() {
+        self::register_sumup_settings();
+
+        if ( 'core' === self::get_square_settings_registration_owner() ) {
+            self::register_square_settings();
+        }
+    }
+
+    public static function register_sumup_settings() {
         register_setting('tpw_payment_settings', 'tpw_sumup_client_id');
         register_setting('tpw_payment_settings', 'tpw_sumup_client_secret');
         register_setting('tpw_payment_settings', 'tpw_sumup_access_token');
+    }
+
+    public static function register_square_settings() {
         register_setting('tpw_payment_settings', 'tpw_square_app_id');
         register_setting('tpw_payment_settings', 'tpw_square_access_token');
         register_setting('tpw_payment_settings', 'tpw_square_location_id');
@@ -56,11 +67,26 @@ class TPW_Payments_Settings {
         ]);
     }
 
+    public static function get_square_settings_registration_owner(): string {
+        $owner = apply_filters( 'tpw_core/square_settings_registration_owner', 'core' );
+
+        return in_array( $owner, [ 'core', 'addon' ], true ) ? $owner : 'core';
+    }
+
     public static function render_page() {
         include plugin_dir_path(__FILE__) . '/views/payment-settings-page.php';
     }
 
     public static function render_square_page() {
+        $route_owner = function_exists( 'tpw_core_get_square_settings_route_owner' )
+            ? tpw_core_get_square_settings_route_owner()
+            : 'core';
+
+        if ( 'addon' === $route_owner && has_action( 'tpw_core/square_settings_route' ) ) {
+            do_action( 'tpw_core/square_settings_route', 'tpw-square-settings' );
+            return;
+        }
+
         include plugin_dir_path(__FILE__) . '/views/square-settings-page.php';
     }
 

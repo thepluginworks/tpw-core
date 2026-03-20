@@ -93,29 +93,20 @@ class TPW_Member_Payments {
 
     /**
      * Render callback for the default "Payment Methods" source.
-     * Queries the tpw_payment_methods table (slug + active, or legacy method_key + enabled).
+     * Uses the shared payments manager so runtime-unavailable methods do not
+     * appear in member-facing UI.
      */
     public static function render_source_methods() : void {
-        global $wpdb;
-    $active_slugs = [];
-    $table = $wpdb->prefix . 'tpw_payment_methods';
-        if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table ) ) === $table ) {
-            $has_active      = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'active'" );
-            $has_enabled     = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'enabled'" );
-            $has_slug        = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'slug'" );
-            $has_method_key  = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'method_key'" );
-            $has_sort        = $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'sort_order'" );
-            $col_key   = $has_slug ? 'slug' : ( $has_method_key ? 'method_key' : '' );
-            $col_flag  = $has_active ? 'active' : ( $has_enabled ? 'enabled' : '' );
-            if ( $col_key && $col_flag ) {
-                $order_by = $has_sort ? 'ORDER BY sort_order ASC' : '';
-                $rows = (array) $wpdb->get_results( "SELECT {$col_key} AS slug, {$col_flag} AS enabled FROM {$table} WHERE {$col_flag} IN (1,'1','yes','on','true','enabled') {$order_by}" );
-                foreach ( $rows as $r ) {
-                    $slug = (string) $r->slug;
-                    if ( $slug !== '' ) { $active_slugs[] = $slug; }
-                }
+        $active_slugs = [];
+        $active_methods = class_exists( 'TPW_Payments_Manager' ) ? (array) TPW_Payments_Manager::get_active_methods() : [];
+
+        foreach ( $active_methods as $method ) {
+            $slug = isset( $method->slug ) ? (string) $method->slug : '';
+            if ( $slug !== '' ) {
+                $active_slugs[] = $slug;
             }
         }
+
         echo '<div class="tpw-card">';
         echo '  <h3>' . esc_html__( 'Active payment methods', 'tpw-core' ) . '</h3>';
         if ( ! empty( $active_slugs ) ) {

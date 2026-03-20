@@ -47,11 +47,23 @@ class TPW_Payments_Admin {
      * This is used by the standalone admin page and also by the TPW Core Settings tab.
      */
     public static function render_manage_methods_content() {
+        if ( class_exists( 'TPW_Payments_Manager' ) && method_exists( 'TPW_Payments_Manager', 'reconcile_square_runtime_state' ) ) {
+            TPW_Payments_Manager::reconcile_square_runtime_state();
+        }
+
+        $square_addon_active = function_exists( 'tpw_core_is_square_gateway_addon_active' )
+            && tpw_core_is_square_gateway_addon_active();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('tpw_update_payment_methods')) {
             global $wpdb;
             $table = $wpdb->prefix . 'tpw_payment_methods';
 
             $selected = isset($_POST['payment_methods']) ? (array) $_POST['payment_methods'] : [];
+            $selected = array_map( 'sanitize_key', $selected );
+
+            if ( ! $square_addon_active ) {
+                $selected = array_values( array_diff( $selected, [ 'square' ] ) );
+            }
 
             $all = $wpdb->get_results("SELECT slug FROM $table");
             foreach ($all as $method) {
@@ -60,6 +72,16 @@ class TPW_Payments_Admin {
             }
 
             echo '<div class="updated"><p>Payment methods updated.</p></div>';
+
+            if ( ! $square_addon_active ) {
+                if ( class_exists( 'TPW_Payments_Manager' ) && method_exists( 'TPW_Payments_Manager', 'reconcile_square_runtime_state' ) ) {
+                    TPW_Payments_Manager::reconcile_square_runtime_state();
+                }
+
+                echo '<div class="notice notice-warning"><p>'
+                    . esc_html__( 'Square settings are retained, but Square cannot be enabled until the TPW Square Gateway add-on is active.', 'tpw-core' )
+                    . '</p></div>';
+            }
         }
 
         global $wpdb;
@@ -111,6 +133,12 @@ class TPW_Payments_Admin {
             }
         }
 
+        if ( ! $square_addon_active ) {
+            echo '<div class="notice notice-warning"><p>'
+                . esc_html__( 'Square remains configured in Core, but it is unavailable on forms until the TPW Square Gateway add-on is active.', 'tpw-core' )
+                . '</p></div>';
+        }
+
         ?>
             <form method="post">
                 <?php wp_nonce_field('tpw_update_payment_methods'); ?>
@@ -154,10 +182,32 @@ class TPW_Payments_Admin {
                             } elseif ($method->slug === 'sumup') {
                                 $access_token = get_option('tpw_sumup_access_token');
                                 $status_chip = $access_token ? '<span class="tpw-status-chip configured">Connected</span>' : '<span class="tpw-status-chip disconnected">Disconnected</span>';
+                            } elseif ($method->slug === 'square' && ! $square_addon_active) {
+                                $has_square_config = class_exists( 'TPW_Payments_Manager' ) && method_exists( 'TPW_Payments_Manager', 'square_has_stored_configuration' )
+                                    ? TPW_Payments_Manager::square_has_stored_configuration()
+                                    : false;
+                                $remembered_square_active = strtolower( (string) get_option( 'tpw_square_requested_active', '0' ) );
+                                $will_restore = in_array( $remembered_square_active, [ '1', 'yes', 'on', 'true', 'enabled' ], true );
+
+                                $status_chip = $has_square_config
+                                    ? '<span class="tpw-status-chip configured">Configured</span> <span class="tpw-status-chip disconnected">Add-on required</span>'
+                                    : '<span class="tpw-status-chip disconnected">Add-on required</span>';
+
+                                $summary_parts = [
+                                    esc_html__( 'Unavailable on forms until the TPW Square Gateway add-on is active.', 'tpw-core' ),
+                                ];
+
+                                if ( $will_restore ) {
+                                    $summary_parts[] = esc_html__( 'The previous enabled state will be restored when the add-on becomes active again.', 'tpw-core' );
+                                }
+
+                                $summary = '<span class="tpw-pay-summary">' . esc_html( implode( ' ', $summary_parts ) ) . '</span>';
                             }
 
                             $disabled_attr = '';
                             if ($method->slug === 'woocommerce' && !class_exists('WooCommerce')) {
+                                $disabled_attr = 'disabled';
+                            } elseif ($method->slug === 'square' && ! $square_addon_active) {
                                 $disabled_attr = 'disabled';
                             }
                         ?>

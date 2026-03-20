@@ -2,6 +2,9 @@
 <?php if ( function_exists( 'tpw_core_render_settings_header' ) ) { tpw_core_render_settings_header( 'Square Payment Settings' ); } ?>
 <div class="tpw-admin-ui"><div class="wrap">
     <p><a href="<?php echo esc_url( tpw_core_get_payment_methods_settings_url() ); ?>" class="button">Back to Payment Methods</a></p>
+    <?php if ( ! function_exists( 'tpw_core_is_square_gateway_addon_active' ) || ! tpw_core_is_square_gateway_addon_active() ) : ?>
+        <div class="notice notice-warning"><p><?php esc_html_e( 'Square payments now require the TPW Square Gateway add-on. These settings are retained for compatibility and will be used by the add-on when it is active.', 'tpw-core' ); ?></p></div>
+    <?php endif; ?>
     <?php if ( isset($_GET['settings-updated']) && $_GET['settings-updated'] ) : ?>
         <div class="notice notice-success is-dismissible"><p>Surcharge settings updated successfully.</p></div>
     <?php endif; ?>
