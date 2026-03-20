@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.30] - 2026-03-20
+### Changed
+- Release delivery: updated Freemius uploads to use curl's built-in Basic Auth handling, avoiding malformed authorization headers during tagged release uploads.
+- Release delivery: kept the existing upload diagnostics in place so GitHub Actions still shows the requested version, package path, HTTP status, response body size, and raw Freemius response when available.
+- Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
+
 ## [1.14.29] - 2026-03-20
 ### Changed
 - Release delivery: expanded Freemius upload logging so tagged releases now show the package path, requested version, response body size, and the raw response returned by Freemius when available.

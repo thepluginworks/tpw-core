@@ -61,7 +61,7 @@ jobs:
             --output "$RESPONSE_BODY" \
             -w "%{http_code}" \
             -X POST "https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json" \
-            -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}' | base64)" \
+            -u "${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}" \
             -F "slug=${{ secrets.FREEMIUS_TPW_CORE_SLUG }}" \
             -F "version=$VERSION" \
             -F "changelog=Automated release from GitHub tag $VERSION" \
