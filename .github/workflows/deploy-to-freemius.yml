@@ -48,43 +48,201 @@ jobs:
 
       - name: Upload to Freemius
         if: github.event_name == 'push'
+        env:
+          FREEMIUS_DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
+          FREEMIUS_PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
+          FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+          FREEMIUS_PLUGIN_ID: ${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}
         run: |
-          set -x
-
-          RESPONSE_BODY="$RUNNER_TEMP/freemius-upload-response.json"
-          : > "$RESPONSE_BODY"
-
           echo "Freemius upload VERSION: $VERSION"
           echo "Freemius upload ZIP_PATH: $ZIP_PATH"
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import hmac
+          import json
+          import mimetypes
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+          import uuid
+          from datetime import datetime, timezone
 
-          HTTP_STATUS=$(curl -sS \
-            --output "$RESPONSE_BODY" \
-            -w "%{http_code}" \
-            -X POST "https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json" \
-            -u "${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}" \
-            -F "slug=${{ secrets.FREEMIUS_TPW_CORE_SLUG }}" \
-            -F "version=$VERSION" \
-            -F "changelog=Automated release from GitHub tag $VERSION" \
-            -F "zip_file=@$ZIP_PATH")
+          API_ROOT = 'https://api.freemius.com'
+          RELEASE_BLOCKING_MODES = {'unreleased', 'pending', 'beta'}
 
-          echo "Freemius upload HTTP status: $HTTP_STATUS"
+          dev_id = os.environ['FREEMIUS_DEV_ID']
+          public_key = os.environ['FREEMIUS_PUBLIC_KEY']
+          secret_key = os.environ['FREEMIUS_SECRET_KEY']
+          plugin_id = os.environ['FREEMIUS_PLUGIN_ID']
+          zip_path = os.environ['ZIP_PATH']
 
-          if [ -f "$RESPONSE_BODY" ]; then
-            RESPONSE_SIZE=$(wc -c < "$RESPONSE_BODY")
-          else
-            RESPONSE_SIZE=0
-          fi
+          def rfc2822_utc_now():
+            return datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000')
 
-          echo "Freemius upload response body size: ${RESPONSE_SIZE} bytes"
+          def log_response(label, status, raw_body):
+            print(f'{label} HTTP status: {status}')
+            print(f'{label} response body size: {len(raw_body)} bytes')
+            if raw_body:
+              print(f'{label} raw response body:')
+              print(raw_body.decode('utf-8', errors='replace'))
+            else:
+              print(f'{label} response body is empty.')
 
-          if [ "$RESPONSE_SIZE" -gt 0 ]; then
-            echo "Freemius upload raw response body:"
-            cat "$RESPONSE_BODY"
-          else
-            echo "Freemius upload response body is empty."
-          fi
+          def build_headers(resource_path, method, body, content_type):
+            date_header = rfc2822_utc_now()
+            content_md5 = hashlib.md5(body).hexdigest() if method in {'POST', 'PUT'} and body else ''
+            string_to_sign = '\n'.join([
+              method,
+              content_md5,
+              content_type,
+              date_header,
+              resource_path,
+            ])
+            auth_type = 'FSP' if secret_key == public_key else 'FS'
+            signature = base64.urlsafe_b64encode(
+              hmac.new(secret_key.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256).digest()
+            ).decode('utf-8').rstrip('=')
 
-          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "::error::Freemius upload failed with HTTP status $HTTP_STATUS"
-            exit 1
-          fi
+            headers = {
+              'Accept': 'application/json',
+              'Authorization': f'{auth_type} {dev_id}:{public_key}:{signature}',
+              'Date': date_header,
+            }
+
+            if content_md5:
+              headers['Content-MD5'] = content_md5
+
+            if content_type:
+              headers['Content-Type'] = content_type
+
+            return headers
+
+          def api_request(label, resource_path, method='GET', body=b'', content_type=''):
+            headers = build_headers(resource_path, method, body, content_type)
+            request = urllib.request.Request(
+              API_ROOT + resource_path,
+              data=body if method in {'POST', 'PUT'} else None,
+              headers=headers,
+              method=method,
+            )
+
+            try:
+              with urllib.request.urlopen(request) as response:
+                raw_body = response.read()
+                status = response.getcode()
+            except urllib.error.HTTPError as error:
+              raw_body = error.read()
+              status = error.code
+
+            log_response(label, status, raw_body)
+            return status, raw_body
+
+          def parse_json(raw_body):
+            if not raw_body:
+              return {}
+
+            try:
+              return json.loads(raw_body.decode('utf-8'))
+            except json.JSONDecodeError:
+              return {}
+
+          def extract_tag(payload):
+            if isinstance(payload, dict) and isinstance(payload.get('tag'), dict):
+              return payload['tag']
+            if isinstance(payload, dict):
+              return payload
+            return {}
+
+          def build_multipart_body():
+            boundary = '----GitHubActionFreemius' + uuid.uuid4().hex
+            body = bytearray()
+            payload = json.dumps({'add_contributor': True})
+
+            def add_text_part(name, value):
+              body.extend(f'--{boundary}\r\n'.encode('utf-8'))
+              body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode('utf-8'))
+              body.extend(str(value).encode('utf-8'))
+              body.extend(b'\r\n')
+
+            add_text_part('data', payload)
+
+            filename = os.path.basename(zip_path)
+            mime_type = mimetypes.guess_type(filename)[0] or 'application/zip'
+            with open(zip_path, 'rb') as zip_file:
+              zip_bytes = zip_file.read()
+
+            body.extend(f'--{boundary}\r\n'.encode('utf-8'))
+            body.extend(
+              f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode('utf-8')
+            )
+            body.extend(f'Content-Type: {mime_type}\r\n\r\n'.encode('utf-8'))
+            body.extend(zip_bytes)
+            body.extend(b'\r\n')
+            body.extend(f'--{boundary}--'.encode('utf-8'))
+
+            return bytes(body), f'multipart/form-data; boundary={boundary}'
+
+          upload_path = f'/v1/developers/{dev_id}/plugins/{plugin_id}/tags.json'
+          upload_body, upload_content_type = build_multipart_body()
+          upload_status, upload_raw_body = api_request(
+            'Freemius upload',
+            upload_path,
+            method='POST',
+            body=upload_body,
+            content_type=upload_content_type,
+          )
+
+          if upload_status < 200 or upload_status >= 300:
+            print(f'::error::Freemius upload failed with HTTP status {upload_status}')
+            sys.exit(1)
+
+          upload_payload = parse_json(upload_raw_body)
+          tag = extract_tag(upload_payload)
+          tag_id = tag.get('id')
+          release_mode = tag.get('release_mode')
+
+          print(f'Freemius uploaded tag id: {tag_id}')
+          print(f'Freemius uploaded tag release_mode: {release_mode}')
+
+          if not tag_id:
+            print('::error::Freemius upload response did not include a tag id')
+            sys.exit(1)
+
+          if release_mode not in RELEASE_BLOCKING_MODES:
+            print('Freemius tag is already in a released state.')
+            sys.exit(0)
+
+          release_path = f'/v1/developers/{dev_id}/plugins/{plugin_id}/tags/{tag_id}.json'
+          release_payloads = [
+            {'release_mode': None},
+            {'release_mode': ''},
+            {'is_released': True},
+          ]
+
+          for candidate in release_payloads:
+            print(f'Attempting Freemius tag release with payload: {json.dumps(candidate)}')
+            release_body = json.dumps(candidate).encode('utf-8')
+            release_status, release_raw_body = api_request(
+              'Freemius release',
+              release_path,
+              method='PUT',
+              body=release_body,
+              content_type='application/json',
+            )
+
+            if release_status < 200 or release_status >= 300:
+              continue
+
+            release_response = extract_tag(parse_json(release_raw_body))
+            current_mode = release_response.get('release_mode')
+            print(f'Freemius released tag release_mode: {current_mode}')
+
+            if current_mode not in RELEASE_BLOCKING_MODES:
+              print('Freemius tag is now released.')
+              sys.exit(0)
+
+          print('::error::Freemius tag was uploaded but could not be moved into a released state')
+          sys.exit(1)
+          PY

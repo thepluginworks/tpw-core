@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.31] - 2026-03-20
+### Changed
+- Release delivery: replaced the rejected Basic Auth Freemius upload path with a signed Freemius API deployment flow that publishes plugin tags through the correct endpoint.
+- Release delivery: tagged release uploads now log the returned Freemius tag metadata and fail explicitly when either the upload or the follow-up release-state change is rejected.
+- Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while correcting the Freemius publishing path.
+
 ## [1.14.30] - 2026-03-20
 ### Changed
 - Release delivery: updated Freemius uploads to use curl's built-in Basic Auth handling, avoiding malformed authorization headers during tagged release uploads.
