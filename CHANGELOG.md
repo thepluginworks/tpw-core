@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.26] - 2026-03-20
+### Changed
+- Maintenance: removed the remaining top-level Composer manifest and lockfile from TPW Core because Core no longer has any direct Composer-managed runtime dependencies.
+- Maintenance: retired the last dead bundled Composer package set from Core so the plugin no longer relies on the top-level `vendor/` tree or Composer autoload artifacts.
+- Maintenance: no business logic, payment flows, or Square add-on behaviour changed in this release.
+
 ## [1.14.25] - 2026-03-20
 ### Changed
 - Maintenance: removed stale Composer vendor packages so the shipped `vendor/` directory now matches the current lockfile after Square SDK externalisation.

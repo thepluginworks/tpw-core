@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.25
+Stable tag: 1.14.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.26 =
+- Maintenance: removed the remaining top-level Composer manifest and lockfile from TPW Core because Core no longer has any direct Composer-managed runtime dependencies.
+- Maintenance: retired the last dead bundled Composer package set from Core so the plugin no longer relies on the top-level `vendor/` tree or Composer autoload artifacts.
+- Maintenance: no business logic, payment flows, or Square add-on behaviour changed in this release.
 
 = 1.14.25 =
 - Maintenance: removed stale Composer vendor packages so the shipped `vendor/` directory now matches the current lockfile after Square SDK externalisation.
