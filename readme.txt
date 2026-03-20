@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.32
+Stable tag: 1.14.33
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.33 =
+- Release delivery: replaced the custom Freemius upload client with an SDK-based deployment path that uses the official Freemius PHP SDK during tagged releases.
+- Release delivery: tagged releases now download a pinned Freemius SDK version on the runner and use a small deployment helper that reports Freemius upload and release responses clearly.
+- Maintenance: plugin packaging, GitHub release assets, and TPW Core runtime behaviour are unchanged in this release.
 
 = 1.14.32 =
 - Release delivery: aligned Freemius request signing with the official Freemius SDK rules for developer-key deployments, correcting the authorization format used for tagged release uploads.

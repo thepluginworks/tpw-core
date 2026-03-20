@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.33] - 2026-03-20
+### Changed
+- Release delivery: replaced the custom Freemius HTTP client with an SDK-based deployment flow that uses the official Freemius PHP SDK for tagged releases.
+- Release delivery: tagged release publishing now downloads a pinned Freemius SDK version on the runner and uses a small deployment helper that fails loudly while logging the returned Freemius upload and release payloads.
+- Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while simplifying the Freemius deployment path.
+
 ## [1.14.32] - 2026-03-20
 ### Changed
 - Release delivery: corrected the Freemius developer-key authorization signing so deployment requests now match the official Freemius SDK rules for canonical paths, multipart uploads, and signature encoding.
