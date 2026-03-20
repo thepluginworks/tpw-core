@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.29] - 2026-03-20
+### Changed
+- Release delivery: expanded Freemius upload logging so tagged releases now show the package path, requested version, response body size, and the raw response returned by Freemius when available.
+- Release delivery: added a clear fallback message when Freemius returns an empty response body, making failed uploads easier to diagnose from GitHub Actions logs.
+- Maintenance: enabled shell trace output for the Freemius upload step to improve release debugging without changing plugin runtime behaviour.
+- Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
+
 ## [1.14.28] - 2026-03-20
 ### Changed
 - Release delivery: hardened the Freemius deployment step so GitHub Actions now reports the HTTP status and response body returned by Freemius for each tagged release upload.

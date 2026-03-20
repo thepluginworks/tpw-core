@@ -49,9 +49,16 @@ jobs:
       - name: Upload to Freemius
         if: github.event_name == 'push'
         run: |
+          set -x
+
           RESPONSE_BODY="$RUNNER_TEMP/freemius-upload-response.json"
+          : > "$RESPONSE_BODY"
+
+          echo "Freemius upload VERSION: $VERSION"
+          echo "Freemius upload ZIP_PATH: $ZIP_PATH"
+
           HTTP_STATUS=$(curl -sS \
-            -o "$RESPONSE_BODY" \
+            --output "$RESPONSE_BODY" \
             -w "%{http_code}" \
             -X POST "https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json" \
             -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}' | base64)" \
@@ -61,8 +68,21 @@ jobs:
             -F "zip_file=@$ZIP_PATH")
 
           echo "Freemius upload HTTP status: $HTTP_STATUS"
-          echo "Freemius upload response body:"
-          cat "$RESPONSE_BODY"
+
+          if [ -f "$RESPONSE_BODY" ]; then
+            RESPONSE_SIZE=$(wc -c < "$RESPONSE_BODY")
+          else
+            RESPONSE_SIZE=0
+          fi
+
+          echo "Freemius upload response body size: ${RESPONSE_SIZE} bytes"
+
+          if [ "$RESPONSE_SIZE" -gt 0 ]; then
+            echo "Freemius upload raw response body:"
+            cat "$RESPONSE_BODY"
+          else
+            echo "Freemius upload response body is empty."
+          fi
 
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
             echo "::error::Freemius upload failed with HTTP status $HTTP_STATUS"
