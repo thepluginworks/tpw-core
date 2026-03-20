@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*.*.*'  # Triggers on version tags like v1.0.0
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
@@ -12,23 +18,40 @@ jobs:
     steps:
       - name: Checkout plugin code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
-      - name: Set version from tag
+      - name: Set release metadata
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Install PHP dependencies
-        run: composer install --no-dev --prefer-dist
-
-      - name: Zip plugin
         run: |
-          zip -r tpw-core.zip . -x "*.git*" -x "*.DS_Store" -x ".git*" -x ".github*"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          fi
+
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "VERSION=${TAG_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build release package
+        run: |
+          ZIP_PATH="$RUNNER_TEMP/tpw-core-${VERSION}.zip"
+          bash scripts/build-release-package.sh "$ZIP_PATH"
+          echo "ZIP_PATH=$ZIP_PATH" >> $GITHUB_ENV
+
+      - name: Upload package to GitHub release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG_NAME" "$ZIP_PATH" --clobber
 
       - name: Upload to Freemius
+        if: github.event_name == 'push'
         run: |
           curl -X POST https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json \
             -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}' | base64)" \
             -F "slug=${{ secrets.FREEMIUS_TPW_CORE_SLUG }}" \
             -F "version=$VERSION" \
             -F "changelog=Automated release from GitHub tag $VERSION" \
-            -F "zip_file=@tpw-core.zip"
+            -F "zip_file=@$ZIP_PATH"

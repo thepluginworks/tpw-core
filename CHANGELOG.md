@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.27] - 2026-03-20
+### Changed
+- Packaging: updated the release workflow to build plugin zips from the existing `.distignore` file so non-runtime docs, editor files, and metadata are excluded consistently.
+- Packaging: published GitHub releases now receive the filtered plugin zip as a release asset, and Freemius deployments use the same filtered package.
+- Maintenance: removed the obsolete Composer install step from the packaging workflow now that TPW Core no longer has a root Composer manifest.
+
 ## [1.14.26] - 2026-03-20
 ### Changed
 - Maintenance: removed the remaining top-level Composer manifest and lockfile from TPW Core because Core no longer has any direct Composer-managed runtime dependencies.

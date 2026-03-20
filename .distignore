@@ -6,7 +6,11 @@
 /ai-session.md
 /RELEASE.md
 /.git
+/.gitattributes
+/.distignore
 /.gitignore
+/.DS_Store
+**/.DS_Store
 /*.yml
 /*.yaml
 /*.xml
