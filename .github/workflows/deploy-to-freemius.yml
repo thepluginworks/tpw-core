@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout plugin code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
@@ -49,9 +49,22 @@ jobs:
       - name: Upload to Freemius
         if: github.event_name == 'push'
         run: |
-          curl -X POST https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json \
+          RESPONSE_BODY="$RUNNER_TEMP/freemius-upload-response.json"
+          HTTP_STATUS=$(curl -sS \
+            -o "$RESPONSE_BODY" \
+            -w "%{http_code}" \
+            -X POST "https://api.freemius.com/v1/plugins/${{ secrets.FREEMIUS_TPW_CORE_PLUGIN_ID }}/versions.json" \
             -H "Authorization: Basic $(echo -n '${{ secrets.TPW_CORE_EMAIL }}:${{ secrets.FREEMIUS_SECRET_KEY }}' | base64)" \
             -F "slug=${{ secrets.FREEMIUS_TPW_CORE_SLUG }}" \
             -F "version=$VERSION" \
             -F "changelog=Automated release from GitHub tag $VERSION" \
-            -F "zip_file=@$ZIP_PATH"
+            -F "zip_file=@$ZIP_PATH")
+
+          echo "Freemius upload HTTP status: $HTTP_STATUS"
+          echo "Freemius upload response body:"
+          cat "$RESPONSE_BODY"
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Freemius upload failed with HTTP status $HTTP_STATUS"
+            exit 1
+          fi

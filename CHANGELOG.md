@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.28] - 2026-03-20
+### Changed
+- Release delivery: hardened the Freemius deployment step so GitHub Actions now reports the HTTP status and response body returned by Freemius for each tagged release upload.
+- Release delivery: Freemius upload attempts now fail the workflow when Freemius rejects the package, making release problems visible immediately instead of appearing as successful runs.
+- Maintenance: updated the release workflow checkout action from `actions/checkout@v3` to `actions/checkout@v4`.
+- Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
+
 ## [1.14.27] - 2026-03-20
 ### Changed
 - Packaging: updated the release workflow to build plugin zips from the existing `.distignore` file so non-runtime docs, editor files, and metadata are excluded consistently.
