@@ -18,3 +18,4 @@
 /*.md
 /composer.*
 /phpunit.*
+/uninstall.php

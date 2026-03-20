@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.34] - 2026-03-20
+### Changed
+- Packaging: excluded `uninstall.php` from the generated release zip so Freemius package validation no longer rejects the TPW Core deployment archive.
+- Packaging: kept the existing `.distignore`-driven build flow unchanged so GitHub release assets and Freemius uploads continue to use the same filtered package.
+- Maintenance: no TPW Core runtime, uninstall logic, or plugin behaviour changed in this release.
+
 ## [1.14.33] - 2026-03-20
 ### Changed
 - Release delivery: replaced the custom Freemius HTTP client with an SDK-based deployment flow that uses the official Freemius PHP SDK for tagged releases.
