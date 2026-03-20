@@ -64,12 +64,16 @@ jobs:
           import mimetypes
           import os
           import sys
+          import time
           import urllib.error
+          import urllib.parse
           import urllib.request
           import uuid
           from datetime import datetime, timezone
 
           API_ROOT = 'https://api.freemius.com'
+          API_VERSION = '1'
+          EOL = '\n'
           RELEASE_BLOCKING_MODES = {'unreleased', 'pending', 'beta'}
 
           dev_id = os.environ['FREEMIUS_DEV_ID']
@@ -81,6 +85,28 @@ jobs:
           def rfc2822_utc_now():
             return datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000')
 
+          def json_encode_sdk(value):
+            return json.dumps(value, separators=(',', ':'))
+
+          def base64_url_encode_sdk(value):
+            return base64.urlsafe_b64encode(value.encode('utf-8')).decode('ascii').rstrip('=')
+
+          def canonize_path(path):
+            path = path.strip('/')
+            query = ''
+
+            if '?' in path:
+              path, raw_query = path.split('?', 1)
+              query = f'?{raw_query}'
+
+            if path.lower().endswith('.json'):
+              path = path[:-5]
+
+            base = f'/developers/{dev_id}'
+            suffix = '.json' if '.' not in path else ''
+
+            return f'/v{API_VERSION}{base}{"/" if path else ""}{path}{suffix}{query}'
+
           def log_response(label, status, raw_body):
             print(f'{label} HTTP status: {status}')
             print(f'{label} response body size: {len(raw_body)} bytes')
@@ -90,10 +116,14 @@ jobs:
             else:
               print(f'{label} response body is empty.')
 
-          def build_headers(resource_path, method, body, content_type):
+          def generate_authorization_params(resource_path, method='GET', json_encoded_params='', content_type=''):
             date_header = rfc2822_utc_now()
-            content_md5 = hashlib.md5(body).hexdigest() if method in {'POST', 'PUT'} and body else ''
-            string_to_sign = '\n'.join([
+            content_md5 = ''
+
+            if method in {'POST', 'PUT'} and json_encoded_params:
+              content_md5 = hashlib.md5(json_encoded_params.encode('utf-8')).hexdigest()
+
+            string_to_sign = EOL.join([
               method,
               content_md5,
               content_type,
@@ -101,31 +131,103 @@ jobs:
               resource_path,
             ])
             auth_type = 'FSP' if secret_key == public_key else 'FS'
-            signature = base64.urlsafe_b64encode(
-              hmac.new(secret_key.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256).digest()
-            ).decode('utf-8').rstrip('=')
+            signature = base64_url_encode_sdk(
+              hmac.new(
+                secret_key.encode('utf-8'),
+                string_to_sign.encode('utf-8'),
+                hashlib.sha256,
+              ).hexdigest()
+            )
 
-            headers = {
-              'Accept': 'application/json',
-              'Authorization': f'{auth_type} {dev_id}:{public_key}:{signature}',
-              'Date': date_header,
+            auth = {
+              'date': date_header,
+              'authorization': f'{auth_type} {dev_id}:{public_key}:{signature}',
             }
 
             if content_md5:
-              headers['Content-MD5'] = content_md5
+              auth['content_md5'] = content_md5
 
-            if content_type:
-              headers['Content-Type'] = content_type
+            return auth
+
+          def build_headers(resource_path, signing_method, json_encoded_params, content_type):
+            auth = generate_authorization_params(resource_path, signing_method, json_encoded_params, content_type)
+            headers = {
+              'Authorization': auth['authorization'],
+              'Content-Type': content_type,
+              'Date': auth['date'],
+              'Expect': '',
+            }
+
+            if 'content_md5' in auth:
+              headers['Content-MD5'] = auth['content_md5']
 
             return headers
 
-          def api_request(label, resource_path, method='GET', body=b'', content_type=''):
-            headers = build_headers(resource_path, method, body, content_type)
+          def build_multipart_body(params, file_params, boundary):
+            body = bytearray()
+
+            for name, value in params.items():
+              body.extend(f'--{boundary}{EOL}'.encode('utf-8'))
+              body.extend(f'Content-Disposition: form-data; name="{name}"{EOL}'.encode('utf-8'))
+              body.extend(EOL.encode('utf-8'))
+              body.extend(str(value).encode('utf-8'))
+              body.extend(EOL.encode('utf-8'))
+
+            for name, file_path in file_params.items():
+              filename = os.path.basename(file_path)
+              mime_type = mimetypes.guess_type(filename)[0] or 'application/zip'
+              with open(file_path, 'rb') as file_handle:
+                file_bytes = file_handle.read()
+
+              body.extend(f'--{boundary}{EOL}'.encode('utf-8'))
+              body.extend(
+                f'Content-Disposition: form-data; name="{name}"; filename="{filename}"{EOL}'.encode('utf-8')
+              )
+              body.extend(f'Content-Type: {mime_type}{EOL}'.encode('utf-8'))
+              body.extend(EOL.encode('utf-8'))
+              body.extend(file_bytes)
+              body.extend(EOL.encode('utf-8'))
+
+            body.extend(f'--{boundary}--'.encode('utf-8'))
+            return bytes(body)
+
+          def api_request(label, path, method='GET', params=None, file_params=None):
+            params = params or {}
+            file_params = file_params or {}
+            canonical_path = canonize_path(path)
+            actual_method = method.upper()
+            signing_method = actual_method
+            content_type = 'application/json'
+            json_encoded_params = json_encode_sdk(params) if params else ''
+            request_body = None
+
+            if actual_method in {'POST', 'PUT'}:
+              if file_params:
+                multipart_params = {} if not json_encoded_params else {'data': json_encoded_params}
+                json_encoded_params = ''
+                now = time.time()
+                boundary = '----' + f'{int(now):08x}{int((now - int(now)) * 1000000):05x}'
+                request_body = build_multipart_body(multipart_params, file_params, boundary)
+                content_type = f'multipart/form-data; boundary={boundary}'
+
+                if actual_method == 'PUT':
+                  separator = '&' if '?' in canonical_path else '?'
+                  canonical_path = f'{canonical_path}{separator}method=PUT'
+                  signing_method = actual_method
+                  actual_method = 'POST'
+              else:
+                request_body = json_encoded_params.encode('utf-8')
+            elif actual_method in {'GET', 'DELETE'} and params:
+              separator = '&' if '?' in canonical_path else '?'
+              canonical_path = f'{canonical_path}{separator}{urllib.parse.urlencode(params)}'
+
+            resource_path = canonical_path.split('?', 1)[0]
+            headers = build_headers(resource_path, signing_method, json_encoded_params, content_type)
             request = urllib.request.Request(
-              API_ROOT + resource_path,
-              data=body if method in {'POST', 'PUT'} else None,
+              API_ROOT + canonical_path,
+              data=request_body if actual_method in {'POST', 'PUT'} else None,
               headers=headers,
-              method=method,
+              method=actual_method,
             )
 
             try:
@@ -155,43 +257,12 @@ jobs:
               return payload
             return {}
 
-          def build_multipart_body():
-            boundary = '----GitHubActionFreemius' + uuid.uuid4().hex
-            body = bytearray()
-            payload = json.dumps({'add_contributor': True})
-
-            def add_text_part(name, value):
-              body.extend(f'--{boundary}\r\n'.encode('utf-8'))
-              body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode('utf-8'))
-              body.extend(str(value).encode('utf-8'))
-              body.extend(b'\r\n')
-
-            add_text_part('data', payload)
-
-            filename = os.path.basename(zip_path)
-            mime_type = mimetypes.guess_type(filename)[0] or 'application/zip'
-            with open(zip_path, 'rb') as zip_file:
-              zip_bytes = zip_file.read()
-
-            body.extend(f'--{boundary}\r\n'.encode('utf-8'))
-            body.extend(
-              f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode('utf-8')
-            )
-            body.extend(f'Content-Type: {mime_type}\r\n\r\n'.encode('utf-8'))
-            body.extend(zip_bytes)
-            body.extend(b'\r\n')
-            body.extend(f'--{boundary}--'.encode('utf-8'))
-
-            return bytes(body), f'multipart/form-data; boundary={boundary}'
-
-          upload_path = f'/v1/developers/{dev_id}/plugins/{plugin_id}/tags.json'
-          upload_body, upload_content_type = build_multipart_body()
           upload_status, upload_raw_body = api_request(
             'Freemius upload',
-            upload_path,
+            f'plugins/{plugin_id}/tags.json',
             method='POST',
-            body=upload_body,
-            content_type=upload_content_type,
+            params={'add_contributor': True},
+            file_params={'file': zip_path},
           )
 
           if upload_status < 200 or upload_status >= 300:
@@ -214,7 +285,6 @@ jobs:
             print('Freemius tag is already in a released state.')
             sys.exit(0)
 
-          release_path = f'/v1/developers/{dev_id}/plugins/{plugin_id}/tags/{tag_id}.json'
           release_payloads = [
             {'release_mode': None},
             {'release_mode': ''},
@@ -223,13 +293,11 @@ jobs:
 
           for candidate in release_payloads:
             print(f'Attempting Freemius tag release with payload: {json.dumps(candidate)}')
-            release_body = json.dumps(candidate).encode('utf-8')
             release_status, release_raw_body = api_request(
               'Freemius release',
-              release_path,
+              f'plugins/{plugin_id}/tags/{tag_id}.json',
               method='PUT',
-              body=release_body,
-              content_type='application/json',
+              params=candidate,
             )
 
             if release_status < 200 or release_status >= 300:

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.32] - 2026-03-20
+### Changed
+- Release delivery: corrected the Freemius developer-key authorization signing so deployment requests now match the official Freemius SDK rules for canonical paths, multipart uploads, and signature encoding.
+- Release delivery: retained the existing GitHub Actions diagnostics so failed Freemius publishing attempts still surface the HTTP status and returned API response clearly.
+- Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while fixing the Freemius signing path.
+
 ## [1.14.31] - 2026-03-20
 ### Changed
 - Release delivery: replaced the rejected Basic Auth Freemius upload path with a signed Freemius API deployment flow that publishes plugin tags through the correct endpoint.
