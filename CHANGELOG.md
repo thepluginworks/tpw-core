@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.25] - 2026-03-20
+### Changed
+- Maintenance: removed stale Composer vendor packages so the shipped `vendor/` directory now matches the current lockfile after Square SDK externalisation.
+- Maintenance: regenerated the production dependency bundle from the current Composer manifest, leaving only Guzzle and its required PSR/support packages in Core.
+- Maintenance: no functional plugin behaviour or payment flows changed in this release.
+
 ## [1.14.24] - 2026-03-20
 ### Changed
 - Payments: Core no longer ships the Square PHP SDK and now treats Square checkout ownership as an external TPW Square Gateway add-on concern.
