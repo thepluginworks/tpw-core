@@ -729,21 +729,7 @@ class TPW_Signup_Finalizer {
 	 * @return int
 	 */
 	private function resolve_default_society_id() {
-		global $wpdb;
-
-		$option_value = absint( get_option( 'tpw_default_society_id' ) );
-		if ( $option_value > 0 ) {
-			return $option_value;
-		}
-
-		$table_name = $wpdb->prefix . 'tpw_members';
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Trusted internal table name with a narrow fallback lookup.
-		$resolved = (int) $wpdb->get_var( "SELECT society_id FROM {$table_name} ORDER BY id ASC LIMIT 1" );
-		if ( $resolved > 0 ) {
-			return $resolved;
-		}
-
-		return 0;
+		return tpw_core_get_site_society_id();
 	}
 
 	/**

@@ -43,7 +43,7 @@ class TPW_Member_Household_Repository {
 	 */
 	public function create_household( $society_id ) {
 		global $wpdb;
-		$society_id = (int) $society_id;
+		$society_id = tpw_core_resolve_entity_society_id( $society_id );
 		if ( $society_id <= 0 ) {
 			return 0;
 		}

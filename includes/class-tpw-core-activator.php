@@ -15,6 +15,7 @@ class TPW_Core_Activator {
     public static function activate() {
         // Trigger any setup tasks here (e.g., flushing rewrite rules)
         flush_rewrite_rules();
+        tpw_core_ensure_site_society_id();
         // require_once TPW_CORE_PATH . 'modules/guests/class-tpw-guests-table.php';
         // TPW_Guests_Table::create_table();
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-manager.php';

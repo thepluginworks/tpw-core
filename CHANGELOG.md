@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.37] - 2026-03-23
+### Changed
+- Members: TPW Core now standardises the canonical site society assignment on the Core-owned `tpw_site_society_id` option, defaulting current single-site installs to `1`.
+- Members: signup finalization, manual member creation, and create-from-user flows now resolve new member records through the canonical site society value instead of mixing hardcoded defaults, empty fallbacks, or inferred existing-member data.
+- Members: household creation and related member society resolution paths now resolve to the same canonical positive site society value, so new real member and household rows no longer default to `0`.
+- Maintenance: this release establishes the correct source of truth for new entity creation but does not rewrite historical legacy rows that already have `society_id = 0`.
+
 ## [1.14.36] - 2026-03-23
 ### Changed
 - Members: signup finalization now preserves the intended society assignment for new member records by preferring society information already carried by the completed Join attempt.

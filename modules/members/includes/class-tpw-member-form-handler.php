@@ -154,7 +154,7 @@ class TPW_Member_Form_Handler {
         ]);
 
     $core_data['user_id'] = $user_id;
-    $core_data['society_id'] = 1; // Placeholder — set dynamically as needed
+    $core_data['society_id'] = tpw_core_get_site_society_id();
 
         // Normalize and assign WP Role based on Status
         $status_role_map = [

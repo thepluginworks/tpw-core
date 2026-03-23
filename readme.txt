@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.36
+Stable tag: 1.14.37
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.37 =
+- Members: TPW Core now uses a single site-level society setting for new member and household records, standardising single-site installs on society ID 1.
+- Members: signup finalization, manual member creation, and create-from-user flows now use the canonical site society value instead of mixed defaults or inferred member data.
+- Members: household creation and related member resolution paths now resolve to the canonical positive site society value so new real entity rows no longer default to 0.
+- Maintenance: existing legacy rows that already have `society_id = 0` are not rewritten in this release and may still need a follow-up migration.
 
 = 1.14.36 =
 - Members: Join finalization now keeps the intended society assignment from the signup flow when that information is available during completion.

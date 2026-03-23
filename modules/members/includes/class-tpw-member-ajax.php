@@ -412,14 +412,7 @@ class TPW_Member_Ajax {
      * @return int
      */
     protected static function resolve_society_id() {
-        global $wpdb;
-        // Prefer an option if exists
-        $opt = get_option( 'tpw_default_society_id' );
-        if ( $opt ) return (int) $opt;
-        // Fallback to first existing member's society_id
-        $table = $wpdb->prefix . 'tpw_members';
-        $sid = (int) $wpdb->get_var( "SELECT society_id FROM {$table} ORDER BY id ASC LIMIT 1" );
-        return $sid > 0 ? $sid : 0;
+        return tpw_core_get_site_society_id();
     }
 
     /**

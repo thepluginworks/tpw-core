@@ -213,9 +213,11 @@ class TPW_Member_Controller {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
 
+        $society_id = tpw_core_resolve_entity_society_id( isset( $data['society_id'] ) ? $data['society_id'] : 0 );
+
         // Base insert data
         $insert = [
-            'society_id'            => $data['society_id'],
+            'society_id'            => $society_id,
             'user_id'               => $data['user_id'],
             'first_name'            => isset($data['first_name']) ? $data['first_name'] : '',
             'surname'               => isset($data['surname']) ? $data['surname'] : '',
@@ -338,6 +340,10 @@ class TPW_Member_Controller {
             } else {
                 $update['user_id'] = (int) $uid;
             }
+        }
+
+        if ( array_key_exists( 'society_id', $update ) ) {
+            $update['society_id'] = tpw_core_resolve_entity_society_id( $update['society_id'] );
         }
 
         // Always bump the updated_at timestamp

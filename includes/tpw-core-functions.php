@@ -152,6 +152,62 @@ function tpw_core_get_currency_code() {
 }
 
 /**
+ * Ensure the site's canonical TPW society_id option exists and is positive.
+ *
+ * Current TPW Core standardises single-site installs on society_id = 1.
+ *
+ * @return int
+ */
+if ( ! function_exists( 'tpw_core_ensure_site_society_id' ) ) {
+    function tpw_core_ensure_site_society_id() {
+        $option_name = 'tpw_site_society_id';
+        $current     = get_option( $option_name, null );
+        $society_id  = absint( $current );
+
+        if ( $society_id > 0 ) {
+            return $society_id;
+        }
+
+        if ( false === get_option( $option_name, false ) ) {
+            add_option( $option_name, 1, '', false );
+        } else {
+            update_option( $option_name, 1, false );
+        }
+
+        return 1;
+    }
+}
+
+/**
+ * Get the site's canonical TPW society_id.
+ *
+ * @return int
+ */
+if ( ! function_exists( 'tpw_core_get_site_society_id' ) ) {
+    function tpw_core_get_site_society_id() {
+        return (int) tpw_core_ensure_site_society_id();
+    }
+}
+
+/**
+ * Resolve a real entity society_id, defaulting to the site's canonical value.
+ *
+ * @param int $society_id Candidate society ID.
+ * @return int
+ */
+if ( ! function_exists( 'tpw_core_resolve_entity_society_id' ) ) {
+    function tpw_core_resolve_entity_society_id( $society_id = 0 ) {
+        $society_id = absint( $society_id );
+
+        if ( $society_id > 0 ) {
+            return $society_id;
+        }
+
+        return tpw_core_get_site_society_id();
+    }
+}
+
+/**
  * Determine whether a future TPW Square Gateway addon is active.
  *
  * Staged rollout note:

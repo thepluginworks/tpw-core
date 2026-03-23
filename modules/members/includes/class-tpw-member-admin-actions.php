@@ -64,7 +64,7 @@ class TPW_Member_Admin_Actions {
      */
     protected static function get_primary_members_for_society( $society_id, $exclude_id = 0 ) {
         global $wpdb;
-        $society_id = (int) $society_id;
+        $society_id = tpw_core_resolve_entity_society_id( $society_id );
         $exclude_id = (int) $exclude_id;
         if ( 0 >= $society_id ) {
             return [];
@@ -124,6 +124,22 @@ class TPW_Member_Admin_Actions {
         // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return $wpdb->get_row( $prepared );
+    }
+
+    /**
+     * Resolve the effective society_id for household operations involving a member.
+     *
+     * @param object|null $member Member row.
+     * @return int
+     */
+    protected static function resolve_member_society_id( $member ) {
+        $society_id = 0;
+
+        if ( is_object( $member ) && isset( $member->society_id ) ) {
+            $society_id = (int) $member->society_id;
+        }
+
+        return tpw_core_resolve_entity_society_id( $society_id );
     }
 
     /**
@@ -226,9 +242,7 @@ class TPW_Member_Admin_Actions {
         }
 
         $member_society_id = 0;
-        if ( is_object( $member ) && isset( $member->society_id ) ) {
-            $member_society_id = (int) $member->society_id;
-        }
+        $member_society_id = self::resolve_member_society_id( $member );
 
         $primary_member     = ( 0 < $household_id ) ? self::get_primary_member_for_household( $household_id ) : null;
         $primary_member_id  = ( $primary_member && isset( $primary_member->id ) ) ? (int) $primary_member->id : 0;
@@ -525,9 +539,11 @@ class TPW_Member_Admin_Actions {
         }
 
         $society_id = isset( $member->society_id ) ? (int) $member->society_id : 0;
+        $society_id = self::resolve_member_society_id( $member );
         if ( 0 >= $society_id ) {
             $url = self::get_edit_redirect_url( $member_id, [ 'tpw_household_error' => 'missing_society' ] );
             wp_safe_redirect( $url );
+                $member_society_id = self::resolve_member_society_id( $member );
             exit;
         }
 
