@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.35
+Stable tag: 1.14.36
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.36 =
+- Members: Join finalization now keeps the intended society assignment from the signup flow when that information is available during completion.
+- Members: new member records created from completed Join requests now avoid falling back to an unrelated default society when the signup already carries the correct society context.
+- Members: Core still falls back safely when no society information is provided, preserving existing behaviour for simpler setups.
 
 = 1.14.35 =
 - Members: the Sign-Ups settings screen now keeps the baseline Join fields for email, first name, and surname visible but locked as Core-required fields.

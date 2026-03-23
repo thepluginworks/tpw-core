@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.36] - 2026-03-23
+### Changed
+- Members: signup finalization now preserves the intended society assignment for new member records by preferring society information already carried by the completed Join attempt.
+- Members: finalized Join requests no longer fall back to an unrelated default society when provider or request context already includes the correct society value.
+- Members: Core still uses the existing default society fallback when no society information is present, preserving compatibility for existing single-society setups.
+
 ## [1.14.35] - 2026-03-23
 ### Changed
 - Members: the Sign-Ups settings UI now marks `email`, `first_name`, and `surname` as Core-required baseline Join fields and keeps them visible but locked in configuration.

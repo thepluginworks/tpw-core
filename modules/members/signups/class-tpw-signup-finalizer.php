@@ -396,7 +396,7 @@ class TPW_Signup_Finalizer {
 		}
 
 		$insert_data                = $member_data;
-		$insert_data['society_id']  = $this->resolve_default_society_id();
+		$insert_data['society_id']  = $this->resolve_society_id_for_attempt( $attempt );
 		$insert_data['user_id']     = (int) $wp_user->ID;
 		$insert_data['email']       = isset( $insert_data['email'] ) && '' !== $insert_data['email'] ? sanitize_email( $insert_data['email'] ) : sanitize_email( $wp_user->user_email );
 		$insert_data['username']    = isset( $insert_data['username'] ) && '' !== $insert_data['username'] ? sanitize_user( $insert_data['username'], true ) : sanitize_user( $wp_user->user_login, true );
@@ -692,6 +692,38 @@ class TPW_Signup_Finalizer {
 	}
 
 	/**
+	 * Resolve the society ID for a finalized attempt.
+	 *
+	 * Prefers an explicit provider-carried value from the attempt payload before
+	 * falling back to the site-level resolver.
+	 *
+	 * @param array $attempt Loaded attempt.
+	 * @return int
+	 */
+	private function resolve_society_id_for_attempt( $attempt ) {
+		$payload_sources = array(
+			$this->get_existing_result_payload( $attempt ),
+			$this->get_request_payload( $attempt ),
+		);
+
+		foreach ( $payload_sources as $payload ) {
+			if ( is_wp_error( $payload ) || ! is_array( $payload ) ) {
+				continue;
+			}
+
+			if ( ! empty( $payload['subscriptions_join']['society_id'] ) ) {
+				return absint( $payload['subscriptions_join']['society_id'] );
+			}
+
+			if ( ! empty( $payload['context']['society_id'] ) ) {
+				return absint( $payload['context']['society_id'] );
+			}
+		}
+
+		return $this->resolve_default_society_id();
+	}
+
+	/**
 	 * Resolve a default society ID for new members.
 	 *
 	 * @return int
@@ -707,8 +739,11 @@ class TPW_Signup_Finalizer {
 		$table_name = $wpdb->prefix . 'tpw_members';
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Trusted internal table name with a narrow fallback lookup.
 		$resolved = (int) $wpdb->get_var( "SELECT society_id FROM {$table_name} ORDER BY id ASC LIMIT 1" );
+		if ( $resolved > 0 ) {
+			return $resolved;
+		}
 
-		return $resolved > 0 ? $resolved : 0;
+		return 0;
 	}
 
 	/**

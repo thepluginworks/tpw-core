@@ -1,4 +1,4 @@
-# TPW Core (v1.14.35)
+# TPW Core (v1.14.36)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
