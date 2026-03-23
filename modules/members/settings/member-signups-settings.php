@@ -58,6 +58,7 @@ $join_providers  = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::get_register
 <p><strong><?php echo esc_html__( 'Field Configuration', 'tpw-core' ); ?></strong></p>
 <p class="description"><?php echo esc_html__( 'Only public-safe fields are shown here. Enable the fields you want on the Join form, choose whether they are required, and place them into the fixed Core section registry.', 'tpw-core' ); ?></p>
 <p class="description"><?php echo esc_html__( 'Drag rows to change field order. Ordering is saved within each section.', 'tpw-core' ); ?></p>
+<p class="description"><?php echo esc_html__( 'Email, First Name, and Surname are Core-required baseline Join fields. They stay visible here for reference, but their enabled and required states are locked and cannot be turned off.', 'tpw-core' ); ?></p>
 
 <style>
 .tpw-signups-resp {
@@ -84,6 +85,33 @@ $join_providers  = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::get_register
 .tpw-signups-sortable .sortable-ghost {
 	opacity: 0.55;
 	background: #f0f6fc;
+}
+
+.tpw-signups-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.tpw-signups-lock-note {
+	color: #646970;
+	font-size: 12px;
+}
+
+.tpw-signups-locked-control {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.tpw-signups-locked-control input[disabled] {
+	cursor: not-allowed;
 }
 
 @media (max-width: 980px) {
@@ -132,18 +160,32 @@ $join_providers  = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::get_register
 				<span class="dashicons dashicons-move tpw-signups-sort-handle" aria-hidden="true"></span>
 				<code><?php echo esc_html( $field['key'] ); ?></code>
 			</div>
-			<div class="tpw-table-cell"><?php echo esc_html( $field['label'] ); ?></div>
 			<div class="tpw-table-cell">
-				<label style="display:inline-flex; align-items:center; gap:6px;">
-					<input type="checkbox" name="signup_fields[<?php echo esc_attr( $field['key'] ); ?>][signup_enabled]" value="1" <?php checked( $field['signup_enabled'] ); ?> />
-					<span class="tpw-signups-resp"><?php echo esc_html__( 'Enabled', 'tpw-core' ); ?></span>
-				</label>
+				<?php echo esc_html( $field['label'] ); ?>
+				<?php if ( ! empty( $field['is_signup_essential'] ) ) : ?>
+					<br>
+					<span class="tpw-signups-badge"><?php echo esc_html__( 'Core Required', 'tpw-core' ); ?></span>
+				<?php endif; ?>
 			</div>
 			<div class="tpw-table-cell">
-				<label style="display:inline-flex; align-items:center; gap:6px;">
-					<input type="checkbox" name="signup_fields[<?php echo esc_attr( $field['key'] ); ?>][signup_required]" value="1" <?php checked( $field['signup_required'] ); ?> />
+				<label class="<?php echo ! empty( $field['signup_enabled_locked'] ) ? 'tpw-signups-locked-control' : ''; ?>" style="display:inline-flex; align-items:center; gap:6px;">
+					<input type="checkbox" name="signup_fields[<?php echo esc_attr( $field['key'] ); ?>][signup_enabled]" value="1" <?php checked( $field['signup_enabled'] ); ?> <?php disabled( ! empty( $field['signup_enabled_locked'] ) ); ?> />
+					<span class="tpw-signups-resp"><?php echo esc_html__( 'Enabled', 'tpw-core' ); ?></span>
+				</label>
+				<?php if ( ! empty( $field['signup_enabled_locked'] ) ) : ?>
+					<br>
+					<span class="tpw-signups-lock-note"><?php echo esc_html__( 'System-required and always enabled.', 'tpw-core' ); ?></span>
+				<?php endif; ?>
+			</div>
+			<div class="tpw-table-cell">
+				<label class="<?php echo ! empty( $field['signup_required_locked'] ) ? 'tpw-signups-locked-control' : ''; ?>" style="display:inline-flex; align-items:center; gap:6px;">
+					<input type="checkbox" name="signup_fields[<?php echo esc_attr( $field['key'] ); ?>][signup_required]" value="1" <?php checked( $field['signup_required'] ); ?> <?php disabled( ! empty( $field['signup_required_locked'] ) ); ?> />
 					<span class="tpw-signups-resp"><?php echo esc_html__( 'Required', 'tpw-core' ); ?></span>
 				</label>
+				<?php if ( ! empty( $field['signup_required_locked'] ) ) : ?>
+					<br>
+					<span class="tpw-signups-lock-note"><?php echo esc_html__( 'Locked as required for Join readiness.', 'tpw-core' ); ?></span>
+				<?php endif; ?>
 			</div>
 			<div class="tpw-table-cell">
 				<select name="signup_fields[<?php echo esc_attr( $field['key'] ); ?>][signup_section]" class="tpw-signup-section-select">

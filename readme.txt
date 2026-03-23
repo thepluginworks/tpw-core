@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.34
+Stable tag: 1.14.35
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.35 =
+- Members: the Sign-Ups settings screen now keeps the baseline Join fields for email, first name, and surname visible but locked as Core-required fields.
+- Members: administrators can no longer disable those fields from the public Join schema, reducing broken Join setups when TPW Subscriptions relies on Core Sign-Ups readiness.
+- Members: Core now enforces the same protection server-side during settings saves, so crafted requests cannot turn off those baseline Join fields.
 
 = 1.14.34 =
 - Packaging: excluded `uninstall.php` from the generated release zip so Freemius package validation accepts the TPW Core deployment archive.

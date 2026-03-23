@@ -16,7 +16,7 @@ class TPW_Signup_Field_Schema {
 	 * @return array<string, mixed>
 	 */
 	public static function get_members_signup_settings() {
-		$settings = get_option( 'tpw_members_settings', array() );
+		$settings             = get_option( 'tpw_members_settings', array() );
 		$default_provider_key = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::CORE_PROVIDER_KEY : 'core';
 
 		if ( ! is_array( $settings ) ) {
@@ -24,8 +24,8 @@ class TPW_Signup_Field_Schema {
 		}
 
 		return array(
-			'enable_signups' => ! empty( $settings['enable_signups'] ) ? '1' : '0',
-			'signup_page_id' => isset( $settings['signup_page_id'] ) ? absint( $settings['signup_page_id'] ) : 0,
+			'enable_signups'    => ! empty( $settings['enable_signups'] ) ? '1' : '0',
+			'signup_page_id'    => isset( $settings['signup_page_id'] ) ? absint( $settings['signup_page_id'] ) : 0,
 			'join_provider_key' => isset( $settings['join_provider_key'] ) ? sanitize_key( (string) $settings['join_provider_key'] ) : $default_provider_key,
 		);
 	}
@@ -37,8 +37,8 @@ class TPW_Signup_Field_Schema {
 	 * @return void
 	 */
 	public static function save_members_signup_settings_from_request( $request ) {
-		$request = is_array( $request ) ? $request : array();
-		$settings = get_option( 'tpw_members_settings', array() );
+		$request              = is_array( $request ) ? $request : array();
+		$settings             = get_option( 'tpw_members_settings', array() );
 		$default_provider_key = class_exists( 'TPW_Join_Page' ) ? TPW_Join_Page::CORE_PROVIDER_KEY : 'core';
 
 		if ( ! is_array( $settings ) ) {
@@ -50,8 +50,8 @@ class TPW_Signup_Field_Schema {
 			$posted_settings = wp_unslash( $request['tpw_members_settings'] );
 		}
 
-		$settings['enable_signups'] = isset( $posted_settings['enable_signups'] ) ? '1' : '0';
-		$settings['signup_page_id'] = isset( $posted_settings['signup_page_id'] ) ? absint( $posted_settings['signup_page_id'] ) : 0;
+		$settings['enable_signups']    = isset( $posted_settings['enable_signups'] ) ? '1' : '0';
+		$settings['signup_page_id']    = isset( $posted_settings['signup_page_id'] ) ? absint( $posted_settings['signup_page_id'] ) : 0;
 		$settings['join_provider_key'] = isset( $posted_settings['join_provider_key'] ) ? sanitize_key( (string) $posted_settings['join_provider_key'] ) : $default_provider_key;
 
 		update_option( 'tpw_members_settings', $settings );
@@ -74,11 +74,12 @@ class TPW_Signup_Field_Schema {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function get_signup_field_settings_rows() {
-		$rows          = self::get_field_rows();
-		$core_keys     = self::get_core_field_keys();
-		$section_map   = TPW_Signup_Sections::get_sections();
-		$section_order = array_keys( $section_map );
-		$schema_fields = array();
+		$rows           = self::get_field_rows();
+		$core_keys      = self::get_core_field_keys();
+		$section_map    = TPW_Signup_Sections::get_sections();
+		$section_order  = array_keys( $section_map );
+		$essential_keys = self::get_essential_signup_field_keys();
+		$schema_fields  = array();
 
 		foreach ( $rows as $row ) {
 			$field_key = isset( $row->field_key ) ? sanitize_key( $row->field_key ) : '';
@@ -100,16 +101,19 @@ class TPW_Signup_Field_Schema {
 			}
 
 			$schema_fields[] = array(
-				'key'                  => $field_key,
-				'label'                => self::get_field_label( $row ),
-				'type'                 => self::normalize_public_field_type( $row ),
-				'node_type'            => 'field',
-				'is_core'              => in_array( $field_key, $core_keys, true ),
-				'signup_enabled'       => $signup_enabled,
-				'signup_required'      => $signup_required,
-				'signup_section'       => $signup_section,
-				'signup_section_label' => '' !== $signup_section ? $section_map[ $signup_section ] : '',
-				'signup_order'         => $signup_order,
+				'key'                    => $field_key,
+				'label'                  => self::get_field_label( $row ),
+				'type'                   => self::normalize_public_field_type( $row ),
+				'node_type'              => 'field',
+				'is_core'                => in_array( $field_key, $core_keys, true ),
+				'is_signup_essential'    => in_array( $field_key, $essential_keys, true ),
+				'signup_enabled'         => $signup_enabled,
+				'signup_required'        => $signup_required,
+				'signup_enabled_locked'  => in_array( $field_key, $essential_keys, true ),
+				'signup_required_locked' => in_array( $field_key, $essential_keys, true ),
+				'signup_section'         => $signup_section,
+				'signup_section_label'   => '' !== $signup_section ? $section_map[ $signup_section ] : '',
+				'signup_order'           => $signup_order,
 				'signup_order_explicit'=> $explicit_order,
 				'known_default_order'  => $known_default,
 				'sort_order'           => isset( $row->sort_order ) ? absint( $row->sort_order ) : 999,
@@ -298,8 +302,8 @@ class TPW_Signup_Field_Schema {
 
 		$table         = $wpdb->prefix . 'tpw_field_settings';
 		$existing_keys = $wpdb->get_col( "SELECT field_key FROM {$table}" );
-		$field_rows     = self::get_field_rows();
-		$field_map      = array();
+		$field_rows    = self::get_field_rows();
+		$field_map     = array();
 
 		foreach ( $field_rows as $row ) {
 			if ( empty( $row->field_key ) ) {
@@ -321,8 +325,9 @@ class TPW_Signup_Field_Schema {
 			}
 
 			$defaults        = self::get_default_signup_metadata( $field_key, $row );
-			$signup_enabled  = isset( $field_config['signup_enabled'] ) ? 1 : 0;
-			$signup_required = ( 1 === $signup_enabled && isset( $field_config['signup_required'] ) ) ? 1 : 0;
+			$is_essential    = self::is_essential_signup_field( $field_key );
+			$signup_enabled  = $is_essential ? 1 : ( isset( $field_config['signup_enabled'] ) ? 1 : 0 );
+			$signup_required = $is_essential ? 1 : ( ( 1 === $signup_enabled && isset( $field_config['signup_required'] ) ) ? 1 : 0 );
 			$signup_section  = self::sanitize_section_key( isset( $field_config['signup_section'] ) ? $field_config['signup_section'] : $defaults['signup_section'] );
 			$signup_order    = isset( $field_config['signup_order'] ) ? absint( $field_config['signup_order'] ) : $defaults['signup_order'];
 
@@ -542,6 +547,10 @@ class TPW_Signup_Field_Schema {
 	 * @return bool
 	 */
 	private static function resolve_signup_enabled( $row, $defaults ) {
+		if ( self::is_essential_signup_field( isset( $row->field_key ) ? $row->field_key : '' ) ) {
+			return true;
+		}
+
 		if ( self::has_explicit_signup_configuration( $row, $defaults ) ) {
 			return ! empty( $row->signup_enabled );
 		}
@@ -557,6 +566,10 @@ class TPW_Signup_Field_Schema {
 	 * @return bool
 	 */
 	private static function resolve_signup_required( $row, $defaults ) {
+		if ( self::is_essential_signup_field( isset( $row->field_key ) ? $row->field_key : '' ) ) {
+			return true;
+		}
+
 		if ( self::has_explicit_signup_configuration( $row, $defaults ) ) {
 			return ! empty( $row->signup_required );
 		}
@@ -752,6 +765,29 @@ class TPW_Signup_Field_Schema {
 			'signup_section'  => self::get_recommended_signup_section( $field_key ),
 			'signup_order'    => self::get_default_signup_order( $field_key ),
 		);
+	}
+
+	/**
+	 * Get the baseline sign-up fields that Core always requires.
+	 *
+	 * @return string[]
+	 */
+	private static function get_essential_signup_field_keys() {
+		return array(
+			'email',
+			'first_name',
+			'surname',
+		);
+	}
+
+	/**
+	 * Check whether a field is a baseline sign-up requirement.
+	 *
+	 * @param string $field_key Field key.
+	 * @return bool
+	 */
+	private static function is_essential_signup_field( $field_key ) {
+		return in_array( sanitize_key( $field_key ), self::get_essential_signup_field_keys(), true );
 	}
 
 	/**

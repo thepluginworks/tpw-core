@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.35] - 2026-03-23
+### Changed
+- Members: the Sign-Ups settings UI now marks `email`, `first_name`, and `surname` as Core-required baseline Join fields and keeps them visible but locked in configuration.
+- Members: administrators can no longer disable those baseline Join fields from the public signup schema, reducing broken paid Join setups when TPW Subscriptions depends on Core readiness.
+- Members: server-side Sign-Ups settings saves now force those baseline fields to remain enabled and required, preventing tampered requests from disabling them.
+
 ## [1.14.34] - 2026-03-20
 ### Changed
 - Packaging: excluded `uninstall.php` from the generated release zip so Freemius package validation no longer rejects the TPW Core deployment archive.
