@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.14.38] - 2026-03-23
+### Changed
+- Freemius: corrected the TPW Core SDK configuration so the plugin is no longer marked as using paid plans or freemium access.
+- Freemius: commercial metadata now matches the current TPW Core distribution model, reducing the risk of incorrect plan-related prompts or state handling.
+
 ## [1.14.37] - 2026-03-23
 ### Changed
 - Members: TPW Core now standardises the canonical site society assignment on the Core-owned `tpw_site_society_id` option, defaulting current single-site installs to `1`.

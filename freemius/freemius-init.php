@@ -17,8 +17,8 @@ if ( ! function_exists( 'tpw_core_fs' ) ) {
                 'version'             => defined('TPW_CORE_VERSION') ? TPW_CORE_VERSION : '1.0.0',
                 'is_premium'          => false,
                 'has_addons'          => false,
-                'has_paid_plans'      => true,
-                'has_freemium'        => true,
+                'has_paid_plans'      => false,
+                'has_freemium'        => false,
                 'menu'                => array(
                     'first-path'     => 'plugins.php',
                     'account'        => false,

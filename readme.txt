@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.37
+Stable tag: 1.14.38
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,10 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.38 =
+- Freemius: corrected the TPW Core SDK configuration so the plugin is no longer marked as using paid plans or freemium access.
+- Admin and licensing metadata now align with the current TPW Core distribution model, reducing the chance of misleading commercial prompts or plan state handling.
 
 = 1.14.37 =
 - Members: TPW Core now uses a single site-level society setting for new member and household records, standardising single-site installs on society ID 1.
