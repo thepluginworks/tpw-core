@@ -262,14 +262,9 @@ class TPW_Member_CSV_Importer {
         $dedupe_action = (isset($_POST['dedupe_action']) && $_POST['dedupe_action'] === 'update') ? 'update' : 'skip';
         if ( $is_dry_run ) {
             $this->add_notice('Simulation mode is ON. No members will be imported.', 'info');
-            error_log('🟡 DRY RUN ENABLED: No database inserts will be made.');
         }
 
         if ( ! isset( $_POST['field_map'] ) || ! isset( $_POST['temp_csv_file'] ) || ! file_exists( $_POST['temp_csv_file'] ) ) {
-            error_log('Import not proceeding: either field_map or temp_csv_file missing, or file does not exist.');
-            error_log('field_map present: ' . (isset($_POST['field_map']) ? 'yes' : 'no'));
-            error_log('temp_csv_file present: ' . (isset($_POST['temp_csv_file']) ? 'yes' : 'no'));
-            error_log('temp_csv_file exists: ' . (file_exists($_POST['temp_csv_file']) ? 'yes' : 'no'));
             echo '<div class="notice notice-error"><p>' . esc_html__( 'CSV file not found or upload expired. Please try again.', 'tpw-core' ) . '</p></div>';
             return;
         }
@@ -340,7 +335,6 @@ class TPW_Member_CSV_Importer {
         foreach ( $rows as $row_index => $row ) {
             if ( count($row) !== count($headers) ) {
                 $this->add_notice("Row " . ($row_index + 2) . " has " . count($row) . " columns, expected " . count($headers) . ".", 'warning');
-                error_log("⚠️ Row " . ($row_index + 2) . " column mismatch: found " . count($row) . ", expected " . count($headers));
             }
         }
 
@@ -352,7 +346,6 @@ class TPW_Member_CSV_Importer {
         foreach ( $rows as $row_index => $row ) {
             $member_data = [];
             if ( empty($row) || count(array_filter($row)) === 0 ) {
-                error_log('⚠️ Skipping empty row');
                 continue;
             }
 
@@ -375,7 +368,6 @@ class TPW_Member_CSV_Importer {
                     }
                     // Update path: Update WP user names if provided, then upsert into tpw_members by user_id
                     if ( $is_dry_run ) {
-                        error_log('🟡 DRY RUN: Would UPDATE existing user and member for email: ' . $email);
                         continue;
                     }
                     $this->log_debug('Matched existing WP user by email: ' . $email . ' (user_id ' . (int) $existing_user->ID . ')');
@@ -432,7 +424,6 @@ class TPW_Member_CSV_Importer {
                     continue; // handled update/insert for existing user
                 }
                 if ( $is_dry_run ) {
-                    error_log('🟡 DRY RUN: Would create user and member for email: ' . $email);
                     continue;
                 }
 
@@ -500,8 +491,6 @@ class TPW_Member_CSV_Importer {
             } else {
                 // No valid email: dedupe using username (fallback to First+Surname)
                 if ( $is_dry_run ) {
-                    $nm = trim( ($member_data['first_name'] ?? '') . ' ' . ($member_data['surname'] ?? '') );
-                    error_log('🟡 DRY RUN: Would process member WITHOUT WP user: ' . $nm);
                     continue;
                 }
                 global $wpdb;
@@ -575,8 +564,6 @@ class TPW_Member_CSV_Importer {
             }
             echo '</tbody></table><br>';
         }
-        error_log('✅ Import complete. Total imported: ' . $imported);
-
         set_transient('tpw_last_csv_mapping_' . get_current_user_id(), $_POST['field_map'], HOUR_IN_SECONDS);
 
         $this->render_notices();

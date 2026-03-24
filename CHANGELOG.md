@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.39] - 2026-03-24
+### Changed
+- Members: the Sign Ups debug screen is now hidden from normal admin menus while remaining available by direct link for authorised administrators when signup debug mode is enabled.
+- Members: signup attempt records now exclude temporary debug and schema trace data, reducing stored noise while preserving the information needed for completion and support.
+- Maintenance: TPW Core now loads translations early enough to avoid WordPress admin timing warnings and removes temporary debug logging across payments, menus, postcode lookups, CSV import tools, and TPW Control.
+- Maintenance: postcode lookups now use the configured site default country when available, falling back to GB when no site preference has been set.
+- Maintenance: Core now records a lightweight support warning for older member records that still use a legacy `society_id = 0` value, without rewriting historical data automatically.
+
 ## [1.14.38] - 2026-03-23
 ### Changed
 - Freemius: corrected the TPW Core SDK configuration so the plugin is no longer marked as using paid plans or freemium access.

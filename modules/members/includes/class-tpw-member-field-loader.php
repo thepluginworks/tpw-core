@@ -202,7 +202,12 @@ class TPW_Member_Field_Loader {
      */
     private static function get_table_columns( $table_name ) {
         global $wpdb;
-        $rows = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM ' . $table_name ) );
+		$table_name = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $table_name );
+		if ( '' === $table_name ) {
+			return [];
+		}
+
+		$rows = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}`" );
         $cols = [];
         if ( $rows ) {
             foreach ( $rows as $r ) {

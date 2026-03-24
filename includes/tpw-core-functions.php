@@ -208,6 +208,76 @@ if ( ! function_exists( 'tpw_core_resolve_entity_society_id' ) ) {
 }
 
 /**
+ * Get the default country code for TPW Core.
+ *
+ * Prefers a configured site setting when present and falls back to GB.
+ *
+ * @return string
+ */
+if ( ! function_exists( 'tpw_core_get_default_country' ) ) {
+    function tpw_core_get_default_country() {
+        $option_keys = array(
+            'tpw_default_country',
+            'flexievent_default_country',
+        );
+
+        foreach ( $option_keys as $option_key ) {
+            $value = get_option( $option_key, '' );
+            if ( is_string( $value ) && '' !== trim( $value ) ) {
+                return strtoupper( sanitize_text_field( trim( $value ) ) );
+            }
+        }
+
+        $settings = get_option( 'flexievent_settings', array() );
+        if ( is_array( $settings ) ) {
+            foreach ( array( 'default_country', 'country', 'country_code' ) as $setting_key ) {
+                if ( ! empty( $settings[ $setting_key ] ) && is_string( $settings[ $setting_key ] ) ) {
+                    return strtoupper( sanitize_text_field( trim( $settings[ $setting_key ] ) ) );
+                }
+            }
+        }
+
+        return 'GB';
+    }
+}
+
+/**
+ * Log a legacy member warning once when a loaded member still has society_id = 0.
+ *
+ * @param object|null $member Loaded member row.
+ * @return void
+ */
+if ( ! function_exists( 'tpw_core_maybe_log_legacy_zero_society_id' ) ) {
+    function tpw_core_maybe_log_legacy_zero_society_id( $member ) {
+        static $logged_member_ids = array();
+
+        if ( ! is_object( $member ) || ! isset( $member->id ) ) {
+            return;
+        }
+
+        $member_id = absint( $member->id );
+        if ( $member_id <= 0 || in_array( $member_id, $logged_member_ids, true ) ) {
+            return;
+        }
+
+        $society_id = isset( $member->society_id ) ? absint( $member->society_id ) : 0;
+        if ( 0 !== $society_id ) {
+            return;
+        }
+
+        $logged_member_ids[] = $member_id;
+
+        $transient_key = 'tpw_legacy_society_zero_' . $member_id;
+        if ( false !== get_transient( $transient_key ) ) {
+            return;
+        }
+
+        set_transient( $transient_key, 1, DAY_IN_SECONDS );
+        error_log( 'Legacy member with society_id=0 detected (member_id=' . $member_id . ')' );
+    }
+}
+
+/**
  * Determine whether a future TPW Square Gateway addon is active.
  *
  * Staged rollout note:

@@ -101,7 +101,6 @@ class TPW_Core_Payments {
         $force_new = isset($args['force_new']) && $args['force_new'];
 
         if (!$force_new) {
-            error_log('[TPW DEBUG] create_payment called with: ' . print_r($data, true));
             // Prevent inserting exact duplicate payment
             if (is_null($data['guest_id'])) {
                 $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}tpw_rsvp_payments
@@ -110,7 +109,6 @@ class TPW_Core_Payments {
                           AND payment_method = %s
                           AND paid_by = %s
                           AND payment_reference = %s";
-                error_log('[TPW DEBUG] Preparing SQL: ' . $sql . ' with guest_id=' . intval($data['guest_id']) . ', payment_id=' . $data['payment_reference']);
                 $existing = $wpdb->get_var($wpdb->prepare(
                     $sql,
                     $data['submission_id'],
@@ -145,17 +143,6 @@ class TPW_Core_Payments {
             $calc = self::tpw_core_calculate_payable_total( (float) $data['amount'], $data['payment_method'] );
             $data['amount'] = $calc['total_with_surcharge'];
         }
-
-        error_log('[TPW DEBUG] Inserting payment with data: ' . print_r([
-            'submission_id'     => $data['submission_id'],
-            'guest_id'          => $data['guest_id'],
-            'amount'            => $data['amount'],
-            'payment_method'    => $data['payment_method'],
-            'payment_reference' => $data['payment_reference'],
-            'checkout_url'      => $data['checkout_url'],
-            'paid_by'           => $data['paid_by'],
-            'notes'             => $data['notes']
-        ], true));
 
         $result = $wpdb->insert(
             $wpdb->prefix . 'tpw_rsvp_payments',

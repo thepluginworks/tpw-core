@@ -2,8 +2,6 @@
 // Exit if accessed directly.
 if (!defined('ABSPATH')) exit;
 
-error_log('payment-settings-page.php loaded');
-
 /**
  * SumUp settings screen renderer.
  *
@@ -36,15 +34,11 @@ class TPW_SumUp_Settings_Page {
             echo '<div class="notice notice-success is-dismissible"><p>Settings saved successfully.</p></div>';
         }
 
-        error_log('[TPW_SUMUP] Reconnect GET param: ' . print_r($_GET, true));
         if (isset($_GET['reconnect']) && $_GET['reconnect'] === '1') {
             delete_option('tpw_sumup_access_token');
-            error_log('[TPW_SUMUP] tpw_sumup_access_token deleted');
             delete_option('tpw_sumup_refresh_token');
-            error_log('[TPW_SUMUP] tpw_sumup_refresh_token deleted');
         }
 
-        error_log('TPW_SumUp_Settings_Page::render_page() was called');
     echo '<div class="tpw-admin-ui"><div class="wrap">';
         echo '<h1>Payment Gateway Settings</h1>';
         echo '<p><button type="button" class="button button-secondary" id="tpw-show-secure-setup">View Secure Setup Guide</button></p>';
@@ -123,7 +117,6 @@ define(\'TPW_SUMUP_CLIENT_SECRET\', \'your-client-secret\');</code></pre>
                     . '&client_id=' . urlencode($client_id)
                     . '&redirect_uri=' . urlencode(admin_url('admin-post.php?action=tpw_sumup_callback'))
                     . '&scope=' . $scope;
-                error_log('Updated SumUp OAuth URL: ' . $auth_redirect);
                 echo '<p><a href="' . esc_url($auth_redirect) . '" class="button button-primary">Connect to SumUp</a></p>';
             } else {
                 echo '<p>Please configure your SumUp Client ID first in the plugin settings.</p>';

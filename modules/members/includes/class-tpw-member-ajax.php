@@ -234,21 +234,18 @@ class TPW_Member_Ajax {
             $parent_value = '';
         }
         if ( $child === '' || $parent === '' ) {
-            error_log('[tpw] dependent_options early_empty_keys child=' . $child . ' parent=' . $parent );
             wp_send_json_success( [ 'options' => [] ] );
         }
         // Confirm dependency configured: If a depends_on is stored and differs, return empty; if not set (empty), allow runtime dependency (future-proof for new fields)
         $fs = $wpdb->prefix . 'tpw_field_settings';
         $dep_conf = $wpdb->get_var( $wpdb->prepare( "SELECT depends_on FROM {$fs} WHERE field_key = %s", $child ) );
         if ( $dep_conf !== null && $dep_conf !== '' && $dep_conf !== $parent ) {
-            error_log('[tpw] dependent_options mismatch_config child=' . $child . ' parent=' . $parent . ' expected=' . $dep_conf );
             wp_send_json_success( [ 'options' => [] ] );
         }
         // Visibility: if user cannot see child field, return empty
         if ( ! $is_admin && function_exists('tpw_can_group_view_field') ) {
             $vis_group = isset($GLOBALS['tpw_members_vis_group']) ? sanitize_key($GLOBALS['tpw_members_vis_group']) : 'member';
             if ( ! tpw_can_group_view_field( $vis_group, $child ) ) {
-                error_log('[tpw] dependent_options not_visible child=' . $child . ' parent=' . $parent . ' value=' . $parent_value );
                 wp_send_json_success( [ 'options' => [] ] );
             }
         }
@@ -280,7 +277,6 @@ class TPW_Member_Ajax {
         $cache_key = 'tpw_dep_opts_' . md5( $child . '|' . $parent . '|' . $parent_value . '|' . $role_hash );
         $cached = get_transient( $cache_key );
         if ( $cached !== false && is_array($cached) ) {
-            error_log('[tpw] dependent_options cache_hit child=' . $child . ' parent=' . $parent . ' value=' . $parent_value . ' count=' . count($cached) );
             wp_send_json_success( [ 'options' => $cached ] );
         }
 
@@ -345,8 +341,6 @@ class TPW_Member_Ajax {
             }
             $options = array_map( function($v){ return [ 'value' => $v, 'label' => $v ]; }, array_values( array_filter( array_map('strval', (array)$rows ) ) ) );
         }
-        // Log final option count before caching
-        error_log('[tpw] dependent_options final child=' . $child . ' parent=' . $parent . ' value=' . $parent_value . ' count=' . count($options) );
         set_transient( $cache_key, $options, 5 * MINUTE_IN_SECONDS );
         wp_send_json_success( [ 'options' => $options ] );
     }
@@ -504,7 +498,6 @@ class TPW_Member_Ajax {
                 // Nonce enforcement (modal-specific)
                 $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
                 if ( ! wp_verify_nonce( $nonce, 'tpw_member_create_nonce' ) ) {
-                    error_log('[tpw] get_details: requested_id=' . $requested_id . ' found=0 filters_applied=no reason=invalid_nonce');
                     wp_send_json_error(['message'=>'Invalid or expired request. Please refresh the page.','requested_id'=>$requested_id,'code'=>'invalid_nonce'],403);
                 }
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
@@ -521,11 +514,8 @@ class TPW_Member_Ajax {
                 $sql = $wpdb->prepare("SELECT * FROM {$members_table} WHERE id = %d", $requested_id);
                 $m = $wpdb->get_row( $sql );
                 if ( ! $m ) {
-                    error_log('[tpw] get_details: requested_id=' . $requested_id . ' found=0 filters_applied=no reason=not_found SQL=' . $sql);
                     wp_send_json_error(['message'=>'Member not found','requested_id'=>$requested_id,'code'=>'not_found'],404);
                 }
-                // Log successful fetch (do before heavy rendering)
-                error_log('[tpw] get_details: requested_id=' . $requested_id . ' found=' . (int)$m->id . ' filters_applied=no reason=ok SQL=' . $sql);
 
                 // Build safe HTML for details modal using configured field sort order
                 $is_admin = TPW_Member_Access::can_manage_members_current();

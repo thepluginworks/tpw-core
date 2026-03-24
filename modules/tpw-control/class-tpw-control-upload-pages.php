@@ -875,7 +875,6 @@ class TPW_Control_Upload_Pages {
                     'visibility' => $vis,
                     // layout not shown on create modal, default in create_page()
                 ]);
-                if ( defined('WP_DEBUG') && WP_DEBUG ) error_log('[TPW Control][upload-pages] Created page id=' . (int)$id);
                 self::redirect_section([ 'sub' => 'edit', 'upload_page_id' => $id ]);
                 break;
             }
@@ -914,7 +913,6 @@ class TPW_Control_Upload_Pages {
                     'visibility' => $vis,
                     'layout' => isset($_POST['layout']) ? sanitize_text_field( wp_unslash( $_POST['layout'] ) ) : null,
                 ]);
-                if ( defined('WP_DEBUG') && WP_DEBUG ) error_log('[TPW Control][upload-pages] Updated page id=' . (int)$page_id);
                 self::redirect_section([ 'sub' => 'edit', 'upload_page_id' => $page_id ]);
                 break;
             }
@@ -942,7 +940,6 @@ class TPW_Control_Upload_Pages {
                     break;
                 }
                 self::delete_page( $page_id );
-                if ( defined('WP_DEBUG') && WP_DEBUG ) error_log('[TPW Control][upload-pages] Deleted page id=' . (int)$page_id);
                 self::redirect_section();
                 break;
             }
@@ -1034,7 +1031,6 @@ class TPW_Control_Upload_Pages {
                     set_transient( 'tpw_upl_bulk_report_' . $user_id . '_' . $page_id, $report, 10 * MINUTE_IN_SECONDS );
                 }
                 do_action( 'tpw_control_upload_pages_bulk_action', $report, $page_id );
-                if ( defined('WP_DEBUG') && WP_DEBUG ) error_log('[TPW Control][upload-pages] Bulk action ' . $action2 . ' by user ' . $user_id . ': ok=' . $report['ok'] . ' fail=' . $report['fail'] );
                 self::redirect_section([ 'sub' => 'edit', 'upload_page_id' => $page_id ]);
                 break;
             }

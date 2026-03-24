@@ -59,18 +59,11 @@ class TPW_Signup_Completion_Actions {
 	 * @return bool
 	 */
 	private static function current_user_can_manage_signups() {
-		if ( ! class_exists( 'TPW_Member_Access' ) ) {
-			$access_file = TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php';
-			if ( file_exists( $access_file ) ) {
-				require_once $access_file;
-			}
+		if ( class_exists( 'TPW_Signup_Attempts_Admin' ) ) {
+			return TPW_Signup_Attempts_Admin::can_access_debug_page();
 		}
 
-		if ( ! class_exists( 'TPW_Member_Access' ) ) {
-			return current_user_can( 'manage_options' );
-		}
-
-		return TPW_Member_Access::can_manage_members_current();
+		return current_user_can( 'manage_options' );
 	}
 
 	/**

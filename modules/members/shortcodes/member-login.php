@@ -172,9 +172,6 @@ class TPW_Member_Login_Shortcode {
             $candidate = esc_url_raw( rawurldecode( $requested ) );
             $target = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
             if ( $target !== '' ) {
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( '[TPW DEBUG] Member login redirect using redirect_to param: ' . $target );
-                }
                 wp_safe_redirect( $target );
                 exit;
             }
@@ -190,9 +187,6 @@ class TPW_Member_Login_Shortcode {
          */
         $redirect_url = apply_filters( 'tpw_member_login_redirect', home_url(), $signon );
         $target = esc_url_raw( $redirect_url );
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( '[TPW DEBUG] Member login redirect using fallback destination: ' . $target );
-        }
         wp_safe_redirect( $target );
         exit;
     }

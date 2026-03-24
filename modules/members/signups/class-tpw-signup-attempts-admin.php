@@ -27,33 +27,47 @@ class TPW_Signup_Attempts_Admin {
 	}
 
 	/**
+	 * Determine whether signup debug mode is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_debug_enabled() {
+		if ( defined( 'TPW_ENABLE_SIGNUP_DEBUG' ) && true === TPW_ENABLE_SIGNUP_DEBUG ) {
+			return true;
+		}
+
+		return 1 === absint( get_option( 'tpw_enable_signup_debug', 0 ) );
+	}
+
+	/**
+	 * Determine whether the current user can access the signup debug screen.
+	 *
+	 * @return bool
+	 */
+	public static function can_access_debug_page() {
+		return current_user_can( 'manage_options' ) && self::is_debug_enabled();
+	}
+
+	/**
 	 * Register the temporary debug screen under a Members admin area.
 	 *
 	 * @return void
 	 */
 	public static function register_admin_pages() {
-		if ( ! self::members_module_enabled() || ! self::current_user_can_manage_members() ) {
+		if ( ! self::members_module_enabled() ) {
 			return;
 		}
 
-		add_menu_page(
-			esc_html__( 'Members', 'tpw-core' ),
-			esc_html__( 'Members', 'tpw-core' ),
-			'read',
-			self::PAGE_SLUG,
-			array( __CLASS__, 'render_page' ),
-			'dashicons-groups',
-			58
-		);
-
 		add_submenu_page(
-			self::PAGE_SLUG,
+			'options-general.php',
 			esc_html__( 'Sign Ups (Debug)', 'tpw-core' ),
 			esc_html__( 'Sign Ups (Debug)', 'tpw-core' ),
-			'read',
+			'manage_options',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
 		);
+
+		remove_submenu_page( 'options-general.php', self::PAGE_SLUG );
 	}
 
 	/**
@@ -62,8 +76,18 @@ class TPW_Signup_Attempts_Admin {
 	 * @return void
 	 */
 	public static function render_page() {
-		if ( ! self::current_user_can_manage_members() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this screen.', 'tpw-core' ), 403 );
+		}
+
+		if ( ! self::is_debug_enabled() ) {
+			?>
+			<div class="wrap">
+				<h1><?php echo esc_html__( 'Sign Ups (Debug)', 'tpw-core' ); ?></h1>
+				<p><?php echo esc_html__( 'Signup debug mode is disabled.', 'tpw-core' ); ?></p>
+			</div>
+			<?php
+			return;
 		}
 
 		$attempts = TPW_Signup_Attempts_Service::get_instance()->load_attempts(

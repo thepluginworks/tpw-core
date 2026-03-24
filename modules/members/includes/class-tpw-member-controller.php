@@ -183,7 +183,13 @@ class TPW_Member_Controller {
     public function get_member_by_user_id( $user_id ) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
-        return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE user_id = %d LIMIT 1", (int)$user_id ) );
+        $member = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE user_id = %d LIMIT 1", (int)$user_id ) );
+
+        if ( function_exists( 'tpw_core_maybe_log_legacy_zero_society_id' ) ) {
+            tpw_core_maybe_log_legacy_zero_society_id( $member );
+        }
+
+        return $member;
     }
 
     /**
@@ -197,9 +203,15 @@ class TPW_Member_Controller {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
 
-        return $wpdb->get_row(
+        $member = $wpdb->get_row(
             $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id )
         );
+
+        if ( function_exists( 'tpw_core_maybe_log_legacy_zero_society_id' ) ) {
+            tpw_core_maybe_log_legacy_zero_society_id( $member );
+        }
+
+        return $member;
     }
 
     /**

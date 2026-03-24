@@ -169,7 +169,6 @@ class TPW_Postcode_Helper {
 
                 if ( empty($addresses) ) {
                     // Last resort: return basic success similar to Google empty behavior
-                    if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][getaddress-full] No addresses; returning basic-only for ' . $postcode); }
                     $basic = self::lookup_postcode( $postcode, $country );
                     if ( is_array($basic) && empty($basic['error']) ) {
                         $basic['provider'] = 'getaddress';
@@ -191,23 +190,19 @@ class TPW_Postcode_Helper {
             // Google full-mode flow (existing)
             $resp = wp_remote_get( $url, [ 'timeout' => 10, 'headers' => [ 'Accept' => 'application/json' ] ] );
             if ( is_wp_error( $resp ) ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google-full] HTTP error: ' . $resp->get_error_message()); }
                 return [ 'error' => 'http_error', 'message' => $resp->get_error_message() ];
             }
             $code = (int) wp_remote_retrieve_response_code( $resp );
             if ( $code !== 200 ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google-full] HTTP status ' . $code); }
                 return [ 'error' => 'http_status', 'message' => 'HTTP ' . $code . ' from Google' ];
             }
             $body = wp_remote_retrieve_body( $resp );
             $data = json_decode( $body, true );
             if ( ! is_array($data) ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google-full] Invalid JSON'); }
                 return [ 'error' => 'invalid_json', 'message' => 'Invalid response from Google' ];
             }
             if ( ! isset($data['status']) || $data['status'] !== 'OK' ) {
                 $em = isset($data['error_message']) ? $data['error_message'] : ($data['status'] ?? 'UNKNOWN_ERROR');
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google-full] Status: ' . ($data['status'] ?? 'N/A') . ' Message: ' . $em); }
                 return [ 'error' => 'google_status', 'message' => $em ];
             }
 
@@ -254,7 +249,6 @@ class TPW_Postcode_Helper {
 
             // If we didn't get discrete street addresses, still return a success payload with basics
             if ( empty($addresses) ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google-full] No street addresses for ' . $postcode . ' — returning basic details'); }
                 $postal_town = $county = $region = $postal_code = $country_name = '';
                 foreach ( (array) $first_components as $c ) {
                     $types = isset($c['types']) ? $c['types'] : [];
@@ -294,7 +288,6 @@ class TPW_Postcode_Helper {
             $url = 'https://api.postcodes.io/postcodes/' . rawurlencode( $pc_sane );
             $resp = wp_remote_get( $url, [ 'timeout' => 8, 'headers' => [ 'Accept' => 'application/json' ] ] );
             if ( is_wp_error( $resp ) ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google] HTTP error: ' . $resp->get_error_message()); }
                 return [ 'error' => 'http_error', 'message' => $resp->get_error_message() ];
             }
             $code = (int) wp_remote_retrieve_response_code( $resp );
@@ -353,7 +346,6 @@ class TPW_Postcode_Helper {
                     }
                 }
                 $msg = $msg ?: 'HTTP ' . $code . ' from GetAddress.io';
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][getaddress] ' . $msg . ' URL=' . $url); }
                 // Fallback: if 404 Not Found, try Google basic lookup if key present to provide at least town/county
                 if ( (int) $code === 404 ) {
                     $g_key = isset($settings['google_api_key']) ? $settings['google_api_key'] : '';
@@ -380,7 +372,6 @@ class TPW_Postcode_Helper {
                                 foreach ( (array) $comps as $c ) {
                                     if ( isset($c['types']) && in_array('postal_code', $c['types'], true) ) { $pc_norm = $c['long_name']; break; }
                                 }
-                                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][getaddress->google-fallback] Returning basic details for ' . $postcode); }
                                 return [
                                     'postcode'  => $pc_norm,
                                     'town'      => $town,
@@ -408,7 +399,6 @@ class TPW_Postcode_Helper {
                                 $lat       = isset( $r['latitude'] ) ? (float) $r['latitude'] : 0.0;
                                 $lng       = isset( $r['longitude'] ) ? (float) $r['longitude'] : 0.0;
                                 $pc_norm   = isset( $r['postcode'] ) ? (string) $r['postcode'] : $postcode;
-                                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][getaddress->postcodesio-fallback] Returning basic details for ' . $postcode); }
                                 return [
                                     'postcode'  => $pc_norm,
                                     'town'      => $town,
@@ -429,7 +419,6 @@ class TPW_Postcode_Helper {
             $body = wp_remote_retrieve_body( $resp );
             $data = json_decode( $body, true );
             if ( ! is_array( $data ) || empty( $data['addresses'] ) ) {
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][getaddress] No addresses in response for ' . $postcode); }
                 return [ 'error' => 'no_addresses', 'message' => 'No addresses returned for this postcode.' ];
             }
             // getaddress returns many addresses; derive town/county from top-level fields if provided
@@ -476,10 +465,10 @@ class TPW_Postcode_Helper {
                 return [ 'error' => 'http_error', 'message' => $resp->get_error_message() ];
             }
             $code = (int) wp_remote_retrieve_response_code( $resp );
-            if ( $code !== 200 ) { if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google] HTTP status ' . $code); } return [ 'error' => 'http_status', 'message' => 'HTTP ' . $code . ' from Google' ]; }
+            if ( $code !== 200 ) { return [ 'error' => 'http_status', 'message' => 'HTTP ' . $code . ' from Google' ]; }
             $body = wp_remote_retrieve_body( $resp );
             $data = json_decode( $body, true );
-            if ( ! is_array($data) ) { if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google] Invalid JSON'); } return [ 'error' => 'invalid_json', 'message' => 'Invalid response from Google' ]; }
+            if ( ! is_array($data) ) { return [ 'error' => 'invalid_json', 'message' => 'Invalid response from Google' ]; }
             if ( isset($data['status']) && $data['status'] !== 'OK' ) {
                 // Fallback: retry without components filter if ZERO_RESULTS
                 if ( $data['status'] === 'ZERO_RESULTS' ) {
@@ -522,7 +511,6 @@ class TPW_Postcode_Helper {
                     }
                 }
                 $em = isset($data['error_message']) ? $data['error_message'] : $data['status'];
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google] Status: ' . $data['status'] . ' Message: ' . $em); }
                 return [ 'error' => 'google_status', 'message' => $em ];
             }
             if ( empty($data['results'][0]) ) {
@@ -564,7 +552,6 @@ class TPW_Postcode_Helper {
                         ];
                     }
                 }
-                if ( defined('WP_DEBUG') && WP_DEBUG ) { error_log('[TPW Postcodes][google] Zero results for ' . $postcode); }
                 return [ 'error' => 'zero_results', 'message' => 'No results for this postcode.' ];
             }
             $res = $data['results'][0];

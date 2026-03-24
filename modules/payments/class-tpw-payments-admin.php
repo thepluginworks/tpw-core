@@ -2,7 +2,6 @@
 
 class TPW_Payments_Admin {
     public static function init() {
-        error_log('TPW_Payments_Admin::init() called');
         // AJAX handler for updating sort order of payment methods
         add_action('wp_ajax_tpw_update_payment_sort', [ __CLASS__, 'ajax_update_sort' ]);
     }
@@ -312,8 +311,6 @@ class TPW_Payments_Admin {
     }
 
     public static function render_page() {
-        error_log('TPW_Payments_Admin::render_page() called');
-
         if ( function_exists( 'tpw_admin_output_header' ) ) {
             tpw_admin_output_header(
                 __( 'Manage Payment Methods', 'tpw-core' ),

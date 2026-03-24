@@ -119,40 +119,21 @@ class TPW_Gateway_WooCommerce {
     }
     public static function maybe_mark_rsvp_payment_as_confirmed($order_id) {
         $order = wc_get_order($order_id);
-        // Dump all meta keys for diagnostic purposes
-        error_log("[TPW DEBUG] --- ORDER META DUMP START ---");
-        foreach ($order->get_meta_data() as $meta) {
-            error_log("[TPW DEBUG] META {$meta->key} = " . json_encode($meta->value));
-        }
-        error_log("[TPW DEBUG] --- ORDER META DUMP END ---");
-
         $member_amount = floatval($order->get_meta('tpw_rsvp_amount'));
-        if ($member_amount > 0) {
-            error_log("[TPW DEBUG] Confirming member payment: tpw_rsvp_amount = $member_amount");
-        } else {
-            error_log("[TPW DEBUG] Member payment tpw_rsvp_amount is zero or not found");
-        }
-
-        error_log("[TPW DEBUG] maybe_mark_rsvp_payment_as_confirmed triggered for order ID: $order_id");
         if (!$order) return;
 
         $campaign = $order->get_meta('_order_attribution_campaign');
-        error_log("[TPW DEBUG] Attribution campaign: $campaign");
         if ($campaign !== 'tpw-rsvp-lodge') {
-            error_log("[TPW DEBUG] Exiting: Not a lodge campaign order.");
             return;
         }
 
         $payment_id = $order->get_meta('tpw_rsvp_payment_id');
-        error_log("[TPW DEBUG] Found payment ID: $payment_id");
         if (!$payment_id) {
-            error_log("[TPW DEBUG] Exiting: No payment ID found.");
             return;
         }
 
         global $wpdb;
 
-        error_log("[TPW DEBUG] Confirming member and guest payments for payment ID $payment_id");
         // Confirm the member payment
         if ($member_amount > 0) {
             $wpdb->query($wpdb->prepare("
@@ -161,61 +142,15 @@ class TPW_Gateway_WooCommerce {
                     paid_at = %s
                 WHERE id = %d
             ", $member_amount, current_time('mysql'), $payment_id));
-        } else {
-            error_log("[TPW DEBUG] Skipping member confirmation — amount is 0.");
-        }
-
-        error_log("[TPW DEBUG] Confirming member and guest payments for payment ID $payment_id");
-        // Log before updating guest payments
-        error_log("[TPW DEBUG] Preparing to count guest rows for payment ID $payment_id");
-
-        $test = $wpdb->get_var($wpdb->prepare("
-            SELECT COUNT(*) FROM {$wpdb->prefix}tpw_rsvp_payment_guests WHERE payment_id = %d
-        ", $payment_id));
-
-        error_log("[TPW DEBUG] Matching guest rows found: " . var_export($test, true));
-        // Diagnostic logging of guest rows before update
-        $rows = $wpdb->get_results($wpdb->prepare("
-            SELECT id, payment_id, confirmed_amount, paid_at FROM {$wpdb->prefix}tpw_rsvp_payment_guests WHERE payment_id = %d
-        ", $payment_id));
-
-        foreach ($rows as $row) {
-            error_log("[TPW DEBUG] Pre-update guest row: " . json_encode($row));
-        }
-
-        // Debug: Retrieve and log guest payment amounts from DB
-        $guest_amounts = $wpdb->get_results($wpdb->prepare("
-            SELECT id, guest_first_name, guest_last_name, amount 
-            FROM {$wpdb->prefix}tpw_rsvp_payment_guests 
-            WHERE payment_id = %d
-        ", $payment_id));
-
-        foreach ($guest_amounts as $g) {
-            error_log("[TPW DEBUG] Guest Payment Amount from DB — ID: {$g->id}, Name: {$g->guest_first_name} {$g->guest_last_name}, Amount: {$g->amount}");
-        }
-
-        // Ensure guest amounts are not zero before confirming
-        $zero_amounts = $wpdb->get_results($wpdb->prepare("
-            SELECT id, guest_first_name, guest_last_name, amount 
-            FROM {$wpdb->prefix}tpw_rsvp_payment_guests 
-            WHERE payment_id = %d AND amount = 0.00
-        ", $payment_id));
-        
-        foreach ($zero_amounts as $zero_row) {
-            error_log("[TPW DEBUG] Guest payment row with zero amount: " . json_encode($zero_row));
         }
 
         // Confirm guest payments linked to this payment ID
-        $guest_rows = $wpdb->query($wpdb->prepare("
+        $wpdb->query($wpdb->prepare("
             UPDATE {$wpdb->prefix}tpw_rsvp_payment_guests
             SET confirmed_amount = amount,
                 paid_at = NOW()
             WHERE payment_id = %d
         ", $payment_id));
-
-        error_log("[TPW DEBUG] Guest update SQL: " . $wpdb->last_query);
-        error_log("[TPW DEBUG] Guest update error: " . $wpdb->last_error);
-        error_log("[TPW DEBUG] Guest payment rows updated: $guest_rows");
     }
 }
 
@@ -263,12 +198,8 @@ add_action('woocommerce_order_status_changed', function ($order_id, $from_status
 
     // Only process for relevant RSVP orders
     if ($order->get_meta('_order_attribution_campaign') === 'tpw-rsvp-lodge') {
-        error_log("RSVP: Status changed from $from_status to $to_status for order $order_id");
-
         $submission_id = $order->get_meta('tpw_submission_id');
         $payment_id    = $order->get_meta('tpw_rsvp_payment_id');
-
-        error_log("RSVP: Setting session for redirect — Submission ID: $submission_id, Payment ID: $payment_id");
 
         WC()->session->set('tpw_redirect_after_payment', [
             'submission_id' => $submission_id,

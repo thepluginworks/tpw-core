@@ -36,7 +36,6 @@ class TPW_WooCommerce_Display {
         echo '<div class="tpw-rsvp-thankyou">';
         echo '<h2>Thank you for your RSVP!</h2>';
         echo '<p><strong>Submission ID:</strong> ' . esc_html($submission_id) . '</p>';
-        error_log('TPW: Checking for payment ID ' . $payment_id . ', Payment result: ' . print_r($payment, true));
 
         if ($payment) {
             echo '<p><strong>Total Amount Paid:</strong> ' . esc_html( $currency_symbol . number_format($total_paid, 2) ) . '</p>';

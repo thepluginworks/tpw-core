@@ -23,7 +23,6 @@ defined( 'ABSPATH' ) || exit;
     }
     elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csv_uploaded'])) {
         $importer = new TPW_Member_CSV_Importer();
-        error_log('[TPW_CSV] Mapped Fields: ' . print_r($_POST['field_map'], true));
         $importer->process_mapped_import($_POST);
     }
     ?>

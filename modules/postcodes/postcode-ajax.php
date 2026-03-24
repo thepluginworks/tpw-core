@@ -28,7 +28,7 @@ function tpw_core_ajax_lookup_postcode() {
     }
 
     $postcode = isset($_POST['postcode']) ? sanitize_text_field( wp_unslash( $_POST['postcode'] ) ) : '';
-    $country  = isset($_POST['country']) ? sanitize_text_field( wp_unslash( $_POST['country'] ) ) : 'GB';
+    $country  = isset($_POST['country']) ? sanitize_text_field( wp_unslash( $_POST['country'] ) ) : tpw_core_get_default_country();
     $mode     = isset($_POST['mode']) ? sanitize_text_field( wp_unslash( $_POST['mode'] ) ) : 'basic';
     $street_prefix = isset($_POST['street_prefix']) ? sanitize_text_field( wp_unslash( $_POST['street_prefix'] ) ) : '';
 

@@ -4,28 +4,21 @@ class TPW_Core_Create_Menu {
 
     public static function init() {
         if ( apply_filters('tpw_enable_create_menu', false) ) {
-            error_log('TPW_Core_Create_Menu::init() called');
             add_action('admin_menu', [__CLASS__, 'add_submenus'], 20);
         }
     }
 
     public static function add_submenus() {
-        error_log('TPW_Core_Create_Menu::add_submenus() running');
-        
         if (!class_exists('TPW_Menus_Admin')) {
             if ( apply_filters('tpw_show_dining_menu', false) ) {
                 require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin.php';
                 TPW_Menus_Admin::init();
-            } else {
-                error_log('TPW_Menus_Admin class does not exist');
             }
         }
         if (!class_exists('TPW_Payments_Admin')) {
             if ( apply_filters('tpw_show_payment_settings', false) ) {
                 require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payments-admin.php';
                 TPW_Payments_Admin::init();
-            } else {
-                error_log('TPW_Payments_Admin class does not exist');
             }
         }
 

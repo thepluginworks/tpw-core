@@ -123,7 +123,6 @@ class TPW_Member_Form_Handler {
     $core_data['email'] = $core_data['email'] ?? sanitize_email( isset($_POST['email']) ? wp_unslash($_POST['email']) : '' );
         $core_data = self::apply_protected_permission_field_rules( $core_data );
 
-        error_log('[TPW DEBUG] handle_add_form() triggered');
         if ( empty($core_data['username']) || empty($core_data['email']) ) {
             wp_die('Username and email are required to create a new user.');
         }
@@ -619,7 +618,6 @@ class TPW_Member_Form_Handler {
             self::is_manage_members_context() &&
             isset($_POST['tpw_add_member_nonce'])
         ) {
-            error_log('[TPW DEBUG] maybe_handle_add_form() detected add nonce and context');
             // Let handle_add_form() perform nonce/cap checks and detailed validation
             self::handle_add_form();
         }

@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.38
+Stable tag: 1.14.39
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.39 =
+- Members: the Sign Ups debug screen is now hidden from normal admin menus while remaining available by direct link for authorised administrators when signup debug mode is enabled.
+- Members: signup attempt records now exclude temporary debug and schema trace data, reducing stored noise while preserving the information needed for completion and support.
+- Maintenance: TPW Core now loads translations early enough to avoid WordPress admin timing warnings and removes temporary debug logging across payments, menus, postcode lookups, CSV import tools, and TPW Control.
+- Maintenance: postcode lookups now use the configured site default country when available, falling back to GB when no site preference has been set.
+- Maintenance: Core now records a lightweight support warning for older member records that still use a legacy `society_id = 0` value, without rewriting historical data automatically.
 
 = 1.14.38 =
 - Freemius: corrected the TPW Core SDK configuration so the plugin is no longer marked as using paid plans or freemium access.

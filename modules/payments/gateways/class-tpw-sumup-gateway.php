@@ -36,9 +36,6 @@ class TPW_SumUp_Gateway {
             'pay_to_email'       => $email,
         ]);
 
-        error_log('[TPW_SUMUP] Access token used: ' . $this->access_token);
-        error_log('[TPW_SUMUP] BODY to be sent: ' . print_r($body, true));
-
         $response = wp_remote_post($endpoint, [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->access_token,
@@ -47,7 +44,6 @@ class TPW_SumUp_Gateway {
             'body'    => $body,
         ]);
         $raw_response = wp_remote_retrieve_body($response);
-        error_log('[TPW_SUMUP] Raw checkout API response: ' . $raw_response);
 
         if (is_wp_error($response)) {
             // Removed error_log
@@ -59,8 +55,6 @@ class TPW_SumUp_Gateway {
         if (!empty($data['checkout_url'])) {
             return esc_url_raw($data['checkout_url']);
         }
-
-        error_log('[TPW_SUMUP] Missing checkout_url in response: ' . print_r($data, true));
         return new WP_Error('sumup_error', 'Failed to create checkout — missing checkout_url in response.');
     }
 

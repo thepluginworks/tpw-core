@@ -3,7 +3,6 @@
 class TPW_Menus_Admin {
 
     public static function init() {
-        error_log('TPW_Menus_Admin::init() called');
         add_action('admin_menu', [__CLASS__, 'maybe_register']);
         add_action('admin_init', [__CLASS__, 'handle_menu_form']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
@@ -35,7 +34,6 @@ class TPW_Menus_Admin {
         if (!isset($_POST['submit_menu'])) {
             return;
         }
-        error_log('Submitted Menu Form: ' . print_r($_POST, true));
 
         $name = sanitize_text_field($_POST['menu_name']);
         $description = sanitize_textarea_field($_POST['menu_description']);

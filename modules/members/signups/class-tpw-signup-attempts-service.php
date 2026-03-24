@@ -146,7 +146,7 @@ class TPW_Signup_Attempts_Service {
 			'currency_code'              => $this->sanitize_nullable_currency_code( $data, 'currency_code' ),
 			'request_payload_json'       => $this->encode_payload( $request_payload ),
 			'retry_payload_json'         => $this->encode_payload( $retry_payload ),
-			'result_payload_json'        => $this->encode_payload( $result_payload ),
+			'result_payload_json'        => $this->encode_result_payload( $result_payload ),
 			'payment_provider'           => $this->sanitize_nullable_text( $data, 'payment_provider' ),
 			'payment_reference'          => $this->sanitize_nullable_text( $data, 'payment_reference' ),
 			'payment_status'             => null,
@@ -842,7 +842,7 @@ class TPW_Signup_Attempts_Service {
 		$updated = $this->update_attempt_row(
 			(int) $attempt['id'],
 			array(
-				'result_payload_json' => $this->encode_payload( $result_payload ),
+				'result_payload_json' => $this->encode_result_payload( $result_payload ),
 				'updated_at'          => $this->get_current_utc_datetime(),
 			)
 		);
@@ -1146,6 +1146,23 @@ class TPW_Signup_Attempts_Service {
 	}
 
 	/**
+	 * Encode a sanitized result payload using the production allowlist.
+	 *
+	 * @param mixed $payload Payload.
+	 * @return string|null
+	 */
+	private function encode_result_payload( $payload ) {
+		if ( null === $payload ) {
+			return null;
+		}
+
+		$sanitized = $this->sanitize_result_payload( $payload );
+		$encoded   = wp_json_encode( $sanitized );
+
+		return false !== $encoded ? $encoded : null;
+	}
+
+	/**
 	 * Decode a JSON payload to an array.
 	 *
 	 * @param string|null $payload_json Payload JSON.
@@ -1180,6 +1197,15 @@ class TPW_Signup_Attempts_Service {
 			$existing = $attempt['result_payload'];
 		}
 
+		if ( 'result_payload_json' === $json_key ) {
+			$merged = array_merge(
+				$this->sanitize_result_payload( $existing ),
+				$this->sanitize_result_payload( $new_data )
+			);
+
+			return $this->encode_result_payload( $merged );
+		}
+
 		$merged = array_merge( $existing, $this->sanitize_payload( $new_data ) );
 
 		return $this->encode_payload( $merged );
@@ -1209,7 +1235,7 @@ class TPW_Signup_Attempts_Service {
 			$sanitized = array();
 			foreach ( $payload as $key => $value ) {
 				$normalized_key = is_string( $key ) ? strtolower( preg_replace( '/[^a-z0-9_\-]/', '_', $key ) ) : $key;
-				if ( is_string( $normalized_key ) && in_array( $normalized_key, $blocked_keys, true ) ) {
+				if ( is_string( $normalized_key ) && ( in_array( $normalized_key, $blocked_keys, true ) || $this->is_debug_payload_key( $normalized_key ) ) ) {
 					continue;
 				}
 
@@ -1232,6 +1258,127 @@ class TPW_Signup_Attempts_Service {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Sanitize result payloads to the production-supported shape.
+	 *
+	 * @param mixed $payload Result payload.
+	 * @return array
+	 */
+	private function sanitize_result_payload( $payload ) {
+		if ( ! is_array( $payload ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+
+		foreach ( $payload as $key => $value ) {
+			if ( ! is_string( $key ) ) {
+				continue;
+			}
+
+			$key = sanitize_key( $key );
+			if ( '' === $key || $this->is_debug_payload_key( $key ) ) {
+				continue;
+			}
+
+			switch ( $key ) {
+				case 'event_log':
+					$event_log = array();
+					foreach ( (array) $value as $entry ) {
+						if ( ! is_array( $entry ) ) {
+							continue;
+						}
+
+						$event_key = isset( $entry['event_key'] ) ? $this->sanitize_event_key( $entry['event_key'] ) : '';
+						if ( '' === $event_key ) {
+							continue;
+						}
+
+						$event_log[] = array(
+							'event_key'   => $event_key,
+							'recorded_at' => isset( $entry['recorded_at'] ) ? sanitize_text_field( (string) $entry['recorded_at'] ) : $this->get_current_utc_datetime(),
+							'data'        => isset( $entry['data'] ) ? $this->sanitize_payload( $entry['data'] ) : array(),
+						);
+					}
+
+					$sanitized['event_log'] = $event_log;
+					break;
+
+				case 'internal_completion':
+				case 'subscriptions_join':
+				case 'subscription_linkage':
+				case 'finalization_result':
+					$sanitized[ $key ] = $this->sanitize_payload( $value );
+					break;
+
+				case 'wp_user_id':
+				case 'member_id':
+				case 'subscription_id':
+					$value = absint( $value );
+					if ( $value > 0 ) {
+						$sanitized[ $key ] = $value;
+					}
+					break;
+
+				case 'member_status':
+				case 'identity_role':
+				case 'subscription_status':
+					$value = sanitize_text_field( (string) $value );
+					if ( '' !== $value ) {
+						$sanitized[ $key ] = $value;
+					}
+					break;
+
+				case 'finalization_error':
+					if ( null === $value ) {
+						$sanitized['finalization_error'] = null;
+						break;
+					}
+
+					if ( is_array( $value ) ) {
+						$error = array();
+						if ( isset( $value['stage'] ) ) {
+							$error['stage'] = sanitize_key( $value['stage'] );
+						}
+						if ( isset( $value['code'] ) ) {
+							$error['code'] = sanitize_key( $value['code'] );
+						}
+						if ( isset( $value['message'] ) ) {
+							$error['message'] = sanitize_textarea_field( (string) $value['message'] );
+						}
+
+						$sanitized['finalization_error'] = $error;
+					}
+					break;
+
+				default:
+					if ( 0 === strpos( $key, 'subscription_' ) ) {
+						$sanitized[ $key ] = $this->sanitize_payload( $value );
+					}
+					break;
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Detect temporary debug payload keys that should never be persisted.
+	 *
+	 * @param string $normalized_key Normalized array key.
+	 * @return bool
+	 */
+	private function is_debug_payload_key( $normalized_key ) {
+		return 'strict_seed' === $normalized_key
+			|| false !== strpos( $normalized_key, 'schema_debug' )
+			|| false !== strpos( $normalized_key, 'installer_trace' )
+			|| false !== strpos( $normalized_key, 'installer_debug' )
+			|| false !== strpos( $normalized_key, 'field_settings_snapshot' )
+			|| false !== strpos( $normalized_key, 'debug_snapshot' )
+			|| false !== strpos( $normalized_key, 'schema_dump' )
+			|| (bool) preg_match( '/(^debug$|^debug_|_debug(?:_|$))/', $normalized_key );
 	}
 
 	/**

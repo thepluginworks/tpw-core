@@ -47,10 +47,6 @@ class TPW_Core_Activator {
                 $target  = TPW_Gallery_DB::VERSION;
                 if ( version_compare( (string) $current, (string) $target, '<' ) ) {
                     TPW_Gallery_DB::create_tables();
-                    // Best-effort: log success, but no admin notices
-                    if ( function_exists( 'error_log' ) ) {
-                        error_log( 'TPW Core activation: Gallery DB schema ensured (v' . $target . ').' );
-                    }
                 }
             }
         } catch ( \Throwable $e ) {
