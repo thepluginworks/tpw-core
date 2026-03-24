@@ -1,18 +1,19 @@
-# Postcode Lookup
+# Address Lookup
 
-Members forms can auto‑fill Town/County based on a postcode.
+Members forms can use Core address lookup to help fill address fields from a GB postcode when a live provider is enabled.
 
 Providers:
-- Postcodes.io (default, GB only)
-- GetAddress.io (requires API key)
-- Google Maps (requires API key; supports full address list)
+- None
+- Ideal Postcodes
+- Fetchify
 
-Configure under Member Settings → Postcodes and use Test Lookup to verify.
+Configure under Member Settings → Address Lookup and use Test Lookup to verify the active live provider.
 
-Full address mode (Google only):
-- When enabled by the provider, users can select a street‑level address returned by Google.
-- Fields like Address1, Town, County, Postcode, Country are auto‑filled.
+Current Core status:
+- None: member forms show manual address fields only, with no lookup UI.
+- Ideal Postcodes: live GB address lookup is available when an API key is configured.
+- Fetchify: settings are scaffolded only in this Core release; manual address entry remains active.
 
 Troubleshooting:
-- If lookups fail, check your API key and quotas.
-- Errors are logged to debug.log when WP_DEBUG is enabled.
+- If Ideal Postcodes lookups fail, check your API key and account limits.
+- If the provider is set to None, or to a scaffolded provider, lookup controls stay hidden by design.

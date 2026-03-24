@@ -139,14 +139,16 @@ add_action('wp_enqueue_scripts', function () {
 
                 // Initialize shared Core postcode binder for Members add/edit forms
                 // This script depends on 'tpw-core-postcode' which is enqueued via modules/postcodes/enqueue.php
-                wp_register_script(
-                    'tpw-members-postcode-init',
-                    plugins_url('js/members-postcode-init.js', __FILE__),
-                    ['tpw-core-postcode'],
-                    filemtime( plugin_dir_path(__FILE__) . 'js/members-postcode-init.js' ),
-                    true
-                );
-                wp_enqueue_script('tpw-members-postcode-init');
+                if ( class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_Helper::should_render_lookup_ui() ) {
+                    wp_register_script(
+                        'tpw-members-postcode-init',
+                        plugins_url('js/members-postcode-init.js', __FILE__),
+                        ['tpw-core-postcode'],
+                        filemtime( plugin_dir_path(__FILE__) . 'js/members-postcode-init.js' ),
+                        true
+                    );
+                    wp_enqueue_script('tpw-members-postcode-init');
+                }
             }
         }
     }

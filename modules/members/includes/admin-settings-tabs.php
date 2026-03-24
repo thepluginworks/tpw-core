@@ -33,7 +33,7 @@ if ( ! function_exists( 'tpw_members_render_settings_tabs' ) ) {
 	echo $mk( __( 'Field Settings', 'tpw-core' ), 'field_settings', [ 'action' => 'field_settings' ] );
 	echo $mk( __( 'Directory Field Visibility', 'tpw-core' ), 'visibility', [ 'action' => 'member-field-visibility' ] );
 	echo $mk( __( 'Member Profile', 'tpw-core' ), 'profile', [ 'action' => 'settings', 'tab' => 'profile' ] );
-	echo $mk( __( 'Postcodes', 'tpw-core' ), 'postcodes', [ 'action' => 'settings', 'tab' => 'postcodes' ] );
+	echo $mk( __( 'Address Lookup', 'tpw-core' ), 'postcodes', [ 'action' => 'settings', 'tab' => 'postcodes' ] );
 	echo $mk( __( 'Help', 'tpw-core' ), 'help', [ 'action' => 'settings', 'tab' => 'help' ] );
 	echo '</h3>';
 	}

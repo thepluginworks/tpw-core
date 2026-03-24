@@ -108,11 +108,11 @@ Reference for actions and filters provided by TPW Core modules. For usage exampl
 - tpw_postcode_lookup_provider (filter) — Select postcode provider.
 	- File: `modules/postcodes/class-tpw-postcode-helper.php`
 	- Since: 1.0.0
-	- Description: Choose between postcodesio, getaddress, google.
+	- Description: Choose between none, ideal_postcodes, and fetchify. Legacy values safely normalize to none.
 - tpw_postcode_lookup_api_key (filter) — Provide provider API keys.
 	- File: `modules/postcodes/class-tpw-postcode-helper.php`
 	- Since: 1.0.0
-	- Description: Inject API keys per provider ('google' or 'getaddress').
+	- Description: Inject API credentials per provider key.
 
 ### Payments
 - tpw_payment_completed (action) — Payment completed webhook event.
@@ -831,17 +831,18 @@ Imported members are created with no WordPress role (wp_capabilities = none). Th
 This ensures that login and permissions remain managed entirely by TPW Core and related plugins, not by native WordPress roles.
 
 
-## Postcode Lookup — Full Address Mode (Google)
+## Address Lookup
 
-The core postcode helper supports two modes:
+The Core address lookup helper supports two modes:
 
-- basic: Returns town/county/coords for a postcode using the configured provider (Postcodes.io, GetAddress.io, or Google).
-- full: Returns a list of street-level address options for a postcode — available with Google only.
+- basic: Returns normalized address metadata for the requested postcode using the active provider.
+- full: Returns a list of normalized address options when the active provider supports full address lists.
 
 Settings
 
-- Stored under `tpw_postcode_settings` with `provider` set to one of `postcodesio`, `getaddress`, or `google` and `google_api_key` when using Google.
-- The frontend enqueues `assets/js/tpw-postcode-lookup.js` and passes the selected provider to `window.tpwPostcode.provider`.
+- Stored under `tpw_postcode_settings` with `provider` set to one of `none`, `ideal_postcodes`, or `fetchify`.
+- Core normalizes removed legacy provider values back to `none`.
+- The shared runtime also exposes whether lookup is enabled at all and whether full address lists are available for the active provider.
 
 Server API
 
@@ -852,22 +853,26 @@ Server API
 	- `mode` (string, `basic`|`full`, optional, default `basic`)
 	- `street_prefix` (string, optional, used to filter addresses starting with a number prefix)
 - Behavior:
-	- If `mode=full` and provider is not Google, returns `{ error: 'full_not_supported', message: 'Full address lookup is only available with Google Maps.' }`.
-	- If `mode=full` and Google API key is available, queries the Geocoding API with `address=<postcode>` and returns an `addresses` array of options with fields: `label`, `address1`, `town`, `county`, `postcode`, `country`.
+	- If lookup is disabled or the selected provider is scaffolded-only, Core returns a clear non-fatal message and forms remain in manual-entry mode.
+	- Ideal Postcodes is wired for live GB address lookup and returns a shared `addresses` array shape when `mode=full`.
 
 Frontend behavior
 
-- When the user clicks "Lookup" with a postcode:
-	- If provider is Google, a "Select Address" dropdown is shown with any returned options.
-	- On selection, the following fields are populated when present: `address1` (street_number + route), `town` (postal_town/locality), `county` (admin_area_level_2 or 1), `postcode`, and `country`.
-	- If provider does not support full lists, a message is shown: "This provider does not support full address lists." and the basic town/county lookup still runs.
+- When the user clicks "Lookup" with a postcode and live lookup is enabled:
+	- A "Select Address" dropdown is shown when the provider returns multiple address options.
+	- On selection, the following fields are populated when present: `address1`, `address2`, `town`, `county`, `postcode`, and `country`.
+- When lookup is disabled, Core does not render the lookup button, helper messages, or address selector markup.
 - The postcode input remains editable and changing it hides the dropdown and clears any inline warning.
-- Results are cached per postcode in `sessionStorage` for the session.
+
+Provider status
+
+- `none`: manual address entry only.
+- `ideal_postcodes`: fully wired for live GB address lookup when configured.
+- `fetchify`: settings scaffold only in this Core release; lookup UI stays hidden.
 
 Notes
 
-- Google API errors (invalid key, over quota) are written to the debug log when `WP_DEBUG` is enabled with a `[TPW Postcodes][google-full]` prefix.
-- For basic lookups, the helper continues to map UK postcodes to `town` from `post_town` and `county` from `admin_county` (fallback `admin_district`).
+- Manual address entry remains the first-class fallback for all Core forms.
 
 ## TPW Control (Front-end Admin Hub)
 

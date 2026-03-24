@@ -111,18 +111,22 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
         }
 
         if ( $current_tab_post === 'postcodes' ) {
-            // Postcodes tab (save provider + API keys if posted)
-            $provider = isset($_POST['tpw_postcode_provider']) ? sanitize_key($_POST['tpw_postcode_provider']) : null;
-            if ( $provider !== null ) {
-                $allowed = [ 'none', 'postcodesio', 'getaddress', 'google' ];
-                if ( ! in_array( $provider, $allowed, true ) ) { $provider = 'postcodesio'; }
-                $getaddr_key = isset($_POST['tpw_getaddress_api_key']) ? sanitize_text_field( wp_unslash($_POST['tpw_getaddress_api_key']) ) : '';
-                $google_key  = isset($_POST['tpw_google_api_key']) ? sanitize_text_field( wp_unslash($_POST['tpw_google_api_key']) ) : '';
-                $settings = [
-                    'provider' => $provider,
-                    'getaddress_api_key' => $getaddr_key,
-                    'google_api_key' => $google_key,
-                ];
+            // Address lookup tab.
+            if ( isset( $_POST['tpw_postcode_provider'] ) ) {
+                $settings = class_exists( 'TPW_Postcode_Provider_Registry' )
+                    ? TPW_Postcode_Provider_Registry::sanitize_settings(
+                        array(
+                            'provider'                => isset( $_POST['tpw_postcode_provider'] ) ? sanitize_key( $_POST['tpw_postcode_provider'] ) : 'none',
+                            'ideal_postcodes_api_key' => isset( $_POST['tpw_ideal_postcodes_api_key'] ) ? wp_unslash( $_POST['tpw_ideal_postcodes_api_key'] ) : '',
+                            'fetchify_access_token'   => isset( $_POST['tpw_fetchify_access_token'] ) ? wp_unslash( $_POST['tpw_fetchify_access_token'] ) : '',
+                        )
+                    )
+                    : array(
+                        'provider'                => 'none',
+                        'ideal_postcodes_api_key' => '',
+                        'fetchify_access_token'   => '',
+                    );
+
                 update_option( 'tpw_postcode_settings', $settings );
                 $tpw_settings_saved = true;
             }
@@ -165,7 +169,7 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
             } elseif ( $current_tab === 'profile' ) {
                 echo esc_html__( 'Member Profile', 'tpw-core' );
             } elseif ( $current_tab === 'postcodes' ) {
-                echo esc_html__( 'Postcode Lookup', 'tpw-core' );
+                echo esc_html__( 'Address Lookup', 'tpw-core' );
             } elseif ( $current_tab === 'help' ) {
                 echo esc_html__( 'Help', 'tpw-core' );
             } else {
@@ -378,45 +382,59 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
           
 
         <?php elseif ( $current_tab === 'postcodes' ) : ?>
-            <?php $pc = get_option( 'tpw_postcode_settings', [] );
-            $pc_provider = isset($pc['provider']) ? $pc['provider'] : 'postcodesio';
-            $pc_getaddr  = isset($pc['getaddress_api_key']) ? $pc['getaddress_api_key'] : '';
-            $pc_google   = isset($pc['google_api_key']) ? $pc['google_api_key'] : '';
+            <?php
+            $pc = class_exists( 'TPW_Postcode_Provider_Registry' ) ? TPW_Postcode_Provider_Registry::get_settings() : array();
+            $pc_provider = class_exists( 'TPW_Postcode_Provider_Registry' ) ? TPW_Postcode_Provider_Registry::get_selected_provider( $pc ) : 'none';
+            $pc_providers = class_exists( 'TPW_Postcode_Provider_Registry' ) ? TPW_Postcode_Provider_Registry::get_registered_providers() : array();
+            $pc_choices = class_exists( 'TPW_Postcode_Provider_Registry' ) ? TPW_Postcode_Provider_Registry::get_provider_choices() : array( 'none' => 'None' );
             ?>
-            <p class="description">Choose which postcode lookup service to use for Members and other modules.</p>
+            <p class="description">Choose the Core address lookup provider used by Members and other Core forms. Manual address entry remains available in every case.</p>
             <p>
-                <label for="tpw_postcode_provider"><strong>Postcode Lookup Provider</strong></label><br>
+                <label for="tpw_postcode_provider"><strong>Address Lookup Provider</strong></label><br>
                 <select name="tpw_postcode_provider" id="tpw_postcode_provider">
-                    <option value="none" <?php selected( $pc_provider, 'none' ); ?>>None</option>
-                    <option value="postcodesio" <?php selected( $pc_provider, 'postcodesio' ); ?>>Postcodes.io (Default, GB only)</option>
-                    <option value="getaddress" <?php selected( $pc_provider, 'getaddress' ); ?>>GetAddress.io</option>
-                    <option value="google" <?php selected( $pc_provider, 'google' ); ?>>Google Maps API</option>
+                    <?php foreach ( $pc_choices as $provider_value => $provider_label ) : ?>
+                        <option value="<?php echo esc_attr( $provider_value ); ?>" <?php selected( $pc_provider, $provider_value ); ?>><?php echo esc_html( $provider_label ); ?></option>
+                    <?php endforeach; ?>
                 </select>
                 <br>
-                <small class="description">Choose which postcode lookup service to use for Members and other modules.</small>
+                <small class="description">Only None, Ideal Postcodes, and Fetchify are supported by Core now. Any old saved provider values fall back safely to None.</small>
             </p>
 
-            <div id="tpw_getaddress_section" style="display:none;">
-                <p>
-                    <label for="tpw_getaddress_api_key"><strong>GetAddress.io API Key</strong></label><br>
-                    <input type="text" name="tpw_getaddress_api_key" id="tpw_getaddress_api_key" value="<?php echo esc_attr( $pc_getaddr ); ?>" style="max-width:420px; width:100%;">
-                    <br>
-                    <small class="description">You must create an account and copy your API key from getaddress.io</small>
-                </p>
-            </div>
+            <?php foreach ( $pc_providers as $provider_key => $provider_definition ) : ?>
+                <?php if ( 'none' === $provider_key ) { continue; } ?>
+                <div class="tpw-address-provider-section" data-provider="<?php echo esc_attr( $provider_key ); ?>" style="display:none;">
+                    <?php if ( ! empty( $provider_definition['settings_notice'] ) ) : ?>
+                        <p class="description"><?php echo esc_html( $provider_definition['settings_notice'] ); ?></p>
+                    <?php endif; ?>
+                    <?php if ( ! empty( $provider_definition['settings_fields'] ) && is_array( $provider_definition['settings_fields'] ) ) : ?>
+                        <?php foreach ( $provider_definition['settings_fields'] as $field ) : ?>
+                            <?php
+                            $field_key = isset( $field['key'] ) ? (string) $field['key'] : '';
+                            if ( '' === $field_key ) {
+                                continue;
+                            }
+                            $field_input_id = 'tpw_' . $field_key;
+                            $field_name = 'tpw_' . $field_key;
+                            $field_value = isset( $pc[ $field_key ] ) ? (string) $pc[ $field_key ] : '';
+                            ?>
+                            <p>
+                                <label for="<?php echo esc_attr( $field_input_id ); ?>"><strong><?php echo esc_html( isset( $field['label'] ) ? $field['label'] : $field_key ); ?></strong></label><br>
+                                <input type="text" name="<?php echo esc_attr( $field_name ); ?>" id="<?php echo esc_attr( $field_input_id ); ?>" value="<?php echo esc_attr( $field_value ); ?>" style="max-width:420px; width:100%;">
+                                <?php if ( ! empty( $field['description'] ) ) : ?>
+                                    <br>
+                                    <small class="description"><?php echo esc_html( $field['description'] ); ?></small>
+                                <?php endif; ?>
+                            </p>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
 
-            <div id="tpw_google_section" style="display:none;">
-                <p>
-                    <label for="tpw_google_api_key"><strong>Google Maps API Key</strong></label><br>
-                    <input type="text" name="tpw_google_api_key" id="tpw_google_api_key" value="<?php echo esc_attr( $pc_google ); ?>" style="max-width:420px; width:100%;">
-                    <br>
-                    <small class="description">You must enable the Geocoding API and billing in your Google Cloud Console</small>
-                </p>
-            </div>
+            <p class="description">When the provider is set to None, or to a provider that is scaffolded only, Core member forms stay in clean manual-address mode with no lookup button, helper text, or address selector UI.</p>
 
             <hr>
-            <h4>Test Lookup</h4>
-            <p class="description">Use a sample postcode to verify your current provider and API key (if required).</p>
+            <h4>Test Address Lookup</h4>
+            <p class="description">Use a sample GB postcode to verify the active live provider. Manual address entry remains available even when lookup is disabled.</p>
             <p>
                 <?php $ajax_url = admin_url('admin-ajax.php'); $nonce = wp_create_nonce('tpw_lookup_postcode'); ?>
                 <label for="tpw_postcode_test"><strong>Sample Postcode</strong></label><br>
@@ -428,18 +446,38 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
             <script>
             (function(){
                 var sel = document.getElementById('tpw_postcode_provider');
-                var ga = document.getElementById('tpw_getaddress_section');
-                var g  = document.getElementById('tpw_google_section');
-                function toggle(){
-                    var v = sel.value;
-                    ga.style.display = (v === 'getaddress') ? '' : 'none';
-                    g.style.display  = (v === 'google') ? '' : 'none';
-                }
-                if (sel){ sel.addEventListener('change', toggle); toggle(); }
-
+                var sections = Array.prototype.slice.call(document.querySelectorAll('.tpw-address-provider-section'));
                 var btn = document.getElementById('tpw_postcode_test_btn');
                 var input = document.getElementById('tpw_postcode_test');
                 var out = document.getElementById('tpw_postcode_test_result');
+
+                function toggle(){
+                    var v = sel.value;
+                    sections.forEach(function(section){
+                        section.style.display = (section.getAttribute('data-provider') === v) ? '' : 'none';
+                    });
+
+                    if (!btn || !out) {
+                        return;
+                    }
+
+                    if (v === 'none') {
+                        btn.disabled = true;
+                        out.textContent = 'Address lookup is disabled. Member forms use manual address entry only.';
+                        return;
+                    }
+
+                    if (v === 'fetchify') {
+                        btn.disabled = true;
+                        out.textContent = 'Fetchify settings are scaffolded only in this release. Manual address entry stays active.';
+                        return;
+                    }
+
+                    btn.disabled = false;
+                    out.textContent = '';
+                }
+                if (sel){ sel.addEventListener('change', toggle); toggle(); }
+
                 if (btn && input && out){
                     btn.addEventListener('click', function(){
                         var pc = (input.value || '').trim();
@@ -455,7 +493,11 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                         .then(function(json){
                             if (json && json.success && json.data){
                                 var d = json.data;
-                                out.textContent = 'Success → Town: ' + (d.town||d.district||'') + ', County: ' + (d.county||d.region||'') + (d.latitude? (' (Lat: '+d.latitude+', Lng: '+d.longitude+')') : '');
+                                var summary = [];
+                                if (d.address1) summary.push('Address 1: ' + d.address1);
+                                if (d.town || d.district) summary.push('Town: ' + (d.town || d.district));
+                                if (d.county || d.region) summary.push('County: ' + (d.county || d.region));
+                                out.textContent = 'Success → ' + summary.join(', ');
                             } else {
                                 out.textContent = (json && json.message) ? ('Error → ' + json.message) : 'Error performing lookup';
                             }

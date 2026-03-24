@@ -1,5 +1,6 @@
 (function(){
   if (!window.TPWCorePostcode || !TPWCorePostcode.bind) return;
+  if (!window.tpwCorePostcode || !window.tpwCorePostcode.enabled) return;
   function bindMembersForm(scope){
     try {
       TPWCorePostcode.bind({

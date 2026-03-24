@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.14.39] - 2026-03-24
+## [1.14.40] - 2026-03-24
 ### Changed
 - Members: the Sign Ups debug screen is now hidden from normal admin menus while remaining available by direct link for authorised administrators when signup debug mode is enabled.
 - Members: signup attempt records now exclude temporary debug and schema trace data, reducing stored noise while preserving the information needed for completion and support.

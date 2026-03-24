@@ -1,10 +1,10 @@
-# Postcodes
+# Address Lookup
 
 ## Overview
-The Postcodes helper resolves town/county/coordinates for a postcode using pluggable providers (Postcodes.io, GetAddress.io, Google). It can also return full address options when supported.
+The Core address lookup helper normalizes provider selection and lookup behavior for manual-entry-aware forms. Core now supports only None, Ideal Postcodes, and Fetchify, with manual address entry remaining the fallback for every form.
 
 ## Key Screens / Shortcodes
-- Front‑end: used by TPW screens and shortcodes that offer postcode lookup.
+- Front‑end: used by TPW screens and shortcodes that offer address lookup.
 - AJAX action: tpw_lookup_postcode (nonce: tpw_lookup_postcode) returns JSON.
 
 ## Hooks
@@ -13,7 +13,8 @@ The Postcodes helper resolves town/county/coordinates for a postcode using plugg
 
 ## Extending
 - Call TPW_Postcode_Helper::lookup_postcode( $postcode, $country = 'GB', $mode = 'basic|full' ).
-- In full mode, you may pass a street number prefix to filter results.
+- Use TPW_Postcode_Helper::should_render_lookup_ui() to decide whether lookup controls should render at all.
+- In full mode, you may pass a street number prefix to filter results when the active provider supports full address lists.
 
 ## References
 - Developer Guide → ../developer-guide.md

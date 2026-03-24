@@ -19,6 +19,7 @@ $default_status = get_option('tpw_default_member_status', '');
 $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 $can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
 $protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
+$show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_Helper::should_render_lookup_ui();
 ?>
 
 <div class="tpw-member-form">
@@ -124,12 +125,16 @@ $protected_permission_fields = TPW_Member_Access::get_protected_member_permissio
                             if ( $field['key'] === 'postcode' ) {
                                 echo '<div class="tpw-inline-input-action">';
                                 echo '<input type="text" name="postcode" id="postcode">';
-                                echo '<button type="button" id="tpw-postcode-lookup-btn" class="tpw-btn tpw-btn-secondary tpw-postcode-btn" aria-label="Lookup postcode">Lookup</button>';
+                                if ( $show_address_lookup_ui ) {
+                                    echo '<button type="button" id="tpw-postcode-lookup-btn" class="tpw-btn tpw-btn-secondary tpw-postcode-btn" aria-label="Lookup address">Lookup</button>';
+                                }
                                 echo '</div>';
-                                echo '<div class="tpw-postcode-select-wrap" style="display:none;margin-top:6px;">';
-                                echo '<select class="tpw-postcode-select" aria-label="Select address"></select>';
-                                echo '</div>';
-                                echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
+                                if ( $show_address_lookup_ui ) {
+                                    echo '<div class="tpw-postcode-select-wrap" style="display:none;margin-top:6px;">';
+                                    echo '<select class="tpw-postcode-select" aria-label="Select address"></select>';
+                                    echo '</div>';
+                                    echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
+                                }
                             } else {
                                 echo '<input type="text" name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '">';
                             }

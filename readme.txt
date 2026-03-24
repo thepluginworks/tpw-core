@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.39
+Stable tag: 1.14.40
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,7 +59,7 @@ Yes. You can enable and configure methods like Bank Transfer and Cheque under TP
 
 == Changelog ==
 
-= 1.14.39 =
+= 1.14.40 =
 - Members: the Sign Ups debug screen is now hidden from normal admin menus while remaining available by direct link for authorised administrators when signup debug mode is enabled.
 - Members: signup attempt records now exclude temporary debug and schema trace data, reducing stored noise while preserving the information needed for completion and support.
 - Maintenance: TPW Core now loads translations early enough to avoid WordPress admin timing warnings and removes temporary debug logging across payments, menus, postcode lookups, CSV import tools, and TPW Control.

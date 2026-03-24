@@ -40,6 +40,8 @@
   var TPWPostcodeLookup = {
     init: function(cfg){
       cfg = cfg || {};
+      var runtime = window.tpwPostcode || {};
+      if (!runtime.enabled) return;
       var pc = document.querySelector(cfg.postcodeField);
       if (!pc) return;
       var address1 = cfg.address1Field ? document.querySelector(cfg.address1Field) : null;
@@ -47,7 +49,7 @@
       var county = cfg.countyField ? document.querySelector(cfg.countyField) : null;
       var country = cfg.countryField ? document.querySelector(cfg.countryField) : null;
       var triggerBtn = cfg.buttonSelector ? document.querySelector(cfg.buttonSelector) : null;
-      var provider = (cfg.provider || (window.tpwPostcode && window.tpwPostcode.provider) || '').toLowerCase();
+      var supportsFull = !!(cfg.supportsFull || runtime.supportsFull);
 
       // Dropdown container
       var holder = pc.closest('.form-group') || pc.parentNode;
@@ -93,7 +95,7 @@
         clearWarning(pc);
         // If we support full list, use full mode; otherwise basic
   var wantsFull = cfg.enableFull !== false; // default true
-  var doFull = wantsFull && (provider === 'google' || provider === 'getaddress');
+  var doFull = wantsFull && supportsFull;
 
         if (doFull) {
           // Use cache first
@@ -105,7 +107,7 @@
           }
         }
 
-        if (wantsFull && !(provider === 'google' || provider === 'getaddress')) {
+        if (wantsFull && !supportsFull) {
           // Immediately inform about capability; proceed with basic lookup
           showNotSupported();
         }
@@ -133,7 +135,7 @@
           } else {
             hideDropdown();
             // Provider capability hint
-            if (wantsFull && !(provider === 'google' || provider === 'getaddress')) {
+            if (wantsFull && !supportsFull) {
               showNotSupported();
             } else {
               showWarning(pc, (resp && resp.message) || 'Postcode not found');

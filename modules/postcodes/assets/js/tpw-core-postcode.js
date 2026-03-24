@@ -18,6 +18,16 @@
   // })
 
   function $(root, sel){ return root ? root.querySelector(sel) : null; }
+  function runtimeConfig(){ return window.tpwCorePostcode || {}; }
+  function normalizeLookupCountry(value, fallback){
+    var raw = (value || fallback || 'GB');
+    var compact = String(raw).trim().toUpperCase().replace(/\s+/g, ' ');
+    if (!compact) return (fallback || 'GB');
+    if (compact === 'GB' || compact === 'UK' || compact === 'GBR' || compact === 'UNITED KINGDOM' || compact === 'GREAT BRITAIN' || compact === 'ENGLAND' || compact === 'SCOTLAND' || compact === 'WALES' || compact === 'NORTHERN IRELAND') {
+      return 'GB';
+    }
+    return compact;
+  }
   function ajaxUrl(){ return (window.tpwCorePostcode && window.tpwCorePostcode.ajaxUrl) || window.ajaxurl || (window.tpwPostcode && window.tpwPostcode.ajaxUrl) || '';
   }
   function nonce(){ return (window.tpwCorePostcode && window.tpwCorePostcode.nonce) || (window.tpwPostcode && window.tpwPostcode.nonce) || '';
@@ -73,6 +83,7 @@
 
   function bind(config){
     config = config || {};
+    if (!runtimeConfig().enabled) return;
     var scope = document;
     var form = typeof config.form === 'string' ? $(scope, config.form) : (config.form || scope);
     if (!form) return;
@@ -88,6 +99,7 @@
       lat: $(form, fields.lat), lng: $(form, fields.lng)
     };
     var countryDefault = config.countryDefault || 'GB';
+    var supportsFull = !!runtimeConfig().supportsFull;
 
     function showMsg(text){ if(!msg) return; msg.textContent = text||''; msg.style.display = text ? 'block' : 'none'; }
     function hideSelect(){ if (selWrap) selWrap.style.display = 'none'; if (sel) sel.innerHTML = ''; }
@@ -100,13 +112,14 @@
     function doLookup(){
       if (!pc || !pc.value) { showMsg('Enter a postcode to search.'); return; }
       var code = (pc.value||'').toUpperCase().replace(/\s+/g, ' ');
-      hideSelect(); showMsg('Looking up postcode...');
+      var lookupCountry = normalizeLookupCountry((f.country && f.country.value) ? f.country.value : '', countryDefault);
+      hideSelect(); showMsg('Looking up address...');
       var fd = new FormData();
       fd.append('action','tpw_lookup_postcode');
       fd.append('postcode', code);
-      fd.append('country', (f.country && f.country.value) ? f.country.value : countryDefault);
+      fd.append('country', lookupCountry);
       fd.append('nonce', nonce());
-      fd.append('mode', 'full');
+      fd.append('mode', supportsFull ? 'full' : 'basic');
       if (config.streetPrefixFrom) {
         var sp = $(form, config.streetPrefixFrom); if (sp && sp.value) fd.append('street_prefix', sp.value.trim());
       }
@@ -120,7 +133,8 @@
           var d = res.data || {}; showMsg('');
           apply({ line1: f.line1 && f.line1.value || '', line2:'', city: d.town || d.city || d.district || '', county: d.county || d.region || '', postcode: d.postcode || code, country: d.country || countryDefault, lat: d.latitude || d.lat || '', lng: d.longitude || d.lng || '' });
         } else {
-          hideSelect(); showMsg((res && (res.message || (res.data && res.data.message))) || 'No addresses found for this postcode.');
+          hideSelect();
+          showMsg((res && (res.message || (res.data && res.data.message))) || 'No addresses found for this postcode.');
         }
       }).catch(function(){ hideSelect(); showMsg('There was a problem looking up this postcode.'); });
     }

@@ -187,6 +187,10 @@ if ( file_exists( TPW_CORE_PATH . 'includes/class-tpw-member-payments.php' ) ) {
 }
 
 // Postcodes module (global)
+require_once TPW_CORE_PATH . 'modules/postcodes/class-tpw-postcode-provider-registry.php';
+require_once TPW_CORE_PATH . 'modules/postcodes/providers/class-tpw-postcode-provider-abstract.php';
+require_once TPW_CORE_PATH . 'modules/postcodes/providers/class-tpw-postcode-provider-ideal-postcodes.php';
+require_once TPW_CORE_PATH . 'modules/postcodes/providers/class-tpw-postcode-provider-fetchify.php';
 require_once TPW_CORE_PATH . 'modules/postcodes/class-tpw-postcode-helper.php';
 require_once TPW_CORE_PATH . 'modules/postcodes/postcode-ajax.php';
 

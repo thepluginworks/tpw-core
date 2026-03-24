@@ -41,13 +41,13 @@ Under Member Profile:
 - Choose which fields a member can view on their own profile
 - Select the page containing the [tpw_member_profile] shortcode
 
-## 7) Postcode lookup
+## 7) Address lookup
 
-Under Postcodes:
+Under Address Lookup:
 
-- Pick Postcodes.io (default, GB only), GetAddress.io, or Google
-- Enter API keys if needed
-- Use Test Lookup to verify the provider
+- Pick None, Ideal Postcodes, or Fetchify
+- Enter provider credentials where required
+- Use Test Lookup to verify a live provider when available
 
 Next steps:
 - Configure searchable fields (advanced search) in Field Settings.

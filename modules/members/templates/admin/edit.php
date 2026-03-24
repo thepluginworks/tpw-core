@@ -17,6 +17,7 @@ $create_wp_btn_id  = 'tpw-create-wp-user-btn-' . (int) $member_id;
 $create_wp_admin_post = admin_url('admin-post.php');
 $can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
 $protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
+$show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_Helper::should_render_lookup_ui();
 
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 $fields = array_filter($fields, fn($field) => $field['key'] !== 'password_hash');
@@ -210,12 +211,16 @@ if ( ! $member ) {
                             if ( $key === 'postcode' ) {
                                 echo '<div class="tpw-inline-input-action">';
                                 echo '<input type="text" name="postcode" id="postcode" value="' . esc_attr($value) . '">';
-                                echo '<button type="button" id="tpw-postcode-lookup-btn" class="tpw-btn tpw-btn-secondary tpw-postcode-btn" aria-label="Lookup postcode">Lookup</button>';
+                                if ( $show_address_lookup_ui ) {
+                                    echo '<button type="button" id="tpw-postcode-lookup-btn" class="tpw-btn tpw-btn-secondary tpw-postcode-btn" aria-label="Lookup address">Lookup</button>';
+                                }
                                 echo '</div>';
-                                echo '<div class="tpw-postcode-select-wrap" style="display:none;margin-top:6px;">';
-                                echo '<select class="tpw-postcode-select" aria-label="Select address"></select>';
-                                echo '</div>';
-                                echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
+                                if ( $show_address_lookup_ui ) {
+                                    echo '<div class="tpw-postcode-select-wrap" style="display:none;margin-top:6px;">';
+                                    echo '<select class="tpw-postcode-select" aria-label="Select address"></select>';
+                                    echo '</div>';
+                                    echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
+                                }
                             } else {
                                 // Username is not editable on the Edit form
                                 if ( $key === 'username' ) {
