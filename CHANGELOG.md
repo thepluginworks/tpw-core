@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.41] - 2026-03-24
+### Changed
+- Release delivery: TPW Core now publishes its canonical install package through GitHub Releases instead of the previous Freemius delivery path.
+- Release delivery: tagged and manual release runs now build a filtered `tpw-core.zip`, preserve the correct `tpw-core/` archive root, and update the release asset in place when a release already exists.
+- Release delivery: release automation now generates a public `tpw-core.json` version manifest and publishes it through GitHub Pages so TPW Core and companion plugins can detect updates from a stable URL.
+- Maintenance: this release changes packaging and distribution only; plugin runtime, Freemius initialization, and admin UI behaviour are unchanged.
+
 ## [1.14.40] - 2026-03-24
 ### Changed
 - Members: the Sign Ups debug screen is now hidden from normal admin menus while remaining available by direct link for authorised administrators when signup debug mode is enabled.

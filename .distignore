@@ -3,6 +3,9 @@
 /.vscode
 /tests
 /docs
+/security
+/scripts
+/node_modules
 /ai-session.md
 /RELEASE.md
 /.git

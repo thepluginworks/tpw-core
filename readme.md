@@ -1,4 +1,4 @@
-# TPW Core (v1.14.40)
+# TPW Core (v1.14.41)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,12 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Release delivery update (1.14.41)
+- TPW Core release downloads now use GitHub Releases as the canonical delivery source.
+- Release automation now builds a filtered `tpw-core.zip`, keeps the correct `tpw-core/` install folder structure, and refreshes the release asset when a tagged package is republished.
+- A public `tpw-core.json` manifest is now generated and published through GitHub Pages so TPW Core and companion plugins can read the latest version and download URL from a stable endpoint.
+- This release updates packaging and release delivery only; plugin runtime behaviour and admin UI behaviour are unchanged.
 
 ### Member details helper adoption update (1.14.21)
 - Updated the Member Details modal in [modules/members/includes/class-tpw-member-ajax.php](modules/members/includes/class-tpw-member-ajax.php) so the legacy member-flag read path now goes through `TPW_Identity_Compat` within one narrow, passive UI boundary.

@@ -1,0 +1,154 @@
+name: Publish Release Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish or refresh, for example v1.14.40'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: tpw-core-release
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    outputs:
+      manifest_url: ${{ steps.metadata.outputs.manifest_url }}
+      release_url: ${{ steps.metadata.outputs.release_url }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout requested tag when it exists
+        if: github.event_name == 'workflow_dispatch' && inputs.tag != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --force --tags origin
+
+          if git rev-parse -q --verify "refs/tags/${{ inputs.tag }}" >/dev/null; then
+            git checkout "${{ inputs.tag }}"
+          fi
+
+      - name: Resolve release metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PLUGIN_VERSION="$(grep -m1 '^ \* Version:' tpw-core.php | sed 's/^ \* Version: *//')"
+          INPUT_TAG="${{ inputs.tag }}"
+
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            TAG_NAME="${GITHUB_REF_NAME}"
+          elif [ -n "$INPUT_TAG" ]; then
+            TAG_NAME="$INPUT_TAG"
+          else
+            TAG_NAME="v${PLUGIN_VERSION}"
+          fi
+
+          VERSION="${TAG_NAME#v}"
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/tpw-core.zip"
+          MANIFEST_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/tpw-core.json"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}"
+
+          echo "plugin_version=${PLUGIN_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
+          echo "manifest_url=${MANIFEST_URL}" >> "$GITHUB_OUTPUT"
+          echo "release_url=${RELEASE_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin archive
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_PATH="$RUNNER_TEMP/tpw-core.zip"
+          bash scripts/build-release-package.sh "$ZIP_PATH"
+
+          echo "zip_path=${ZIP_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate archive root folder
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FIRST_ENTRY="$(unzip -Z1 "${{ steps.package.outputs.zip_path }}" | head -n 1)"
+
+          if [ "$FIRST_ENTRY" != 'tpw-core/' ]; then
+            echo "Expected archive root to be tpw-core/, got: $FIRST_ENTRY" >&2
+            exit 1
+          fi
+
+      - name: Create or update GitHub release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG_NAME="${{ steps.metadata.outputs.tag_name }}"
+          VERSION="${{ steps.metadata.outputs.version }}"
+          ZIP_PATH="${{ steps.package.outputs.zip_path }}"
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" --clobber
+          else
+            gh release create "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" \
+              --title "TPW Core ${VERSION}" \
+              --notes "Automated release for TPW Core ${VERSION}." \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Generate version manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+          cat > dist/tpw-core.json <<EOF
+          {
+            "version": "${{ steps.metadata.outputs.version }}",
+            "download_url": "${{ steps.metadata.outputs.download_url }}"
+          }
+          EOF
+
+          touch dist/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: build-release
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
