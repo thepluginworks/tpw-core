@@ -1,4 +1,4 @@
-# TPW Core (v1.14.41)
+# TPW Core (v1.14.42)
 
 TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
 
@@ -61,6 +61,12 @@ TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Th
 - Use Core’s payment methods and logger, or add new gateways by following the same patterns
 
 If you build new TPW add‑ons, depend on this plugin and use the extension points below.
+
+### Plugin update detection update (1.14.42)
+- TPW Core now checks a public version manifest and surfaces available updates through WordPress' normal plugin update flow.
+- The Plugins screen can now show current TPW Core version details along with the download link and homepage information for the latest release.
+- Update checks are cached to reduce repeated requests and keep the updater lightweight for production sites.
+- This release adds update detection only and does not introduce new update UI settings.
 
 ### Release delivery update (1.14.41)
 - TPW Core release downloads now use GitHub Releases as the canonical delivery source.

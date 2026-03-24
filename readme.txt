@@ -4,7 +4,7 @@ Tags: rsvp, payments, event-management, golf, masonic
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.41
+Stable tag: 1.14.42
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,12 @@ Yes. All RSVP and payment logic is centralized in TPW Core.
 Yes. You can enable and configure methods like Bank Transfer and Cheque under TPW Core settings.
 
 == Changelog ==
+
+= 1.14.42 =
+- Updates: TPW Core now checks the public TPW version manifest and registers available updates through WordPress' standard plugin update system.
+- Updates: in-dashboard update details now include the latest TPW Core version, download link, and homepage information so site owners can review and install updates from the Plugins screen.
+- Maintenance: manifest responses are cached to keep update checks lightweight and reduce unnecessary requests to GitHub Pages.
+- Maintenance: this release adds update detection only; no new admin UI has been introduced.
 
 = 1.14.41 =
 - Release delivery: TPW Core now publishes its canonical install package through GitHub Releases instead of the previous Freemius delivery path.

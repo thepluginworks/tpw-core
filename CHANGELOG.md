@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.42] - 2026-03-24
+### Changed
+- Updates: TPW Core now checks the public TPW version manifest and registers available updates through WordPress' standard plugin update system.
+- Updates: plugin information for TPW Core now includes the current available version, release download link, and homepage details for a smoother in-dashboard update experience.
+- Maintenance: manifest responses are cached to keep update checks lightweight and reduce unnecessary remote requests.
+- Maintenance: this release adds update detection only; no new admin UI has been introduced.
+
 ## [1.14.41] - 2026-03-24
 ### Changed
 - Release delivery: TPW Core now publishes its canonical install package through GitHub Releases instead of the previous Freemius delivery path.
