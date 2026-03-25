@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.15.7] - 2026-03-25
+### Changed
+- Maintenance: removed the bundled Freemius SDK, bootstrap include, and Core-side startup call now that TPW Core updates are fully handled by the GitHub release manifest flow.
+- Maintenance: retained the existing manifest fetch, update injection, GitHub release packaging, and normal plugin runtime behaviour without further updater logic changes.
+
 ## [1.15.6] - 2026-03-25
 ### Changed
 - Updates: removed temporary upgrader trace hooks, request-scoped trace summaries, and the admin-only updater refresh helper now that release validation is complete.
