@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.4] - 2026-03-25
+### Changed
+- Updates: TPW Core now logs the exact WordPress upgrader stage reached during one-click updates, including the package URL handed to WordPress and the final upgrader result.
+- Updates: upgrader diagnostics now capture precise `WP_Error` codes, messages, and data for remote download failures, filesystem credential or write-access failures, unpack or package validation failures, and plugin replacement failures.
+- Maintenance: each traced update request now records a concise end-of-request summary so failed upgrades can be classified quickly without changing updater behaviour.
+
 ## [1.15.3] - 2026-03-25
 ### Changed
 - Updates: reduced temporary updater diagnostics so short-term validation keeps signal for active update checks and remote manifest failures without the previous debug noise.
