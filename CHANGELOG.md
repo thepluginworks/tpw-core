@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.2] - 2026-03-25
+### Changed
+- Updates: TPW Core now bypasses stale manifest data during WordPress plugin update checks so new releases appear reliably in scheduled checks and after using Dashboard > Updates > Check Again.
+- Updates: updater cache refresh now clears both the TPW Core manifest cache and WordPress plugin update cache automatically when WordPress performs an active check or after a TPW Core upgrade completes.
+- Maintenance: temporary updater diagnostics now log whether cached or freshly fetched manifest data was used, alongside the installed version, available version, and final update injection decision.
+
 ## [1.15.1] - 2026-03-25
 ### Changed
 - Maintenance: removed the obsolete `scripts/freemius-deploy.php` helper as part of updater release validation.

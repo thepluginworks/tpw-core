@@ -25,6 +25,20 @@ class TPW_Core_Updater {
 	const DOWNLOAD_URL = 'https://github.com/thepluginworks/tpw-core/releases/latest/download/tpw-core.zip';
 
 	/**
+	 * Per-request manifest cache so a forced refresh only performs one remote request.
+	 *
+	 * @var array<string, string|int>|null
+	 */
+	private static $request_manifest = null;
+
+	/**
+	 * Track whether the manifest cache was explicitly bypassed in this request.
+	 *
+	 * @var bool
+	 */
+	private static $did_bypass_manifest_cache = false;
+
+	/**
 	 * Register updater hooks.
 	 *
 	 * @return void
@@ -68,7 +82,7 @@ class TPW_Core_Updater {
 		}
 
 		$installed_version = self::get_installed_version( $transient );
-		$manifest = self::get_manifest();
+		$manifest = self::get_manifest( self::get_manifest_request_args() );
 		$manifest_version = ! empty( $manifest['version'] ) ? $manifest['version'] : '';
 		$comparison = '';
 
@@ -218,6 +232,14 @@ class TPW_Core_Updater {
 			return;
 		}
 
+		if ( self::is_manual_check_again_request() ) {
+			self::clear_update_caches();
+			self::log( 'Dashboard Updates force-check detected; cleared updater caches.', array(
+				'user_id' => get_current_user_id(),
+			) );
+			return;
+		}
+
 		if ( empty( $_GET[ self::REFRESH_QUERY_ARG ] ) ) {
 			return;
 		}
@@ -241,23 +263,58 @@ class TPW_Core_Updater {
 	/**
 	 * Get cached manifest data or fetch a fresh copy.
 	 *
+	 * @param array<string, bool|string> $args Manifest retrieval arguments.
 	 * @return array<string, string>
 	 */
-	private static function get_manifest() {
-		$cached = get_site_transient( self::CACHE_KEY );
+	private static function get_manifest( $args = array() ) {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'force_refresh' => false,
+				'context'       => 'default',
+			)
+		);
 
-		if ( is_array( $cached ) ) {
-			self::log( 'Using cached manifest response.', array(
-				'has_error' => ! empty( $cached['_error'] ) ? 'yes' : 'no',
+		$force_refresh = ! empty( $args['force_refresh'] );
+		$context = isset( $args['context'] ) ? (string) $args['context'] : 'default';
+
+		if ( $force_refresh && is_array( self::$request_manifest ) ) {
+			self::log( 'Using request-scoped manifest response.', array(
+				'context'   => $context,
+				'cache_use' => ! empty( self::$request_manifest['_error'] ) ? 'request_error_marker' : 'request_fresh_manifest',
 			) );
 
-			if ( ! empty( $cached['_error'] ) ) {
-				return array();
-			}
-
-			return $cached;
+			return self::normalize_manifest_response( self::$request_manifest );
 		}
 
+		if ( ! $force_refresh ) {
+			$cached = get_site_transient( self::CACHE_KEY );
+
+			if ( is_array( $cached ) ) {
+				self::log( 'Using cached manifest response.', array(
+					'context'   => $context,
+					'cache_use' => ! empty( $cached['_error'] ) ? 'cached_error_marker' : 'cached_manifest',
+				) );
+
+				return self::normalize_manifest_response( $cached );
+			}
+		} else {
+			self::bypass_manifest_cache( $context );
+		}
+
+		$manifest = self::fetch_manifest_from_remote( $context );
+		self::$request_manifest = $manifest;
+
+		return self::normalize_manifest_response( $manifest );
+	}
+
+	/**
+	 * Fetch a fresh manifest from the remote source.
+	 *
+	 * @param string $context Manifest request context for logging.
+	 * @return array<string, string|int>
+	 */
+	private static function fetch_manifest_from_remote( $context ) {
 		$response = wp_remote_get(
 			self::MANIFEST_URL,
 			array(
@@ -268,28 +325,29 @@ class TPW_Core_Updater {
 
 		if ( is_wp_error( $response ) ) {
 			self::log( 'Manifest request failed.', array(
+				'context' => $context,
 				'error' => $response->get_error_message(),
 			) );
-			self::cache_manifest_failure();
-			return array();
+			return self::cache_manifest_failure();
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
 			self::log( 'Manifest request returned a non-200 response.', array(
+				'context'     => $context,
 				'status_code' => $status_code,
 			) );
-			self::cache_manifest_failure();
-			return array();
+			return self::cache_manifest_failure();
 		}
 
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
 
 		if ( ! is_array( $data ) ) {
-			self::log( 'Manifest response could not be decoded as JSON.' );
-			self::cache_manifest_failure();
-			return array();
+			self::log( 'Manifest response could not be decoded as JSON.', array(
+				'context' => $context,
+			) );
+			return self::cache_manifest_failure();
 		}
 
 		$manifest = array(
@@ -298,13 +356,18 @@ class TPW_Core_Updater {
 		);
 
 		if ( '' === $manifest['version'] || '' === $manifest['download_url'] ) {
+			$manifest['context'] = $context;
 			self::log( 'Manifest was missing required fields.', $manifest );
-			self::cache_manifest_failure();
-			return array();
+			return self::cache_manifest_failure();
 		}
 
 		set_site_transient( self::CACHE_KEY, $manifest, self::CACHE_TTL );
-		self::log( 'Fetched and cached manifest.', $manifest );
+		self::log( 'Fetched and cached manifest.', array(
+			'context'      => $context,
+			'cache_use'    => 'fresh_remote_manifest',
+			'version'      => $manifest['version'],
+			'download_url' => $manifest['download_url'],
+		) );
 
 		return $manifest;
 	}
@@ -312,20 +375,109 @@ class TPW_Core_Updater {
 	/**
 	 * Cache a manifest fetch failure briefly to avoid repeated remote requests.
 	 *
-	 * @return void
+	 * @return array<string, int>
 	 */
 	private static function cache_manifest_failure() {
+		$failure_marker = array(
+			'_error' => 1,
+		);
+
 		set_site_transient(
 			self::CACHE_KEY,
-			array(
-				'_error' => 1,
-			),
+			$failure_marker,
 			self::FAILURE_CACHE_TTL
 		);
 
 		self::log( 'Cached manifest failure marker.', array(
 			'cache_key' => self::CACHE_KEY,
 		) );
+
+		return $failure_marker;
+	}
+
+	/**
+	 * Resolve manifest retrieval behaviour for the current request.
+	 *
+	 * @return array<string, bool|string>
+	 */
+	private static function get_manifest_request_args() {
+		$hook = current_filter();
+		$args = array(
+			'force_refresh' => false,
+			'context'       => $hook ? $hook : 'default',
+		);
+
+		if ( 'pre_set_site_transient_update_plugins' === $hook ) {
+			$args['force_refresh'] = true;
+			$args['context'] = 'wp_update_plugins';
+		} elseif ( 'site_transient_update_plugins' === $hook && self::is_manual_check_again_request() ) {
+			$args['force_refresh'] = true;
+			$args['context'] = 'dashboard_check_again';
+		} elseif ( 'site_transient_update_plugins' === $hook && function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
+			$args['force_refresh'] = true;
+			$args['context'] = 'wp_cron_update_check';
+		}
+
+		self::log( 'Manifest request context resolved.', array(
+			'hook'          => $hook,
+			'context'       => $args['context'],
+			'force_refresh' => $args['force_refresh'] ? 'yes' : 'no',
+		) );
+
+		return $args;
+	}
+
+	/**
+	 * Normalize cached or request-scoped manifest responses.
+	 *
+	 * @param array<string, string|int> $manifest Manifest or failure marker.
+	 * @return array<string, string>
+	 */
+	private static function normalize_manifest_response( $manifest ) {
+		if ( ! is_array( $manifest ) || ! empty( $manifest['_error'] ) ) {
+			return array();
+		}
+
+		return $manifest;
+	}
+
+	/**
+	 * Bypass the persistent manifest cache for active update checks.
+	 *
+	 * @param string $context Manifest request context for logging.
+	 * @return void
+	 */
+	private static function bypass_manifest_cache( $context ) {
+		if ( self::$did_bypass_manifest_cache ) {
+			return;
+		}
+
+		delete_site_transient( self::CACHE_KEY );
+		self::$did_bypass_manifest_cache = true;
+
+		self::log( 'Bypassing cached manifest for active update check.', array(
+			'context'   => $context,
+			'cache_use' => 'bypass_persistent_manifest_cache',
+		) );
+	}
+
+	/**
+	 * Determine whether the current admin request is Dashboard > Updates > Check Again.
+	 *
+	 * @return bool
+	 */
+	private static function is_manual_check_again_request() {
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		global $pagenow;
+
+		if ( 'update-core.php' !== $pagenow ) {
+			return false;
+		}
+
+		return null !== filter_input( INPUT_GET, 'force-check', FILTER_DEFAULT );
 	}
 
 	/**
