@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.15.1] - 2026-03-25
+### Changed
+- Maintenance: removed the obsolete `scripts/freemius-deploy.php` helper as part of updater release validation.
+
 ## [1.15.0] - 2026-03-25
 ### Changed
 - Updates: TPW Core now injects update metadata on both the plugin update check path and the cached plugin update read path, so available releases surface more reliably in Plugins and Dashboard > Updates.
