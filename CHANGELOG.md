@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.15.5] - 2026-03-25
+### Changed
+- Maintenance: clarified updater inline documentation without changing TPW Core runtime behaviour.
+
 ## [1.15.4] - 2026-03-25
 ### Changed
 - Updates: TPW Core now logs the exact WordPress upgrader stage reached during one-click updates, including the package URL handed to WordPress and the final upgrader result.

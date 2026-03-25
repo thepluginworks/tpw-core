@@ -3,7 +3,7 @@
  * Lightweight GitHub-based updater for TPW Core.
  *
  * Reads the public version manifest, caches it, injects updates into the
- * standard WordPress plugin update transient, and supplies basic plugin info
+ * standard WordPress plugin update transient, and supplies plugin information
  * for the details modal.
  *
  * @since 1.14.42
@@ -602,7 +602,7 @@ class TPW_Core_Updater {
 	}
 
 	/**
-	 * Temporarily clear updater caches on demand for manual testing.
+	 * Clear updater caches on demand for manual testing requests.
 	 *
 	 * @return void
 	 */
