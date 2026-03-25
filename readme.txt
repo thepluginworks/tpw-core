@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.14.43
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.15.0 =
+- Improved WordPress update visibility so administrators can see new TPW Core releases more reliably in Plugins and Dashboard > Updates.
+- Improved updater refresh behaviour after releases so WordPress picks up the latest TPW Core package information more consistently.
 
 = 1.14.43 =
 - Refreshed the public plugin documentation to make setup and usage guidance clearer for site owners and administrators.

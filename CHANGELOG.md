@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0] - 2026-03-25
+### Changed
+- Updates: TPW Core now injects update metadata on both the plugin update check path and the cached plugin update read path, so available releases surface more reliably in Plugins and Dashboard > Updates.
+- Updates: version comparisons now resolve against the installed TPW Core plugin version reported by WordPress, reducing the risk of stale or mismatched update decisions.
+- Maintenance: updater cache clearing now refreshes both the TPW Core manifest cache and WordPress' plugin update cache after upgrades and manual refresh checks.
+- Maintenance: added tightly scoped temporary updater diagnostics and an admin-only refresh trigger to support release validation and troubleshooting.
+
 ## [1.14.43] - 2026-03-24
 ### Changed
 - Documentation: refreshed the public plugin readme so setup notes, shortcode references, and release notes are clearer for site owners and administrators.
