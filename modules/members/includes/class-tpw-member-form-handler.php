@@ -344,6 +344,36 @@ class TPW_Member_Form_Handler {
             }
         }
 
+        if ( $member_before && ! empty( $member_before->user_id ) && array_key_exists( 'email', $core_data ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
+
+            $sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
+                $controller,
+                $member_before,
+                (string) $core_data['email'],
+                [ 'source' => 'admin_edit' ]
+            );
+
+            if ( is_wp_error( $sync_result ) ) {
+                $error_code = $sync_result->get_error_code();
+                if ( 'tpw_member_email_invalid' === $error_code ) {
+                    wp_die( 'Please enter a valid email address.', '', [ 'response' => 400 ] );
+                }
+
+                if ( 'tpw_member_email_broken_link' === $error_code ) {
+                    wp_die( 'This member is linked to a WordPress user that could not be loaded. Repair the account link before changing the email.', '', [ 'response' => 409 ] );
+                }
+
+                if ( 'tpw_member_email_conflict' === $error_code ) {
+                    wp_die( 'That email address is already in use by another WordPress account. Use a different email or link the correct account first.', '', [ 'response' => 409 ] );
+                }
+
+                wp_die( 'The member email could not be synchronized with the linked WordPress account. No email change was saved.', '', [ 'response' => 500 ] );
+            }
+
+            unset( $core_data['email'] );
+        }
+
         // Handle photo delete/upload before normalizing status
         $photos_enabled = get_option('tpw_members_use_photos', '0') === '1';
         $existing_photo_rel = '';

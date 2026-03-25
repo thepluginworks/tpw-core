@@ -199,6 +199,8 @@ class TPW_Member_Fields {
 
 		// Save core field settings
 		if ( isset($_POST['fields']) && is_array($_POST['fields']) ) {
+			$core_fields = $this->get_core_fields();
+			$username_label = isset( $core_fields['username']['label'] ) ? (string) $core_fields['username']['label'] : 'Username';
 			$sections_map = get_option('tpw_member_field_sections', []);
 			if (!is_array($sections_map)) { $sections_map = []; }
 			foreach ( $_POST['fields'] as $key => $field ) {
@@ -211,7 +213,11 @@ class TPW_Member_Fields {
 				} else {
 					$is_enabled = isset( $field['is_enabled'] ) ? 1 : 0;
 				}
-				$custom_label = isset( $field['custom_label'] ) ? sanitize_text_field($field['custom_label']) : '';
+				if ( 'username' === $key ) {
+					$custom_label = $username_label;
+				} else {
+					$custom_label = isset( $field['custom_label'] ) ? sanitize_text_field($field['custom_label']) : '';
+				}
 				$sort_order = isset( $field['sort_order'] ) ? intval($field['sort_order']) : 0;
 				$basic_search = isset($field['basic_search']) ? 1 : 0;
 				$depends_on = isset($field['depends_on']) ? sanitize_key($field['depends_on']) : '';
@@ -264,6 +270,31 @@ class TPW_Member_Fields {
 						$sections_map[$key] = $sec;
 					}
 				}
+			}
+
+			$username_row_exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE field_key = %s", 'username' ) );
+			if ( $username_row_exists ) {
+				$wpdb->update(
+					$table,
+					[
+						'is_enabled'   => 1,
+						'custom_label' => $username_label,
+					],
+					[ 'field_key' => 'username' ],
+					[ '%d', '%s' ],
+					[ '%s' ]
+				);
+			} else {
+				$wpdb->insert(
+					$table,
+					[
+						'field_key'    => 'username',
+						'is_enabled'   => 1,
+						'custom_label' => $username_label,
+						'sort_order'   => 0,
+					],
+					[ '%s', '%d', '%s', '%d' ]
+				);
 			}
 			update_option('tpw_member_field_sections', $sections_map );
 		}

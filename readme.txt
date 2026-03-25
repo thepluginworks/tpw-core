@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.15.7
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.16.0 =
+- Improved linked member account email updates so TPW Core now keeps the member record and linked WordPress account email address in sync more reliably.
+- Reduced confusion on the Member Field Settings screen by hardening non-auth setting fields against unwanted browser or password-manager autofill.
+- Fixed the core Username field label in Member Field Settings so it remains visible but cannot be edited accidentally.
 
 = 1.15.7 =
 - Removed the bundled Freemius SDK and startup hooks now that TPW Core updates are delivered through the GitHub release and manifest flow.

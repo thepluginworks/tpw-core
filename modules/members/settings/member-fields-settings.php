@@ -14,6 +14,8 @@ wp_enqueue_script(
 
 $__searchable_opt = get_option('tpw_member_searchable_fields', []);
 if (!is_array($__searchable_opt)) { $__searchable_opt = []; }
+$__autofill_form_attrs = ' autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-op-ignore="true"';
+$__autofill_input_attrs = ' autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-op-ignore="true"';
 ?>
 <script>
 window.TPW_SEARCHABLE = <?php echo wp_json_encode($__searchable_opt); ?>;
@@ -43,7 +45,7 @@ tr[data-custom="1"] {
 		<div class="notice notice-success"><p>Settings saved successfully.</p></div>
 	<?php endif; ?>
 
-	<form method="post">
+	<form method="post"<?php echo $__autofill_form_attrs; ?>>
 		<?php wp_nonce_field( 'tpw_save_field_settings', 'tpw_field_settings_nonce' ); ?>
 
 		<?php
@@ -122,6 +124,7 @@ tr[data-custom="1"] {
 				<?php foreach ( $all_fields as $field ):
 					$protected_keys = ['username', 'first_name', 'surname', 'status'];
 					$is_protected = in_array($field['key'], $protected_keys);
+					$is_fixed_username_label = ( 'username' === $field['key'] );
 				?>
 				<div class="tpw-table-row"<?php echo $field['is_custom'] ? ' data-custom="1"' : ''; ?>>
 					<div class="tpw-table-cell">
@@ -146,11 +149,15 @@ tr[data-custom="1"] {
 						</label>
 					</div>
 					<div class="tpw-table-cell">
-						<input type="text" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][custom_label]" value="<?php echo esc_attr($field['custom_label']); ?>">
+						<?php if ( $is_fixed_username_label ) : ?>
+							<div style="padding:6px 8px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px;">Username</div>
+						<?php else : ?>
+							<input type="text" class="tpw-autofill-guard" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][custom_label]" value="<?php echo esc_attr($field['custom_label']); ?>"<?php echo $__autofill_input_attrs; ?>>
+						<?php endif; ?>
 					</div>
 					<div class="tpw-table-cell">
 						<?php $current_section = isset($__sections_map[$field['key']]) && $__sections_map[$field['key']] !== '' ? $__sections_map[$field['key']] : ''; ?>
-						<input type="text" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][section]" value="<?php echo esc_attr($current_section); ?>" placeholder="General" style="max-width:140px;">
+						<input type="text" class="tpw-autofill-guard" name="<?php echo $field['is_custom'] ? 'custom_fields' : 'fields'; ?>[<?php echo esc_attr($field['key']); ?>][section]" value="<?php echo esc_attr($current_section); ?>" placeholder="General" style="max-width:140px;"<?php echo $__autofill_input_attrs; ?>>
 					</div>
 					<div class="tpw-table-cell">
 						<input type="text" value="<?php echo esc_attr($field['type'] ?? ($field['is_custom'] ? 'text' : 'core')); ?>" readonly style="width:100px; background:#f9f9f9;">
@@ -216,7 +223,7 @@ tr[data-custom="1"] {
 		<h3>Add Custom Field</h3>
 		<p>
 			<label for="new_meta_label">Field Name:</label>
-			<input type="text" id="new_meta_label" name="new_meta_label">
+			<input type="text" class="tpw-autofill-guard" id="new_meta_label" name="new_meta_label"<?php echo $__autofill_input_attrs; ?>>
 		</p>
 		<p>
 			<label for="new_meta_type">Field Type:</label>
@@ -228,7 +235,7 @@ tr[data-custom="1"] {
 				<option value="date">Date</option>
 			</select>
 		</p>
-		<input type="hidden" id="new_meta_key" name="new_meta_key" readonly value="">
+		<input type="hidden" id="new_meta_key" name="new_meta_key" readonly value="" data-lpignore="true" data-1p-ignore="true">
 
 	<p><button type="submit" class="tpw-btn tpw-btn-primary">Save Settings</button></p>
 	</form>
@@ -241,9 +248,9 @@ tr[data-custom="1"] {
 			<button type="button" class="tpw-btn tpw-btn-light tpw-dir-modal-close">Close</button>
 		</div>
 		<div class="tpw-dir-modal__body">
-			<form id="tpw-search-config-form">
+			<form id="tpw-search-config-form"<?php echo $__autofill_form_attrs; ?>>
 				<input type="hidden" name="field_key" id="tpw-search-field-key" value="">
-				<input type="hidden" name="label" id="tpw-search-field-label" value="">
+				<input type="hidden" name="label" id="tpw-search-field-label" value="" data-lpignore="true" data-1p-ignore="true">
 				<input type="hidden" name="depends_on" id="tpw-search-depends-on" value="">
 				<p>
 					<label for="tpw-search-type"><strong>Search Type</strong></label><br>
@@ -275,7 +282,7 @@ tr[data-custom="1"] {
 							<option value="dynamic">Dynamic (load from existing values)</option>
 						</select>
 						<label for="tpw-search-options"><strong>Options</strong> (comma or newline separated)</label><br>
-					<textarea name="options" id="tpw-search-options" rows="5" style="width:100%;"></textarea>
+					<textarea name="options" class="tpw-autofill-guard" id="tpw-search-options" rows="5" style="width:100%;"<?php echo $__autofill_input_attrs; ?>></textarea>
 				</p>
 				<p class="description" id="tpw-search-help"></p>
 				<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -301,6 +308,50 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }
+
+		const guardedFields = Array.from(document.querySelectorAll('.tpw-field-settings .tpw-autofill-guard'));
+		function markAutofillBaseline(field) {
+			if (!field) return;
+			field.dataset.tpwAutofillBaseline = field.value;
+			field.dataset.tpwAutofillDirty = '0';
+		}
+		function scrubAutofillField(field) {
+			if (!field || field.dataset.tpwAutofillDirty === '1') return;
+			const baseline = Object.prototype.hasOwnProperty.call(field.dataset, 'tpwAutofillBaseline')
+				? field.dataset.tpwAutofillBaseline
+				: '';
+			if (field.value !== baseline) {
+				field.value = baseline;
+			}
+		}
+		function scrubAutofillFields() {
+			guardedFields.forEach(scrubAutofillField);
+		}
+		guardedFields.forEach(function(field){
+			markAutofillBaseline(field);
+			field.addEventListener('input', function(event){
+				if (event.isTrusted) {
+					field.dataset.tpwAutofillDirty = '1';
+					field.dataset.tpwAutofillBaseline = field.value;
+				}
+			});
+			field.addEventListener('change', function(event){
+				if (event.isTrusted) {
+					field.dataset.tpwAutofillDirty = '1';
+					field.dataset.tpwAutofillBaseline = field.value;
+				}
+			});
+			field.addEventListener('focus', function(){
+				scrubAutofillField(field);
+			});
+			field.addEventListener('pointerdown', function(){
+				scrubAutofillField(field);
+			});
+		});
+		window.setTimeout(scrubAutofillFields, 0);
+		window.setTimeout(scrubAutofillFields, 250);
+		window.setTimeout(scrubAutofillFields, 1000);
+		window.setTimeout(scrubAutofillFields, 2000);
   });
 
 	// Searchable toggle logic
@@ -401,6 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			const conf = (window.TPW_SEARCHABLE || {} )[key] || null;
 			document.getElementById('tpw-search-type').value = conf && conf.search_type ? conf.search_type : 'text';
 			document.getElementById('tpw-search-options').value = (conf && conf.options && conf.options.length) ? conf.options.join('\n') : '';
+			markAutofillBaseline(document.getElementById('tpw-search-options'));
 			document.getElementById('tpw-search-admin-only').checked = !!(conf && conf.admin_only);
 				if (optSourceEl) { optSourceEl.value = conf && conf.options_source ? conf.options_source : 'static'; }
 			// Dependency list: build choices of other searchable/basic-search fields excluding self

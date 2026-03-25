@@ -582,6 +582,20 @@ class TPW_Signup_Finalizer {
 			$update_data['date_joined'] = gmdate( 'Y-m-d' );
 		}
 
+		if ( ! empty( $existing_member->user_id ) ) {
+			$sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
+				$controller,
+				$existing_member,
+				(string) $update_data['email'],
+				array( 'source' => 'signup_finalizer' )
+			);
+			if ( is_wp_error( $sync_result ) ) {
+				return $sync_result;
+			}
+
+			unset( $update_data['email'] );
+		}
+
 		$updated = $controller->update_member( (int) $existing_member->id, $update_data );
 		if ( false === $updated ) {
 			return new WP_Error( 'tpw_signup_member_update_failed', 'The TPW member record could not be updated.' );
@@ -828,6 +842,7 @@ class TPW_Signup_Finalizer {
 			'TPW_Identity'          => TPW_CORE_PATH . 'modules/members/includes/class-tpw-identity.php',
 			'TPW_Member_Access'     => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-access.php',
 			'TPW_Member_Controller' => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-controller.php',
+			'TPW_Member_Email_Sync' => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-email-sync.php',
 			'TPW_Member_Meta'       => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-meta.php',
 			'TPW_Member_Roles'      => TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-roles.php',
 		);

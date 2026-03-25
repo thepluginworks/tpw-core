@@ -810,6 +810,7 @@ class TPW_Member_Ajax {
             $allow_all_statuses = apply_filters('tpw_members/profile_allow_all_statuses', true);
 
             require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
             $user = wp_get_current_user();
             $controller = new TPW_Member_Controller();
             $member = $controller->get_member_by_user_id( (int) $user->ID );
@@ -866,16 +867,61 @@ class TPW_Member_Ajax {
             if ( $is_core ) {
                 // Minimal sanitize for known types
                 $san = is_string($field_value) ? wp_kses_post( $field_value ) : $field_value;
-                $update = [ $field_key => $san ];
-                // Auto-maintain whi_updated when WHI changes (FlexiGolf only)
-                if (
-                    $field_key === 'whi'
-                    && method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' )
-                    && TPW_Member_Field_Loader::is_flexigolf_active()
-                ) {
-                    $update['whi_updated'] = current_time('Y-m-d');
+                if ( 'email' === $field_key ) {
+                    $sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
+                        $controller,
+                        $member,
+                        (string) $san,
+                        [ 'source' => 'self_service_ajax' ]
+                    );
+
+                    if ( is_wp_error( $sync_result ) ) {
+                        $error_code = $sync_result->get_error_code();
+                        if ( 'tpw_member_email_invalid' === $error_code ) {
+                            wp_send_json_error([
+                                'message'   => 'Please enter a valid email address.',
+                                'code'      => 'invalid_email',
+                                'field_key' => 'email',
+                            ], 400);
+                        }
+
+                        if ( 'tpw_member_email_broken_link' === $error_code ) {
+                            wp_send_json_error([
+                                'message'   => 'Your member record is linked to a WordPress account that could not be loaded. Please contact an administrator.',
+                                'code'      => 'broken_link',
+                                'field_key' => 'email',
+                            ], 409);
+                        }
+
+                        if ( 'tpw_member_email_conflict' === $error_code ) {
+                            wp_send_json_error([
+                                'message'   => 'That email address is already in use by another account.',
+                                'code'      => 'email_conflict',
+                                'field_key' => 'email',
+                            ], 409);
+                        }
+
+                        wp_send_json_error([
+                            'message'   => 'We could not update your email address. No email change was saved.',
+                            'code'      => 'email_sync_failed',
+                            'field_key' => 'email',
+                        ], 500);
+                    }
+
+                    $field_value = (string) $sync_result['normalized_email'];
+                    $ok          = true;
+                } else {
+                    $update = [ $field_key => $san ];
+                    // Auto-maintain whi_updated when WHI changes (FlexiGolf only)
+                    if (
+                        $field_key === 'whi'
+                        && method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' )
+                        && TPW_Member_Field_Loader::is_flexigolf_active()
+                    ) {
+                        $update['whi_updated'] = current_time('Y-m-d');
+                    }
+                    $ok = (bool) $controller->update_member( (int) $member->id, $update );
                 }
-                $ok = (bool) $controller->update_member( (int) $member->id, $update );
             } else {
                 $ok = (bool) TPW_Member_Meta::save_meta( (int) $member->id, $field_key, (string) $field_value );
             }

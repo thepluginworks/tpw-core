@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0] - 2026-03-25
+### Changed
+- Members: linked member email updates now synchronize `tpw_members.email` and the linked WordPress account email together across self-service profile edits, admin Edit Member saves, and existing-member signup finalization, while preserving existing usernames.
+- Members: linked email sync now handles duplicate-email conflicts, broken linked-user records, drift-heal cases where only one side is stale, and rollback when a WordPress email update fails after the member record changes.
+- Members: the Member Field Settings screen now uses stronger non-auth autofill suppression and page-local safeguards to reduce unwanted browser or password-manager injection into label, section, custom-field, and search-option inputs.
+- Members: the core `username` field label remains visible in Member Field Settings but is now fixed in the UI and enforced server-side so posted overrides are ignored.
+
 ## [1.15.7] - 2026-03-25
 ### Changed
 - Maintenance: removed the bundled Freemius SDK, bootstrap include, and Core-side startup call now that TPW Core updates are fully handled by the GitHub release manifest flow.
