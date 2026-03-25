@@ -1,18 +1,23 @@
 # Changelog
 
+## [1.14.43] - 2026-03-24
+### Changed
+- Documentation: refreshed the public plugin readme so setup notes, shortcode references, and release notes are clearer for site owners and administrators.
+- Documentation: simplified the public repository overview for GitHub visitors while keeping the full developer and internal documentation set in the repository.
+
 ## [1.14.42] - 2026-03-24
 ### Changed
 - Updates: TPW Core now checks the public TPW version manifest and registers available updates through WordPress' standard plugin update system.
-- Updates: plugin information for TPW Core now includes the current available version, release download link, and homepage details for a smoother in-dashboard update experience.
+- Updates: plugin information for TPW Core now includes the current available version, release download link, and homepage details for a clearer in-dashboard update experience.
 - Maintenance: manifest responses are cached to keep update checks lightweight and reduce unnecessary remote requests.
 - Maintenance: this release adds update detection only; no new admin UI has been introduced.
 
 ## [1.14.41] - 2026-03-24
 ### Changed
-- Release delivery: TPW Core now publishes its canonical install package through GitHub Releases instead of the previous Freemius delivery path.
-- Release delivery: tagged and manual release runs now build a filtered `tpw-core.zip`, preserve the correct `tpw-core/` archive root, and update the release asset in place when a release already exists.
-- Release delivery: release automation now generates a public `tpw-core.json` version manifest and publishes it through GitHub Pages so TPW Core and companion plugins can detect updates from a stable URL.
-- Maintenance: this release changes packaging and distribution only; plugin runtime, Freemius initialization, and admin UI behaviour are unchanged.
+- Release delivery: TPW Core now publishes its canonical install package through the public release channel used for site downloads.
+- Release delivery: tagged and manual release runs now build a filtered `tpw-core.zip`, preserve the correct `tpw-core/` archive root, and refresh the published asset when needed.
+- Release delivery: release automation now generates a public `tpw-core.json` version manifest so TPW Core and companion plugins can detect updates from a stable URL.
+- Maintenance: this release changes packaging and distribution only; plugin runtime and admin UI behaviour are unchanged.
 
 ## [1.14.40] - 2026-03-24
 ### Changed
@@ -24,8 +29,8 @@
 
 ## [1.14.38] - 2026-03-23
 ### Changed
-- Freemius: corrected the TPW Core SDK configuration so the plugin is no longer marked as using paid plans or freemium access.
-- Freemius: commercial metadata now matches the current TPW Core distribution model, reducing the risk of incorrect plan-related prompts or state handling.
+- Distribution: corrected plugin commercial metadata so the plugin is no longer marked as using paid plans or freemium access.
+- Distribution: metadata now matches the current TPW Core distribution model, reducing the risk of incorrect plan-related prompts or state handling.
 
 ## [1.14.37] - 2026-03-23
 ### Changed
@@ -48,45 +53,45 @@
 
 ## [1.14.34] - 2026-03-20
 ### Changed
-- Packaging: excluded `uninstall.php` from the generated release zip so Freemius package validation no longer rejects the TPW Core deployment archive.
-- Packaging: kept the existing `.distignore`-driven build flow unchanged so GitHub release assets and Freemius uploads continue to use the same filtered package.
+- Packaging: excluded `uninstall.php` from the generated release zip so package validation no longer rejects the TPW Core deployment archive.
+- Packaging: kept the existing `.distignore`-driven build flow unchanged so published release assets continue to use the same filtered package.
 - Maintenance: no TPW Core runtime, uninstall logic, or plugin behaviour changed in this release.
 
 ## [1.14.33] - 2026-03-20
 ### Changed
-- Release delivery: replaced the custom Freemius HTTP client with an SDK-based deployment flow that uses the official Freemius PHP SDK for tagged releases.
-- Release delivery: tagged release publishing now downloads a pinned Freemius SDK version on the runner and uses a small deployment helper that fails loudly while logging the returned Freemius upload and release payloads.
+- Release delivery: replaced the previous custom deployment client with an SDK-based publishing flow for tagged releases.
+- Release delivery: tagged release publishing now uses a pinned SDK version on the runner and logs returned upload and release payloads more clearly when publishing fails.
 - Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while simplifying the Freemius deployment path.
 
 ## [1.14.32] - 2026-03-20
 ### Changed
-- Release delivery: corrected the Freemius developer-key authorization signing so deployment requests now match the official Freemius SDK rules for canonical paths, multipart uploads, and signature encoding.
-- Release delivery: retained the existing GitHub Actions diagnostics so failed Freemius publishing attempts still surface the HTTP status and returned API response clearly.
+- Release delivery: corrected deployment request signing so tagged publishing now follows the expected SDK rules for canonical paths, multipart uploads, and signatures.
+- Release delivery: retained the existing diagnostics so failed publishing attempts still surface the HTTP status and returned API response clearly.
 - Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while fixing the Freemius signing path.
 
 ## [1.14.31] - 2026-03-20
 ### Changed
-- Release delivery: replaced the rejected Basic Auth Freemius upload path with a signed Freemius API deployment flow that publishes plugin tags through the correct endpoint.
-- Release delivery: tagged release uploads now log the returned Freemius tag metadata and fail explicitly when either the upload or the follow-up release-state change is rejected.
+- Release delivery: replaced the rejected Basic Auth publishing path with the correct signed API deployment flow for plugin tags.
+- Release delivery: tagged release uploads now log returned tag metadata and fail explicitly when either the upload or the follow-up release-state change is rejected.
 - Maintenance: kept package building, GitHub release asset uploads, and plugin runtime behaviour unchanged while correcting the Freemius publishing path.
 
 ## [1.14.30] - 2026-03-20
 ### Changed
-- Release delivery: updated Freemius uploads to use curl's built-in Basic Auth handling, avoiding malformed authorization headers during tagged release uploads.
-- Release delivery: kept the existing upload diagnostics in place so GitHub Actions still shows the requested version, package path, HTTP status, response body size, and raw Freemius response when available.
+- Release delivery: updated tagged publishing to use curl's built-in Basic Auth handling, avoiding malformed authorization headers during uploads.
+- Release delivery: kept the existing upload diagnostics in place so release runs still show the requested version, package path, HTTP status, response body size, and raw response when available.
 - Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
 
 ## [1.14.29] - 2026-03-20
 ### Changed
-- Release delivery: expanded Freemius upload logging so tagged releases now show the package path, requested version, response body size, and the raw response returned by Freemius when available.
-- Release delivery: added a clear fallback message when Freemius returns an empty response body, making failed uploads easier to diagnose from GitHub Actions logs.
+- Release delivery: expanded tagged upload logging so release runs now show the package path, requested version, response body size, and raw response when available.
+- Release delivery: added a clear fallback message when a publishing response body is empty, making failed uploads easier to diagnose from release logs.
 - Maintenance: enabled shell trace output for the Freemius upload step to improve release debugging without changing plugin runtime behaviour.
 - Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
 
 ## [1.14.28] - 2026-03-20
 ### Changed
-- Release delivery: hardened the Freemius deployment step so GitHub Actions now reports the HTTP status and response body returned by Freemius for each tagged release upload.
-- Release delivery: Freemius upload attempts now fail the workflow when Freemius rejects the package, making release problems visible immediately instead of appearing as successful runs.
+- Release delivery: hardened the publishing step so release runs now report the HTTP status and response body returned for each tagged upload.
+- Release delivery: failed package uploads now fail the workflow immediately instead of appearing as successful runs.
 - Maintenance: updated the release workflow checkout action from `actions/checkout@v3` to `actions/checkout@v4`.
 - Maintenance: no plugin runtime, payment flow, or front-end behaviour changed in this release.
 

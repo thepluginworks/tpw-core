@@ -1,449 +1,71 @@
-# TPW Core (v1.14.42)
-
-TPW Core provides shared building blocks for TPW plugins (e.g., FlexiEvent, FlexiGolf, RSVP-based add‑ons). It centralizes members, payments, branding, system pages, and common utilities so that dependent plugins remain small and consistent.
-
-## Help Topics
-Browse all module documentation → [docs/help/README.md](docs/help/README.md)
-
-## What it does (at a glance)
-
-- Members and Access Control: shared helpers, profile and login pages, status/flags checks
-- Payments: unified payment tables, logger, settings (BACS/Cheque/Cash, SumUp, WooCommerce hooks)
-- Branding and UI Theme: global button system and admin UI tokens used across TPW screens
-- System Pages: registry for required front‑end pages (My Profile, TPW Control, Member Login, etc.)
-- Email: reusable email settings, templates, and sending helpers
-- Postcodes: AJAX postcode lookup utilities with multiple providers
-- TPW Control: front‑end admin hub that other plugins extend via hooks
-
-### Payments updates (1.8.0)
-- Payment Methods management is now a tab in TPW Core Settings.
-- Settings tabs can now be extended via `tpw_core_settings_tab_content` and `tpw_core_settings_tab_content_{tab}`.
-- Added `tpw_core_get_payment_methods_settings_url()` and redirected the legacy Payment Methods page/menu to the new tab.
-
-### Gallery updates (1.5.0)
-- Public shortcode: optional pagination for large galleries (`per_page` / `paginate`) in `grid` and `list` views.
-- Elementor: TPW Gallery widget (Grid/List/Story) when Elementor is installed and active.
-- Story view: smoother navigation via neighbor preloading and improved image decoding.
-- Docs: updated Gallery help topics and admin guide.
-
-### Notices update (1.5.1)
-- Noticeboard list: notice thumbnail image is now clickable (links to the notice).
-
-### Gallery updates (1.5.2)
-- Public shortcode + Elementor: added `show_heading` option to hide the gallery title/description above images (useful when page already has a heading).
-- Gallery Admin: caption editing now uses a single textarea modal (auto-growing) suitable for long narrative captions, with clamped previews so cards don’t expand.
-
-### Members updates (1.6.0)
-- Optional Household support (default off) with new tools on the Edit Member screen to create households and attach/move members.
-- Added Date of Birth (DOB) core field.
-- Select fields can now use option lists via `field_options` (one option per line).
-
-### Scheduler updates (1.7.0)
-- Core now provides an ecosystem-wide scheduling engine via Action Scheduler, with safe detection/avoidance of duplicate loads.
-- Other TPW plugins should call `TPW_Core_Scheduler::init_if_needed()` early (e.g. on `plugins_loaded`) and use the wrapper methods (single/recurring/unschedule/query).
-
-### Members updates (1.7.2)
-- Members Admin: Add Member now validates required fields inline (username, first name, surname, email).
-- Members Admin: Edit Member can be saved even when imported records have a blank member username (no longer blocked by JS).
-
-### Members updates (1.7.1)
-- New setting (default off) to optionally show adult family members on the primary member profile.
-- Member-facing directory and details now only allow primary members; dependants/children are never displayed to other members.
-- Admin Edit Member: improved Household UI with a household members list and safer change controls.
-
-## Works with other TPW plugins
-
-TPW Core is a dependency of feature plugins such as FlexiEvent and FlexiGolf. Those plugins:
-
-- Register their System Pages via Core’s page registry
-- Use Core’s members/access checks to gate front‑end routes
-- Hook into Core’s email/template system for consistent messages
-- Use Core’s payment methods and logger, or add new gateways by following the same patterns
-
-If you build new TPW add‑ons, depend on this plugin and use the extension points below.
-
-### Plugin update detection update (1.14.42)
-- TPW Core now checks a public version manifest and surfaces available updates through WordPress' normal plugin update flow.
-- The Plugins screen can now show current TPW Core version details along with the download link and homepage information for the latest release.
-- Update checks are cached to reduce repeated requests and keep the updater lightweight for production sites.
-- This release adds update detection only and does not introduce new update UI settings.
-
-### Release delivery update (1.14.41)
-- TPW Core release downloads now use GitHub Releases as the canonical delivery source.
-- Release automation now builds a filtered `tpw-core.zip`, keeps the correct `tpw-core/` install folder structure, and refreshes the release asset when a tagged package is republished.
-- A public `tpw-core.json` manifest is now generated and published through GitHub Pages so TPW Core and companion plugins can read the latest version and download URL from a stable endpoint.
-- This release updates packaging and release delivery only; plugin runtime behaviour and admin UI behaviour are unchanged.
-
-### Member details helper adoption update (1.14.21)
-- Updated the Member Details modal in [modules/members/includes/class-tpw-member-ajax.php](modules/members/includes/class-tpw-member-ajax.php) so the legacy member-flag read path now goes through `TPW_Identity_Compat` within one narrow, passive UI boundary.
-- Preserved the existing flag labels, ordering, formatting, field visibility, and Yes/No rendering behaviour in the modal.
-- Added a same-member guard so the modal falls back to the original loaded member row unless the compatibility lookup resolves back to that exact member record.
-
-### Member flag ownership model update (1.14.20)
-- Added the formal Phase 2C Member Flag Ownership & Classification Model under `docs/architecture/identity/member-flag-ownership-model.md`.
-- Classified the current `tpw_members` member flags by ownership, system role, migration risk, and migration difficulty so later migration planning can stay behaviour-preserving.
-- Clarified that these member flags are not canonical identity and that this release does not change runtime behaviour.
-
-### Identity audit helper adoption (1.14.19)
-- Added the first narrow internal Core adoption of the Phase 2A helper layer by switching the read-only Identity Audit admin reporting paths to `TPW_Identity` and `TPW_Identity_Compat` where their behaviour already matched the existing audit logic.
-- Limited the change to the audit-only methods for user linkage analysis, identity role projection, unknown role reporting, and drift reporting.
-- Preserved existing audit output and kept live permission behaviour, role semantics, member-flag authority paths, and admin elevation logic unchanged.
-
-### Architecture clarification update (1.14.18)
-- Clarified in the identity architecture docs that `tpw_members.is_admin` is a Core-managed administrative elevation signal rather than an ordinary compatibility-era responsibility flag.
-- Documented that `is_admin` affects WordPress Administrator assignment and site-level authority, so its semantics must remain behaviour-preserving during migration.
-- Recorded that any redesign of WordPress Administrator assignment must be handled as an explicit architecture decision rather than as helper migration or responsibility-flag cleanup.
-
-### Identity helper layer update (1.14.17)
-- Added the first Phase 2A identity helper-layer scaffolding with `TPW_Identity` for canonical member lookup, raw and normalized status reads, linkage-mode reporting, and canonical membership checks.
-- Added `TPW_Identity_Compat` to centralize compatibility-era access to legacy member flags and current WordPress legacy identity-role slugs such as `tpw_member`.
-- Preserved the current weak-linkage compatibility behaviour by keeping direct `user_id` lookup first, followed by the existing email and username fallbacks when enabled.
-
-### Architecture guardrails update (1.14.16)
-- Strengthened the identity and permissions architecture documentation with Phase 2 migration guardrails for legacy responsibility flags stored on Core member records.
-- Documented that historical flags such as committee, match manager, and similar responsibility markers are compatibility-era signals rather than identity or long-term permission models.
-- Clarified that future plugin migration must move away from direct raw-flag reads to a Core compatibility layer to reduce privilege escalation risk from inconsistent responsibility reuse.
-
-### Identity audit tooling (1.14.15)
-- Added a new read-only Identity Audit screen under TPW Core Settings for Phase 1 of the identity and permissions implementation roadmap.
-- The audit reports user to member linkage, weak-linkage fallback matches, identity role projections, unknown assigned roles, member status distribution, and current drift indicators.
-- This release adds diagnostics only and does not change runtime identity ownership, role assignment, or permission enforcement behaviour.
-
-### Role classification architecture reference (1.14.14)
-- Added a formal TPW Role Classification Model under `docs/architecture/identity/role-classification-model.md`.
-- Clarified the distinction between platform identity roles, shared responsibility roles, plugin-local responsibility roles, capabilities, domain assignments, third-party roles, and legacy or unknown roles.
-- Added architecture guidance to help future plugin design classify concepts such as Match Manager without mixing identity and permissions.
-
-### Identity projection lifecycle clarification (1.14.13)
-- Clarified in the architecture docs that TPW Core owns the full lifecycle of projected identity roles when those roles are retained.
-- Clarified that feature plugins must not create or manage identity roles directly and should instead rely on Core identity checks or capabilities.
-- Reinforced that this rule is separate from plugin-owned responsibility roles used for operational permissions.
-
-### Identity and permissions architecture updates (1.14.12)
-- Added a formal identity and permissions decisions document under `docs/architecture/identity/identity-permissions-decisions.md`.
-- Added a phased implementation roadmap under `docs/architecture/identity/identity-permissions-implementation-roadmap.md`.
-- Updated the architecture overview so the identity model, decisions, roadmap, and permissions references are easier to find together.
-
-### Identity architecture clarification (1.14.11)
-- Refined the status wording in the TPW Identity Architecture specification to make clear that the current design direction remains subject to ecosystem audit and migration validation.
-
-### Identity architecture updates (1.14.10)
-- Added the first formal TPW Identity Architecture specification under `docs/architecture/identity/identity-model.md`.
-- Defined TPW Core as the canonical owner of platform identity and clarified the separation between identity and permissions.
-- Documented the canonical `tpw_members` member record as the source of truth for membership identity, with WordPress identity roles treated as synchronised projections.
-
-### Architecture documentation updates (1.14.9)
-- Introduced a dedicated `docs/architecture/` section for platform architecture documentation.
-- Separated architecture domains into `docs/architecture/identity/` and `docs/architecture/permissions/`.
-- Moved the existing permissions documentation into `docs/architecture/permissions/` and updated documentation references to match.
-
-### Member onboarding updates (1.14.8)
-- Added a signup finalization service that turns eligible Join signup attempts into live WordPress users and TPW member records.
-- Added a schema-driven field mapper so approved signup data is stored consistently across users, members, and member meta.
-- Added a controlled internal completion bridge for draft Join attempts, with a privileged admin-post trigger for non-gateway recovery and end-to-end Core testing.
-- Finalization now writes created account references back to the signup attempt as soon as they exist, making partial progress recoverable.
-- Failed finalization runs now move into a recoverable finalization-failed state with structured error details for safe follow-up.
-- Internal completion now records explicit non-gateway audit context in the signup attempt payload and event log before finalization starts.
-
-### Join form updates (1.14.6)
-- Added automatic provisioning for the public Join page and support for the public `[tpw_join_form]` shortcode.
-- Added schema-driven Join form rendering with validation, sticky values, and a clearer public confirmation message using a shortened reference code.
-- Successful Join submissions now create a signup request record only; this stage does not create TPW members or WordPress users.
-- Sign-Ups settings now focus on public-safe fields, better default field handling, and drag-and-drop field ordering with cleaner initial grouping.
-
-### Sign-up schema and settings updates (1.14.5)
-- Added the next stage of the TPW Core sign-up system by extending standard and custom member fields with sign-up configuration.
-- Added fixed Core sign-up sections covering Account Details, Personal Details, Address, and Emergency Contact.
-- Added a Sign-Ups tab in Member Settings to control sign-up enablement, select the public sign-up page, and configure eligible fields for future sign-up forms.
-
-### Sign-up engine foundation updates (1.14.4)
-- Added the first Core signup attempts engine foundation for future TPW onboarding flows.
-- New installs and upgraded sites now provision a dedicated signup attempts table through the normal Core activation and upgrade path.
-- Added a generic lifecycle service covering sign-up attempt creation, lookup, status transitions, payment state handling, finalization locks, cleanup, and audit-style event logging.
-
-### Sign-up system documentation updates (1.14.3)
-- Added the first TPW Core Sign-Up System design specification for the new onboarding framework.
-- Documented the generic Core lifecycle model for payment-first sign-up flows, including retryable attempts, post-payment account creation, and admin recovery.
-- Defined the day-one extension model for plugin-owned sections, repeatable groups, validation, and finalization callbacks used by FlexiSubscriptions and future TPW plugins.
-
-### Payments updates (1.14.2)
-- The Payment Methods item under the FlexiEvent admin menu now opens the current TPW Core Settings Payment Methods screen directly.
-- Removed the obsolete legacy Payment Methods compatibility route now that active TPW plugins use the shared destination.
-
-### Payments updates (1.14.1)
-- Restored TPW Core Payments currency settings persistence in FlexiEvent settings by allowing `currency_symbol` and `currency_code` through the new `flexievent_settings_allowed_keys` filter.
-
-### Members management updates (1.14.0)
-- Added a new core boolean member field `is_manage_members` with the label `Members Manager`.
-- Access to the front-end members management UI and related capability checks now allows WordPress admins, TPW members with `is_admin = 1`, or TPW members with `is_manage_members = 1`.
-- `is_manage_members` now follows the same Core checkbox-style handling pattern as other permission-style member flags across schema upgrade, field settings, profile protections, and add/edit forms.
-- Protected permission fields `is_admin` and `is_manage_members` now stay visible but read-only for non-administrator managers, with server-side enforcement to block privilege escalation through form tampering or AJAX requests.
-
-### Members and Email updates (1.12.0)
-- My Profile tabs now render from a shared profile sections registry, so add-on plugins can register their own member-facing tabs via `tpw_core_register_profile_sections`.
-- Built-in Profile and Payments sections now use the same normalized tab registry and priority ordering.
-- Added `TPW_Email::dispatch_mail()` as the shared outbound email dispatcher with throttling-aware slot reservation and centralized logging hooks.
-- Feedback submissions and member notification emails now use the shared dispatcher when it is available.
-- Docs now include the My Profile tab extension contract and example integration guidance for future TPW plugins.
-
-### Notices updates (1.13.1)
-- Active front-end noticeboard management now allows TPW noticeboard admins via `TPW_Control_UI::is_noticeboard_admin()` while preserving WordPress admin access.
-- The active notices shortcode render path and AJAX management actions now share the same permission check so front-end controls and endpoints stay aligned.
-
-### Members updates (1.13.2)
-- Added `TPW_Member_Field_Loader::get_condition_eligible_custom_fields()` to return enabled custom checkbox fields that are explicitly allowed for conditional field logic.
-- The helper exposes sanitized `key`, `label`, and `type` values so member-facing conditional UI can consume a single filtered field list.
-
-### Email logging updates (1.13.0)
-- Added a persistent core email log table that records timestamp, recipient, subject, context, status, error detail, and send duration for dispatcher activity.
-- Added an Email Logs tab in TPW Core Settings so administrators can inspect the latest 100 log entries and clear logs when required.
-- `TPW_Email::dispatch_mail()` now captures actual `wp_mail()` failure details when available and records operational outcomes centrally.
-- Email log retention now runs automatically each day and removes entries older than 30 days.
-- Docs now cover central email logging, optional dispatcher context values, retention behaviour, and where to view logs.
-
-### Scheduler updates (1.11.2)
-- Added `TPW_Core_Scheduler::get_wrapper_diagnostics()` to expose the loaded wrapper file, detected Action Scheduler source/version, and pre-filter registration state.
-- `schedule_single()` now records branch-specific debug metadata, raw scheduler return values, and optional admin-only debug log events around each scheduling call.
-- Short-circuited `pre_as_schedule_single_action` responses now preserve explicit success/failure diagnostics.
-
-### Scheduler updates (1.11.1)
-- `TPW_Core_Scheduler::schedule_single()` now records richer attempt context for successful and failed scheduling requests.
-- Added request-scoped diagnostics helpers: `get_last_error()`, `get_last_schedule_debug()`, and `get_schedule_debug_history()`.
-- Unique single scheduling now rejects duplicate hook/args/group combinations before handing work back to Action Scheduler.
-
-### Members updates (1.11.0)
-- Added a new core boolean member field `is_volunteer` with the label `Volunteer`.
-- `is_volunteer` now follows the same Core handling pattern as `is_committee` and `is_noticeboard_admin` across field settings, add/edit forms, Member Details modal, profile protections, and checkbox-based directory search/filtering.
-- Upgraded sites now ensure the `tpw_members.is_volunteer` column exists with a default value of `0`.
-
-### Gallery updates (1.10.0)
-- Added a same-page gallery browser via the `tpw_gallery_index` shortcode and a dedicated Gallery Index Elementor widget.
-- Clicking a gallery card now hides the index and renders only the selected gallery with a Back to Galleries action on the same page.
-- Gallery index pages now enqueue the shared TPW button stylesheet so embedded browser controls render correctly.
-
-### Maintenance updates (1.9.5)
-- Admin UI: scope WP admin tabs styling to `wp-core-ui`-scoped TPW screens.
-- Maintenance: version bump to 1.9.5.
-
-### Maintenance updates (1.9.4)
-- Admin UI: added single helper to detect TPW wp-admin requests and gate UI-only styling.
-- Admin UI: `tpw-fe-embed` body class is now opt-in via filter (defaults to off).
-- Branding: front-end branding/heading CSS vars only output when TPW styles are enqueued.
-- Maintenance: version bump to 1.9.4.
-
-### Members / Login updates (1.9.3)
-- Fix: preserve full `redirect_to` destinations (including nested query args) through front-end password reset emails and post-reset redirects.
-- Fix: preserve `redirect_to` after failed login attempts so subsequent tries still land on the intended page.
-
-### Admin / Settings updates (1.9.2)
-- Fix: eliminated WP 6.7+ early textdomain JIT notices by ensuring tpw-core translations are not invoked before init.
-- Maintenance: version bump to 1.9.2.
-
-### Admin / Settings updates (1.9.1)
-- Core Settings: normalized notice handling (no Settings API notice plumbing), removed notice relocation JS, and eliminated flicker/duplicate notices.
-- Maintenance: version bump to 1.9.1.
-
-### Admin / Settings updates (1.9.0)
-- Core Settings: now uses the standard TPW admin header strip (icon + title/subtitle, TPW logo).
-- Maintenance: version bump to 1.9.0.
-
-### Menus / Logout updates (1.8.9)
-- Menus: introduced the official logout placeholder URL `/?tpw_action=logout` for menu Custom Links.
-- Menus: placeholder is rewritten at render-time into a fresh `wp_logout_url( home_url('/') )` so logout is immediate and no WordPress confirmation screen appears.
-- Docs: documented the Logout URL Standard contract for admins and developers.
-- Maintenance: version bump to 1.8.9.
-
-### Members updates (1.8.8)
-- My Profile: removed the “Payment Methods” panel from the member-facing My Payments hub.
-- Maintenance: version bump to 1.8.8.
-
-### UI updates (1.8.7)
-- UI: removed `all: revert-layer` from the scoped Admin UI CSS to avoid impacting other plugins/themes.
-- Maintenance: version bump to 1.8.7.
-
-### UI updates (1.8.6)
-- UI: tidied Member Profile / My Payments navigation hierarchy (Tier-1 tabs + Tier-2 sidebar) and payments hub layout polish (no behaviour change).
-- Maintenance: version bump to 1.8.6.
-
-### UI and Permissions updates (1.8.5)
-- UI: added `.tpw-btn-warning` variant to the global button system.
-- Docs: added permissions documentation under `docs/architecture/permissions/`.
-- Maintenance: version bump to 1.8.5.
-
-### Permissions updates (1.8.4)
-- Permissions: added `tpw_core_user_can()` bridge helper (additive only; no behaviour change).
-- Maintenance: version bump to 1.8.4.
-
-### Members updates (1.8.3)
-- Maintenance: version bump to 1.8.3.
-
-### Members updates (1.8.2)
-- Members Admin: Export CSV now exports all enabled fields (including custom fields) when no Download fields are selected.
-- Members Admin: When Download fields are selected, Export CSV now includes only those selected fields that are enabled.
-
-### Members updates (1.8.1)
-- Members Admin: Export CSV no longer downloads blank output when no Download fields have been configured.
-
-## Key components
+# TPW Core
 
-- Members: profile page, login URL resolution, access helpers, admin forms extendable via actions
-- Payments: create and record payments; optional surcharges; logger table and admin viewer
-- Branding and UI: `.tpw-btn` button system and `.tpw-admin-ui` scoped styles driven by saved tokens
-- System Pages: register/ensure/get front‑end pages required by modules
-- Email: settings, template registry/manager, reusable form and send wrapper
-- Postcodes: client + server helpers and a small JS library
-- TPW Control: front‑end admin hub ([docs/help/admin-guide-tpw-control.md](docs/help/admin-guide-tpw-control.md))
+TPW Core is the shared foundation plugin used by TPW sites and TPW add-on plugins. It provides the common member, payment, page, branding, and admin tools that other TPW modules rely on.
 
-## Developer entry points (hooks)
+## What TPW Core is
 
-Common actions/filters used by add‑ons (see inline docs for full signatures):
+TPW Core is the central service layer for TPW-powered sites. It helps administrators run consistent member journeys, shared pages, payments, and reusable admin tools across the TPW plugin suite.
 
-- Filter: `tpw_core/login_url` — Resolve the front‑end login URL (Core provides sane defaults)
-- Filter: `tpw_member_login_redirect` — Adjust post‑login redirect destination
-- Action: `tpw_members_admin_form_extra_fields` — Render extra fields in Members admin Add/Edit
-- Action: `tpw_members_admin_form_after_save` — Persist extra fields after Core saves
-- Actions: `tpw_members_admin_buttons_end`, `tpw_members_tools_buttons_end` — Add buttons to Manage Members
-- Filter: `tpw_control/sections` — Register TPW Control sections
+This repository keeps the public overview concise while preserving the deeper implementation and architecture documentation in the repo for development use.
 
-For examples, see `docs/developer-guide.md`.
+## What it provides
 
-## Extending Core (short examples)
+- Shared member and profile features
+- Shared payment methods and payment records
+- Front-end login, profile, and join flows
+- System page registration for TPW plugins
+- Shared TPW settings, branding, and admin UI assets
+- Common utilities such as email and postcode lookup support
 
-Add a Members admin form field:
+## TPW plugins that depend on it
 
-```php
-add_action( 'tpw_members_admin_form_extra_fields', function( string $context, ?int $member_id, ?object $member, array $meta ) {
-    echo '<p><label>Membership No. <input name="my_membership_no" type="text" /></label></p>';
-}, 10, 4 );
+TPW Core is intended to support TPW feature plugins such as:
 
-add_action( 'tpw_members_admin_form_after_save', function( string $context, int $member_id ) {
-    if ( isset($_POST['my_membership_no']) ) {
-        update_user_meta( (int) get_current_user_id(), 'my_membership_no', sanitize_text_field( wp_unslash($_POST['my_membership_no']) ) );
-    }
-}, 10, 2 );
-```
+- TPW event and RSVP plugins
+- TPW payments-enabled modules
+- TPW members and join-flow extensions
+- TPW gallery, notices, menus, and control tools
 
-Register a System Page for your add‑on:
+If a TPW plugin expects shared member, payment, or front-end account functionality, it will typically depend on TPW Core being active.
 
-```php
-TPW_Core_System_Pages::register_page( 'my-addon', [
-    'title'     => 'My Add‑on',
-    'shortcode' => '[my_addon]',
-    'plugin'    => 'tpw-my-addon',
-    'required'  => 1,
-] );
-TPW_Core_System_Pages::ensure_page( 'my-addon' );
-```
+## Installation and updates
 
-## Shortcodes
+1. Install and activate TPW Core in WordPress.
+2. Install any TPW add-on plugins that depend on it.
+3. Review the shared settings under WordPress Settings -> TPW Core.
+4. Confirm that required pages such as login, profile, join, or thank-you pages are set up for your site.
 
-### `[tpw_thank_you]`
+TPW Core includes its own update and packaging flow so production sites receive the intended install package structure.
 
-Displays a Thank You message after RSVP completion. Works in both block and classic themes.
+## Key admin areas
 
-Usage:
+- Settings -> TPW Core for shared configuration such as branding, payments, and core options
+- Member-related TPW screens used by dependent plugins
+- TPW Control for front-end admin tools where enabled
 
-```plaintext
-[tpw_thank_you]
-```
+## Common public shortcodes
 
-- Shows RSVP confirmation
-- Displays the submission ID (when present in the URL)
-- Outputs payment instructions (e.g., Bank Transfer)
+- `[tpw_member_login]`
+- `[tpw_member_profile]`
+- `[tpw_join_form]`
+- `[tpw_thank_you]`
+- `[tpw-control]`
 
-Example route: `/rsvp-thank-you/?submission_id=123`
+Exact shortcodes used on a site depend on which TPW modules are active.
 
-### `[tpw_gallery_help]`
-Renders the Gallery Help page content explaining image management, categories, reordering, captions, and focal point adjustments.
+## Support and documentation
 
-Example route: `/gallery-help/`
+- Admin and help topics: [docs/help/README.md](docs/help/README.md)
+- General developer guidance: [docs/developer-guide.md](docs/developer-guide.md)
+- Full release history: [CHANGELOG.md](CHANGELOG.md)
 
-### `[tpw_logout_link]`
+## For developers
 
-Renders a logout link that redirects the user to the homepage (useful when the WP admin bar is hidden for members):
+Developer and internal documentation remains in the repository. Start with:
 
-```plaintext
-[tpw_logout_link]
-```
+- [docs/developer-guide.md](docs/developer-guide.md)
+- [docs/architecture/README.md](docs/architecture/README.md)
+- [docs/help/README.md](docs/help/README.md)
+- [CODING_STANDARDS.md](CODING_STANDARDS.md)
 
-Custom link text:
-
-```plaintext
-[tpw_logout_link]Sign out[/tpw_logout_link]
-```
-
-## Logout URL Standard
-
-TPW Core does not support hardcoded WordPress logout URLs such as `wp-login.php?action=logout`.
-
-WordPress logout URLs contain a security nonce. If a nonce-bearing logout URL is saved into a WordPress menu, that nonce will eventually expire. When it does, users will see the default WordPress confirmation screen (“Are you sure you want to log out?”) instead of being logged out immediately.
-
-The official TPW Core logout URL contract is:
-
-`/?tpw_action=logout`
-
-When this URL is used in a WordPress menu:
-
-- It is rewritten at render time into `wp_logout_url( home_url('/') )`
-- A fresh nonce is generated per user/session
-- Logout happens immediately
-- The user is redirected to the homepage
-- No confirmation screen appears
-
-### Admin Instruction
-
-To add Logout to a menu:
-
-1. Go to Appearance → Menus
-2. Add a Custom Link
-3. URL: `/?tpw_action=logout`
-4. Link text: Logout
-5. Save
-
-Admins must not paste `wp-login.php?action=logout` URLs into menus.
-
-### `[tpw-control]`
-### `[tpw_profile_badge]`
-
-Standalone circular profile/login badge (40px). Shows member photo, real avatar, or initials. Optional dropdown:
-
-```
-[tpw_profile_badge]
-[tpw_profile_badge dropdown="yes"]
-```
-
-Dropdown behaviour: hover opens on desktop; first tap opens on touch devices, second tap follows link or outside tap/ESC closes. Links: My Profile, Logout.
-
-
-Front‑end admin hub (TPW Control). Create a page titled “TPW Control” with this shortcode to access Upload Pages, Menu Manager, and plugin‑provided tools via `/tpw-control/?action=`.
-
-## Core settings (admin)
-
-Found under Settings → TPW Core. Highlights:
-
-- Default Login Page and Redirect After Login
-- Branding and UI Theme tokens
-- Email settings and template overrides
-- System Pages registry viewer
-
-## RSVP data
-
-Core manages the following tables:
-
-- `tpw_rsvp_submissions` — main RSVP data
-- `tpw_rsvp_guests` — linked guests per RSVP
-- `tpw_rsvp_payments` — recorded payments
-
-Add‑ons should use Core functions/filters to submit/retrieve RSVP data and redirect to the shared thank‑you endpoint when finished.
-
-## References
-
-- Admin Help — TPW Control: `docs/help/admin-guide-tpw-control.md`
-- Admin Help — TPW Core Settings: `docs/help/tpw-core-settings.md`
-- Branding and UI tokens: `docs/help/tpw-branding.md`
-- Developer Guide (hooks, examples): `docs/developer-guide.md`
-
-## Developer Documentation
-
-- Developer Guide (Core Hooks Index, extension patterns): `docs/developer-guide.md`
-- Module Help topics (Overview/Usage/Hooks/Extending/References): `docs/help/README.md`
+This README is intentionally high level. Detailed implementation notes, architecture material, and internal reference docs stay in the repo rather than being duplicated here.
