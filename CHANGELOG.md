@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.15.3] - 2026-03-25
+### Changed
+- Updates: reduced temporary updater diagnostics so short-term validation keeps signal for active update checks and remote manifest failures without the previous debug noise.
+
 ## [1.15.2] - 2026-03-25
 ### Changed
 - Updates: TPW Core now bypasses stale manifest data during WordPress plugin update checks so new releases appear reliably in scheduled checks and after using Dashboard > Updates > Check Again.

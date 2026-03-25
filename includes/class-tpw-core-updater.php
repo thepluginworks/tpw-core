@@ -44,11 +44,6 @@ class TPW_Core_Updater {
 	 * @return void
 	 */
 	public static function init() {
-		self::log( 'Updater class loaded and hooks registered.', array(
-			'plugin_basename' => self::PLUGIN_BASENAME,
-			'slug'            => self::PLUGIN_SLUG,
-		) );
-
 		add_filter( 'pre_set_site_transient_update_plugins', array( __CLASS__, 'inject_update' ) );
 		add_filter( 'site_transient_update_plugins', array( __CLASS__, 'inject_update' ) );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugins_api' ), 10, 3 );
@@ -63,13 +58,7 @@ class TPW_Core_Updater {
 	 * @return object
 	 */
 	public static function inject_update( $transient ) {
-		self::log( 'Update transient hook fired.', array(
-			'hook'            => current_filter(),
-			'plugin_basename' => self::PLUGIN_BASENAME,
-		) );
-
 		if ( ! is_object( $transient ) ) {
-			self::log( 'Update transient was not an object; skipping injection.' );
 			return $transient;
 		}
 
@@ -83,27 +72,13 @@ class TPW_Core_Updater {
 
 		$installed_version = self::get_installed_version( $transient );
 		$manifest = self::get_manifest( self::get_manifest_request_args() );
-		$manifest_version = ! empty( $manifest['version'] ) ? $manifest['version'] : '';
-		$comparison = '';
-
-		if ( '' !== $installed_version && '' !== $manifest_version ) {
-			$comparison = version_compare( $manifest_version, $installed_version, '>' ) ? 'remote_newer' : 'installed_current';
-		}
-
-		self::log( 'Version state resolved.', array(
-			'installed_version' => $installed_version,
-			'manifest_version'  => $manifest_version,
-			'comparison'        => $comparison,
-		) );
 
 		if ( empty( $manifest['version'] ) || empty( $manifest['download_url'] ) ) {
 			self::clear_transient_entries( $transient );
-			self::log( 'Manifest was empty or invalid; no update injected.' );
 			return $transient;
 		}
 
 		if ( '' === $installed_version ) {
-			self::log( 'Installed version could not be resolved; skipping injection.' );
 			return $transient;
 		}
 
@@ -117,10 +92,6 @@ class TPW_Core_Updater {
 				'url'         => self::HOMEPAGE,
 				'id'          => self::HOMEPAGE . '#tpw-core',
 			);
-			self::log( 'Remote version is not newer; no update injected.', array(
-				'installed_version' => $installed_version,
-				'manifest_version'  => $manifest['version'],
-			) );
 			return $transient;
 		}
 
@@ -138,9 +109,7 @@ class TPW_Core_Updater {
 		}
 
 		self::log( 'Update object injected into transient.', array(
-			'plugin_basename' => self::PLUGIN_BASENAME,
-			'new_version'     => $manifest['version'],
-			'package'         => $manifest['download_url'],
+			'new_version' => $manifest['version'],
 		) );
 
 		return $transient;
@@ -155,11 +124,6 @@ class TPW_Core_Updater {
 	 * @return false|object|array
 	 */
 	public static function plugins_api( $result, $action, $args ) {
-		self::log( 'plugins_api called.', array(
-			'action' => $action,
-			'slug'   => is_object( $args ) && isset( $args->slug ) ? $args->slug : '',
-		) );
-
 		if ( 'plugin_information' !== $action ) {
 			return $result;
 		}
@@ -215,9 +179,6 @@ class TPW_Core_Updater {
 		}
 
 		if ( in_array( self::PLUGIN_BASENAME, $options['plugins'], true ) ) {
-			self::log( 'Plugin upgrade completed; clearing updater caches.', array(
-				'plugin_basename' => self::PLUGIN_BASENAME,
-			) );
 			self::clear_update_caches();
 		}
 	}
@@ -234,9 +195,6 @@ class TPW_Core_Updater {
 
 		if ( self::is_manual_check_again_request() ) {
 			self::clear_update_caches();
-			self::log( 'Dashboard Updates force-check detected; cleared updater caches.', array(
-				'user_id' => get_current_user_id(),
-			) );
 			return;
 		}
 
@@ -247,10 +205,6 @@ class TPW_Core_Updater {
 		check_admin_referer( self::REFRESH_QUERY_ARG );
 
 		self::clear_update_caches();
-
-		self::log( 'Temporary updater refresh helper triggered.', array(
-			'user_id' => get_current_user_id(),
-		) );
 
 		$redirect_url = remove_query_arg(
 			array( self::REFRESH_QUERY_ARG, '_wpnonce' )
@@ -279,11 +233,6 @@ class TPW_Core_Updater {
 		$context = isset( $args['context'] ) ? (string) $args['context'] : 'default';
 
 		if ( $force_refresh && is_array( self::$request_manifest ) ) {
-			self::log( 'Using request-scoped manifest response.', array(
-				'context'   => $context,
-				'cache_use' => ! empty( self::$request_manifest['_error'] ) ? 'request_error_marker' : 'request_fresh_manifest',
-			) );
-
 			return self::normalize_manifest_response( self::$request_manifest );
 		}
 
@@ -291,11 +240,6 @@ class TPW_Core_Updater {
 			$cached = get_site_transient( self::CACHE_KEY );
 
 			if ( is_array( $cached ) ) {
-				self::log( 'Using cached manifest response.', array(
-					'context'   => $context,
-					'cache_use' => ! empty( $cached['_error'] ) ? 'cached_error_marker' : 'cached_manifest',
-				) );
-
 				return self::normalize_manifest_response( $cached );
 			}
 		} else {
@@ -362,12 +306,6 @@ class TPW_Core_Updater {
 		}
 
 		set_site_transient( self::CACHE_KEY, $manifest, self::CACHE_TTL );
-		self::log( 'Fetched and cached manifest.', array(
-			'context'      => $context,
-			'cache_use'    => 'fresh_remote_manifest',
-			'version'      => $manifest['version'],
-			'download_url' => $manifest['download_url'],
-		) );
 
 		return $manifest;
 	}
@@ -387,10 +325,6 @@ class TPW_Core_Updater {
 			$failure_marker,
 			self::FAILURE_CACHE_TTL
 		);
-
-		self::log( 'Cached manifest failure marker.', array(
-			'cache_key' => self::CACHE_KEY,
-		) );
 
 		return $failure_marker;
 	}
@@ -417,12 +351,6 @@ class TPW_Core_Updater {
 			$args['force_refresh'] = true;
 			$args['context'] = 'wp_cron_update_check';
 		}
-
-		self::log( 'Manifest request context resolved.', array(
-			'hook'          => $hook,
-			'context'       => $args['context'],
-			'force_refresh' => $args['force_refresh'] ? 'yes' : 'no',
-		) );
 
 		return $args;
 	}
