@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.15.6] - 2026-03-25
+### Changed
+- Updates: removed temporary upgrader trace hooks, request-scoped trace summaries, and the admin-only updater refresh helper now that release validation is complete.
+- Maintenance: retained the existing manifest fetch, cache bypass, update injection, and upgrade cache-clearing behaviour without further updater logic changes.
+
 ## [1.15.5] - 2026-03-25
 ### Changed
 - Maintenance: clarified updater inline documentation without changing TPW Core runtime behaviour.
