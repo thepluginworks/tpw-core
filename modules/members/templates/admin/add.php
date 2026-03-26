@@ -32,6 +32,7 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
                 // Only enabled fields are returned from loader. Extra guard in case of legacy data
                 if ( isset($field['is_enabled']) && (int)$field['is_enabled'] === 0 ) continue;
                 if ( in_array( $field['key'], $excluded_keys, true ) ) continue;
+                if ( $field['key'] === 'username' ) continue;
             ?>
             <div class="form-group">
                 <?php

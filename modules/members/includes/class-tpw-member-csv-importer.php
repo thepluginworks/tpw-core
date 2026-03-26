@@ -189,7 +189,6 @@ class TPW_Member_CSV_Importer {
 
         // Define required fields that are always included
         $required_fields = [
-            (object) [ 'field_key' => 'username', 'custom_label' => 'Username' ],
             (object) [ 'field_key' => 'first_name', 'custom_label' => 'First Name' ],
             (object) [ 'field_key' => 'surname', 'custom_label' => 'Surname' ],
             (object) [ 'field_key' => 'status', 'custom_label' => 'Status' ],
@@ -215,7 +214,7 @@ class TPW_Member_CSV_Importer {
             echo '<option value="">' . esc_html__( '-- Select Field --', 'tpw-core' ) . '</option>';
 
             foreach ( $fields as $field ) {
-                $locked_fields = ['username', 'first_name', 'surname', 'status'];
+                $locked_fields = ['first_name', 'surname', 'status'];
                 $title = in_array($field->field_key, $locked_fields)
                     ? ' title="This is a required field. Please ensure it is correctly mapped."'
                     : '';
@@ -242,6 +241,12 @@ class TPW_Member_CSV_Importer {
     echo '<label style="display:block; margin:4px 0;"><input type="radio" name="dedupe_action" value="update"> ' . esc_html__( 'Update user if exists', 'tpw-core' ) . '</label>';
     echo '<span class="description">' . esc_html__( 'Duplicates are detected by email. For rows without email, username is used (fallback to matching First Name + Surname).', 'tpw-core' ) . '</span>';
     echo '</p>';
+    echo '<p style="margin-top:12px;">';
+    echo '<strong>' . esc_html__( 'Username handling for new WordPress users:', 'tpw-core' ) . '</strong><br>';
+    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="username_import_mode" value="generate" checked> ' . esc_html__( 'Generate new usernames (default)', 'tpw-core' ) . '</label>';
+    echo '<label style="display:block; margin:4px 0;"><input type="radio" name="username_import_mode" value="preserve"> ' . esc_html__( 'Preserve imported usernames', 'tpw-core' ) . '</label>';
+    echo '<span class="description">' . esc_html__( 'Generate mode ignores mapped username values when creating new WordPress users. Preserve mode uses the imported username as the preferred base and suffixes it until unique. Rows without email still use the member username field for member-only import matching.', 'tpw-core' ) . '</span>';
+    echo '</p>';
         echo '<p>';
         echo '<label><input type="checkbox" name="dry_run" value="1"> ' . esc_html__( 'Simulation mode – don’t actually import', 'tpw-core' ) . '</label>';
         echo '</p>';
@@ -260,6 +265,7 @@ class TPW_Member_CSV_Importer {
 
         $is_dry_run = isset($_POST['dry_run']) && $_POST['dry_run'] === '1';
         $dedupe_action = (isset($_POST['dedupe_action']) && $_POST['dedupe_action'] === 'update') ? 'update' : 'skip';
+        $preserve_imported_usernames = ( isset($_POST['username_import_mode']) && $_POST['username_import_mode'] === 'preserve' );
         if ( $is_dry_run ) {
             $this->add_notice('Simulation mode is ON. No members will be imported.', 'info');
         }
@@ -390,6 +396,7 @@ class TPW_Member_CSV_Importer {
                     foreach ($expected_fields as $field) {
                         if (!empty($member_data[$field])) { $set[$field] = $member_data[$field]; }
                     }
+                    unset( $set['username'] );
                     // Ensure we set email field explicitly
                     $set['email'] = $email;
 
@@ -411,6 +418,7 @@ class TPW_Member_CSV_Importer {
                     } else {
                         // Insert new member row linked to the existing user
                         $set['user_id'] = (int) $existing_user->ID;
+                        $set['username'] = (string) $existing_user->user_login;
                         $wpdb->insert( $table, $set );
                         $member_id = (int) $wpdb->insert_id;
                         $this->log_debug('Inserted new tpw_members row id ' . $member_id . ' for existing user_id ' . (int) $existing_user->ID);
@@ -427,13 +435,19 @@ class TPW_Member_CSV_Importer {
                     continue;
                 }
 
-                $desired_login = isset($member_data['username']) ? trim($member_data['username']) : '';
-                $user_login = $desired_login;
-
-                // Validate and sanitize user_login
-                if ( empty($user_login) || username_exists($user_login) || strlen($user_login) > 60 ) {
-                    $user_login = sanitize_user( current( explode( '@', $email ) ), true );
+                $desired_login = $preserve_imported_usernames && isset($member_data['username']) ? trim($member_data['username']) : '';
+                $user_login = TPW_Member_Username_Generator::resolve_new_user_login(
+                    $desired_login,
+                    $preserve_imported_usernames,
+                    TPW_Member_Username_Generator::MAX_USER_LOGIN_LENGTH,
+                    isset($member_data['first_name']) ? $member_data['first_name'] : '',
+                    isset($member_data['surname']) ? $member_data['surname'] : ''
+                );
+                if ( '' === $user_login ) {
+                    $import_summary[] = [ 'email' => $email, 'status' => '⚠️ Skipped – Unable to generate unique username' ];
+                    continue;
                 }
+                $member_data['username'] = $user_login;
 
                 // Set display_name if first_name and/or surname are available
                 $display_name = '';

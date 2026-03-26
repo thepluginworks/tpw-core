@@ -69,6 +69,9 @@ if ( ! $member ) {
             if ( $field['key'] === 'user_id' ) {
                 continue;
             }
+            if ( $field['key'] === 'username' ) {
+                continue;
+            }
             $key = $field['key'];
             $value = $field['is_core'] ? $member->$key ?? '' : $meta[$key] ?? '';
         ?>
@@ -85,7 +88,6 @@ if ( ! $member ) {
             <div class="form-group">
                 <?php
                     $label_text = ($key === 'status') ? 'Member Status' : $field['label'];
-                    if ($key === 'username') { $label_text .= ' (cannot be changed)'; }
                     $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_manage_members','is_volunteer'], true);
                     $is_protected_permission_field = in_array( $key, $protected_permission_fields, true );
                     $is_disabled_permission_field = $is_protected_permission_field && ! $can_edit_protected_permission_fields;
@@ -222,19 +224,7 @@ if ( ! $member ) {
                                     echo '<div class="tpw-postcode-message" style="display:none;margin-top:6px;color:#666;"></div>';
                                 }
                             } else {
-                                // Username is not editable on the Edit form
-                                if ( $key === 'username' ) {
-                                    $display_value = $value;
-                                    if ( (string) $display_value === '' && ! empty( $member->user_id ) ) {
-                                        $wp_user = get_user_by( 'id', (int) $member->user_id );
-                                        if ( $wp_user && isset( $wp_user->user_login ) ) {
-                                            $display_value = (string) $wp_user->user_login;
-                                        }
-                                    }
-                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($display_value) . '" readonly aria-readonly="true">';
-                                } else {
-                                    echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
-                                }
+                                echo '<input type="text" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
                                 // Inline Create WP User control directly under Email when eligible
                                 if (
                                     $key === 'email'

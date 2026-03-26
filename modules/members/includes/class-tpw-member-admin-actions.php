@@ -725,21 +725,24 @@ class TPW_Member_Admin_Actions {
 
         // If a WP user already exists for this email, link it; else create a new one
         $existing = get_user_by( 'email', $email );
+        $created_user_login = '';
         if ( $existing && isset($existing->ID) ) {
             $user_id = (int) $existing->ID;
         } else {
-            // Derive username from member.username or email local part; ensure uniqueness
-            $desired = isset($member->username) ? (string) $member->username : '';
-            $user_login = $desired;
-            if ( $user_login === '' || username_exists( $user_login ) || strlen( $user_login ) > 60 ) {
-                $user_login = sanitize_user( current( explode( '@', $email ) ), true );
-            }
-            if ( $user_login === '' ) {
-                $user_login = 'member_' . wp_generate_password( 8, false, false );
-            }
-            // Prepare display names
             $first = isset($member->first_name) ? (string) $member->first_name : '';
             $last  = isset($member->surname) ? (string) $member->surname : '';
+            $user_login = TPW_Member_Username_Generator::resolve_new_user_login(
+                '',
+                false,
+                TPW_Member_Username_Generator::MAX_USER_LOGIN_LENGTH,
+                $first,
+                $last
+            );
+            if ( $user_login === '' ) {
+                wp_die( 'Unable to generate a unique username for the new user.' );
+            }
+            $created_user_login = $user_login;
+            // Prepare display names
             $display_name = trim( $first . ' ' . $last );
 
             $user_id = wp_insert_user( [
@@ -762,7 +765,11 @@ class TPW_Member_Admin_Actions {
         }
 
         // Link the WP user to this member
-        $updated = $controller->update_member( $member_id, [ 'user_id' => (int) $user_id ] );
+        $member_update = [ 'user_id' => (int) $user_id ];
+        if ( '' !== $created_user_login ) {
+            $member_update['username'] = $created_user_login;
+        }
+        $updated = $controller->update_member( $member_id, $member_update );
         if ( $updated === false ) {
             wp_die( 'Failed to link user to member.', 500 );
         }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.17.0] - 2026-03-26
+### Changed
+- Members: new WordPress users created through Add Member, admin create/link, CSV import, and signup finalization now receive system-generated usernames derived from member name data, with deterministic numeric suffixes when needed.
+- Members: CSV import now generates new usernames by default for new WordPress users and adds an explicit preserve-imported-usernames mode for migration scenarios, while keeping final resolved usernames aligned between `wp_users.user_login` and `tpw_members.username`.
+- Members: normal member admin and profile surfaces now treat usernames as internal identifiers for new accounts instead of a manually managed field, without renaming existing users or changing login and password-reset behaviour.
+
 ## [1.16.0] - 2026-03-25
 ### Changed
 - Members: linked member email updates now synchronize `tpw_members.email` and the linked WordPress account email together across self-service profile edits, admin Edit Member saves, and existing-member signup finalization, while preserving existing usernames.

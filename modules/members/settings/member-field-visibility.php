@@ -39,7 +39,9 @@ require_once TPW_CORE_PATH . 'modules/members/includes/admin-settings-tabs.php';
   if ( isset($_POST['tpw_member_visibility_nonce']) && wp_verify_nonce( $_POST['tpw_member_visibility_nonce'], 'tpw_member_visibility_matrix' ) ) {
       // Collect enabled field keys for scoped updates
       $enabled_rows = $wpdb->get_results( "SELECT field_key, custom_label FROM {$settings_tbl} WHERE is_enabled = 1 ORDER BY sort_order ASC" );
-      $enabled_keys = array_map( function($r){ return sanitize_key($r->field_key); }, (array) $enabled_rows );
+        $enabled_keys = array_values( array_filter( array_map( function($r){ return sanitize_key($r->field_key); }, (array) $enabled_rows ), function( $field_key ) {
+          return 'username' !== $field_key;
+        } ) );
 
       if ( ! is_array($enabled_keys) ) { $enabled_keys = []; }
 
@@ -73,7 +75,9 @@ require_once TPW_CORE_PATH . 'modules/members/includes/admin-settings-tabs.php';
 
   // Load enabled fields
   $rows = $wpdb->get_results( "SELECT field_key, custom_label FROM {$settings_tbl} WHERE is_enabled = 1 ORDER BY sort_order ASC" );
-  $enabled_fields = array_map( function($r){ return [ 'key' => $r->field_key, 'label' => $r->custom_label ]; }, (array) $rows );
+  $enabled_fields = array_values( array_filter( array_map( function($r){ return [ 'key' => $r->field_key, 'label' => $r->custom_label ]; }, (array) $rows ), function( $field ) {
+      return isset( $field['key'] ) && 'username' !== sanitize_key( $field['key'] );
+  } ) );
 
   // Load current visibility for our groups
   if ( ! empty($enabled_fields) ) {

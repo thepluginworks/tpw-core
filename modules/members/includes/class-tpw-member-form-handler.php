@@ -87,6 +87,9 @@ class TPW_Member_Form_Handler {
 
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
+            if ( $key === 'username' ) {
+                continue;
+            }
             // Always unslash data from superglobals before sanitizing to avoid saving backslashes
             $raw   = isset($_POST[$key]) ? wp_unslash($_POST[$key]) : '';
             $value = ($raw !== '') ? sanitize_text_field($raw) : '';
@@ -118,19 +121,28 @@ class TPW_Member_Form_Handler {
             }
         }
 
-        // Fallback in case username or email are not enabled fields
-    $core_data['username'] = $core_data['username'] ?? sanitize_user( isset($_POST['username']) ? wp_unslash($_POST['username']) : '' );
+        // Fallback in case email is not enabled as a field
     $core_data['email'] = $core_data['email'] ?? sanitize_email( isset($_POST['email']) ? wp_unslash($_POST['email']) : '' );
         $core_data = self::apply_protected_permission_field_rules( $core_data );
 
-        if ( empty($core_data['username']) || empty($core_data['email']) ) {
-            wp_die('Username and email are required to create a new user.');
+        if ( empty($core_data['email']) ) {
+            wp_die('Email is required to create a new user.');
         }
 
         // Create WP User
-        $username = sanitize_user($core_data['username']);
+        $email = sanitize_email($core_data['email']);
+        $username = TPW_Member_Username_Generator::resolve_new_user_login(
+            '',
+            false,
+            TPW_Member_Username_Generator::MAX_USER_LOGIN_LENGTH,
+            isset($core_data['first_name']) ? $core_data['first_name'] : '',
+            isset($core_data['surname']) ? $core_data['surname'] : ''
+        );
+        if ( $username === '' ) {
+            wp_die('Unable to generate a unique username for the new user.');
+        }
         $password = wp_generate_password();
-        $email    = sanitize_email($core_data['email']);
+        $core_data['username'] = $username;
 
         $user_id = wp_create_user($username, $password, $email);
         if ( is_wp_error($user_id) ) {

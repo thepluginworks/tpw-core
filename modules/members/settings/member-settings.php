@@ -92,10 +92,16 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
         if ( $current_tab_post === 'profile' ) {
             // Member Profile tab
             $editable = isset($_POST['tpw_member_editable_fields']) && is_array($_POST['tpw_member_editable_fields']) ? array_map('sanitize_text_field', $_POST['tpw_member_editable_fields']) : [];
+            $editable = array_values( array_filter( $editable, function( $field_key ) {
+                return 'username' !== sanitize_key( $field_key );
+            } ) );
             update_option( 'tpw_member_editable_fields', $editable );
 
             // Save viewable-by-member fields
             $viewable = isset($_POST['tpw_member_viewable_fields']) && is_array($_POST['tpw_member_viewable_fields']) ? array_map('sanitize_text_field', $_POST['tpw_member_viewable_fields']) : [];
+            $viewable = array_values( array_filter( $viewable, function( $field_key ) {
+                return 'username' !== sanitize_key( $field_key );
+            } ) );
             update_option( 'tpw_member_viewable_fields', $viewable );
             // New: Member profile photo edit toggle (view|edit)
             if ( isset($_POST['tpw_member_profile_photo_mode']) ) {
@@ -147,6 +153,9 @@ $tab_url = function($tab) use ($base_url) { return esc_url( add_query_arg( 'tab'
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-field-loader.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/admin-settings-tabs.php';
 $all_enabled_fields = TPW_Member_Field_Loader::get_all_enabled_fields();
+$all_enabled_fields = array_values( array_filter( $all_enabled_fields, function( $field ) {
+    return isset( $field['key'] ) && 'username' !== sanitize_key( $field['key'] );
+} ) );
 $editable_selected = get_option( 'tpw_member_editable_fields', [] );
 $editable_selected = is_array($editable_selected) ? $editable_selected : [];
 $viewable_selected = get_option( 'tpw_member_viewable_fields', [] );

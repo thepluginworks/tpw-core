@@ -334,9 +334,12 @@ class TPW_Signup_Finalizer {
 			return $existing_user;
 		}
 
-		$user_login = $this->ensure_unique_user_login(
-			isset( $wp_user_data['user_login'] ) ? (string) $wp_user_data['user_login'] : '',
-			$email
+		$user_login = TPW_Member_Username_Generator::resolve_new_user_login(
+			'',
+			false,
+			TPW_Member_Username_Generator::MAX_USER_LOGIN_LENGTH,
+			isset( $wp_user_data['first_name'] ) ? (string) $wp_user_data['first_name'] : '',
+			isset( $wp_user_data['last_name'] ) ? (string) $wp_user_data['last_name'] : ''
 		);
 		if ( '' === $user_login ) {
 			return new WP_Error( 'tpw_signup_user_login_missing', 'Unable to derive a unique username for the signup attempt.' );
@@ -785,51 +788,6 @@ class TPW_Signup_Finalizer {
 		}
 
 		return sanitize_text_field( (string) $status );
-	}
-
-	/**
-	 * Ensure a unique WordPress user_login.
-	 *
-	 * @param string $candidate Initial username candidate.
-	 * @param string $email     Email address fallback.
-	 * @return string
-	 */
-	private function ensure_unique_user_login( $candidate, $email ) {
-		$user_login = sanitize_user( $candidate, true );
-		if ( '' === $user_login && '' !== $email ) {
-			$email_parts = explode( '@', $email );
-			$user_login  = sanitize_user( (string) current( $email_parts ), true );
-		}
-
-		if ( '' === $user_login ) {
-			$user_login = 'member_' . strtolower( wp_generate_password( 8, false, false ) );
-		}
-
-		$user_login = substr( $user_login, 0, 60 );
-		if ( '' === $user_login ) {
-			return '';
-		}
-
-		if ( ! username_exists( $user_login ) ) {
-			return $user_login;
-		}
-
-		$base_login = substr( $user_login, 0, 54 );
-		if ( '' === $base_login ) {
-			$base_login = 'member';
-		}
-
-		$index = 2;
-		while ( $index < 1000 ) {
-			$suffixed_login = substr( $base_login . $index, 0, 60 );
-			if ( ! username_exists( $suffixed_login ) ) {
-				return $suffixed_login;
-			}
-
-			++$index;
-		}
-
-		return '';
 	}
 
 	/**

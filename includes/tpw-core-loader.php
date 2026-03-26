@@ -70,6 +70,7 @@ TPW_Menus::init();
 //member modules
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-identity.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-identity-compat.php';
+require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-username-generator.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-household-repository.php';
 require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-fields.php';
 require_once TPW_CORE_PATH . 'modules/members/admin/class-tpw-identity-audit-admin.php';

@@ -65,12 +65,8 @@ class TPW_Signup_Field_Mapper {
 			'first_name'   => $first_name,
 			'last_name'    => $last_name,
 			'display_name' => $this->build_display_name( $first_name, $last_name, $email ),
-			'user_login'   => $this->build_username_candidate( $field_values, $member_data, $email ),
+			'user_login'   => '',
 		);
-
-		if ( '' !== $wp_user_data['user_login'] ) {
-			$member_data['username'] = $wp_user_data['user_login'];
-		}
 
 		return array(
 			'wp_user_data'       => $wp_user_data,
@@ -187,30 +183,4 @@ class TPW_Signup_Field_Mapper {
 		return $email;
 	}
 
-	/**
-	 * Build the initial username candidate for downstream uniqueness checks.
-	 *
-	 * @param array  $field_values Raw field values.
-	 * @param array  $member_data  Mapped member data.
-	 * @param string $email        Email address.
-	 * @return string
-	 */
-	private function build_username_candidate( $field_values, $member_data, $email ) {
-		$candidate = '';
-
-		if ( isset( $field_values['username'] ) ) {
-			$candidate = sanitize_user( (string) $field_values['username'], true );
-		}
-
-		if ( '' === $candidate && isset( $member_data['username'] ) ) {
-			$candidate = sanitize_user( (string) $member_data['username'], true );
-		}
-
-		if ( '' === $candidate && '' !== $email ) {
-			$email_parts = explode( '@', $email );
-			$candidate   = sanitize_user( (string) current( $email_parts ), true );
-		}
-
-		return $candidate;
-	}
 }

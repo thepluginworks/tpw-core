@@ -122,6 +122,9 @@ tr[data-custom="1"] {
 				?>
 
 				<?php foreach ( $all_fields as $field ):
+					if ( 'username' === $field['key'] ) {
+						continue;
+					}
 					$protected_keys = ['username', 'first_name', 'surname', 'status'];
 					$is_protected = in_array($field['key'], $protected_keys);
 					$is_fixed_username_label = ( 'username' === $field['key'] );
