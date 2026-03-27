@@ -61,6 +61,7 @@ a.tpw-btn.tpw-btn {
   text-transform: var(--tpw-text-transform, none);
   letter-spacing: var(--tpw-letter-spacing, normal);
   text-shadow: var(--tpw-text-shadow, none);
+  text-decoration: none;
 }
 /* Resets per element type */
 /* Native buttons/inputs often carry UA styles; neutralize and align with base */
@@ -169,6 +170,7 @@ input[type="reset"].tpw-btn.tpw-btn-secondary {
   background: var(--tpw-btn-secondary);
   color: var(--tpw-btn-text-light);
   padding: var(--tpw-btn-padding);
+  border-radius: var(--tpw-btn-radius);  
 }
 
 .tpw-btn-danger {

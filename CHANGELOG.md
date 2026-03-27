@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.17.1] - 2026-03-27
+### Changed
+- UI: refined the shared TPW button stylesheet so link-style buttons consistently suppress link underlines and secondary buttons keep the intended rounded corners across supported contexts.
+
 ## [1.17.0] - 2026-03-26
 ### Changed
 - Members: new WordPress users created through Add Member, admin create/link, CSV import, and signup finalization now receive system-generated usernames derived from member name data, with deterministic numeric suffixes when needed.
