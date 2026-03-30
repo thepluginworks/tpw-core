@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.18.0] - 2026-03-30
+### Changed
+- Menus: added a front-end admin dining menus management screen with create, edit, delete, course naming, and course choice management flows for authorised administrators when the dining menus module is enabled.
+
 ## [1.17.1] - 2026-03-27
 ### Changed
 - UI: refined the shared TPW button stylesheet so link-style buttons consistently suppress link underlines and secondary buttons keep the intended rounded corners across supported contexts.

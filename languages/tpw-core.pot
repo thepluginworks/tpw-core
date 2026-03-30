@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the TPW Core plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.17.1\n"
+"Project-Id-Version: TPW Core 1.18.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-27T17:04:15+00:00\n"
+"POT-Creation-Date: 2026-03-30T14:18:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -50,7 +50,7 @@ msgid "Logout"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:293
-#: includes/tpw-core-loader.php:473
+#: includes/tpw-core-loader.php:475
 #: includes/tpw-core-settings.php:1824
 #: includes/tpw-core-settings.php:2145
 #: modules/members/shortcodes/member-profile.php:13
@@ -251,6 +251,8 @@ msgstr ""
 #: modules/gallery/templates/list.php:51
 #: modules/members/shortcodes/member-profile.php:287
 #: modules/members/shortcodes/member-profile.php:400
+#: modules/menus/class-tpw-menus-frontend-admin.php:390
+#: modules/menus/class-tpw-menus-frontend-admin.php:608
 #: modules/notices/shortcodes/noticeboard-list.php:96
 #: modules/system-pages/class-tpw-core-system-pages.php:502
 #: modules/system-pages/templates/system-pages.php:74
@@ -269,6 +271,8 @@ msgstr ""
 #: modules/gallery/templates/help.php:54
 #: modules/gallery/templates/list.php:52
 #: modules/members/shortcodes/member-profile.php:350
+#: modules/menus/class-tpw-menus-frontend-admin.php:396
+#: modules/menus/class-tpw-menus-frontend-admin.php:617
 #: modules/notices/shortcodes/noticeboard-list.php:98
 msgid "Delete"
 msgstr ""
@@ -688,6 +692,10 @@ msgstr ""
 #: includes/tpw-core-settings.php:776
 #: modules/gallery/templates/categories.php:28
 #: modules/gallery/templates/list.php:35
+#: modules/menus/class-tpw-menus-frontend-admin.php:370
+#: modules/menus/class-tpw-menus-frontend-admin.php:387
+#: modules/menus/class-tpw-menus-frontend-admin.php:597
+#: modules/menus/class-tpw-menus-frontend-admin.php:605
 #: modules/system-pages/templates/system-pages.php:39
 msgid "Actions"
 msgstr ""
@@ -1225,12 +1233,14 @@ msgstr ""
 #: modules/gallery/gallery-loader.php:91
 #: modules/gallery/templates/grid.php:91
 #: modules/gallery/templates/list-view.php:75
+#: modules/menus/class-tpw-menus-frontend-admin.php:348
 msgid "Previous"
 msgstr ""
 
 #: modules/gallery/gallery-loader.php:92
 #: modules/gallery/templates/grid.php:93
 #: modules/gallery/templates/list-view.php:77
+#: modules/menus/class-tpw-menus-frontend-admin.php:349
 msgid "Next"
 msgstr ""
 
@@ -1244,6 +1254,8 @@ msgstr ""
 
 #: modules/gallery/gallery-loader.php:95
 #: modules/gallery/templates/form.php:99
+#: modules/menus/class-tpw-menus-frontend-admin.php:511
+#: modules/menus/class-tpw-menus-frontend-admin.php:730
 msgid "Cancel"
 msgstr ""
 
@@ -1329,6 +1341,12 @@ msgid "Title"
 msgstr ""
 
 #: modules/gallery/templates/form.php:24
+#: modules/menus/class-tpw-menus-frontend-admin.php:370
+#: modules/menus/class-tpw-menus-frontend-admin.php:384
+#: modules/menus/class-tpw-menus-frontend-admin.php:491
+#: modules/menus/class-tpw-menus-frontend-admin.php:552
+#: modules/menus/class-tpw-menus-frontend-admin.php:597
+#: modules/menus/class-tpw-menus-frontend-admin.php:603
 msgid "Description"
 msgstr ""
 
@@ -2504,6 +2522,7 @@ msgid "Emergency Contact"
 msgstr ""
 
 #: modules/menus/class-tpw-course-choice-form-admin.php:46
+#: modules/menus/class-tpw-menus-frontend-admin.php:535
 msgid "Course Options"
 msgstr ""
 
@@ -2527,6 +2546,7 @@ msgid "View and edit available choices for each course in your dining menus. For
 msgstr ""
 
 #: modules/menus/class-tpw-menus-admin-edit.php:29
+#: modules/menus/class-tpw-menus-frontend-admin.php:539
 msgid "Edit Menu"
 msgstr ""
 
@@ -2545,17 +2565,345 @@ msgstr ""
 msgid "Add, edit, and delete dining menus for your events. For Admins and Secretaries."
 msgstr ""
 
-#: modules/menus/templates/menu-modal.php:35
-msgid "View Menu"
+#: modules/menus/class-tpw-menus-frontend-admin.php:31
+#: modules/menus/class-tpw-menus-frontend-admin.php:356
+msgid "Dining Menus"
 msgstr ""
 
+#: modules/menus/class-tpw-menus-frontend-admin.php:41
+msgid "Dining menu created."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:42
+msgid "Dining menu updated."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:43
+msgid "Dining menu deleted."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:44
+msgid "Course choice created."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:45
+msgid "Course choice updated."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:46
+msgid "Course choice deleted."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:47
+msgid "Course name updated."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:50
+msgid "Menu name is required."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:51
+msgid "Dish name is required."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:52
+msgid "The selected dining menu is invalid."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:53
+msgid "The selected course choice is invalid."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:54
+msgid "The selected course is invalid."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:55
+msgid "Security check failed. Please try again."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:56
+msgid "You do not have permission to manage dining menus."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:57
+msgid "The dining menu could not be saved."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:58
+msgid "The dining menu could not be deleted."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:59
+msgid "The course choice could not be saved."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:60
+msgid "The course choice could not be deleted."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:61
+msgid "The course name could not be updated."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:70
+msgid "Dining Menus is not currently available."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:357
+msgid "Manage dining menus and the course choices used by dining-enabled events from the FlexiEvent front-end admin."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:359
+msgid "Add Menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:365
+msgid "Each menu now links directly into course management so you can maintain dishes without leaving the FE admin."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:366
+#, php-format
+msgid "%d menus"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:370
+#: modules/menus/class-tpw-menus-frontend-admin.php:383
+msgid "Menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:370
+#: modules/menus/class-tpw-menus-frontend-admin.php:385
+#: modules/menus/class-tpw-menus-frontend-admin.php:389
+#: modules/menus/class-tpw-menus-frontend-admin.php:509
+msgid "Courses"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:370
+#: modules/menus/class-tpw-menus-frontend-admin.php:386
+#: modules/menus/class-tpw-menus-frontend-admin.php:499
 #: modules/menus/templates/menu-modal.php:68
 msgid "Price"
 msgstr ""
 
+#: modules/menus/class-tpw-menus-frontend-admin.php:391
+msgid "Delete this dining menu?"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:410
+msgid "Dining menus pagination"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:414
+#, php-format
+msgid "Showing %1$d-%2$d of %3$d"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:430
+msgid "No dining menus have been created yet."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:431
+msgid "Create your first menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:442
+msgid "Edit Dining Menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:442
+msgid "Add Dining Menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:444
+msgid "Update the menu details used by your dining-enabled events."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:445
+msgid "Create a dining menu with the core details needed for event setup."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:451
+#: modules/menus/class-tpw-menus-frontend-admin.php:525
+#: modules/menus/class-tpw-menus-frontend-admin.php:645
+msgid "Dining menu not found."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:452
+msgid "The selected menu could not be loaded."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:454
+#: modules/menus/class-tpw-menus-frontend-admin.php:470
+#: modules/menus/class-tpw-menus-frontend-admin.php:528
+#: modules/menus/class-tpw-menus-frontend-admin.php:540
+#: modules/menus/class-tpw-menus-frontend-admin.php:648
+msgid "Back to Menus"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:482
+msgid "Menu Details"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:483
+msgid "These fields stay aligned with the existing backend menu records."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:487
+msgid "Menu Name"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:495
+#: modules/menus/class-tpw-menus-frontend-admin.php:556
+msgid "Number of Courses"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:507
+msgid "Save Changes"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:507
+msgid "Create Menu"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:526
+msgid "Select a valid dining menu to manage its courses and dishes."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:536
+#, php-format
+msgid "Manage course names and dish choices for %s."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:548
+#, php-format
+msgid "%1$d courses configured. Menu price: %2$s."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:571
+#, php-format
+msgid "%d dish available."
+msgid_plural "%d dishes available."
+msgstr[0] ""
+msgstr[1] ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:582
+msgid "Course Name"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:588
+msgid "Update Course Name"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:589
+msgid "Add Dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:597
+#: modules/menus/class-tpw-menus-frontend-admin.php:602
+msgid "Dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:597
+#: modules/menus/class-tpw-menus-frontend-admin.php:604
+#: modules/menus/class-tpw-menus-frontend-admin.php:721
+msgid "Extra Cost"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:611
+#: modules/menus/class-tpw-menus-frontend-admin.php:734
+msgid "Delete this course choice?"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:629
+msgid "No dishes have been added for this course yet."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:630
+msgid "Add the first dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:646
+msgid "Select a valid dining menu to manage course choices."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:655
+msgid "Course not found."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:656
+msgid "The selected course is not available on this menu."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:658
+#: modules/menus/class-tpw-menus-frontend-admin.php:679
+#: modules/menus/class-tpw-menus-frontend-admin.php:694
+msgid "Back to Course Options"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:666
+msgid "Edit Course Choice"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:666
+msgid "Add Course Choice"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:669
+#, php-format
+msgid "Update a dish option for %1$s on %2$s."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:670
+#, php-format
+msgid "Add a new dish option for %1$s on %2$s."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:676
+msgid "Course choice not found."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:677
+msgid "The selected dish could not be loaded for this course."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:708
+msgid "Dish Details"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:709
+#, php-format
+msgid "This choice belongs to %1$s on %2$s."
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:713
+msgid "Dish Name"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:717
+msgid "Dish Description"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:729
+msgid "Save Dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:729
+msgid "Create Dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:740
+msgid "Delete Dish"
+msgstr ""
+
+#: modules/menus/class-tpw-menus-frontend-admin.php:766
 #: modules/menus/templates/menu-modal.php:86
 #, php-format
 msgid "Course %d"
+msgstr ""
+
+#: modules/menus/templates/menu-modal.php:35
+msgid "View Menu"
 msgstr ""
 
 #: modules/menus/templates/menu-modal.php:103

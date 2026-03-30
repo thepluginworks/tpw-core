@@ -243,9 +243,11 @@ function tpw_core_load_optional_modules() {
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin.php';
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin-add.php';
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-admin-edit.php';
+        require_once TPW_CORE_PATH . 'modules/menus/class-tpw-menus-frontend-admin.php';
         TPW_Menus_Admin_Edit::init();
         TPW_Menus_Admin_Add::init();
         TPW_Menus_Admin::init();
+        TPW_Menus_Frontend_Admin::init();
 
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-manager.php';
         require_once TPW_CORE_PATH . 'modules/menus/class-tpw-course-choices-admin.php';
