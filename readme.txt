@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.18.0
+Stable tag: 1.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.19.0 =
+- Members: TPW Core now stores a canonical membership entitlement on member records for dependent TPW plugins to read consistently.
+- Members: membership entitlement support includes a dedicated database column, strict machine-value validation, and code-controlled options rather than loose field configuration.
+- Members: the admin Add Member and Edit Member field remains hidden by default and is only exposed when a relevant dependent plugin enables it.
 
 = 1.17.0 =
 - Improved new member account creation so TPW Core now generates WordPress usernames automatically from member name data instead of relying on manually entered usernames.

@@ -18,6 +18,13 @@ $create_wp_admin_post = admin_url('admin-post.php');
 $can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
 $protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
 $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_Helper::should_render_lookup_ui();
+$membership_entitlement_options = class_exists( 'TPW_Member_Controller' ) && method_exists( 'TPW_Member_Controller', 'get_membership_entitlement_options' )
+    ? TPW_Member_Controller::get_membership_entitlement_options()
+    : [
+        '' => 'Not Set',
+        'full_dining' => 'Full Dining',
+        'country' => 'Country',
+    ];
 
 $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
 $fields = array_filter($fields, fn($field) => $field['key'] !== 'password_hash');
@@ -100,6 +107,9 @@ if ( ! $member ) {
                 ?>
 
                 <?php
+                if ( $key === 'membership_entitlement' ) {
+                    $field['type'] = 'select';
+                }
                 switch ( $field['type'] ) {
                     case 'textarea':
                         echo '<textarea name="' . esc_attr($key) . '" id="' . esc_attr($key) . '">' . esc_textarea($value) . '</textarea>';
@@ -107,8 +117,8 @@ if ( ! $member ) {
 
                     case 'select':
                         echo '<select name="' . esc_attr($key) . '" id="' . esc_attr($key) . '">';
-                        echo '<option value="">-- Select --</option>';
                         if ( $key === 'status' ) {
+                            echo '<option value="">-- Select --</option>';
                             $status_options = [
                                 'Active',
                                 'Inactive',
@@ -125,7 +135,14 @@ if ( ! $member ) {
                                 $sel = ($cur_l === strtolower($opt)) ? ' selected' : '';
                                 echo '<option value="' . esc_attr($opt) . '"' . $sel . '>' . esc_html($opt) . '</option>';
                             }
+                        } elseif ( $key === 'membership_entitlement' ) {
+                            $cur = TPW_Member_Controller::normalize_membership_entitlement( $value );
+                            foreach ( $membership_entitlement_options as $opt_value => $opt_label ) {
+                                $sel = ( (string) $cur === (string) $opt_value ) ? ' selected' : '';
+                                echo '<option value="' . esc_attr($opt_value) . '"' . $sel . '>' . esc_html($opt_label) . '</option>';
+                            }
                         } elseif ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+                            echo '<option value="">-- Select --</option>';
                             $cur = is_string( $value ) ? trim( $value ) : '';
                             $has_cur = false;
                             foreach ( $field['options'] as $opt ) {
@@ -144,6 +161,7 @@ if ( ! $member ) {
                             }
                         } else {
                             // Generic select fallback: include current value
+                            echo '<option value="">-- Select --</option>';
                             echo '<option value="' . esc_attr($value) . '" selected>' . esc_html($value) . '</option>';
                         }
                         echo '</select>';

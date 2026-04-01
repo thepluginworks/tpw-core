@@ -14,6 +14,15 @@
 class TPW_Member_Field_Loader {
 
     /**
+     * Whether the membership entitlement field should be exposed in Core UI.
+     *
+     * @return bool
+     */
+    public static function should_show_membership_entitlement() {
+        return (bool) apply_filters( 'tpw_members/show_membership_entitlement', false );
+    }
+
+    /**
      * Return a static list of core fields.
      */
     public static function get_core_fields() {
@@ -47,6 +56,10 @@ class TPW_Member_Field_Loader {
             'username'              => 'Username',
             'password_hash'         => 'Password Hash',
         ];
+
+        if ( self::should_show_membership_entitlement() ) {
+            $core['membership_entitlement'] = 'Membership Entitlement';
+        }
 
         // Only expose FlexiGolf fields if plugin is active AND columns exist
         if ( self::is_flexigolf_active() ) {
@@ -95,6 +108,12 @@ class TPW_Member_Field_Loader {
             } ) );
         }
 
+        if ( ! self::should_show_membership_entitlement() ) {
+            $results = array_values( array_filter( (array) $results, function( $row ) {
+                return 'membership_entitlement' !== $row->field_key;
+            } ) );
+        }
+
     $core_fields = self::get_core_fields();
     $enabled_fields = [];
 
@@ -103,6 +122,7 @@ class TPW_Member_Field_Loader {
             'dob'                 => 'date',
             'date_joined'          => 'date',
             'status'               => 'select',
+            'membership_entitlement' => 'select',
             'is_committee'         => 'checkbox',
             'is_match_manager'     => 'checkbox',
             'is_admin'             => 'checkbox',
@@ -141,7 +161,12 @@ class TPW_Member_Field_Loader {
                 : ( $is_core ? $core_fields[ $row->field_key ] : ucwords( str_replace( '_', ' ', $row->field_key ) ) );
 
             $options = [];
-            if ( $type === 'select' && ! empty( $row->field_options ) && is_string( $row->field_options ) ) {
+            if ( 'membership_entitlement' === $row->field_key && class_exists( 'TPW_Member_Controller' ) && method_exists( 'TPW_Member_Controller', 'get_membership_entitlement_options' ) ) {
+                $options = array_keys( TPW_Member_Controller::get_membership_entitlement_options() );
+                $options = array_values( array_filter( $options, static function( $option ) {
+                    return '' !== $option;
+                } ) );
+            } elseif ( $type === 'select' && ! empty( $row->field_options ) && is_string( $row->field_options ) ) {
                 $lines = preg_split( '/\r\n|\r|\n/', $row->field_options );
                 $lines = is_array( $lines ) ? $lines : [];
                 foreach ( $lines as $line ) {

@@ -35,6 +35,7 @@ class TPW_Members_DB {
             dob DATE NULL,
             date_joined DATE NULL,
             status VARCHAR(50),
+            membership_entitlement VARCHAR(32) NULL DEFAULT NULL,
             is_committee TINYINT(1) DEFAULT 0,
             is_match_manager TINYINT(1) DEFAULT 0,
             is_admin TINYINT(1) DEFAULT 0,
@@ -251,6 +252,15 @@ class TPW_Members_DB {
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN dob DATE NULL AFTER country" );
         }
 
+        // Safety net: ensure the membership_entitlement column exists for upgraded installs
+        $has_membership_entitlement = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'membership_entitlement'",
+            $table_name
+        ) );
+        if ( ! $has_membership_entitlement ) {
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN membership_entitlement VARCHAR(32) NULL DEFAULT NULL AFTER status" );
+        }
+
         // Safety net: ensure the is_gallery_admin column exists for upgraded installs
         $has_is_gallery_admin = $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_gallery_admin'",
@@ -292,13 +302,21 @@ class TPW_Members_DB {
 
         $ensure_fields = [
             [
+                'field_key'    => 'membership_entitlement',
+                'custom_label' => 'Membership Entitlement',
+                'field_type'   => 'select',
+                'insert_after' => [ 'status' ],
+            ],
+            [
                 'field_key'    => 'is_gallery_admin',
                 'custom_label' => 'Gallery Admin',
+                'field_type'   => 'checkbox',
                 'insert_after' => [ 'is_noticeboard_admin' ],
             ],
             [
                 'field_key'    => 'is_manage_members',
                 'custom_label' => 'Members Manager',
+                'field_type'   => 'checkbox',
                 'insert_after' => [ 'is_gallery_admin', 'is_noticeboard_admin' ],
             ],
         ];
@@ -332,7 +350,7 @@ class TPW_Members_DB {
                     'field_key'    => $field_key,
                     'is_enabled'   => 1,
                     'custom_label' => $field['custom_label'],
-                    'field_type'   => 'checkbox',
+                    'field_type'   => $field['field_type'],
                     'sort_order'   => $insert_sort,
                 ],
                 [ '%s', '%d', '%s', '%s', '%d' ]

@@ -90,6 +90,21 @@ class TPW_Member_Fields {
 			'password_hash'         => [ 'label' => 'Password Hash', 'type' => 'varchar(255)' ],
 		];
 
+		if (
+			method_exists( 'TPW_Member_Field_Loader', 'should_show_membership_entitlement' )
+			&& TPW_Member_Field_Loader::should_show_membership_entitlement()
+		) {
+			$fields['membership_entitlement'] = [
+				'label'   => 'Membership Entitlement',
+				'type'    => 'select',
+				'options' => class_exists( 'TPW_Member_Controller' ) && method_exists( 'TPW_Member_Controller', 'get_membership_entitlement_options' )
+					? array_keys( array_filter( TPW_Member_Controller::get_membership_entitlement_options(), static function( $label, $value ) {
+						return '' !== $value;
+					}, ARRAY_FILTER_USE_BOTH ) )
+					: [ 'full_dining', 'country' ],
+			];
+		}
+
 		// If FlexiGolf is active and columns exist, append them as core fields
 		if ( method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() ) {
 			$table = $wpdb->prefix . 'tpw_members';
@@ -151,6 +166,15 @@ class TPW_Member_Fields {
 		";
 
 		$results = $wpdb->get_results( $wpdb->prepare( $sql, ...$core_fields ) );
+
+		if (
+			method_exists( 'TPW_Member_Field_Loader', 'should_show_membership_entitlement' )
+			&& ! TPW_Member_Field_Loader::should_show_membership_entitlement()
+		) {
+			$results = array_values( array_filter( (array) $results, function( $row ) {
+				return 'membership_entitlement' !== $row->field_key;
+			} ) );
+		}
 
 		// Hide FlexiGolf-related fields from the settings UI when FlexiGolf is inactive
 		// Also hide specific FG fields if their DB columns are missing
@@ -527,6 +551,9 @@ class TPW_Member_Fields {
 				$insert_sort = $next_sort++;
 				if ( 'dob' === $field_key && isset( $sort_map['title'] ) ) {
 					$insert_sort = (int) $sort_map['title'] + 1;
+					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
+				} elseif ( 'membership_entitlement' === $field_key && isset( $sort_map['status'] ) ) {
+					$insert_sort = (int) $sort_map['status'] + 1;
 					$wpdb->query( $wpdb->prepare( "UPDATE $table SET sort_order = sort_order + 1 WHERE sort_order >= %d", $insert_sort ) );
 				} elseif ( 'is_gallery_admin' === $field_key && isset( $sort_map['is_noticeboard_admin'] ) ) {
 					$insert_sort = (int) $sort_map['is_noticeboard_admin'] + 1;

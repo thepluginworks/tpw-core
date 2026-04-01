@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.19.0] - 2026-04-01
+### Changed
+- Members: TPW Core now stores a canonical `membership_entitlement` value on member records through a dedicated `tpw_members` column, with strict normalization so only allowed machine values persist and invalid submissions collapse back to unset.
+- Members: membership entitlement is now a Core-owned field with dedicated helper filters for visibility and option values, allowing dependent plugins to enable the admin field and supply code-controlled labels without relying on loose field-settings options.
+- Members: the Add Member and Edit Member entitlement select is hidden by default, only appears when enabled by a dependent plugin, and default or fallback member downloads continue to omit the field while it remains hidden.
+
 ## [1.18.0] - 2026-03-30
 ### Changed
 - Menus: added a front-end admin dining menus management screen with create, edit, delete, course naming, and course choice management flows for authorised administrators when the dining menus module is enabled.

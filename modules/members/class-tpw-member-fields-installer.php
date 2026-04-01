@@ -24,6 +24,7 @@ class TPW_Member_Fields_Installer {
 			'country'               => 'Country',
 			'date_joined'           => 'Date Joined',
 			'status'                => 'Status',
+			'membership_entitlement'=> 'Membership Entitlement',
 			'is_committee'          => 'Committee Member',
 			'is_match_manager'      => 'Match Manager',
 			'is_admin'              => 'Administrator',

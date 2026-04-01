@@ -3,6 +3,83 @@
 class TPW_Member_Controller {
 
     /**
+     * Return the code-controlled membership entitlement options map.
+     *
+     * @return array<string,string>
+     */
+    public static function get_membership_entitlement_options() {
+        $default_options = [
+            ''            => 'Not Set',
+            'full_dining' => 'Full Dining',
+            'country'     => 'Country',
+        ];
+
+        $options = apply_filters( 'tpw_members/membership_entitlement_options', $default_options );
+        if ( ! is_array( $options ) ) {
+            return $default_options;
+        }
+
+        $sanitized_options = [];
+
+        foreach ( $options as $value => $label ) {
+            if ( '' === $value ) {
+                $sanitized_options[''] = is_scalar( $label ) && '' !== trim( (string) $label )
+                    ? sanitize_text_field( (string) $label )
+                    : 'Not Set';
+                continue;
+            }
+
+            if ( is_int( $value ) ) {
+                $value = sanitize_key( (string) $label );
+            } else {
+                $value = sanitize_key( (string) $value );
+            }
+
+            if ( '' === $value ) {
+                continue;
+            }
+
+            if ( is_scalar( $label ) && '' !== trim( (string) $label ) ) {
+                $sanitized_label = sanitize_text_field( (string) $label );
+            } else {
+                $sanitized_label = ucwords( str_replace( '_', ' ', $value ) );
+            }
+
+            $sanitized_options[ $value ] = $sanitized_label;
+        }
+
+        if ( ! isset( $sanitized_options[''] ) ) {
+            $sanitized_options = [ '' => $default_options[''] ] + $sanitized_options;
+        }
+
+        if ( count( $sanitized_options ) <= 1 ) {
+            return $default_options;
+        }
+
+        return $sanitized_options;
+    }
+
+    /**
+     * Normalize the canonical membership entitlement machine value.
+     *
+     * @param mixed $value Raw submitted value.
+     * @return string|null
+     */
+    public static function normalize_membership_entitlement( $value ) {
+        if ( ! is_string( $value ) ) {
+            return null;
+        }
+
+        $value = sanitize_key( $value );
+        $allowed = array_keys( self::get_membership_entitlement_options() );
+        $allowed = array_values( array_filter( $allowed, static function( $allowed_value ) {
+            return '' !== $allowed_value;
+        } ) );
+
+        return in_array( $value, $allowed, true ) ? $value : null;
+    }
+
+    /**
      * Get all members, optionally filtered.
     *
     * @since 1.0.0
@@ -249,6 +326,7 @@ class TPW_Member_Controller {
             'dob'                   => isset($data['dob']) ? $data['dob'] : '',
             'date_joined'           => isset($data['date_joined']) ? $data['date_joined'] : '',
             'status'                => isset($data['status']) ? $data['status'] : '',
+            'membership_entitlement'=> self::normalize_membership_entitlement( isset($data['membership_entitlement']) ? $data['membership_entitlement'] : null ),
             'is_committee'          => isset($data['is_committee']) ? $data['is_committee'] : 0,
             'is_match_manager'      => isset($data['is_match_manager']) ? $data['is_match_manager'] : 0,
             'is_admin'              => isset($data['is_admin']) ? $data['is_admin'] : 0,
@@ -315,6 +393,7 @@ class TPW_Member_Controller {
             'dob',
             'date_joined',
             'status',
+            'membership_entitlement',
             'is_committee',
             'is_match_manager',
             'is_admin',
@@ -356,6 +435,10 @@ class TPW_Member_Controller {
 
         if ( array_key_exists( 'society_id', $update ) ) {
             $update['society_id'] = tpw_core_resolve_entity_society_id( $update['society_id'] );
+        }
+
+        if ( array_key_exists( 'membership_entitlement', $update ) ) {
+            $update['membership_entitlement'] = self::normalize_membership_entitlement( $update['membership_entitlement'] );
         }
 
         // Always bump the updated_at timestamp

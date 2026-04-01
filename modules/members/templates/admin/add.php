@@ -14,6 +14,13 @@ $settings = get_option( 'flexievent_settings', [] );
 $date_format = tpw_core_get_date_format();
 $time_format = tpw_core_get_time_format();
 $default_status = get_option('tpw_default_member_status', '');
+$membership_entitlement_options = class_exists( 'TPW_Member_Controller' ) && method_exists( 'TPW_Member_Controller', 'get_membership_entitlement_options' )
+    ? TPW_Member_Controller::get_membership_entitlement_options()
+    : [
+        '' => 'Not Set',
+        'full_dining' => 'Full Dining',
+        'country' => 'Country',
+    ];
 // Fields already come sorted by tpw_field_settings.sort_order. Do not reorder here.
 
 $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
@@ -60,6 +67,10 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
                     $field['type'] = 'select';
                 }
 
+                if ( $field['key'] === 'membership_entitlement' ) {
+                    $field['type'] = 'select';
+                }
+
                 switch ( $field['type'] ) {
                     case 'textarea':
                         echo '<textarea name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '"></textarea>';
@@ -68,9 +79,9 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
 
                     case 'select':
                         echo '<select name="' . esc_attr($field['key']) . '" id="' . esc_attr($field['key']) . '">';
-                        echo '<option value="">-- Select --</option>';
 
                         if ( $field['key'] === 'status' ) {
+                            echo '<option value="">-- Select --</option>';
                             $status_options = [
                                 'Active'     => 'Active',
                                 'Inactive'   => 'Inactive',
@@ -85,11 +96,18 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
                                 $selected = ($field['key'] === 'status' && $value === $default_status) ? ' selected' : '';
                                 echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
                             }
+                        } elseif ( $field['key'] === 'membership_entitlement' ) {
+                            foreach ( $membership_entitlement_options as $value => $label ) {
+                                echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+                            }
                         } elseif ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+                            echo '<option value="">-- Select --</option>';
                             foreach ( $field['options'] as $opt ) {
                                 $opt = (string) $opt;
                                 echo '<option value="' . esc_attr( $opt ) . '">' . esc_html( $opt ) . '</option>';
                             }
+                        } else {
+                            echo '<option value="">-- Select --</option>';
                         }
 
                         echo '</select>';

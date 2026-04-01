@@ -105,6 +105,9 @@ class TPW_Member_Form_Handler {
                 if ( $key === 'user_id' && empty($value) ) {
                     continue;
                 }
+                if ( $key === 'membership_entitlement' ) {
+                    $value = TPW_Member_Controller::normalize_membership_entitlement( $value );
+                }
                 if ( ($field['type'] ?? '') === 'date' && $value !== '' ) {
                     $value = self::normalize_date_ddmmyyyy_to_mysql($value);
                 }
@@ -330,6 +333,9 @@ class TPW_Member_Form_Handler {
                 // Skip user_id and society_id to avoid overwriting them again
                 if ( $key === 'user_id' || $key === 'society_id' ) {
                     continue;
+                }
+                if ( $key === 'membership_entitlement' ) {
+                    $value = TPW_Member_Controller::normalize_membership_entitlement( $value );
                 }
                 if ( ($field['type'] ?? '') === 'date' && $value !== '' ) {
                     $value = self::normalize_date_ddmmyyyy_to_mysql($value);

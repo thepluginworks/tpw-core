@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the TPW Core plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.18.0\n"
+"Project-Id-Version: TPW Core 1.19.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-30T14:18:18+00:00\n"
+"POT-Creation-Date: 2026-04-01T15:54:17+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -2165,12 +2165,12 @@ msgstr ""
 msgid "Download Sample CSV Template"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-form-handler.php:290
-#: modules/members/includes/class-tpw-member-form-handler.php:611
+#: modules/members/includes/class-tpw-member-form-handler.php:293
+#: modules/members/includes/class-tpw-member-form-handler.php:617
 msgid "Invalid member ID."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-form-handler.php:619
+#: modules/members/includes/class-tpw-member-form-handler.php:625
 msgid "Member not found."
 msgstr ""
 
@@ -2355,7 +2355,7 @@ msgstr ""
 
 #: modules/members/shortcodes/member-profile.php:504
 #: modules/members/shortcodes/member-profile.php:525
-#: modules/members/shortcodes/members-admin.php:465
+#: modules/members/shortcodes/members-admin.php:469
 msgid "Access Denied"
 msgstr ""
 
@@ -2371,19 +2371,19 @@ msgstr ""
 msgid "Profile section unavailable."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:443
+#: modules/members/shortcodes/members-admin.php:447
 msgid "Member photo deleted."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:445
+#: modules/members/shortcodes/members-admin.php:449
 msgid "Member photo updated."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:454
+#: modules/members/shortcodes/members-admin.php:458
 msgid "WordPress user successfully created and linked."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:458
+#: modules/members/shortcodes/members-admin.php:462
 msgid "Email address added — you can now create a WordPress user for this member."
 msgstr ""
 
