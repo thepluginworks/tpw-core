@@ -13,6 +13,7 @@ yarn-error.log*
 ai-session.md
 phpcs.xml
 CODING_STANDARDS.md
+release-workflow.agent.md
 
 # === Build artifacts ===
 *.zip
