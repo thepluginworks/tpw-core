@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0] - 2026-04-02
+### Changed
+- Menus: TPW Control menu management now supports the `is_gallery_admin` visibility flag across add-item flows, edit-item saves, current-item summaries, and the edit modal visibility UI.
+- Menus: editing a menu item from the menu-manager modal now preserves the existing menu position, parent, and structural nav-menu metadata so item edits no longer push the entry to the bottom of the menu.
+- Menus: Match Managers visibility is now conditionally rendered from the existing FlexiGolf activation gate in both add and edit flows, and the edit modal now captures that gate correctly inside the nested tree renderer.
+- Members: FlexiGolf activation detection now recognises TPW FlexiGolf bootstrap constants and loader classes in addition to the existing legacy markers.
+
 ## [1.19.0] - 2026-04-01
 ### Changed
 - Members: TPW Core now stores a canonical `membership_entitlement` value on member records through a dedicated `tpw_members` column, with strict normalization so only allowed machine values persist and invalid submissions collapse back to unset.

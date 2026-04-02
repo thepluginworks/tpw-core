@@ -10,6 +10,13 @@ if ( ! class_exists('TPW_Control_UI') || ! TPW_Control_UI::user_has_access( [ 'l
 // Helpers
 $base_url = TPW_Control_UI::menu_url('menu-manager');
 $nonce_action = 'tpw_control_menu_manager';
+if ( ! class_exists( 'TPW_Member_Field_Loader' ) ) {
+    $member_field_loader = TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-field-loader.php';
+    if ( file_exists( $member_field_loader ) ) {
+        require_once $member_field_loader;
+    }
+}
+$show_match_manager_visibility = method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active();
 
 // Safe redirect helper to avoid blank pages when headers are already sent
 $tpw_mm_redirect = function( $url ) {
@@ -73,6 +80,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                 'is_committee' => ! empty($_POST['visibility_is_committee']),
                 'is_match_manager' => ! empty($_POST['visibility_is_match_manager']),
                 'is_noticeboard_admin' => ! empty($_POST['visibility_is_noticeboard_admin']),
+                'is_gallery_admin' => ! empty($_POST['visibility_is_gallery_admin']),
                 'status' => isset($_POST['visibility_status']) && is_array($_POST['visibility_status']) ? array_map('sanitize_text_field', $_POST['visibility_status']) : [],
             ];
             $requires_login = ! empty( $_POST['requires_login'] );
@@ -99,6 +107,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                 'is_committee' => ! empty($_POST['visibility_is_committee']),
                 'is_match_manager' => ! empty($_POST['visibility_is_match_manager']),
                 'is_noticeboard_admin' => ! empty($_POST['visibility_is_noticeboard_admin']),
+                'is_gallery_admin' => ! empty($_POST['visibility_is_gallery_admin']),
                 'status' => isset($_POST['visibility_status']) && is_array($_POST['visibility_status']) ? array_map('sanitize_text_field', $_POST['visibility_status']) : [],
             ];
             $requires_login = ! empty( $_POST['requires_login'] );
@@ -142,6 +151,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                 'is_committee' => ! empty($_POST['visibility_is_committee']),
                 'is_match_manager' => ! empty($_POST['visibility_is_match_manager']),
                 'is_noticeboard_admin' => ! empty($_POST['visibility_is_noticeboard_admin']),
+                'is_gallery_admin' => ! empty($_POST['visibility_is_gallery_admin']),
                 'status' => isset($_POST['visibility_status']) && is_array($_POST['visibility_status']) ? array_map('sanitize_text_field', $_POST['visibility_status']) : [],
             ];
             $requires_login = ! empty( $_POST['requires_login'] );
@@ -167,6 +177,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
                 'is_committee' => ! empty($_POST['visibility_is_committee']),
                 'is_match_manager' => ! empty($_POST['visibility_is_match_manager']),
                 'is_noticeboard_admin' => ! empty($_POST['visibility_is_noticeboard_admin']),
+                'is_gallery_admin' => ! empty($_POST['visibility_is_gallery_admin']),
                 'status' => isset($_POST['visibility_status']) && is_array($_POST['visibility_status']) ? array_map('sanitize_text_field', $_POST['visibility_status']) : [],
             ];
             $requires_login = ! empty( $_POST['requires_login'] );
@@ -207,18 +218,44 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_wpnonce']) && wp_ve
             $item_id = (int) ($_POST['item_id'] ?? 0);
             $label = sanitize_text_field( $_POST['label'] ?? '' );
             $url   = esc_url_raw( $_POST['url'] ?? '' );
+            $existing_vis = [];
+            if ( $item_id > 0 ) {
+                $raw_existing_vis = get_post_meta( $item_id, '_tpw_visibility_json', true );
+                if ( is_string( $raw_existing_vis ) && $raw_existing_vis !== '' ) {
+                    $decoded_existing_vis = json_decode( $raw_existing_vis, true );
+                    if ( is_array( $decoded_existing_vis ) ) {
+                        $existing_vis = $decoded_existing_vis;
+                    }
+                }
+            }
             $vis = [
                 'is_admin' => ! empty($_POST['visibility_is_admin']),
                 'is_committee' => ! empty($_POST['visibility_is_committee']),
-                'is_match_manager' => ! empty($_POST['visibility_is_match_manager']),
+                'is_match_manager' => $show_match_manager_visibility ? ! empty($_POST['visibility_is_match_manager']) : ! empty($existing_vis['is_match_manager']),
                 'is_noticeboard_admin' => ! empty($_POST['visibility_is_noticeboard_admin']),
+                'is_gallery_admin' => ! empty($_POST['visibility_is_gallery_admin']),
                 'status' => isset($_POST['visibility_status']) && is_array($_POST['visibility_status']) ? array_map('sanitize_text_field', $_POST['visibility_status']) : [],
             ];
             $requires_login = ! empty( $_POST['requires_login'] );
             if ( $menu_id && $item_id ) {
-                $args = [ 'menu-item-title' => $label, 'menu-item-status' => 'publish' ];
-                if ( $url !== '' ) $args['menu-item-url'] = $url;
-                wp_update_nav_menu_item( $menu_id, $item_id, $args );
+                $existing_item = wp_setup_nav_menu_item( get_post( $item_id ) );
+                if ( $existing_item && ! is_wp_error( $existing_item ) ) {
+                    $args = [
+                        'menu-item-title'      => $label,
+                        'menu-item-status'     => 'publish',
+                        'menu-item-position'   => (int) $existing_item->menu_order,
+                        'menu-item-parent-id'  => (int) $existing_item->menu_item_parent,
+                        'menu-item-type'       => $existing_item->type,
+                        'menu-item-object-id'  => (int) $existing_item->object_id,
+                        'menu-item-object'     => $existing_item->object,
+                    ];
+
+                    if ( 'custom' === $existing_item->type ) {
+                        $args['menu-item-url'] = $url !== '' ? $url : (string) $existing_item->url;
+                    }
+
+                    wp_update_nav_menu_item( $menu_id, $item_id, $args );
+                }
                 update_post_meta( $item_id, '_tpw_visibility_json', wp_json_encode( $vis ) );
                 update_post_meta( $item_id, '_tpw_requires_login', $requires_login ? 1 : 0 );
             }
@@ -419,8 +456,9 @@ if ( $selected_menu_id ) {
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><input type="checkbox" name="visibility_is_admin" /> Admins</label>';
     echo '                <label><input type="checkbox" name="visibility_is_committee" /> Committee</label>';
-    echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
+    if ( $show_match_manager_visibility ) echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
     echo '                <label><input type="checkbox" name="visibility_is_noticeboard_admin" /> Noticeboard Admins</label>';
+    echo '                <label><input type="checkbox" name="visibility_is_gallery_admin" /> Gallery Admins</label>';
     echo '              </div>';
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><strong>Member Status</strong></label>';
@@ -463,8 +501,9 @@ if ( $selected_menu_id ) {
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><input type="checkbox" name="visibility_is_admin" /> Admins</label>';
     echo '                <label><input type="checkbox" name="visibility_is_committee" /> Committee</label>';
-    echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
+    if ( $show_match_manager_visibility ) echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
     echo '                <label><input type="checkbox" name="visibility_is_noticeboard_admin" /> Noticeboard Admins</label>';
+    echo '                <label><input type="checkbox" name="visibility_is_gallery_admin" /> Gallery Admins</label>';
     echo '              </div>';
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><strong>Member Status</strong></label>';
@@ -507,8 +546,9 @@ if ( $selected_menu_id ) {
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><input type="checkbox" name="visibility_is_admin" /> Admins</label>';
     echo '                <label><input type="checkbox" name="visibility_is_committee" /> Committee</label>';
-    echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
+    if ( $show_match_manager_visibility ) echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
     echo '                <label><input type="checkbox" name="visibility_is_noticeboard_admin" /> Noticeboard Admins</label>';
+    echo '                <label><input type="checkbox" name="visibility_is_gallery_admin" /> Gallery Admins</label>';
     echo '              </div>';
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><strong>Member Status</strong></label>';
@@ -549,8 +589,9 @@ if ( $selected_menu_id ) {
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><input type="checkbox" name="visibility_is_admin" /> Admins</label>';
     echo '                <label><input type="checkbox" name="visibility_is_committee" /> Committee</label>';
-    echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
+    if ( $show_match_manager_visibility ) echo '                <label><input type="checkbox" name="visibility_is_match_manager" /> Match Managers</label>';
     echo '                <label><input type="checkbox" name="visibility_is_noticeboard_admin" /> Noticeboard Admins</label>';
+    echo '                <label><input type="checkbox" name="visibility_is_gallery_admin" /> Gallery Admins</label>';
     echo '              </div>';
     echo '              <div class="tpw-mm-vis-col">';
     echo '                <label><strong>Member Status</strong></label>';
@@ -589,7 +630,7 @@ if ( $selected_menu_id ) {
             }
             unset($group);
 
-            $render_ul = function( $parent_id ) use ( &$render_ul, $by_parent, $parse_vis, $statuses_list, $selected_menu_id, $nonce_action ) {
+            $render_ul = function( $parent_id ) use ( &$render_ul, $by_parent, $parse_vis, $statuses_list, $selected_menu_id, $nonce_action, $show_match_manager_visibility ) {
                 $html = '<ul class="tpw-mm-list" ' . ( $parent_id === 0 ? 'id="tpw-mm-root"' : '' ) . '>';
                 $siblings = $by_parent[$parent_id] ?? [];
                 foreach ( $siblings as $it ) {
@@ -597,7 +638,7 @@ if ( $selected_menu_id ) {
                     $req = (bool) get_post_meta( $it->ID, '_tpw_requires_login', true );
                     $row_id = (int) $it->ID;
                     $bits = [];
-                    foreach ( ['is_admin'=>'Admin','is_committee'=>'Committee','is_match_manager'=>'Match','is_noticeboard_admin'=>'Noticeboard'] as $k=>$lbl ) if ( ! empty($vis[$k]) ) $bits[] = $lbl;
+                    foreach ( ['is_admin'=>'Admin','is_committee'=>'Committee','is_match_manager'=>'Match','is_noticeboard_admin'=>'Noticeboard','is_gallery_admin'=>'Gallery'] as $k=>$lbl ) if ( ! empty($vis[$k]) ) $bits[] = $lbl;
                     if ( ! empty($vis['status']) ) $bits[] = 'Status(' . implode(', ', array_map('esc_html',$vis['status'])) . ')';
                     $html .= '<li class="tpw-mm-item" data-id="' . $row_id . '">';
                     $html .= '<div class="tpw-mm-item__row">';
@@ -637,8 +678,11 @@ if ( $selected_menu_id ) {
                     $html .= '            <div style="display:flex;gap:12px;flex-wrap:wrap">';
                     $html .= '              <label><input type="checkbox" name="visibility_is_admin" ' . checked( !empty($vis['is_admin']), true, false ) . ' /> Admins</label>';
                     $html .= '              <label><input type="checkbox" name="visibility_is_committee" ' . checked( !empty($vis['is_committee']), true, false ) . ' /> Committee</label>';
-                    $html .= '              <label><input type="checkbox" name="visibility_is_match_manager" ' . checked( !empty($vis['is_match_manager']), true, false ) . ' /> Match Managers</label>';
+                    if ( $show_match_manager_visibility ) {
+                        $html .= '              <label><input type="checkbox" name="visibility_is_match_manager" ' . checked( !empty($vis['is_match_manager']), true, false ) . ' /> Match Managers</label>';
+                    }
                     $html .= '              <label><input type="checkbox" name="visibility_is_noticeboard_admin" ' . checked( !empty($vis['is_noticeboard_admin']), true, false ) . ' /> Noticeboard Admins</label>';
+                    $html .= '              <label><input type="checkbox" name="visibility_is_gallery_admin" ' . checked( !empty($vis['is_gallery_admin']), true, false ) . ' /> Gallery Admins</label>';
                     $html .= '            </div>';
                     $sel = isset($vis['status']) && is_array($vis['status']) ? $vis['status'] : [];
                     $html .= '            <div style="margin-top:8px">';
@@ -724,10 +768,12 @@ echo '<script>
         const cEl = form.querySelector("input[name=visibility_is_committee]");
         const mEl = form.querySelector("input[name=visibility_is_match_manager]");
         const nEl = form.querySelector("input[name=visibility_is_noticeboard_admin]");
+        const gEl = form.querySelector("input[name=visibility_is_gallery_admin]");
         const admins = aEl && aEl.checked;
         const commit = cEl && cEl.checked;
         const matchm = mEl && mEl.checked;
         const nb = nEl && nEl.checked;
+        const gallery = gEl && gEl.checked;
         const statusSel = form.querySelector("select[name=\"visibility_status[]\"]");
         const statuses = statusSel ? Array.from(statusSel.selectedOptions).map(function(o){return o.value;}) : [];
         const bits = [];
@@ -735,6 +781,7 @@ echo '<script>
         if (commit) bits.push("Committee");
         if (matchm) bits.push("Match");
         if (nb) bits.push("Noticeboard");
+        if (gallery) bits.push("Gallery");
         if (statuses.length) bits.push("Status("+statuses.join(", ")+")");
         return bits.length ? bits.join(" • ") : "No visibility restrictions";
     }

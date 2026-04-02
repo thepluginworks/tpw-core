@@ -253,7 +253,12 @@ class TPW_Member_Field_Loader {
         }
 
         // Common markers
-        if ( defined('FLEXIGOLF_VERSION') || class_exists('FlexiGolf') ) {
+        if (
+            defined('FLEXIGOLF_VERSION')
+            || class_exists('FlexiGolf')
+            || defined('TPW_FLEXIGOLF_VERSION')
+            || class_exists('TPW_FlexiGolf_Loader')
+        ) {
             return true;
         }
         if ( ! function_exists('is_plugin_active') ) {
@@ -273,7 +278,12 @@ class TPW_Member_Field_Loader {
                 'tpw-flexigolf/tpw-flexigolf-main.php',
             ];
             foreach ( $candidates as $slug ) {
-                if ( is_plugin_active( $slug ) ) return true;
+                if ( is_plugin_active( $slug ) ) {
+                    return true;
+                }
+                if ( is_multisite() && function_exists( 'is_plugin_active_for_network' ) && is_plugin_active_for_network( $slug ) ) {
+                    return true;
+                }
             }
         }
         return false;
