@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.21.2] - 2026-04-07
+### Changed
+- UI: refined shared primary and secondary TPW button classes so they consistently keep the configured padding, height, and border-radius tokens across shared button usage.
+
 ## [1.21.1] - 2026-04-07
 ### Changed
 - UI: refined primary TPW button styling so shared primary button classes consistently keep the configured padding, height, and border radius tokens.
