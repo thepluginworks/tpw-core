@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.21.1] - 2026-04-07
+### Changed
+- UI: refined primary TPW button styling so shared primary button classes consistently keep the configured padding, height, and border radius tokens.
+
 ## [1.21.0] - 2026-04-07
 ### Changed
 - UI: added configurable large button tokens for `.tpw-btn-lg`, including large font size, padding, and height values that now emit as shared branding CSS variables in both admin and front-end output.

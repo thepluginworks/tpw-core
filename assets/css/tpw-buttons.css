@@ -153,6 +153,9 @@ a.tpw-btn {
 .tpw-btn-primary {
   background: var(--tpw-btn-primary);
   color: var(--tpw-btn-text-light);
+  padding: var(--tpw-btn-padding);
+  height: var(--tpw-btn-height, auto);
+  border-radius: var(--tpw-btn-radius);
 }
 button.tpw-btn.tpw-btn-primary,
 input[type="submit"].tpw-btn.tpw-btn-primary,
