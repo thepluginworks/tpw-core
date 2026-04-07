@@ -260,6 +260,9 @@ function tpw_member_profile_render_profile_section( $member ) {
       continue;
     }
     $label = $f['label'];
+    if ( $key === 'share_with_members' ) {
+      $label = 'Make my profile visible to other members';
+    }
     $is_meta = ! property_exists( $member, $key );
     $value = $is_meta ? ($meta[$key] ?? '') : ($member->$key ?? '');
 
@@ -381,14 +384,14 @@ function tpw_member_profile_render_profile_section( $member ) {
         <form id="tpw-profile-form">
           <input type="hidden" name="field_key" value="">
           <input type="hidden" name="field_type" value="text">
-          <div class="tpw-field-row">
+          <div class="tpw-field-row tpw-profile-field-row">
             <label id="tpw-profile-label"></label>
             <div id="tpw-profile-text-field">
               <input type="text" name="field_value" value="" />
             </div>
-            <label id="tpw-profile-checkbox-field" style="display:none; align-items:center; gap:8px;">
+            <label id="tpw-profile-checkbox-field" class="tpw-profile-checkbox-field" style="display:none;">
               <input type="checkbox" name="field_value_checkbox" value="1" />
-              <span><?php echo esc_html__( 'Visible to other members', 'tpw-core' ); ?></span>
+              <span><?php echo esc_html__( 'Yes', 'tpw-core' ); ?></span>
             </label>
           </div>
           <div id="tpw-profile-result" style="margin-top:8px;"></div>

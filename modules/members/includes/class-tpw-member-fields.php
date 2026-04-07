@@ -86,7 +86,7 @@ class TPW_Member_Fields {
 			'is_gallery_admin'     => [ 'label' => 'Gallery Admin', 'type' => 'tinyint(1)' ],
 			'is_manage_members'    => [ 'label' => 'Members Manager', 'type' => 'tinyint(1)' ],
 			'is_volunteer'         => [ 'label' => 'Volunteer', 'type' => 'tinyint(1)' ],
-			'share_with_members'   => [ 'label' => 'Make my profile visible to other members', 'type' => 'tinyint(1)' ],
+			'share_with_members'   => [ 'label' => 'Visible to other members', 'type' => 'tinyint(1)' ],
 			'username'              => [ 'label' => 'Username', 'type' => 'varchar(100)' ],
 			'password_hash'         => [ 'label' => 'Password Hash', 'type' => 'varchar(255)' ],
 		];

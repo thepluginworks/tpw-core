@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.22.0
+Stable tag: 1.22.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.22.1 =
+- Members: refined the self-service profile editor for the visibility checkbox with clearer spacing, a larger touch target, and a simple Yes label.
+- Members: admin screens now use the neutral field label while the member profile keeps the fuller explanatory wording.
 
 = 1.22.0 =
 - Members: added a profile visibility setting so members can opt out of appearing in member-facing directories, detail views, contact actions, and related member selection lists.

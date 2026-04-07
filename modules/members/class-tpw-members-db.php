@@ -331,7 +331,7 @@ class TPW_Members_DB {
             ],
             [
                 'field_key'    => 'share_with_members',
-                'custom_label' => 'Make my profile visible to other members',
+                'custom_label' => 'Visible to other members',
                 'field_type'   => 'checkbox',
                 'insert_after' => [ 'status', 'membership_entitlement' ],
             ],

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.22.1] - 2026-04-07
+### Changed
+- Members: refined the self-service profile editor for the member visibility checkbox with clearer spacing, a larger touch target, and a simpler inline Yes label.
+- Members: the shared admin label for the visibility field is now neutral, while the member-facing profile page keeps the fuller explanatory wording.
+
 ## [1.22.0] - 2026-04-07
 ### Changed
 - Members: added a member-controlled profile visibility setting so standard members can opt out of appearing in member-facing directories, detail views, contact actions, and related member selection lists.

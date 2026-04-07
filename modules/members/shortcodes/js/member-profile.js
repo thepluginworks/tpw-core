@@ -15,7 +15,7 @@
     $('#tpw-profile-form [name=field_type]').val(type);
     if (type === 'checkbox') {
       $('#tpw-profile-text-field').hide();
-      $('#tpw-profile-checkbox-field').css('display', 'inline-flex');
+      $('#tpw-profile-checkbox-field').css('display', 'flex');
       $('#tpw-profile-form [name=field_value_checkbox]').prop('checked', String(rawValue) === '1');
       $('#tpw-profile-form [name=field_value]').val('');
     } else {

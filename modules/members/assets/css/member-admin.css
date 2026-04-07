@@ -554,6 +554,23 @@ form input[type="text"] {
 .tpw-dir-modal__body #tpw-email-form textarea { width:100%; max-width:none; }
 .tpw-dir-modal__body #tpw-email-form .tpw-email-actions { margin-top:6px; }
 .tpw-dir-modal__body #tpw-email-form .tpw-email-text { padding:8px 10px; background:#fafafa; border:1px solid #eee; border-radius:4px; word-wrap:break-word; }
+.tpw-profile-field-row { display:flex; flex-direction:column; gap:10px; }
+.tpw-profile-field-row > label { margin:0; }
+.tpw-profile-field-row #tpw-profile-text-field input[type="text"] { width:100%; max-width:none; }
+.tpw-profile-checkbox-field {
+  display:none;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:12px;
+  margin-top:4px;
+  padding:6px 2px;
+}
+.tpw-profile-checkbox-field input[type="checkbox"] {
+  transform:scale(1.5);
+  transform-origin:left center;
+  margin:4px;
+  cursor:pointer;
+}
 .tpw-member-link-modal[hidden] { display: none; }
 .tpw-member-link-modal__dialog {
   background: #fff;

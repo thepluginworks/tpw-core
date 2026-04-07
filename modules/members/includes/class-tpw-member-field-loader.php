@@ -53,7 +53,7 @@ class TPW_Member_Field_Loader {
             'is_gallery_admin'      => 'Gallery Admin',
             'is_manage_members'     => 'Members Manager',
             'is_volunteer'          => 'Volunteer',
-            'share_with_members'    => 'Make my profile visible to other members',
+            'share_with_members'    => 'Visible to other members',
             'username'              => 'Username',
             'password_hash'         => 'Password Hash',
         ];
@@ -161,6 +161,10 @@ class TPW_Member_Field_Loader {
             $label = !empty($row->custom_label)
                 ? $row->custom_label
                 : ( $is_core ? $core_fields[ $row->field_key ] : ucwords( str_replace( '_', ' ', $row->field_key ) ) );
+
+            if ( 'share_with_members' === $row->field_key ) {
+                $label = 'Visible to other members';
+            }
 
             $options = [];
             if ( 'membership_entitlement' === $row->field_key && class_exists( 'TPW_Member_Controller' ) && method_exists( 'TPW_Member_Controller', 'get_membership_entitlement_options' ) ) {
