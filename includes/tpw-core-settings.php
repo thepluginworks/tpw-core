@@ -840,6 +840,9 @@ if ( ! function_exists('tpw_core_build_branding_css') ) {
             'btn_radius'     => '--tpw-btn-radius',
             'btn_padding'    => '--tpw-btn-padding',
             'btn_font_size'  => '--tpw-btn-font-size',
+            'btn_padding_lg'   => '--tpw-btn-padding-lg',
+            'btn_font_size_lg' => '--tpw-btn-font-size-lg',
+            'btn_height_lg'    => '--tpw-btn-height-lg',
             'btn_font_family'=> '--tpw-btn-font-family',
             'btn_font_weight'=> '--tpw-btn-font-weight',
             'btn_height'     => '--tpw-btn-height',
@@ -1007,6 +1010,9 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
             'btn_radius'     => '7px',
             'btn_padding'    => '4px 8px',
             'btn_font_size'  => '0.9rem',
+            'btn_padding_lg'   => '10px 18px',
+            'btn_font_size_lg' => '1.05rem',
+            'btn_height_lg'    => '48px',
             'btn_font_family'=> '',
             'btn_font_weight'=> '600',
             'btn_height'     => '',
@@ -1034,80 +1040,6 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
             <input type="hidden" name="action" value="tpw_core_save_branding" />
             <table class="form-table" role="presentation">
                 <tbody>
-                    <tr><th colspan="2"><h2 style="margin:6px 0;">UI Theme (applies to .tpw-admin-ui)</h2></th></tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_font_family"><?php esc_html_e('Font family', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_font_family" name="tpw_ui_font_family" value="<?php echo esc_attr( (string) ($ui['font_family'] ?? '') ); ?>" placeholder="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" />
-                            <p class="description"><?php esc_html_e('Applies within .tpw-admin-ui only.', 'tpw-core'); ?></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_font_weight"><?php esc_html_e('Font weight', 'tpw-core'); ?></label></th>
-                        <td>
-                            <?php $fw = (string) ($ui['font_weight'] ?? '600'); ?>
-                            <select id="tpw_ui_font_weight" name="tpw_ui_font_weight">
-                                <?php foreach ( ['normal','500','600','700'] as $opt ): ?>
-                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $fw, $opt ); ?>><?php echo esc_html($opt); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_text_transform"><?php esc_html_e('Text transform', 'tpw-core'); ?></label></th>
-                        <td>
-                            <?php $tt = (string) ($ui['text_transform'] ?? 'none'); ?>
-                            <select id="tpw_ui_text_transform" name="tpw_ui_text_transform">
-                                <?php foreach ( ['none','uppercase','lowercase','capitalize'] as $opt ): ?>
-                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $tt, $opt ); ?>><?php echo esc_html( ucfirst($opt) ); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_letter_spacing"><?php esc_html_e('Letter spacing', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_letter_spacing" name="tpw_ui_letter_spacing" value="<?php echo esc_attr( (string) ($ui['letter_spacing'] ?? 'normal') ); ?>" placeholder="normal | 0.03em | 1px" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_text_shadow"><?php esc_html_e('Text shadow', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_text_shadow" name="tpw_ui_text_shadow" value="<?php echo esc_attr( (string) ($ui['text_shadow'] ?? 'none') ); ?>" placeholder="none | 0 0 0 rgba(0,0,0,0.3)" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_btn_bg"><?php esc_html_e('Button background colour', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_btn_bg" name="tpw_ui_btn_bg" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" placeholder="#0b6cad" />
-                            <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" oninput="document.getElementById('tpw_ui_btn_bg').value=this.value" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_btn_text"><?php esc_html_e('Button text colour', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_btn_text" name="tpw_ui_btn_text" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" placeholder="#ffffff" />
-                            <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" oninput="document.getElementById('tpw_ui_btn_text').value=this.value" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_accent"><?php esc_html_e('Accent colour', 'tpw-core'); ?></label></th>
-                        <td>
-                            <input type="text" class="regular-text" id="tpw_ui_accent" name="tpw_ui_accent" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" placeholder="#2271b1" />
-                            <input type="color" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" oninput="document.getElementById('tpw_ui_accent').value=this.value" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="tpw_ui_inherit_global_frontend"><?php esc_html_e('Inherit global site styles on admin screens (front-end only)', 'tpw-core'); ?></label></th>
-                        <td>
-                            <?php $inherit_flag = ! empty( $ui['inherit_global_frontend'] ) ? 1 : 0; ?>
-                            <label>
-                                <input type="checkbox" id="tpw_ui_inherit_global_frontend" name="tpw_ui_inherit_global_frontend" value="1" <?php checked( 1, $inherit_flag ); ?> />
-                                <?php esc_html_e('Do not apply TPW Admin UI wrapper/styles on front-end shortcodes. Useful when using Elementor/Theme global styles.', 'tpw-core'); ?>
-                            </label>
-                            <p class="description"><?php esc_html_e('Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected.', 'tpw-core'); ?></p>
-                        </td>
-                    </tr>
                     <?php
                     // Headings section UI
                     $heading_defaults = function_exists('tpw_core_get_heading_defaults') ? tpw_core_get_heading_defaults() : [];
@@ -1184,6 +1116,30 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                             <p class="description"><?php esc_html_e('Used for .tpw-action-edit buttons in admin module lists.', 'tpw-core'); ?></p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_radius">Border radius</label></th>
+                        <td><input type="text" class="regular-text" id="btn_radius" name="btn_radius" value="<?php echo esc_attr($val['btn_radius']); ?>" placeholder="7px" /> <span class="description">e.g., 7px, 0.5rem</span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_padding">Padding</label></th>
+                        <td><input type="text" class="regular-text" id="btn_padding" name="btn_padding" value="<?php echo esc_attr($val['btn_padding']); ?>" placeholder="4px 8px" /> <span class="description">CSS shorthand accepted</span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_font_size">Font size</label></th>
+                        <td><input type="text" class="regular-text" id="btn_font_size" name="btn_font_size" value="<?php echo esc_attr($val['btn_font_size']); ?>" placeholder="0.9rem" /> <span class="description">e.g., 14px, 0.9rem</span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_font_size_lg"><?php esc_html_e('Large buttons font size', 'tpw-core'); ?></label></th>
+                        <td><input type="text" class="regular-text" id="btn_font_size_lg" name="btn_font_size_lg" value="<?php echo esc_attr($val['btn_font_size_lg']); ?>" placeholder="1.05rem" /> <span class="description"><?php esc_html_e('Used by .tpw-btn-lg.', 'tpw-core'); ?></span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_padding_lg"><?php esc_html_e('Large buttons padding', 'tpw-core'); ?></label></th>
+                        <td><input type="text" class="regular-text" id="btn_padding_lg" name="btn_padding_lg" value="<?php echo esc_attr($val['btn_padding_lg']); ?>" placeholder="10px 18px" /> <span class="description"><?php esc_html_e('CSS shorthand accepted. Used by .tpw-btn-lg.', 'tpw-core'); ?></span></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="btn_height_lg"><?php esc_html_e('Large buttons height', 'tpw-core'); ?></label></th>
+                        <td><input type="text" class="regular-text" id="btn_height_lg" name="btn_height_lg" value="<?php echo esc_attr($val['btn_height_lg']); ?>" placeholder="48px" /> <span class="description"><?php esc_html_e('Minimum height for .tpw-btn-lg. Use a unit such as px, rem, or em.', 'tpw-core'); ?></span></td>
+                    </tr>
                     <tr><th colspan="2"><h2 style="margin:12px 0 6px;">Semantic Notice Colours</h2></th></tr>
                     <tr>
                         <th scope="row"><label for="color_success">Success</label></th>
@@ -1215,18 +1171,6 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="btn_radius">Border radius</label></th>
-                        <td><input type="text" class="regular-text" id="btn_radius" name="btn_radius" value="<?php echo esc_attr($val['btn_radius']); ?>" placeholder="7px" /> <span class="description">e.g., 7px, 0.5rem</span></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="btn_padding">Padding</label></th>
-                        <td><input type="text" class="regular-text" id="btn_padding" name="btn_padding" value="<?php echo esc_attr($val['btn_padding']); ?>" placeholder="4px 8px" /> <span class="description">CSS shorthand accepted</span></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="btn_font_size">Font size</label></th>
-                        <td><input type="text" class="regular-text" id="btn_font_size" name="btn_font_size" value="<?php echo esc_attr($val['btn_font_size']); ?>" placeholder="0.9rem" /> <span class="description">e.g., 14px, 0.9rem</span></td>
-                    </tr>
-                    <tr>
                         <th scope="row"><label for="btn_height"><?php esc_html_e('Buttons Height', 'tpw-core'); ?></label></th>
                         <td>
                             <input type="text" class="regular-text" id="btn_height" name="btn_height" value="<?php echo esc_attr($val['btn_height']); ?>" placeholder="auto | 32px" />
@@ -1250,6 +1194,80 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
                         <td>
                             <input type="text" class="regular-text" id="btn_font_family" name="btn_font_family" value="<?php echo esc_attr($val['btn_font_family']); ?>" placeholder='"Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial' />
                             <span class="description"><?php esc_html_e('Optional. Overrides UI font for TPW buttons only. If empty, buttons use the UI Theme font or the system stack.', 'tpw-core'); ?></span>
+                        </td>
+                    </tr>
+                    <tr><th colspan="2"><h2 style="margin:6px 0;">UI Theme (applies to .tpw-admin-ui)</h2></th></tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_font_family"><?php esc_html_e('Font family', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_font_family" name="tpw_ui_font_family" value="<?php echo esc_attr( (string) ($ui['font_family'] ?? '') ); ?>" placeholder="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" />
+                            <p class="description"><?php esc_html_e('Applies within .tpw-admin-ui only.', 'tpw-core'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_font_weight"><?php esc_html_e('Font weight', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $fw = (string) ($ui['font_weight'] ?? '600'); ?>
+                            <select id="tpw_ui_font_weight" name="tpw_ui_font_weight">
+                                <?php foreach ( ['normal','500','600','700'] as $opt ): ?>
+                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $fw, $opt ); ?>><?php echo esc_html($opt); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_text_transform"><?php esc_html_e('Text transform', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $tt = (string) ($ui['text_transform'] ?? 'none'); ?>
+                            <select id="tpw_ui_text_transform" name="tpw_ui_text_transform">
+                                <?php foreach ( ['none','uppercase','lowercase','capitalize'] as $opt ): ?>
+                                    <option value="<?php echo esc_attr($opt); ?>" <?php selected( $tt, $opt ); ?>><?php echo esc_html( ucfirst($opt) ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_letter_spacing"><?php esc_html_e('Letter spacing', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_letter_spacing" name="tpw_ui_letter_spacing" value="<?php echo esc_attr( (string) ($ui['letter_spacing'] ?? 'normal') ); ?>" placeholder="normal | 0.03em | 1px" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_text_shadow"><?php esc_html_e('Text shadow', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_text_shadow" name="tpw_ui_text_shadow" value="<?php echo esc_attr( (string) ($ui['text_shadow'] ?? 'none') ); ?>" placeholder="none | 0 0 0 rgba(0,0,0,0.3)" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_btn_bg"><?php esc_html_e('Button background colour', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_btn_bg" name="tpw_ui_btn_bg" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" placeholder="#0b6cad" />
+                            <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" oninput="document.getElementById('tpw_ui_btn_bg').value=this.value" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_btn_text"><?php esc_html_e('Button text colour', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_btn_text" name="tpw_ui_btn_text" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" placeholder="#ffffff" />
+                            <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" oninput="document.getElementById('tpw_ui_btn_text').value=this.value" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_accent"><?php esc_html_e('Accent colour', 'tpw-core'); ?></label></th>
+                        <td>
+                            <input type="text" class="regular-text" id="tpw_ui_accent" name="tpw_ui_accent" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" placeholder="#2271b1" />
+                            <input type="color" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" oninput="document.getElementById('tpw_ui_accent').value=this.value" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="tpw_ui_inherit_global_frontend"><?php esc_html_e('Inherit global site styles on admin screens (front-end only)', 'tpw-core'); ?></label></th>
+                        <td>
+                            <?php $inherit_flag = ! empty( $ui['inherit_global_frontend'] ) ? 1 : 0; ?>
+                            <label>
+                                <input type="checkbox" id="tpw_ui_inherit_global_frontend" name="tpw_ui_inherit_global_frontend" value="1" <?php checked( 1, $inherit_flag ); ?> />
+                                <?php esc_html_e('Do not apply TPW Admin UI wrapper/styles on front-end shortcodes. Useful when using Elementor/Theme global styles.', 'tpw-core'); ?>
+                            </label>
+                            <p class="description"><?php esc_html_e('Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected.', 'tpw-core'); ?></p>
                         </td>
                     </tr>
                 </tbody>
@@ -1315,6 +1333,9 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         'btn_radius'     => '7px',
         'btn_padding'    => '4px 8px',
         'btn_font_size'  => '0.9rem',
+        'btn_padding_lg'   => '10px 18px',
+        'btn_font_size_lg' => '1.05rem',
+        'btn_height_lg'    => '48px',
         'btn_font_family'=> '',
         'btn_font_weight'=> '600',
         'btn_height'     => '',
@@ -1384,7 +1405,10 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         };
         $in['btn_radius']    = $sanitize_size( $in['btn_radius'], $defaults['btn_radius'] );
         $in['btn_padding']   = $sanitize_size( $in['btn_padding'], $defaults['btn_padding'] );
-    $in['btn_font_size'] = $sanitize_size( $in['btn_font_size'], $defaults['btn_font_size'] );
+        $in['btn_font_size'] = $sanitize_size( $in['btn_font_size'], $defaults['btn_font_size'] );
+        $in['btn_padding_lg'] = $sanitize_size( $in['btn_padding_lg'], $defaults['btn_padding_lg'] );
+        $in['btn_font_size_lg'] = $sanitize_size( $in['btn_font_size_lg'], $defaults['btn_font_size_lg'] );
+        $in['btn_height_lg'] = $sanitize_size( $in['btn_height_lg'], $defaults['btn_height_lg'] );
 
     // Font family is free text; trim only (quotes allowed)
     $in['btn_font_family'] = trim( (string) $in['btn_font_family'] );

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.21.0] - 2026-04-07
+### Changed
+- UI: added configurable large button tokens for `.tpw-btn-lg`, including large font size, padding, and height values that now emit as shared branding CSS variables in both admin and front-end output.
+- UI: reorganised the Branding settings page so button-specific controls sit with the Buttons section and the scoped UI Theme section appears after Semantic Notice Colours.
+
 ## [1.20.1] - 2026-04-07
 ### Changed
 - UI: updated the shared TPW button stylesheet to provide a consistent outline button variant for primary and secondary buttons.

@@ -18,6 +18,9 @@
   --tpw-btn-radius: 7px;
   --tpw-btn-padding: 4px 8px;
   --tpw-btn-font-size: 0.9rem;
+  --tpw-btn-font-size-lg: 1.05rem;
+  --tpw-btn-padding-lg: 10px 18px;
+  --tpw-btn-height-lg: 48px;
 }
 
 /* Base shared button class */
@@ -338,5 +341,15 @@ input[type="reset"].tpw-btn.tpw-btn-edit {
   text-transform: var(--tpw-text-transform, none);
   letter-spacing: var(--tpw-letter-spacing, normal);
   text-shadow: var(--tpw-text-shadow, none);
+}
+
+a.tpw-btn.tpw-btn-lg,
+button.tpw-btn.tpw-btn-lg,
+input[type="submit"].tpw-btn.tpw-btn-lg,
+input[type="button"].tpw-btn.tpw-btn-lg,
+input[type="reset"].tpw-btn.tpw-btn-lg {
+  padding: var(--tpw-btn-padding-lg);
+  font-size: var(--tpw-btn-font-size-lg);
+  min-height: var(--tpw-btn-height-lg);
 }
 

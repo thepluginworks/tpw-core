@@ -47,6 +47,9 @@ Location: `includes/tpw-core-settings.php` (around the block starting near the E
 | btn_radius        | --tpw-btn-radius          | Radius for `.tpw-btn` |
 | btn_padding       | --tpw-btn-padding         | Horizontal/vertical padding |
 | btn_font_size     | --tpw-btn-font-size       | Font size |
+| btn_padding_lg    | --tpw-btn-padding-lg      | Large button padding for `.tpw-btn-lg` |
+| btn_font_size_lg  | --tpw-btn-font-size-lg    | Large button font size for `.tpw-btn-lg` |
+| btn_height_lg     | --tpw-btn-height-lg       | Large button min-height for `.tpw-btn-lg` |
 | btn_font_family   | --tpw-btn-font-family     | Font family override for buttons |
 | btn_font_weight   | --tpw-btn-font-weight     | Font weight |
 | btn_height        | --tpw-btn-height          | Explicit height (optional) |

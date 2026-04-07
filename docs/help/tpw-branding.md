@@ -14,6 +14,7 @@ The Branding tab at: Settings → TPW Core → Branding (`/wp-admin/options-gene
   - `--tpw-btn-primary`, `--tpw-btn-secondary`, `--tpw-btn-danger`, `--tpw-btn-light`, `--tpw-btn-dark`
   - Text colors: `--tpw-btn-text-light`, `--tpw-btn-text-dark`
   - Shape/size: `--tpw-btn-radius`, `--tpw-btn-padding`, `--tpw-btn-font-size`, `--tpw-btn-height`
+  - Large button size: `--tpw-btn-font-size-lg`, `--tpw-btn-padding-lg`, `--tpw-btn-height-lg`
   - Typography: `--tpw-btn-font-family`, `--tpw-btn-font-weight`
   - Action color: `--tpw-action-edit`
 - UI Theme tokens for admin-like pages

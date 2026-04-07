@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.20.1
+Stable tag: 1.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.21.0 =
+- UI: added configurable large button size tokens for `.tpw-btn-lg`, including large font size, padding, and height values that are now emitted as shared branding CSS variables.
+- UI: reorganised the Branding settings layout so button controls appear with the Buttons section and the scoped UI Theme section now sits after Semantic Notice Colours.
 
 = 1.20.1 =
 - UI: refined the shared TPW button stylesheet to provide a clearer outline button variant for primary and secondary buttons.

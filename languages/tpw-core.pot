@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the TPW Core plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.20.1\n"
+"Project-Id-Version: TPW Core 1.21.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-07T15:57:38+00:00\n"
+"POT-Creation-Date: 2026-04-07T18:17:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -37,13 +37,13 @@ msgid "ThePluginWorks"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:219
-#: includes/tpw-core-settings.php:2067
+#: includes/tpw-core-settings.php:2091
 msgid "Members Menu"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:232
-#: includes/tpw-core-settings.php:1825
-#: includes/tpw-core-settings.php:2079
+#: includes/tpw-core-settings.php:1849
+#: includes/tpw-core-settings.php:2103
 #: modules/members/members-init.php:195
 #: modules/members/members-init.php:208
 msgid "Logout"
@@ -51,8 +51,8 @@ msgstr ""
 
 #: includes/class-tpw-core-activator.php:293
 #: includes/tpw-core-loader.php:475
-#: includes/tpw-core-settings.php:1824
-#: includes/tpw-core-settings.php:2145
+#: includes/tpw-core-settings.php:1848
+#: includes/tpw-core-settings.php:2169
 #: modules/members/shortcodes/member-profile.php:13
 #: modules/members/shortcodes/member-profile.php:236
 msgid "My Profile"
@@ -340,22 +340,22 @@ msgid "Unknown template key."
 msgstr ""
 
 #: includes/tpw-core-settings.php:124
-#: includes/tpw-core-settings.php:2000
+#: includes/tpw-core-settings.php:2024
 msgid "TPW Core: The Member Profile page is not configured. "
 msgstr ""
 
 #: includes/tpw-core-settings.php:125
-#: includes/tpw-core-settings.php:2001
+#: includes/tpw-core-settings.php:2025
 msgid "Select a Profile page now"
 msgstr ""
 
 #: includes/tpw-core-settings.php:134
-#: includes/tpw-core-settings.php:2012
+#: includes/tpw-core-settings.php:2036
 msgid "TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published."
 msgstr ""
 
 #: includes/tpw-core-settings.php:135
-#: includes/tpw-core-settings.php:2013
+#: includes/tpw-core-settings.php:2037
 msgid "Edit page"
 msgstr ""
 
@@ -392,47 +392,47 @@ msgid "Configure branding, menus, email, payment methods, and system pages."
 msgstr ""
 
 #: includes/tpw-core-settings.php:264
-#: includes/tpw-core-settings.php:1039
+#: includes/tpw-core-settings.php:1201
 msgid "Font family"
 msgstr ""
 
 #: includes/tpw-core-settings.php:267
-#: includes/tpw-core-settings.php:1042
+#: includes/tpw-core-settings.php:1204
 msgid "Applies within .tpw-admin-ui only."
 msgstr ""
 
 #: includes/tpw-core-settings.php:271
-#: includes/tpw-core-settings.php:1046
+#: includes/tpw-core-settings.php:1208
 msgid "Font weight"
 msgstr ""
 
 #: includes/tpw-core-settings.php:282
-#: includes/tpw-core-settings.php:1057
+#: includes/tpw-core-settings.php:1219
 msgid "Text transform"
 msgstr ""
 
 #: includes/tpw-core-settings.php:293
-#: includes/tpw-core-settings.php:1068
+#: includes/tpw-core-settings.php:1230
 msgid "Letter spacing"
 msgstr ""
 
 #: includes/tpw-core-settings.php:299
-#: includes/tpw-core-settings.php:1074
+#: includes/tpw-core-settings.php:1236
 msgid "Text shadow"
 msgstr ""
 
 #: includes/tpw-core-settings.php:305
-#: includes/tpw-core-settings.php:1080
+#: includes/tpw-core-settings.php:1242
 msgid "Button background colour"
 msgstr ""
 
 #: includes/tpw-core-settings.php:312
-#: includes/tpw-core-settings.php:1087
+#: includes/tpw-core-settings.php:1249
 msgid "Button text colour"
 msgstr ""
 
 #: includes/tpw-core-settings.php:319
-#: includes/tpw-core-settings.php:1094
+#: includes/tpw-core-settings.php:1256
 msgid "Accent colour"
 msgstr ""
 
@@ -474,7 +474,7 @@ msgid "Replace Which Menu Location for Members?"
 msgstr ""
 
 #: includes/tpw-core-settings.php:441
-#: includes/tpw-core-settings.php:1666
+#: includes/tpw-core-settings.php:1690
 msgid "Logged-in users will see the TPW Member Menu at this location if a menu is assigned to it."
 msgstr ""
 
@@ -701,10 +701,10 @@ msgid "Actions"
 msgstr ""
 
 #: includes/tpw-core-settings.php:794
-#: includes/tpw-core-settings.php:1297
-#: includes/tpw-core-settings.php:1498
-#: includes/tpw-core-settings.php:1518
+#: includes/tpw-core-settings.php:1315
+#: includes/tpw-core-settings.php:1522
 #: includes/tpw-core-settings.php:1542
+#: includes/tpw-core-settings.php:1566
 #: modules/gallery/elementor/ajax.php:16
 #: modules/gallery/gallery-loader.php:138
 #: modules/gallery/gallery-loader.php:148
@@ -725,94 +725,118 @@ msgstr ""
 msgid "Permission denied"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1101
-#: includes/tpw-core-settings.php:1261
-msgid "Inherit global site styles on admin screens (front-end only)"
-msgstr ""
-
-#: includes/tpw-core-settings.php:1106
-#: includes/tpw-core-settings.php:1270
-msgid "Do not apply TPW Admin UI wrapper/styles on front-end shortcodes. Useful when using Elementor/Theme global styles."
-msgstr ""
-
-#: includes/tpw-core-settings.php:1108
-msgid "Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected."
-msgstr ""
-
-#: includes/tpw-core-settings.php:1120
+#: includes/tpw-core-settings.php:1052
 msgid "Heading font family"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1123
+#: includes/tpw-core-settings.php:1055
 msgid "Leave empty to inherit the UI Theme font. Applies to h1–h6 within TPW UIs."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1133
+#: includes/tpw-core-settings.php:1065
 msgid "colour / size / weight"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1141
+#: includes/tpw-core-settings.php:1073
 msgid "Default"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1145
+#: includes/tpw-core-settings.php:1077
 msgid "Leave colour empty to inherit. Size accepts px, rem, or em. Weight: choose Default to use the built-in scale."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1184
+#: includes/tpw-core-settings.php:1116
 msgid "Used for .tpw-action-edit buttons in admin module lists."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1192
+#: includes/tpw-core-settings.php:1132
+msgid "Large buttons font size"
+msgstr ""
+
+#: includes/tpw-core-settings.php:1133
+msgid "Used by .tpw-btn-lg."
+msgstr ""
+
+#: includes/tpw-core-settings.php:1136
+msgid "Large buttons padding"
+msgstr ""
+
+#: includes/tpw-core-settings.php:1137
+msgid "CSS shorthand accepted. Used by .tpw-btn-lg."
+msgstr ""
+
+#: includes/tpw-core-settings.php:1140
+msgid "Large buttons height"
+msgstr ""
+
+#: includes/tpw-core-settings.php:1141
+msgid "Minimum height for .tpw-btn-lg. Use a unit such as px, rem, or em."
+msgstr ""
+
+#: includes/tpw-core-settings.php:1148
 msgid "Background/base colour for success states. Supports CSS functions (color-mix, var())."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1199
+#: includes/tpw-core-settings.php:1155
 msgid "Base colour for informational notices. Typically uses the UI accent."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1207
+#: includes/tpw-core-settings.php:1163
 msgid "High-attention but non-fatal states."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1214
+#: includes/tpw-core-settings.php:1170
 msgid "Critical / failure state colour, usually matches Danger button."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1230
+#: includes/tpw-core-settings.php:1174
 msgid "Buttons Height"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1233
+#: includes/tpw-core-settings.php:1177
 msgid "Optional. Sets a fixed height for TPW buttons. Use a unit (e.g., 32px). Leave blank or set to “auto” to size by padding."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1237
+#: includes/tpw-core-settings.php:1181
 msgid "Buttons Font Weight"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1245
+#: includes/tpw-core-settings.php:1189
 msgid "Overrides UI weight for TPW buttons only. Leave as 600 for the default."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1249
+#: includes/tpw-core-settings.php:1193
 msgid "Buttons Font Family"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1252
+#: includes/tpw-core-settings.php:1196
 msgid "Optional. Overrides UI font for TPW buttons only. If empty, buttons use the UI Theme font or the system stack."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1272
+#: includes/tpw-core-settings.php:1263
+#: includes/tpw-core-settings.php:1279
+msgid "Inherit global site styles on admin screens (front-end only)"
+msgstr ""
+
+#: includes/tpw-core-settings.php:1268
+#: includes/tpw-core-settings.php:1288
+msgid "Do not apply TPW Admin UI wrapper/styles on front-end shortcodes. Useful when using Elementor/Theme global styles."
+msgstr ""
+
+#: includes/tpw-core-settings.php:1270
+msgid "Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected."
+msgstr ""
+
+#: includes/tpw-core-settings.php:1290
 msgid "This does not affect wp-admin. It applies only to front-end admin-like pages powered by TPW shortcodes."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1277
+#: includes/tpw-core-settings.php:1295
 msgid "Save Branding"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1566
-#: includes/tpw-core-settings.php:1631
+#: includes/tpw-core-settings.php:1590
+#: includes/tpw-core-settings.php:1655
 msgid "You do not have permission to manage settings."
 msgstr ""
 
