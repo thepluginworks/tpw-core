@@ -130,6 +130,7 @@ class TPW_Core_Updater {
 		$manifest = self::get_manifest();
 		$version = ! empty( $manifest['version'] ) ? $manifest['version'] : TPW_CORE_VERSION;
 		$download_link = ! empty( $manifest['download_url'] ) ? $manifest['download_url'] : self::DOWNLOAD_URL;
+		$sections = self::get_plugin_information_sections();
 
 		return (object) array(
 			'name'          => 'TPW Core',
@@ -140,10 +141,7 @@ class TPW_Core_Updater {
 			'homepage'      => self::HOMEPAGE,
 			'download_link' => $download_link,
 			'external'      => true,
-			'sections'      => array(
-				'description' => '<p>TPW Core provides shared RSVP, member, payment, branding, and system-page functionality for the TPW plugin ecosystem.</p>',
-				'changelog'   => self::build_changelog_section(),
-			),
+			'sections'      => $sections,
 		);
 	}
 
@@ -441,26 +439,171 @@ class TPW_Core_Updater {
 	}
 
 	/**
-	 * Build a simple changelog section for the plugin information modal.
+	 * Build plugin information modal sections from the bundled readme.
 	 *
+	 * @return array<string, string>
+	 */
+	private static function get_plugin_information_sections() {
+		$sections = self::get_readme_sections();
+
+		$description = ! empty( $sections['description'] )
+			? self::format_readme_section_html( $sections['description'] )
+			: '<p>TPW Core provides shared RSVP, member, payment, branding, and system-page functionality for the TPW plugin ecosystem.</p>';
+
+		$changelog = ! empty( $sections['changelog'] )
+			? self::format_readme_section_html( $sections['changelog'] )
+			: '<p>See the bundled plugin readme for recent release notes.</p>';
+
+		return array(
+			'description' => $description,
+			'changelog'   => $changelog,
+		);
+	}
+
+	/**
+	 * Extract named sections from the bundled readme.txt file.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function get_readme_sections() {
+		$readme_file = TPW_CORE_PATH . 'readme.txt';
+
+		if ( ! file_exists( $readme_file ) || ! is_readable( $readme_file ) ) {
+			return array();
+		}
+
+		$contents = file_get_contents( $readme_file );
+		if ( ! is_string( $contents ) || '' === $contents ) {
+			return array();
+		}
+
+		$contents = self::normalize_readme_line_endings( $contents );
+		$matches = array();
+
+		if ( ! preg_match_all( '/^==\s*(.+?)\s*==\s*$/m', $contents, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return array();
+		}
+
+		$sections = array();
+		$total_matches = count( $matches[0] );
+
+		for ( $index = 0; $index < $total_matches; $index++ ) {
+			$section_name = strtolower( trim( (string) $matches[1][ $index ][0] ) );
+			$section_start = $matches[0][ $index ][1] + strlen( (string) $matches[0][ $index ][0] );
+			$section_end = isset( $matches[0][ $index + 1 ] )
+				? $matches[0][ $index + 1 ][1]
+				: strlen( $contents );
+
+			$section_body = trim( substr( $contents, $section_start, $section_end - $section_start ) );
+
+			if ( '' !== $section_body ) {
+				$sections[ $section_name ] = $section_body;
+			}
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Normalize readme line endings for section parsing.
+	 *
+	 * @param string $contents Raw readme contents.
 	 * @return string
 	 */
-	private static function build_changelog_section() {
-		$changelog_file = TPW_CORE_PATH . 'CHANGELOG.md';
+	private static function normalize_readme_line_endings( $contents ) {
+		return str_replace( array( "\r\n", "\r" ), "\n", $contents );
+	}
 
-		if ( ! file_exists( $changelog_file ) || ! is_readable( $changelog_file ) ) {
-			return '<p>See the project changelog for recent release notes.</p>';
+	/**
+	 * Format a readme section into safe HTML for the plugin details modal.
+	 *
+	 * @param string $content Readme section body.
+	 * @return string
+	 */
+	private static function format_readme_section_html( $content ) {
+		$content = trim( self::normalize_readme_line_endings( $content ) );
+
+		if ( '' === $content ) {
+			return '';
 		}
 
-		$contents = file_get_contents( $changelog_file );
-		if ( ! is_string( $contents ) || '' === $contents ) {
-			return '<p>See the project changelog for recent release notes.</p>';
+		$lines = explode( "\n", $content );
+		$html = array();
+		$paragraph_lines = array();
+		$list_items = array();
+
+		foreach ( $lines as $line ) {
+			$trimmed_line = trim( $line );
+
+			if ( '' === $trimmed_line ) {
+				self::flush_readme_list_items( $html, $list_items );
+				self::flush_readme_paragraph_lines( $html, $paragraph_lines );
+				continue;
+			}
+
+			if ( preg_match( '/^=\s*(.+?)\s*=$/', $trimmed_line, $matches ) ) {
+				self::flush_readme_list_items( $html, $list_items );
+				self::flush_readme_paragraph_lines( $html, $paragraph_lines );
+				$html[] = '<h4>' . esc_html( $matches[1] ) . '</h4>';
+				continue;
+			}
+
+			if ( preg_match( '/^[-*]\s+(.+)$/', $trimmed_line, $matches ) ) {
+				self::flush_readme_paragraph_lines( $html, $paragraph_lines );
+				$list_items[] = $matches[1];
+				continue;
+			}
+
+			$paragraph_lines[] = $trimmed_line;
 		}
 
-		$sections = preg_split( '/\R\R+/', trim( $contents ) );
-		$top = array_slice( $sections, 0, 3 );
-		$text = implode( "\n\n", $top );
+		self::flush_readme_list_items( $html, $list_items );
+		self::flush_readme_paragraph_lines( $html, $paragraph_lines );
 
-		return wpautop( esc_html( $text ) );
+		return wp_kses_post( implode( "\n", $html ) );
+	}
+
+	/**
+	 * Flush accumulated readme paragraph lines into HTML output.
+	 *
+	 * @param array<int, string> $html            Output HTML fragments.
+	 * @param array<int, string> $paragraph_lines Buffered paragraph lines.
+	 * @return void
+	 */
+	private static function flush_readme_paragraph_lines( &$html, &$paragraph_lines ) {
+		if ( empty( $paragraph_lines ) ) {
+			return;
+		}
+
+		$text = trim( implode( ' ', array_map( 'trim', $paragraph_lines ) ) );
+		$paragraph_lines = array();
+
+		if ( '' === $text ) {
+			return;
+		}
+
+		$html[] = '<p>' . esc_html( $text ) . '</p>';
+	}
+
+	/**
+	 * Flush accumulated readme list items into HTML output.
+	 *
+	 * @param array<int, string> $html       Output HTML fragments.
+	 * @param array<int, string> $list_items Buffered list items.
+	 * @return void
+	 */
+	private static function flush_readme_list_items( &$html, &$list_items ) {
+		if ( empty( $list_items ) ) {
+			return;
+		}
+
+		$html[] = '<ul>';
+
+		foreach ( $list_items as $item ) {
+			$html[] = '<li>' . esc_html( trim( $item ) ) . '</li>';
+		}
+
+		$html[] = '</ul>';
+		$list_items = array();
 	}
 }

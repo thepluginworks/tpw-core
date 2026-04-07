@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.1
+Stable tag: 1.23.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,17 +12,24 @@ Shared member, payment, page, and admin tools for TPW-powered WordPress sites an
 
 == Description ==
 
-TPW Core is the shared foundation used by TPW plugins.
+TPW Core is the central engine that powers ThePluginWorks plugin ecosystem.
 
-It helps site owners and administrators run consistent TPW features across their site, including:
+It provides shared functionality used across TPW plugins, ensuring everything works together consistently and reliably.
 
-- member login and profile flows
-- join or signup journeys
-- payment method settings and payment records
-- required shared pages for TPW modules
-- common admin tools and front-end utilities
+With TPW Core installed, your plugins can:
 
-TPW Core is typically installed alongside other TPW plugins that depend on it.
+- manage member accounts, roles, and profiles
+- handle login, registration, and access control
+- process payments and track transactions
+- apply consistent branding and UI styles
+- share system pages and common functionality across modules
+
+TPW Core is required by many TPW plugins and is typically installed automatically when needed.
+
+You do not use TPW Core directly — it works behind the scenes to support the plugins you install.
+
+Learn more about ThePluginWorks ecosystem:
+https://www.thepluginworks.com
 
 == Installation ==
 
@@ -64,6 +71,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.23.2 =
+- Updates: the WordPress View version details modal now loads its Description and Changelog content from the bundled plugin readme so release notes display properly for GitHub-delivered updates.
+- Documentation: refreshed the public plugin description to better explain TPW Core's role within the wider ThePluginWorks plugin ecosystem.
 
 = 1.23.1 =
 - Members: fixed a regression where removing the TPW Administrator flag from a linked member could leave the linked WordPress account with the Administrator role.

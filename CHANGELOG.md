@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.2] - 2026-04-07
+### Fixed
+- Updates: the WordPress plugin details modal now reads Description and Changelog content from the bundled `readme.txt`, so GitHub-delivered TPW Core updates show the intended release information without depending on `CHANGELOG.md` in the installed package.
+
+### Changed
+- Documentation: refreshed the public-facing `readme.txt` description so the plugin details modal and install readme better explain TPW Core's role in the ThePluginWorks plugin ecosystem.
+
 ## [1.23.1] - 2026-04-07
 ### Fixed
 - Members: fixed a regression where clearing the TPW `is_admin` flag on a linked member could leave the linked WordPress account with the `administrator` role and continue granting admin access.
