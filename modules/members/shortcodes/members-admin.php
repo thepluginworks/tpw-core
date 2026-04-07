@@ -426,6 +426,7 @@ add_shortcode('tpw_manage_members', function() {
     }
 
     $can_manage = TPW_Member_Access::can_manage_members_current();
+    $privacy_bypass = TPW_Member_Access::current_user_bypasses_member_directory_privacy();
 
     // Directory eligibility: Active/Honorary/Life Member statuses
     $can_view_directory = false;
@@ -433,6 +434,9 @@ add_shortcode('tpw_manage_members', function() {
         $status_norm = strtolower( trim( (string) ($member_obj->status ?? '') ) );
         $allowed = array_map('strtolower', TPW_Member_Access::get_allowed_statuses());
         $can_view_directory = in_array( $status_norm, $allowed, true );
+    }
+    if ( $privacy_bypass ) {
+        $can_view_directory = true;
     }
 
     $inherit_global = function_exists('tpw_core_inherit_global_frontend_enabled') ? tpw_core_inherit_global_frontend_enabled() : false;

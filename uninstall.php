@@ -46,6 +46,7 @@ $options = [
     'tpw_members_use_photos',
     'tpw_members_enable_advanced_search',
     'tpw_members_manage_access',
+    'tpw_member_privacy_override_access',
     'tpw_members_default_view',
     'tpw_members_default_per_page',
     'tpw_members_default_per_page_card',

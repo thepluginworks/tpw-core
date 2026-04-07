@@ -155,12 +155,148 @@ class TPW_Member_Access {
     }
 
     /**
+     * Get available privacy override choices for view-only bypasses.
+     *
+     * Choices are additive to the built-in manage-members bypass and do not
+     * grant any edit or settings access on their own.
+     *
+     * Filter: tpw_members/member_privacy_override_choices
+     *
+     * @return array<string,array<string,string>>
+     */
+    public static function get_member_privacy_override_choices() {
+        $choices = [
+            'member_flag_is_committee' => [
+                'label'      => 'Committee Member',
+                'match_type' => 'member_flag',
+                'value'      => 'is_committee',
+            ],
+        ];
+
+        if ( ! class_exists( 'TPW_Member_Field_Loader' ) ) {
+            $loader_file = plugin_dir_path( __FILE__ ) . 'class-tpw-member-field-loader.php';
+            if ( file_exists( $loader_file ) ) {
+                require_once $loader_file;
+            }
+        }
+
+        if ( class_exists( 'TPW_Member_Field_Loader' ) && method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' ) && TPW_Member_Field_Loader::is_flexigolf_active() ) {
+            $choices['member_flag_is_match_manager'] = [
+                'label'      => 'Match Manager',
+                'match_type' => 'member_flag',
+                'value'      => 'is_match_manager',
+            ];
+        }
+
+        $choices = apply_filters( 'tpw_members/member_privacy_override_choices', $choices );
+
+        if ( ! is_array( $choices ) ) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ( $choices as $key => $choice ) {
+            if ( ! is_array( $choice ) ) {
+                continue;
+            }
+
+            $choice_key = sanitize_key( (string) $key );
+            $label      = isset( $choice['label'] ) ? trim( (string) $choice['label'] ) : '';
+            $match_type = isset( $choice['match_type'] ) ? sanitize_key( (string) $choice['match_type'] ) : '';
+            $value      = isset( $choice['value'] ) ? sanitize_key( (string) $choice['value'] ) : '';
+
+            if ( '' === $choice_key || '' === $label || '' === $match_type || '' === $value ) {
+                continue;
+            }
+
+            if ( ! in_array( $match_type, [ 'member_flag', 'capability' ], true ) ) {
+                continue;
+            }
+
+            $normalized[ $choice_key ] = [
+                'label'      => $label,
+                'match_type' => $match_type,
+                'value'      => $value,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Sanitize selected privacy override choice keys.
+     *
+     * @param mixed $selected Raw selected values.
+     * @return string[]
+     */
+    public static function sanitize_member_privacy_override_selection( $selected ) {
+        $selected = is_array( $selected ) ? $selected : [];
+        $selected = array_values( array_unique( array_filter( array_map( 'sanitize_key', $selected ) ) ) );
+        $choices  = self::get_member_privacy_override_choices();
+
+        if ( empty( $choices ) ) {
+            return [];
+        }
+
+        return array_values( array_intersect( $selected, array_keys( $choices ) ) );
+    }
+
+    /**
+     * Get stored privacy override choice keys.
+     *
+     * @return string[]
+     */
+    public static function get_selected_member_privacy_overrides() {
+        return self::sanitize_member_privacy_override_selection( get_option( 'tpw_member_privacy_override_access', [] ) );
+    }
+
+    /**
+     * Check whether a user matches any selected privacy override choice.
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function user_has_member_privacy_override_user( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        $selected = self::get_selected_member_privacy_overrides();
+        if ( empty( $selected ) ) {
+            return false;
+        }
+
+        $choices = self::get_member_privacy_override_choices();
+        foreach ( $selected as $choice_key ) {
+            if ( empty( $choices[ $choice_key ] ) ) {
+                continue;
+            }
+
+            $choice = $choices[ $choice_key ];
+            if ( 'capability' === $choice['match_type'] && user_can( $user_id, $choice['value'] ) ) {
+                return true;
+            }
+
+            if ( 'member_flag' === $choice['match_type'] && self::user_has_member_flag( $choice['value'], $user_id ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Check whether the current user bypasses member-to-member privacy limits.
      *
      * @return bool
      */
     public static function current_user_bypasses_member_directory_privacy() {
-        return self::can_manage_members_current();
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        return self::can_manage_members_current() || self::user_has_member_privacy_override_user( (int) get_current_user_id() );
     }
 
     /**

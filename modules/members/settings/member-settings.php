@@ -34,12 +34,7 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             // General tab
             update_option( 'tpw_members_allow_deletion', isset($_POST['tpw_members_allow_deletion']) ? '1' : '0' );
             update_option( 'tpw_default_member_status', sanitize_text_field($_POST['tpw_default_member_status'] ?? 'Active') );
-            update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
             update_option( 'tpw_members_enable_households', isset( $_POST['tpw_members_enable_households'] ) ? '1' : '0' );
-            // New: Show adult family members (partner) on primary member profile/details
-            update_option( 'tpw_members_show_adult_family_on_primary_profile', isset( $_POST['tpw_members_show_adult_family_on_primary_profile'] ) ? '1' : '0' );
-            // New: enable Advanced Search modal for all members (non-admins)
-            update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
             // New: Member Profile Change Notification Email (single site option)
             if ( isset($_POST['tpw_member_change_notify_email']) ) {
                 $email = sanitize_email( wp_unslash( $_POST['tpw_member_change_notify_email'] ) );
@@ -87,6 +82,20 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
                 $tpw_members_settings['name_format'] = 'surname_first';
             }
             update_option('tpw_members_settings', $tpw_members_settings );
+            $tpw_settings_saved = true;
+        }
+
+        if ( $current_tab_post === 'privacy' ) {
+            update_option( 'tpw_members_show_adult_family_on_primary_profile', isset( $_POST['tpw_members_show_adult_family_on_primary_profile'] ) ? '1' : '0' );
+            update_option( 'tpw_members_use_photos', isset($_POST['tpw_members_use_photos']) ? '1' : '0' );
+            update_option( 'tpw_members_enable_advanced_search', isset($_POST['tpw_members_enable_advanced_search']) ? '1' : '0' );
+
+            $privacy_override_access = isset( $_POST['tpw_member_privacy_override_access'] ) ? wp_unslash( $_POST['tpw_member_privacy_override_access'] ) : [];
+            update_option(
+                'tpw_member_privacy_override_access',
+                TPW_Member_Access::sanitize_member_privacy_override_selection( $privacy_override_access )
+            );
+
             $tpw_settings_saved = true;
         }
 
@@ -178,6 +187,8 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
             <?php
             if ( $current_tab === 'general' ) {
                 echo esc_html__( 'General Settings', 'tpw-core' );
+            } elseif ( $current_tab === 'privacy' ) {
+                echo esc_html__( 'Privacy Settings', 'tpw-core' );
             } elseif ( $current_tab === 'signups' ) {
                 echo esc_html__( 'Sign-Ups', 'tpw-core' );
             } elseif ( $current_tab === 'profile' ) {
@@ -207,36 +218,11 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
             </p>
 
             <p>
-                <label>
-                    <input type="checkbox" name="tpw_members_show_adult_family_on_primary_profile" value="1" <?php checked( get_option( 'tpw_members_show_adult_family_on_primary_profile', '0' ), '1' ); ?> />
-                    Show adult family members on primary profile
-                </label>
-                <br>
-                <small class="description">When enabled, a primary member’s profile/details can show secondary adult family member names (partner only). Dependants/children are never shown.</small>
-            </p>
-
-            <p>
                     <label>
                             <input type="checkbox" name="tpw_members_allow_deletion" value="1" <?php checked( tpw_members_allow_deletion(), true ); ?> />
                             Allow admins to delete members?
                     </label>
             </p>
-
-            <p>
-                    <label>
-                            <input type="checkbox" name="tpw_members_use_photos" value="1" <?php checked( get_option('tpw_members_use_photos', '0'), '1' ); ?> />
-                            Use Photos of Members
-                    </label>
-            </p>
-
-        <p>
-            <label>
-                <input type="checkbox" name="tpw_members_enable_advanced_search" value="1" <?php checked( get_option('tpw_members_enable_advanced_search', '0'), '1' ); ?> />
-                Enable Advanced Search for all members
-            </label>
-            <br>
-            <small class="description">When enabled, non-admin members see the Advanced Search button alongside any Basic Search fields.</small>
-        </p>
 
             <p>
                 <strong>Members management access</strong><br>
@@ -318,6 +304,52 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                 </select>
                 <br>
                 <small class="description">Default: Surname, First Name. This affects how names render in the Members list and card views.</small>
+            </p>
+        <?php elseif ( $current_tab === 'privacy' ) : ?>
+            <?php
+            $privacy_override_choices = TPW_Member_Access::get_member_privacy_override_choices();
+            $privacy_override_selected = TPW_Member_Access::get_selected_member_privacy_overrides();
+            $privacy_select_size = max( 4, count( $privacy_override_choices ) );
+            ?>
+            <p>
+                <label>
+                    <input type="checkbox" name="tpw_members_show_adult_family_on_primary_profile" value="1" <?php checked( get_option( 'tpw_members_show_adult_family_on_primary_profile', '0' ), '1' ); ?> />
+                    Show adult family members on primary profile
+                </label>
+                <br>
+                <small class="description">When enabled, a primary member’s profile/details can show secondary adult family member names (partner only). Dependants/children are never shown.</small>
+            </p>
+
+            <p>
+                <label>
+                    <input type="checkbox" name="tpw_members_use_photos" value="1" <?php checked( get_option('tpw_members_use_photos', '0'), '1' ); ?> />
+                    Use Photos of Members
+                </label>
+            </p>
+
+            <p>
+                <label>
+                    <input type="checkbox" name="tpw_members_enable_advanced_search" value="1" <?php checked( get_option('tpw_members_enable_advanced_search', '0'), '1' ); ?> />
+                    Enable Advanced Search for all members
+                </label>
+                <br>
+                <small class="description">When enabled, non-admin members see the Advanced Search button alongside any Basic Search fields.</small>
+            </p>
+
+            <hr>
+            <p>
+                <label for="tpw_member_privacy_override_access"><strong>Roles/capabilities that can view all members (ignore member privacy settings)</strong></label><br>
+                <select name="tpw_member_privacy_override_access[]" id="tpw_member_privacy_override_access" multiple size="<?php echo esc_attr( (string) $privacy_select_size ); ?>" style="min-width:320px; max-width:520px; width:100%;">
+                    <?php foreach ( $privacy_override_choices as $choice_key => $choice ) : ?>
+                        <option value="<?php echo esc_attr( $choice_key ); ?>" <?php selected( in_array( $choice_key, $privacy_override_selected, true ) ); ?>><?php echo esc_html( $choice['label'] ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <br>
+                <small class="description">Selected roles/capabilities can view members who have chosen to hide their details from other members. This does not grant permission to edit members.</small>
+                <?php if ( empty( $privacy_override_choices ) ) : ?>
+                    <br>
+                    <small class="description">No additional privacy override roles/capabilities are currently available in this install.</small>
+                <?php endif; ?>
             </p>
         <?php elseif ( $current_tab === 'signups' ) : ?>
             <?php include TPW_CORE_PATH . 'modules/members/settings/member-signups-settings.php'; ?>

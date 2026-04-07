@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.23.0] - 2026-04-07
+### Changed
+- Members: added a dedicated Privacy settings tab so member visibility and profile-sharing controls are separated from general member system settings.
+- Members: added a configurable, extensible privacy-override setting for view-only access so selected roles or capabilities can bypass member privacy restrictions without gaining member management permissions.
+
 ## [1.22.1] - 2026-04-07
 ### Changed
 - Members: refined the self-service profile editor for the member visibility checkbox with clearer spacing, a larger touch target, and a simpler inline Yes label.

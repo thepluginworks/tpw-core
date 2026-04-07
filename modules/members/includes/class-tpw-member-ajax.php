@@ -212,8 +212,9 @@ class TPW_Member_Ajax {
     public static function dependent_options() {
         require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
         $is_admin = TPW_Member_Access::can_manage_members_current();
+        $privacy_bypass = TPW_Member_Access::current_user_bypasses_member_directory_privacy();
         $is_member = TPW_Member_Access::is_member_current();
-        if ( ! $is_admin && ! $is_member ) {
+        if ( ! $is_admin && ! $is_member && ! $privacy_bypass ) {
             wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
         }
         global $wpdb;
@@ -258,7 +259,7 @@ class TPW_Member_Ajax {
             }
         }
         $options = [];
-        $role_hash = $is_admin ? 'admin' : 'member';
+        $role_hash = $is_admin ? 'admin' : ( $privacy_bypass ? 'privacy-bypass' : 'member' );
         $cache_key = 'tpw_dep_opts_' . md5( $child . '|' . $parent . '|' . $parent_value . '|' . $role_hash );
         $cached = get_transient( $cache_key );
         if ( $cached !== false && is_array($cached) ) {
@@ -274,7 +275,9 @@ class TPW_Member_Ajax {
         $member_visibility_params = [];
         if ( ! $is_admin ) {
             $member_visibility_join = " LEFT JOIN {$hm_table} AS hm_dir ON hm_dir.member_id = mem.id ";
-            $member_visibility_where = " AND COALESCE(mem.share_with_members, 1) = 1";
+            if ( ! $privacy_bypass ) {
+                $member_visibility_where = " AND COALESCE(mem.share_with_members, 1) = 1";
+            }
             if ( $status_placeholders !== '' ) {
                 $member_visibility_where .= " AND mem.status IN ({$status_placeholders})";
                 $member_visibility_params = array_merge( $member_visibility_params, array_values( $allowed_statuses ) );
@@ -465,7 +468,8 @@ class TPW_Member_Ajax {
                 require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
                 $is_admin  = TPW_Member_Access::can_manage_members_current();
                 $is_member = TPW_Member_Access::is_member_current();
-                if ( ! $is_admin && ! $is_member ) {
+            $privacy_bypass = TPW_Member_Access::current_user_bypasses_member_directory_privacy();
+            if ( ! $is_admin && ! $is_member && ! $privacy_bypass ) {
                         wp_send_json_error( [ 'message' => 'Access denied' ], 403 );
                 }
         }
@@ -506,7 +510,7 @@ class TPW_Member_Ajax {
 
                 // Build safe HTML for details modal using configured field sort order
                 $is_admin = TPW_Member_Access::can_manage_members_current();
-                if ( ! $is_admin && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
+                if ( ! TPW_Member_Access::current_user_bypasses_member_directory_privacy() && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
                     wp_send_json_error(['message'=>'Member not found','requested_id'=>$requested_id,'code'=>'not_found'],404);
                 }
 
@@ -753,7 +757,7 @@ class TPW_Member_Ajax {
                 $controller = new TPW_Member_Controller();
                 $m = $controller->get_member($member_id);
                 if ( ! $m || empty($m->email) ) wp_send_json_error(['message'=>'Recipient not found'],404);
-                if ( ! $is_admin && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
+                if ( ! TPW_Member_Access::current_user_bypasses_member_directory_privacy() && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
                     wp_send_json_error(['message'=>'Recipient not found'],404);
                 }
 

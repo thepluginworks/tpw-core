@@ -32,6 +32,9 @@ if ( isset($_GET['per_page']) ) {
         : ( ($default_per_page > 0) ? max(1, $default_per_page) : 25 );
 }
 $is_admin = !empty($GLOBALS['tpw_members_is_admin']);
+$privacy_bypass = class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'current_user_bypasses_member_directory_privacy')
+    ? TPW_Member_Access::current_user_bypasses_member_directory_privacy()
+    : $is_admin;
 // Determine visibility group used by tpw_can_group_view_field for non-admin directory users
 $vis_group = isset($GLOBALS['tpw_members_vis_group']) ? sanitize_key($GLOBALS['tpw_members_vis_group']) : ($is_admin ? 'admin' : 'member');
 $allowed_directory_statuses = ( ! $is_admin && class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'get_allowed_statuses') )
@@ -206,7 +209,9 @@ if ( ! $is_admin ) {
 
     // Directory rule: primary members only (no partners/children). Children are hard-excluded.
     $args['directory_primary_only'] = true;
-    $args['share_with_members_only'] = true;
+    if ( ! $privacy_bypass ) {
+        $args['share_with_members_only'] = true;
+    }
 }
 // Admins can filter by any existing status
 if ( $is_admin && $selected_status !== '' ) {
@@ -404,7 +409,10 @@ $current_view = $initial_view;
                                 $sql = "SELECT DISTINCT mem.`{$bk}` AS v FROM {$members_table} AS mem";
                                 $params = [];
                                 if ( ! $is_admin ) {
-                                    $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$bk}` IS NOT NULL AND mem.`{$bk}` <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                    $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$bk}` IS NOT NULL AND mem.`{$bk}` <> ''";
+                                    if ( ! $privacy_bypass ) {
+                                        $sql .= " AND COALESCE(mem.share_with_members, 1) = 1";
+                                    }
                                     if ( $directory_status_placeholders !== '' ) {
                                         $sql .= " AND mem.status IN ({$directory_status_placeholders})";
                                         $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
@@ -422,7 +430,10 @@ $current_view = $initial_view;
                                 $sql = "SELECT DISTINCT meta.meta_value AS v FROM {$meta_table} AS meta";
                                 $params = [ $bk ];
                                 if ( ! $is_admin ) {
-                                    $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                    $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> ''";
+                                    if ( ! $privacy_bypass ) {
+                                        $sql .= " AND COALESCE(mem.share_with_members, 1) = 1";
+                                    }
                                     if ( $directory_status_placeholders !== '' ) {
                                         $sql .= " AND mem.status IN ({$directory_status_placeholders})";
                                         $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
@@ -686,7 +697,7 @@ $current_view = $initial_view;
                                     global $wpdb; $members_table = $wpdb->prefix . 'tpw_members';
                                     $cache_key = 'tpw_dynamic_options_' . $key_sane;
                                     if ( ! $is_admin ) {
-                                        $cache_key .= '_member';
+                                        $cache_key .= $privacy_bypass ? '_member_privacy_bypass' : '_member';
                                     }
                                     $options = get_transient($cache_key);
                                     if ($options === false) {
@@ -696,7 +707,10 @@ $current_view = $initial_view;
                                             $sql = "SELECT DISTINCT mem.`{$key_sane}` AS v FROM {$members_table} AS mem";
                                             $params = [];
                                             if ( ! $is_admin ) {
-                                                $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$key_sane}` IS NOT NULL AND mem.`{$key_sane}` <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                                $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$key_sane}` IS NOT NULL AND mem.`{$key_sane}` <> ''";
+                                                if ( ! $privacy_bypass ) {
+                                                    $sql .= " AND COALESCE(mem.share_with_members, 1) = 1";
+                                                }
                                                 if ( $directory_status_placeholders !== '' ) {
                                                     $sql .= " AND mem.status IN ({$directory_status_placeholders})";
                                                     $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
@@ -715,7 +729,10 @@ $current_view = $initial_view;
                                             $sql = "SELECT DISTINCT meta.meta_value AS v FROM {$meta_table} AS meta";
                                             $params = [ $key_sane ];
                                             if ( ! $is_admin ) {
-                                                $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                                $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> ''";
+                                                if ( ! $privacy_bypass ) {
+                                                    $sql .= " AND COALESCE(mem.share_with_members, 1) = 1";
+                                                }
                                                 if ( $directory_status_placeholders !== '' ) {
                                                     $sql .= " AND mem.status IN ({$directory_status_placeholders})";
                                                     $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
@@ -1202,7 +1219,9 @@ $current_view = $initial_view;
 
             // Directory rule: primary members only (no partners/children). Children are hard-excluded.
             $count_args['directory_primary_only'] = true;
-            $count_args['share_with_members_only'] = true;
+            if ( ! $privacy_bypass ) {
+                $count_args['share_with_members_only'] = true;
+            }
         }
         if ( $is_admin && $selected_status !== '' ) { $count_args['status'] = $selected_status; }
         $total_members = $controller->get_total_members_count( $count_args );
