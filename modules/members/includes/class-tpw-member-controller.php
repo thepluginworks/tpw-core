@@ -105,6 +105,10 @@ class TPW_Member_Controller {
         $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.role IS NULL OR hm_dir.role <> 'child' )";
     }
 
+    if ( ! empty( $args['share_with_members_only'] ) ) {
+        $sql .= " AND COALESCE({$table}.share_with_members, 1) = 1";
+    }
+
         // Optional filters
         if ( isset( $args['society_id'] ) ) {
             $sql .= $wpdb->prepare( " AND society_id = %d", $args['society_id'] );
@@ -334,6 +338,7 @@ class TPW_Member_Controller {
             'is_gallery_admin'      => isset($data['is_gallery_admin']) ? $data['is_gallery_admin'] : 0,
             'is_manage_members'     => isset($data['is_manage_members']) ? $data['is_manage_members'] : 0,
             'is_volunteer'          => isset($data['is_volunteer']) ? $data['is_volunteer'] : 0,
+            'share_with_members'    => isset($data['share_with_members']) ? (int) ! empty( $data['share_with_members'] ) : 1,
             'username'              => isset($data['username']) ? $data['username'] : '',
             'password_hash'         => isset($data['password_hash']) ? $data['password_hash'] : '',
             'created_at'            => current_time( 'mysql' ),
@@ -401,6 +406,7 @@ class TPW_Member_Controller {
             'is_gallery_admin',
             'is_manage_members',
             'is_volunteer',
+            'share_with_members',
             'username',
             'password_hash',
         ];
@@ -439,6 +445,10 @@ class TPW_Member_Controller {
 
         if ( array_key_exists( 'membership_entitlement', $update ) ) {
             $update['membership_entitlement'] = self::normalize_membership_entitlement( $update['membership_entitlement'] );
+        }
+
+        if ( array_key_exists( 'share_with_members', $update ) ) {
+            $update['share_with_members'] = ! empty( $update['share_with_members'] ) ? 1 : 0;
         }
 
         // Always bump the updated_at timestamp
@@ -517,6 +527,10 @@ class TPW_Member_Controller {
         $meta_joins[] = " LEFT JOIN {$hm_table} AS hm_dir ON hm_dir.member_id = {$table}.id ";
         $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.is_primary = 1 )";
         $sql .= " AND ( hm_dir.member_id IS NULL OR hm_dir.role IS NULL OR hm_dir.role <> 'child' )";
+    }
+
+    if ( ! empty( $args['share_with_members_only'] ) ) {
+        $sql .= " AND COALESCE({$table}.share_with_members, 1) = 1";
     }
 
         // Optional filters

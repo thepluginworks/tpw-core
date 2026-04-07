@@ -26,6 +26,7 @@ function tpw_get_default_member_status() {
 $tpw_settings_saved = false;
 
 if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_member_settings_nonce'], 'tpw_member_settings') ) {
+    $always_profile_keys = [ 'share_with_members' ];
         // Determine which tab we're saving (prefer POST, fallback to GET)
         $current_tab_post = isset($_POST['tab']) ? sanitize_key($_POST['tab']) : ( isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general' );
 
@@ -95,6 +96,7 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             $editable = array_values( array_filter( $editable, function( $field_key ) {
                 return 'username' !== sanitize_key( $field_key );
             } ) );
+            $editable = array_values( array_unique( array_merge( $editable, $always_profile_keys ) ) );
             update_option( 'tpw_member_editable_fields', $editable );
 
             // Save viewable-by-member fields
@@ -102,6 +104,7 @@ if ( isset($_POST['tpw_member_settings_nonce']) && wp_verify_nonce($_POST['tpw_m
             $viewable = array_values( array_filter( $viewable, function( $field_key ) {
                 return 'username' !== sanitize_key( $field_key );
             } ) );
+            $viewable = array_values( array_unique( array_merge( $viewable, $always_profile_keys ) ) );
             update_option( 'tpw_member_viewable_fields', $viewable );
             // New: Member profile photo edit toggle (view|edit)
             if ( isset($_POST['tpw_member_profile_photo_mode']) ) {
@@ -160,6 +163,8 @@ $editable_selected = get_option( 'tpw_member_editable_fields', [] );
 $editable_selected = is_array($editable_selected) ? $editable_selected : [];
 $viewable_selected = get_option( 'tpw_member_viewable_fields', [] );
 $viewable_selected = is_array($viewable_selected) ? $viewable_selected : [];
+$editable_selected = array_values( array_unique( array_merge( $editable_selected, [ 'share_with_members' ] ) ) );
+$viewable_selected = array_values( array_unique( array_merge( $viewable_selected, [ 'share_with_members' ] ) ) );
 $protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
 $never_view_keys = [ 'password_hash', 'user_id', 'society_id' ];
 $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
@@ -343,23 +348,26 @@ $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
                     $checked = in_array( $key, $editable_selected, true );
                     $view_checked = in_array( $key, $viewable_selected, true );
                     $is_never_view = in_array( $key, $never_view_keys, true );
+                    $is_always_profile = ( 'share_with_members' === $key );
                 ?>
                 <div class="tpw-table-row">
                     <div class="tpw-table-cell"><code><?php echo esc_html($key); ?></code></div>
                     <div class="tpw-table-cell"><?php echo esc_html($label); ?></div>
                     <div class="tpw-table-cell">
                         <label style="display:inline-flex; align-items:center; gap:6px;">
-                            <input type="checkbox" name="tpw_member_editable_fields[]" value="<?php echo esc_attr($key); ?>" <?php checked( $checked ); ?> <?php echo $is_protected ? 'disabled title="Protected field"' : ''; ?> />
+                            <input type="checkbox" name="tpw_member_editable_fields[]" value="<?php echo esc_attr($key); ?>" <?php checked( $checked ); ?> <?php echo ( $is_protected || $is_always_profile ) ? 'disabled' : ''; ?> <?php echo $is_protected ? 'title="Protected field"' : ''; ?> <?php echo $is_always_profile ? 'title="Always available on Member Profile"' : ''; ?> />
                             <span class="tpw-profile-resp">Editable by Member?</span>
                         </label>
                         <?php if ( $is_protected ): ?><em style="color:#777; margin-left:6px;">Protected</em><?php endif; ?>
+                        <?php if ( $is_always_profile ): ?><em style="color:#777; margin-left:6px;">Always available</em><?php endif; ?>
                     </div>
                     <div class="tpw-table-cell">
                         <label style="display:inline-flex; align-items:center; gap:6px;">
-                            <input type="checkbox" name="tpw_member_viewable_fields[]" value="<?php echo esc_attr($key); ?>" <?php checked( $view_checked ); ?> <?php echo $is_never_view ? 'disabled title="Not viewable (system field)"' : ''; ?> />
+                            <input type="checkbox" name="tpw_member_viewable_fields[]" value="<?php echo esc_attr($key); ?>" <?php checked( $view_checked ); ?> <?php echo ( $is_never_view || $is_always_profile ) ? 'disabled' : ''; ?> <?php echo $is_never_view ? 'title="Not viewable (system field)"' : ''; ?> <?php echo $is_always_profile ? 'title="Always available on Member Profile"' : ''; ?> />
                             <span class="tpw-profile-resp">Viewable by Member?</span>
                         </label>
                         <?php if ( $is_never_view ): ?><em style="color:#777; margin-left:6px;">System-only</em><?php endif; ?>
+                        <?php if ( $is_always_profile ): ?><em style="color:#777; margin-left:6px;">Always available</em><?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>

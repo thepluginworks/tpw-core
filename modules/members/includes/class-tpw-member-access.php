@@ -155,6 +155,35 @@ class TPW_Member_Access {
     }
 
     /**
+     * Check whether the current user bypasses member-to-member privacy limits.
+     *
+     * @return bool
+     */
+    public static function current_user_bypasses_member_directory_privacy() {
+        return self::can_manage_members_current();
+    }
+
+    /**
+     * Check whether a member row is visible to standard members.
+     *
+     * Missing values default to visible for backward compatibility.
+     *
+     * @param object|array|null $member Member row.
+     * @return bool
+     */
+    public static function member_is_visible_to_standard_members( $member ) {
+        if ( is_object( $member ) ) {
+            return ! isset( $member->share_with_members ) || 1 === (int) $member->share_with_members;
+        }
+
+        if ( is_array( $member ) ) {
+            return ! array_key_exists( 'share_with_members', $member ) || 1 === (int) $member['share_with_members'];
+        }
+
+        return false;
+    }
+
+    /**
      * Check whether a user can edit protected member permission fields.
      *
      * @param int $user_id Optional user ID.

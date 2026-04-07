@@ -91,14 +91,12 @@ class TPW_Member_Ajax {
             wp_send_json_success(['removed'=>true]);
         }
 
-        // Ensure entry exists; if UI provided type/options/admin_only/options_source, respect them
         if ( ! isset($opt[$field_key]) || ! is_array($opt[$field_key]) ) {
             $label = isset($_POST['label']) ? sanitize_text_field($_POST['label']) : $field_key;
             $stype_raw = isset($_POST['search_type']) ? sanitize_text_field($_POST['search_type']) : 'text';
             $stype = strtolower( str_replace( [ ' ', '-' ], '_', $stype_raw ) );
             $valid_types = ['text','select','date_range','has_value','checkbox'];
             if ( ! in_array( $stype, $valid_types, true ) ) { $stype = 'text'; }
-            // Robust parse of admin_only similar to save handler
             $admin_only = false;
             if ( isset($_POST['admin_only']) ) {
                 $ao = $_POST['admin_only'];
@@ -108,7 +106,6 @@ class TPW_Member_Ajax {
                     $admin_only = in_array( strtolower( (string) $ao ), [ '1', 'true', 'on', 'yes', 'y', 't' ], true );
                 }
             }
-            // Options source (for select type): 'static' or 'dynamic'
             $opt_source_raw = isset($_POST['options_source']) ? sanitize_text_field($_POST['options_source']) : 'static';
             $options_source = in_array( $opt_source_raw, ['static','dynamic'], true ) ? $opt_source_raw : 'static';
             $opts = [];
@@ -158,13 +155,11 @@ class TPW_Member_Ajax {
      */
     public static function save_search_config() {
         self::check_caps_and_nonce( 'tpw_member_searchable_nonce' );
-    $field_key   = isset($_POST['field_key']) ? sanitize_key($_POST['field_key']) : '';
-    $search_type_raw = isset($_POST['search_type']) ? sanitize_text_field($_POST['search_type']) : 'text';
-    // Normalize variants like "Date range" or "date-range" to "date_range"
-    $search_type = strtolower( str_replace( [ ' ', '-' ], '_', $search_type_raw ) );
+        $field_key   = isset($_POST['field_key']) ? sanitize_key($_POST['field_key']) : '';
+        $search_type_raw = isset($_POST['search_type']) ? sanitize_text_field($_POST['search_type']) : 'text';
+        $search_type = strtolower( str_replace( [ ' ', '-' ], '_', $search_type_raw ) );
         $raw_options = isset($_POST['options']) ? wp_unslash($_POST['options']) : '';
         $label       = isset($_POST['label']) ? sanitize_text_field($_POST['label']) : $field_key;
-        // Accept common truthy values for robustness ("1", "true", "on", etc.)
         $admin_only  = false;
         if ( isset($_POST['admin_only']) ) {
             $ao = $_POST['admin_only'];
@@ -178,11 +173,10 @@ class TPW_Member_Ajax {
         if ( $field_key === '' ) {
             wp_send_json_error(['message'=>'Missing field_key'],400);
         }
-    $valid_types = ['text','select','date_range','has_value','checkbox'];
+        $valid_types = ['text','select','date_range','has_value','checkbox'];
         if ( ! in_array( $search_type, $valid_types, true ) ) {
             $search_type = 'text';
         }
-        // Options source (only relevant for select)
         $opt_source_raw = isset($_POST['options_source']) ? sanitize_text_field($_POST['options_source']) : 'static';
         $options_source = in_array( $opt_source_raw, ['static','dynamic'], true ) ? $opt_source_raw : 'static';
         $opt = get_option( 'tpw_member_searchable_fields', [] );
@@ -190,7 +184,6 @@ class TPW_Member_Ajax {
 
         $parsed_options = [];
         if ( $search_type === 'select' && $options_source === 'static' ) {
-            // Accept comma or newline separated values
             $lines = preg_split('/[\r\n,]+/', (string) $raw_options );
             foreach ( $lines as $line ) {
                 $line = trim( (string) $line );
@@ -217,7 +210,6 @@ class TPW_Member_Ajax {
      * Returns JSON: { options: [ { value, label } ] }
      */
     public static function dependent_options() {
-        // Visibility + basic nonce bypass: allow logged in or public with limited access? For now require member or admin.
         require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
         $is_admin = TPW_Member_Access::can_manage_members_current();
         $is_member = TPW_Member_Access::is_member_current();
@@ -229,20 +221,17 @@ class TPW_Member_Ajax {
         $parent = isset($_REQUEST['depends_on_field']) ? sanitize_key($_REQUEST['depends_on_field']) : '';
         $pval_raw = isset($_REQUEST['depends_on_value']) ? wp_unslash($_REQUEST['depends_on_value']) : '';
         $parent_value = sanitize_text_field( (string) $pval_raw );
-        // Treat 'Any' (case-insensitive) as blank/no filter
         if ( strtolower( $parent_value ) === 'any' ) {
             $parent_value = '';
         }
         if ( $child === '' || $parent === '' ) {
             wp_send_json_success( [ 'options' => [] ] );
         }
-        // Confirm dependency configured: If a depends_on is stored and differs, return empty; if not set (empty), allow runtime dependency (future-proof for new fields)
         $fs = $wpdb->prefix . 'tpw_field_settings';
         $dep_conf = $wpdb->get_var( $wpdb->prepare( "SELECT depends_on FROM {$fs} WHERE field_key = %s", $child ) );
         if ( $dep_conf !== null && $dep_conf !== '' && $dep_conf !== $parent ) {
             wp_send_json_success( [ 'options' => [] ] );
         }
-        // Visibility: if user cannot see child field, return empty
         if ( ! $is_admin && function_exists('tpw_can_group_view_field') ) {
             $vis_group = isset($GLOBALS['tpw_members_vis_group']) ? sanitize_key($GLOBALS['tpw_members_vis_group']) : 'member';
             if ( ! tpw_can_group_view_field( $vis_group, $child ) ) {
@@ -251,11 +240,8 @@ class TPW_Member_Ajax {
         }
         $members_table = $wpdb->prefix . 'tpw_members';
         $cols = (array) $wpdb->get_col( 'SHOW COLUMNS FROM ' . $members_table, 0 );
-        // Default detection via core table presence
         $is_child_core = in_array( $child, $cols, true );
         $is_parent_core = in_array( $parent, $cols, true );
-        // Override detection using definitions in tpw_member_fields (field_type indicates core vs meta)
-        // Optional override detection using definitions table if it exists (legacy-safe)
         $fields_table = $wpdb->prefix . 'tpw_member_fields';
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $fields_table ) );
         if ( $table_exists === $fields_table ) {
@@ -272,7 +258,6 @@ class TPW_Member_Ajax {
             }
         }
         $options = [];
-        // Cache key incorporates role visibility
         $role_hash = $is_admin ? 'admin' : 'member';
         $cache_key = 'tpw_dep_opts_' . md5( $child . '|' . $parent . '|' . $parent_value . '|' . $role_hash );
         $cached = get_transient( $cache_key );
@@ -281,60 +266,63 @@ class TPW_Member_Ajax {
         }
 
         $meta_table = $wpdb->prefix . 'tpw_member_meta';
+        $hm_table = $wpdb->prefix . 'tpw_members_household_member';
+        $allowed_statuses = $is_admin ? [] : TPW_Member_Access::get_allowed_statuses();
+        $status_placeholders = ! empty( $allowed_statuses ) ? implode( ',', array_fill( 0, count( $allowed_statuses ), '%s' ) ) : '';
+        $member_visibility_join = '';
+        $member_visibility_where = '';
+        $member_visibility_params = [];
+        if ( ! $is_admin ) {
+            $member_visibility_join = " LEFT JOIN {$hm_table} AS hm_dir ON hm_dir.member_id = mem.id ";
+            $member_visibility_where = " AND COALESCE(mem.share_with_members, 1) = 1";
+            if ( $status_placeholders !== '' ) {
+                $member_visibility_where .= " AND mem.status IN ({$status_placeholders})";
+                $member_visibility_params = array_merge( $member_visibility_params, array_values( $allowed_statuses ) );
+            }
+            $member_visibility_where .= " AND ( hm_dir.member_id IS NULL OR hm_dir.is_primary = 1 )";
+            $member_visibility_where .= " AND ( hm_dir.member_id IS NULL OR hm_dir.role IS NULL OR hm_dir.role <> 'child' )";
+        }
 
         if ( $is_child_core && $is_parent_core ) {
-            // Both core columns
             if ( $parent_value === '' ) {
-                // No parent filter – all distinct child values
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                $sql = "SELECT DISTINCT `{$child}` AS v FROM {$members_table} WHERE `{$child}` IS NOT NULL AND `{$child}` <> '' ORDER BY LOWER(`{$child}`) ASC";
-                $rows = $wpdb->get_col( $sql );
+                $sql = "SELECT DISTINCT mem.`{$child}` AS v FROM {$members_table} AS mem{$member_visibility_join} WHERE mem.`{$child}` IS NOT NULL AND mem.`{$child}` <> ''{$member_visibility_where} ORDER BY LOWER(mem.`{$child}`) ASC";
+                $rows = empty( $member_visibility_params ) ? $wpdb->get_col( $sql ) : $wpdb->get_col( $wpdb->prepare( $sql, ...$member_visibility_params ) );
             } else {
-                // With parent filter
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                $sql = $wpdb->prepare( "SELECT DISTINCT `{$child}` AS v FROM {$members_table} WHERE `{$parent}` = %s AND `{$child}` IS NOT NULL AND `{$child}` <> '' ORDER BY LOWER(`{$child}`) ASC", $parent_value );
-                $rows = $wpdb->get_col( $sql );
+                $sql = "SELECT DISTINCT mem.`{$child}` AS v FROM {$members_table} AS mem{$member_visibility_join} WHERE mem.`{$parent}` = %s AND mem.`{$child}` IS NOT NULL AND mem.`{$child}` <> ''{$member_visibility_where} ORDER BY LOWER(mem.`{$child}`) ASC";
+                $params = array_merge( [ $parent_value ], $member_visibility_params );
+                $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
             }
             $options = array_map( function($v){ return [ 'value' => $v, 'label' => $v ]; }, array_values( array_filter( array_map('strval', (array)$rows ) ) ) );
         } elseif ( ! $is_child_core && ! $is_parent_core ) {
-            // Both meta fields – self join
             if ( $parent_value === '' ) {
-                // All child values regardless of parent
-                $sql = $wpdb->prepare( "SELECT DISTINCT meta_value AS v FROM {$meta_table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> '' ORDER BY LOWER(meta_value) ASC", $child );
-                $rows = $wpdb->get_col( $sql );
+                $sql = "SELECT DISTINCT c.meta_value AS v FROM {$meta_table} AS c INNER JOIN {$members_table} AS mem ON mem.id = c.member_id{$member_visibility_join} WHERE c.meta_key = %s AND c.meta_value IS NOT NULL AND c.meta_value <> ''{$member_visibility_where} ORDER BY LOWER(c.meta_value) ASC";
+                $params = array_merge( [ $child ], $member_visibility_params );
+                $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
             } else {
-                // Filter by parent meta value (case-insensitive)
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                $sql = $wpdb->prepare( "SELECT DISTINCT c.meta_value AS v FROM {$meta_table} m INNER JOIN {$meta_table} c ON m.member_id = c.member_id WHERE m.meta_key = %s AND c.meta_key = %s AND LOWER(m.meta_value) = LOWER(%s) AND c.meta_value IS NOT NULL AND c.meta_value <> '' ORDER BY LOWER(c.meta_value) ASC", $parent, $child, $parent_value );
-                $rows = $wpdb->get_col( $sql );
+                $sql = "SELECT DISTINCT c.meta_value AS v FROM {$meta_table} AS m INNER JOIN {$meta_table} AS c ON m.member_id = c.member_id INNER JOIN {$members_table} AS mem ON mem.id = c.member_id{$member_visibility_join} WHERE m.meta_key = %s AND c.meta_key = %s AND LOWER(m.meta_value) = LOWER(%s) AND c.meta_value IS NOT NULL AND c.meta_value <> ''{$member_visibility_where} ORDER BY LOWER(c.meta_value) ASC";
+                $params = array_merge( [ $parent, $child, $parent_value ], $member_visibility_params );
+                $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
             }
             $options = array_map( function($v){ return [ 'value' => $v, 'label' => $v ]; }, array_values( array_filter( array_map('strval', (array)$rows ) ) ) );
         } else {
-            // Mixed core/meta
             if ( $is_parent_core && ! $is_child_core ) {
-                // Parent core, child meta
                 if ( $parent_value === '' ) {
-                    // All child meta values
-                    $sql = $wpdb->prepare( "SELECT DISTINCT meta_value AS v FROM {$meta_table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> '' ORDER BY LOWER(meta_value) ASC", $child );
-                    $rows = $wpdb->get_col( $sql );
+                    $sql = "SELECT DISTINCT m2.meta_value AS v FROM {$meta_table} AS m2 INNER JOIN {$members_table} AS mem ON mem.id = m2.member_id{$member_visibility_join} WHERE m2.meta_key = %s AND m2.meta_value IS NOT NULL AND m2.meta_value <> ''{$member_visibility_where} ORDER BY LOWER(m2.meta_value) ASC";
+                    $params = array_merge( [ $child ], $member_visibility_params );
+                    $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                 } else {
-                    // Join members -> meta filtered by parent core value
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                    $sql = $wpdb->prepare( "SELECT DISTINCT m2.meta_value AS v FROM {$members_table} mem INNER JOIN {$meta_table} m2 ON mem.id = m2.member_id WHERE mem.`{$parent}` = %s AND m2.meta_key = %s AND m2.meta_value IS NOT NULL AND m2.meta_value <> '' ORDER BY LOWER(m2.meta_value) ASC", $parent_value, $child );
-                    $rows = $wpdb->get_col( $sql );
+                    $sql = "SELECT DISTINCT m2.meta_value AS v FROM {$members_table} AS mem INNER JOIN {$meta_table} AS m2 ON mem.id = m2.member_id{$member_visibility_join} WHERE mem.`{$parent}` = %s AND m2.meta_key = %s AND m2.meta_value IS NOT NULL AND m2.meta_value <> ''{$member_visibility_where} ORDER BY LOWER(m2.meta_value) ASC";
+                    $params = array_merge( [ $parent_value, $child ], $member_visibility_params );
+                    $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                 }
             } elseif ( ! $is_parent_core && $is_child_core ) {
-                // Parent meta, child core
                 if ( $parent_value === '' ) {
-                    // All child core values
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                    $sql = "SELECT DISTINCT `{$child}` AS v FROM {$members_table} WHERE `{$child}` IS NOT NULL AND `{$child}` <> '' ORDER BY LOWER(`{$child}`) ASC";
-                    $rows = $wpdb->get_col( $sql );
+                    $sql = "SELECT DISTINCT mem.`{$child}` AS v FROM {$members_table} AS mem{$member_visibility_join} WHERE mem.`{$child}` IS NOT NULL AND mem.`{$child}` <> ''{$member_visibility_where} ORDER BY LOWER(mem.`{$child}`) ASC";
+                    $rows = empty( $member_visibility_params ) ? $wpdb->get_col( $sql ) : $wpdb->get_col( $wpdb->prepare( $sql, ...$member_visibility_params ) );
                 } else {
-                    // Join parent meta -> members for child core values
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                    $sql = $wpdb->prepare( "SELECT DISTINCT mem.`{$child}` AS v FROM {$meta_table} pm INNER JOIN {$members_table} mem ON pm.member_id = mem.id WHERE pm.meta_key = %s AND LOWER(pm.meta_value) = LOWER(%s) AND mem.`{$child}` IS NOT NULL AND mem.`{$child}` <> '' ORDER BY LOWER(mem.`{$child}`) ASC", $parent, $parent_value );
-                    $rows = $wpdb->get_col( $sql );
+                    $sql = "SELECT DISTINCT mem.`{$child}` AS v FROM {$meta_table} AS pm INNER JOIN {$members_table} AS mem ON pm.member_id = mem.id{$member_visibility_join} WHERE pm.meta_key = %s AND LOWER(pm.meta_value) = LOWER(%s) AND mem.`{$child}` IS NOT NULL AND mem.`{$child}` <> ''{$member_visibility_where} ORDER BY LOWER(mem.`{$child}`) ASC";
+                    $params = array_merge( [ $parent, $parent_value ], $member_visibility_params );
+                    $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                 }
             } else {
                 $rows = [];
@@ -344,7 +332,6 @@ class TPW_Member_Ajax {
         set_transient( $cache_key, $options, 5 * MINUTE_IN_SECONDS );
         wp_send_json_success( [ 'options' => $options ] );
     }
-
     /**
      * Search WordPress users not already linked to TPW members.
      *
@@ -519,6 +506,9 @@ class TPW_Member_Ajax {
 
                 // Build safe HTML for details modal using configured field sort order
                 $is_admin = TPW_Member_Access::can_manage_members_current();
+                if ( ! $is_admin && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
+                    wp_send_json_error(['message'=>'Member not found','requested_id'=>$requested_id,'code'=>'not_found'],404);
+                }
 
                 // Directory/profile safety: Non-admins can only view primary members.
                 // Hard rule: dependants/children must never be visible to other members.
@@ -763,6 +753,9 @@ class TPW_Member_Ajax {
                 $controller = new TPW_Member_Controller();
                 $m = $controller->get_member($member_id);
                 if ( ! $m || empty($m->email) ) wp_send_json_error(['message'=>'Recipient not found'],404);
+                if ( ! $is_admin && ! TPW_Member_Access::member_is_visible_to_standard_members( $m ) ) {
+                    wp_send_json_error(['message'=>'Recipient not found'],404);
+                }
 
             // Let WordPress / SMTP plugins control the From header by default.
             // If a site wants to force a specific, authenticated From, they can provide it via this filter.
@@ -802,208 +795,195 @@ class TPW_Member_Ajax {
      * @return void JSON { message, field_key }
      */
     public static function profile_update() {
-            // Members can update allowed fields; admins too
-            if ( ! is_user_logged_in() ) {
-                wp_send_json_error(['message' => 'Access denied'], 403);
-            }
-            $admin_can_view = apply_filters('tpw_members/wp_admin_can_view_profile', true);
-            $allow_all_statuses = apply_filters('tpw_members/profile_allow_all_statuses', true);
-
-            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
-            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
-            $user = wp_get_current_user();
-            $controller = new TPW_Member_Controller();
-            $member = $controller->get_member_by_user_id( (int) $user->ID );
-            if ( ! $member ) {
-                wp_send_json_error(['message' => 'Member not found'], 404);
-            }
-
-            // Admins always allowed by default; enforce status only if filter requires it
-            if ( ! ( current_user_can('manage_options') && $admin_can_view ) ) {
-                if ( ! $allow_all_statuses ) {
-                    require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-                    if ( ! TPW_Member_Access::is_member_current() ) {
-                        wp_send_json_error(['message' => 'Access denied'], 403);
-                    }
-                }
-            }
-            $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
-            if ( ! wp_verify_nonce( $nonce, 'tpw_member_profile_update' ) ) {
-                wp_send_json_error(['message'=>'Invalid nonce'], 403);
-            }
-
-            $field_key = isset($_POST['field_key']) ? sanitize_key($_POST['field_key']) : '';
-            $field_value = isset($_POST['field_value']) ? wp_unslash($_POST['field_value']) : '';
-            if ( $field_key === '' ) {
-                wp_send_json_error(['message'=>'Missing field_key'], 400);
-            }
-
-            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
-            if (
-                TPW_Member_Access::is_protected_member_permission_field( $field_key )
-                && ! TPW_Member_Access::can_edit_protected_member_permission_fields_current()
-            ) {
-                wp_send_json_error(['message'=>'You do not have permission to edit this field'], 403);
-            }
-
-            $editable = get_option('tpw_member_editable_fields', []);
-            if ( ! is_array($editable) ) { $editable = []; }
-            if ( ! in_array( $field_key, $editable, true ) ) {
-                wp_send_json_error(['message'=>'Field not editable'], 403);
-            }
-
-            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-meta.php';
-
-            // Decide whether field is core column or meta
-            $is_core = property_exists( $member, $field_key );
-            // Capture previous value for notification diff
-            $old_value = '';
-            if ( $is_core ) {
-                $old_value = isset( $member->$field_key ) ? (string) $member->$field_key : '';
-            } else {
-                $old_value = (string) TPW_Member_Meta::get_meta( (int) $member->id, $field_key );
-            }
-            $ok = false;
-            if ( $is_core ) {
-                // Minimal sanitize for known types
-                $san = is_string($field_value) ? wp_kses_post( $field_value ) : $field_value;
-                if ( 'email' === $field_key ) {
-                    $sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
-                        $controller,
-                        $member,
-                        (string) $san,
-                        [ 'source' => 'self_service_ajax' ]
-                    );
-
-                    if ( is_wp_error( $sync_result ) ) {
-                        $error_code = $sync_result->get_error_code();
-                        if ( 'tpw_member_email_invalid' === $error_code ) {
-                            wp_send_json_error([
-                                'message'   => 'Please enter a valid email address.',
-                                'code'      => 'invalid_email',
-                                'field_key' => 'email',
-                            ], 400);
-                        }
-
-                        if ( 'tpw_member_email_broken_link' === $error_code ) {
-                            wp_send_json_error([
-                                'message'   => 'Your member record is linked to a WordPress account that could not be loaded. Please contact an administrator.',
-                                'code'      => 'broken_link',
-                                'field_key' => 'email',
-                            ], 409);
-                        }
-
-                        if ( 'tpw_member_email_conflict' === $error_code ) {
-                            wp_send_json_error([
-                                'message'   => 'That email address is already in use by another account.',
-                                'code'      => 'email_conflict',
-                                'field_key' => 'email',
-                            ], 409);
-                        }
-
-                        wp_send_json_error([
-                            'message'   => 'We could not update your email address. No email change was saved.',
-                            'code'      => 'email_sync_failed',
-                            'field_key' => 'email',
-                        ], 500);
-                    }
-
-                    $field_value = (string) $sync_result['normalized_email'];
-                    $ok          = true;
-                } else {
-                    $update = [ $field_key => $san ];
-                    // Auto-maintain whi_updated when WHI changes (FlexiGolf only)
-                    if (
-                        $field_key === 'whi'
-                        && method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' )
-                        && TPW_Member_Field_Loader::is_flexigolf_active()
-                    ) {
-                        $update['whi_updated'] = current_time('Y-m-d');
-                    }
-                    $ok = (bool) $controller->update_member( (int) $member->id, $update );
-                }
-            } else {
-                $ok = (bool) TPW_Member_Meta::save_meta( (int) $member->id, $field_key, (string) $field_value );
-            }
-
-            if ( ! $ok ) {
-                wp_send_json_error(['message'=>'Failed to save'], 500);
-            }
-
-            // After successful save, trigger notification if configured and if value actually changed
-            $notify_to = get_option( 'tpw_member_change_notify_email', '' );
-            if ( is_string($notify_to) ) { $notify_to = trim( $notify_to ); }
-            if ( $notify_to !== '' && is_email( $notify_to ) ) {
-                $new_value = is_string($field_value) ? (string) $field_value : (string) wp_json_encode( $field_value );
-                // Normalize whitespace for comparison
-                if ( trim( (string) $old_value ) !== trim( (string) $new_value ) ) {
-                    // Prepare safe headers and message
-                    if ( ! defined( 'DONOTCACHEPAGE' ) ) { define( 'DONOTCACHEPAGE', true ); }
-                    if ( function_exists( 'nocache_headers' ) ) { nocache_headers(); }
-
-                    // Resolve field label
-                    if ( ! class_exists( 'TPW_Member_Field_Loader' ) ) {
-                        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-field-loader.php';
-                    }
-                    $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
-                    $label = $field_key;
-                    foreach ( (array) $fields as $f ) {
-                        if ( isset($f['key']) && $f['key'] === $field_key ) { $label = (string) ($f['label'] ?? $field_key); break; }
-                    }
-
-                    // Member name and profile URL
-                    $first = isset($member->first_name) ? (string) $member->first_name : '';
-                    $last  = isset($member->surname) ? (string) $member->surname : '';
-                    $member_name = trim( $first . ' ' . $last );
-                    $profile_url = '';
-                    $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
-                    if ( $profile_page_id > 0 ) {
-                        $profile_url = get_permalink( $profile_page_id );
-                    }
-
-                    // Formats
-                    $settings = get_option( 'flexievent_settings', [] );
-                    $date_format = isset($settings['date_format']) ? (string) $settings['date_format'] : 'd-m-Y';
-                    $time_format = isset($settings['time_format']) ? (string) $settings['time_format'] : 'H:i';
-                    $stamp = date_i18n( $date_format . ' ' . $time_format, current_time('timestamp') );
-
-                    // Site name for subject
-                    $site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-                    $subject = sprintf( '[%s] Profile Updated by %s', $site_name, $member_name !== '' ? $member_name : 'Member' );
-
-                    // Build plain-text body with minimal escaping
-                    $line_field = sprintf( '%s: %s  %s', $label, wp_strip_all_tags( (string) $old_value ), wp_strip_all_tags( (string) $new_value ) );
-                    $body_lines = [];
-                    $body_lines[] = sprintf( 'The following profile details were updated by %s on %s:', $member_name !== '' ? $member_name : 'a member', $stamp );
-                    $body_lines[] = '';
-                    $body_lines[] = 'Field: Old → New';
-                    $body_lines[] = $label . ': ' . wp_strip_all_tags( (string) $old_value ) . ' → ' . wp_strip_all_tags( (string) $new_value );
-                    $body_lines[] = '';
-                    if ( $profile_url ) {
-                        $body_lines[] = 'View member: ' . $profile_url;
-                    }
-                    $body = implode( "\n", $body_lines );
-
-                    $headers = [ 'Content-Type: text/plain; charset=UTF-8' ];
-                    // Helpful Reply-To: route replies to the member
-                    $member_email = isset($member->email) ? sanitize_email( (string) $member->email ) : '';
-                    if ( is_email( $member_email ) ) {
-                        $headers[] = 'Reply-To: ' . ( $member_name !== '' ? $member_name : 'Member' ) . ' <' . $member_email . '>';
-                    }
-
-                    // Send and ignore failures silently (log if desired)
-                    if ( class_exists( 'TPW_Email' ) ) {
-                        TPW_Email::dispatch_mail( $notify_to, $subject, $body, $headers, [], [
-                            'source'       => 'TPW_Member_Ajax::profile_update',
-                            'message_type' => 'plain',
-                        ] );
-                    } else {
-                        @wp_mail( $notify_to, $subject, $body, $headers );
-                    }
-                }
-            }
-            wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error(['message' => 'Access denied'], 403);
         }
+        $admin_can_view = apply_filters('tpw_members/wp_admin_can_view_profile', true);
+        $allow_all_statuses = apply_filters('tpw_members/profile_allow_all_statuses', true);
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
+        $user = wp_get_current_user();
+        $controller = new TPW_Member_Controller();
+        $member = $controller->get_member_by_user_id( (int) $user->ID );
+        if ( ! $member ) {
+            wp_send_json_error(['message' => 'Member not found'], 404);
+        }
+
+        if ( ! ( current_user_can('manage_options') && $admin_can_view ) ) {
+            if ( ! $allow_all_statuses ) {
+                require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+                if ( ! TPW_Member_Access::is_member_current() ) {
+                    wp_send_json_error(['message' => 'Access denied'], 403);
+                }
+            }
+        }
+        $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field($_POST['_wpnonce']) : '';
+        if ( ! wp_verify_nonce( $nonce, 'tpw_member_profile_update' ) ) {
+            wp_send_json_error(['message'=>'Invalid nonce'], 403);
+        }
+
+        $field_key = isset($_POST['field_key']) ? sanitize_key($_POST['field_key']) : '';
+        $field_value = isset($_POST['field_value']) ? wp_unslash($_POST['field_value']) : '';
+        if ( $field_key === '' ) {
+            wp_send_json_error(['message'=>'Missing field_key'], 400);
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+        if (
+            TPW_Member_Access::is_protected_member_permission_field( $field_key )
+            && ! TPW_Member_Access::can_edit_protected_member_permission_fields_current()
+        ) {
+            wp_send_json_error(['message'=>'You do not have permission to edit this field'], 403);
+        }
+
+        $editable = get_option('tpw_member_editable_fields', []);
+        if ( ! is_array($editable) ) { $editable = []; }
+        if ( ! in_array( $field_key, $editable, true ) ) {
+            wp_send_json_error(['message'=>'Field not editable'], 403);
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-meta.php';
+
+        $is_core = property_exists( $member, $field_key );
+        $old_value = '';
+        if ( $is_core ) {
+            $old_value = isset( $member->$field_key ) ? (string) $member->$field_key : '';
+        } else {
+            $old_value = (string) TPW_Member_Meta::get_meta( (int) $member->id, $field_key );
+        }
+
+        $ok = false;
+        if ( $is_core ) {
+            $san = is_string($field_value) ? wp_kses_post( $field_value ) : $field_value;
+            if ( 'share_with_members' === $field_key ) {
+                $san = in_array( strtolower( (string) $field_value ), [ '1', 'true', 'yes', 'on' ], true ) ? 1 : 0;
+            }
+            if ( 'email' === $field_key ) {
+                $sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
+                    $controller,
+                    $member,
+                    (string) $san,
+                    [ 'source' => 'self_service_ajax' ]
+                );
+
+                if ( is_wp_error( $sync_result ) ) {
+                    $error_code = $sync_result->get_error_code();
+                    if ( 'tpw_member_email_invalid' === $error_code ) {
+                        wp_send_json_error([
+                            'message'   => 'Please enter a valid email address.',
+                            'code'      => 'invalid_email',
+                            'field_key' => 'email',
+                        ], 400);
+                    }
+
+                    if ( 'tpw_member_email_broken_link' === $error_code ) {
+                        wp_send_json_error([
+                            'message'   => 'Your member record is linked to a WordPress account that could not be loaded. Please contact an administrator.',
+                            'code'      => 'broken_link',
+                            'field_key' => 'email',
+                        ], 409);
+                    }
+
+                    if ( 'tpw_member_email_conflict' === $error_code ) {
+                        wp_send_json_error([
+                            'message'   => 'That email address is already in use by another account.',
+                            'code'      => 'email_conflict',
+                            'field_key' => 'email',
+                        ], 409);
+                    }
+
+                    wp_send_json_error([
+                        'message'   => 'We could not update your email address. No email change was saved.',
+                        'code'      => 'email_sync_failed',
+                        'field_key' => 'email',
+                    ], 500);
+                }
+
+                $field_value = (string) $sync_result['normalized_email'];
+                $ok          = true;
+            } else {
+                $update = [ $field_key => $san ];
+                if (
+                    $field_key === 'whi'
+                    && method_exists( 'TPW_Member_Field_Loader', 'is_flexigolf_active' )
+                    && TPW_Member_Field_Loader::is_flexigolf_active()
+                ) {
+                    $update['whi_updated'] = current_time('Y-m-d');
+                }
+                $ok = (bool) $controller->update_member( (int) $member->id, $update );
+            }
+        } else {
+            $ok = (bool) TPW_Member_Meta::save_meta( (int) $member->id, $field_key, (string) $field_value );
+        }
+
+        if ( ! $ok ) {
+            wp_send_json_error(['message'=>'Failed to save'], 500);
+        }
+
+        $notify_to = get_option( 'tpw_member_change_notify_email', '' );
+        if ( is_string($notify_to) ) { $notify_to = trim( $notify_to ); }
+        if ( $notify_to !== '' && is_email( $notify_to ) ) {
+            $new_value = is_string($field_value) ? (string) $field_value : (string) wp_json_encode( $field_value );
+            if ( trim( (string) $old_value ) !== trim( (string) $new_value ) ) {
+                if ( ! defined( 'DONOTCACHEPAGE' ) ) { define( 'DONOTCACHEPAGE', true ); }
+                if ( function_exists( 'nocache_headers' ) ) { nocache_headers(); }
+
+                if ( ! class_exists( 'TPW_Member_Field_Loader' ) ) {
+                    require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-field-loader.php';
+                }
+                $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
+                $label = $field_key;
+                foreach ( (array) $fields as $f ) {
+                    if ( isset($f['key']) && $f['key'] === $field_key ) { $label = (string) ($f['label'] ?? $field_key); break; }
+                }
+
+                $first = isset($member->first_name) ? (string) $member->first_name : '';
+                $last  = isset($member->surname) ? (string) $member->surname : '';
+                $member_name = trim( $first . ' ' . $last );
+                $profile_url = '';
+                $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
+                if ( $profile_page_id > 0 ) {
+                    $profile_url = get_permalink( $profile_page_id );
+                }
+
+                $settings = get_option( 'flexievent_settings', [] );
+                $date_format = isset($settings['date_format']) ? (string) $settings['date_format'] : 'd-m-Y';
+                $time_format = isset($settings['time_format']) ? (string) $settings['time_format'] : 'H:i';
+                $stamp = date_i18n( $date_format . ' ' . $time_format, current_time('timestamp') );
+
+                $site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+                $subject = sprintf( '[%s] Profile Updated by %s', $site_name, $member_name !== '' ? $member_name : 'Member' );
+
+                $body_lines = [];
+                $body_lines[] = sprintf( 'The following profile details were updated by %s on %s:', $member_name !== '' ? $member_name : 'a member', $stamp );
+                $body_lines[] = '';
+                $body_lines[] = 'Field: Old → New';
+                $body_lines[] = $label . ': ' . wp_strip_all_tags( (string) $old_value ) . ' → ' . wp_strip_all_tags( (string) $new_value );
+                $body_lines[] = '';
+                if ( $profile_url ) {
+                    $body_lines[] = 'View member: ' . $profile_url;
+                }
+                $body = implode( "\n", $body_lines );
+
+                $headers = [ 'Content-Type: text/plain; charset=UTF-8' ];
+                $member_email = isset($member->email) ? sanitize_email( (string) $member->email ) : '';
+                if ( is_email( $member_email ) ) {
+                    $headers[] = 'Reply-To: ' . ( $member_name !== '' ? $member_name : 'Member' ) . ' <' . $member_email . '>';
+                }
+
+                if ( class_exists( 'TPW_Email' ) ) {
+                    TPW_Email::dispatch_mail( $notify_to, $subject, $body, $headers, [], [
+                        'source'       => 'TPW_Member_Ajax::profile_update',
+                        'message_type' => 'plain',
+                    ] );
+                } else {
+                    @wp_mail( $notify_to, $subject, $body, $headers );
+                }
+            }
+        }
+        wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);
+    }
 
         /**
          * Member self-service: delete own photo.

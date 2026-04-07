@@ -231,6 +231,7 @@ function tpw_member_profile_render_profile_section( $member ) {
 
   $fields = TPW_Member_Field_Loader::get_all_enabled_fields();
   $meta   = TPW_Member_Meta::get_all_meta( (int) $member->id );
+  $known_checkbox_fields = [ 'share_with_members' ];
 
   ob_start();
   echo '<h2>' . esc_html__( 'My Profile', 'tpw-core' ) . '</h2>';
@@ -280,11 +281,13 @@ function tpw_member_profile_render_profile_section( $member ) {
     $display_value = (string) $value;
     if ( isset($f['type']) && $f['type'] === 'date' ) {
       $display_value = tpw_format_date( $value );
+    } elseif ( ( isset($f['type']) && $f['type'] === 'checkbox' ) || in_array( $key, $known_checkbox_fields, true ) ) {
+      $display_value = ! empty( $value ) ? 'Yes' : 'No';
     }
     echo '  <div class="tpw-table-cell">' . esc_html( $display_value ) . '</div>';
     echo '  <div class="tpw-table-cell">';
     if ( in_array( $key, $editable, true ) ) {
-      echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '">' . esc_html__( 'Edit', 'tpw-core' ) . '</button>';
+      echo '    <button class="tpw-btn tpw-btn-secondary tpw-profile-edit" data-key="' . esc_attr($key) . '" data-field-type="' . esc_attr( isset( $f['type'] ) ? $f['type'] : 'text' ) . '" data-field-value="' . esc_attr( ( ( isset($f['type']) && $f['type'] === 'checkbox' ) || in_array( $key, $known_checkbox_fields, true ) ) ? ( ! empty( $value ) ? '1' : '0' ) : (string) $value ) . '">' . esc_html__( 'Edit', 'tpw-core' ) . '</button>';
     } else {
       echo '&nbsp;';
     }
@@ -377,9 +380,16 @@ function tpw_member_profile_render_profile_section( $member ) {
       <div class="tpw-dir-modal__body">
         <form id="tpw-profile-form">
           <input type="hidden" name="field_key" value="">
+          <input type="hidden" name="field_type" value="text">
           <div class="tpw-field-row">
             <label id="tpw-profile-label"></label>
-            <input type="text" name="field_value" value="" />
+            <div id="tpw-profile-text-field">
+              <input type="text" name="field_value" value="" />
+            </div>
+            <label id="tpw-profile-checkbox-field" style="display:none; align-items:center; gap:8px;">
+              <input type="checkbox" name="field_value_checkbox" value="1" />
+              <span><?php echo esc_html__( 'Visible to other members', 'tpw-core' ); ?></span>
+            </label>
           </div>
           <div id="tpw-profile-result" style="margin-top:8px;"></div>
           <div style="margin-top:10px;">

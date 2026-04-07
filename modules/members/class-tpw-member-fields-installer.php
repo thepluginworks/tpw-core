@@ -32,6 +32,7 @@ class TPW_Member_Fields_Installer {
 			'is_gallery_admin'     => 'Gallery Admin',
 			'is_manage_members'    => 'Members Manager',
 			'is_volunteer'         => 'Volunteer',
+			'share_with_members'   => 'Make my profile visible to other members',
 			'username'              => 'Username',
 			'password_hash'         => 'Password Hash',
 		];

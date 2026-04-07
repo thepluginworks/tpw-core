@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.22.0] - 2026-04-07
+### Changed
+- Members: added a member-controlled profile visibility setting so standard members can opt out of appearing in member-facing directories, detail views, contact actions, and related member selection lists.
+- Members: management views and authorised admin or manager access continue to bypass member-to-member visibility restrictions.
+
 ## [1.21.2] - 2026-04-07
 ### Changed
 - UI: refined shared primary and secondary TPW button classes so they consistently keep the configured padding, height, and border-radius tokens across shared button usage.

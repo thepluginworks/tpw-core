@@ -5,13 +5,25 @@
 
   // Open modal with field
   $(document).on('click', '.tpw-profile-edit', function(){
+    var type = $(this).data('field-type') || 'text';
+    var rawValue = $(this).attr('data-field-value');
     var key = $(this).data('key');
     var row = $(this).closest('.tpw-table-row');
     var label = row.find('.tpw-table-cell').eq(0).text();
-    var val = row.find('.tpw-table-cell').eq(1).text();
     $('#tpw-profile-label').text(label);
     $('#tpw-profile-form [name=field_key]').val(key);
-    $('#tpw-profile-form [name=field_value]').val(val);
+    $('#tpw-profile-form [name=field_type]').val(type);
+    if (type === 'checkbox') {
+      $('#tpw-profile-text-field').hide();
+      $('#tpw-profile-checkbox-field').css('display', 'inline-flex');
+      $('#tpw-profile-form [name=field_value_checkbox]').prop('checked', String(rawValue) === '1');
+      $('#tpw-profile-form [name=field_value]').val('');
+    } else {
+      $('#tpw-profile-checkbox-field').hide();
+      $('#tpw-profile-text-field').show();
+      $('#tpw-profile-form [name=field_value]').val(rawValue || '');
+      $('#tpw-profile-form [name=field_value_checkbox]').prop('checked', false);
+    }
     $('#tpw-profile-result').empty();
     $('#tpw-profile-modal').removeAttr('hidden');
   });
@@ -25,7 +37,10 @@
   $(document).on('submit', '#tpw-profile-form', function(e){
     e.preventDefault();
     var key = $('#tpw-profile-form [name=field_key]').val();
-    var val = $('#tpw-profile-form [name=field_value]').val();
+    var type = $('#tpw-profile-form [name=field_type]').val() || 'text';
+    var val = type === 'checkbox'
+      ? ($('#tpw-profile-form [name=field_value_checkbox]').is(':checked') ? '1' : '0')
+      : $('#tpw-profile-form [name=field_value]').val();
     var $btn = $(this).find('button[type=submit]');
     $btn.prop('disabled', true).text('Saving...');
     ajax('tpw_member_profile_update', { field_key: key, field_value: val })
@@ -36,8 +51,10 @@
           return;
         }
         // Update the visible value in the row
-        var row = $('.tpw-profile-edit[data-key='+ key +']').closest('.tpw-table-row');
-        row.find('.tpw-table-cell').eq(1).text(val);
+        var $editBtn = $('.tpw-profile-edit[data-key='+ key +']');
+        var row = $editBtn.closest('.tpw-table-row');
+        row.find('.tpw-table-cell').eq(1).text(type === 'checkbox' ? (val === '1' ? 'Yes' : 'No') : val);
+        $editBtn.attr('data-field-value', val);
         $('#tpw-profile-modal').attr('hidden', true);
       })
       .fail(function(xhr){

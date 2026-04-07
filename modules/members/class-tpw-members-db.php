@@ -43,6 +43,7 @@ class TPW_Members_DB {
             is_gallery_admin TINYINT(1) DEFAULT 0,
             is_manage_members TINYINT(1) DEFAULT 0,
             is_volunteer TINYINT(1) DEFAULT 0,
+            share_with_members TINYINT(1) DEFAULT 1,
 
             username VARCHAR(100),
             password_hash VARCHAR(255),
@@ -289,6 +290,15 @@ class TPW_Members_DB {
             $after_column = $has_is_manage_members ? 'is_manage_members' : ( $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin' );
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_volunteer TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
         }
+
+        $has_share_with_members = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'share_with_members'",
+            $table_name
+        ) );
+        if ( ! $has_share_with_members ) {
+            $after_column = $has_is_volunteer ? 'is_volunteer' : ( $has_is_manage_members ? 'is_manage_members' : ( $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin' ) );
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN share_with_members TINYINT(1) NOT NULL DEFAULT 1 AFTER {$after_column}" );
+        }
     }
 
     private static function ensure_member_field_settings_rows( $table_name ) {
@@ -318,6 +328,12 @@ class TPW_Members_DB {
                 'custom_label' => 'Members Manager',
                 'field_type'   => 'checkbox',
                 'insert_after' => [ 'is_gallery_admin', 'is_noticeboard_admin' ],
+            ],
+            [
+                'field_key'    => 'share_with_members',
+                'custom_label' => 'Make my profile visible to other members',
+                'field_type'   => 'checkbox',
+                'insert_after' => [ 'status', 'membership_entitlement' ],
             ],
         ];
 

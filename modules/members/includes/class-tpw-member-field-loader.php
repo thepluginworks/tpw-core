@@ -53,6 +53,7 @@ class TPW_Member_Field_Loader {
             'is_gallery_admin'      => 'Gallery Admin',
             'is_manage_members'     => 'Members Manager',
             'is_volunteer'          => 'Volunteer',
+            'share_with_members'    => 'Make my profile visible to other members',
             'username'              => 'Username',
             'password_hash'         => 'Password Hash',
         ];
@@ -130,6 +131,7 @@ class TPW_Member_Field_Loader {
             'is_gallery_admin'     => 'checkbox',
             'is_manage_members'    => 'checkbox',
             'is_volunteer'         => 'checkbox',
+            'share_with_members'   => 'checkbox',
             // FlexiGolf additions
             'whi'                  => 'text',
             'whi_updated'          => 'date',

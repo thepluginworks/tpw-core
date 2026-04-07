@@ -34,6 +34,10 @@ if ( isset($_GET['per_page']) ) {
 $is_admin = !empty($GLOBALS['tpw_members_is_admin']);
 // Determine visibility group used by tpw_can_group_view_field for non-admin directory users
 $vis_group = isset($GLOBALS['tpw_members_vis_group']) ? sanitize_key($GLOBALS['tpw_members_vis_group']) : ($is_admin ? 'admin' : 'member');
+$allowed_directory_statuses = ( ! $is_admin && class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'get_allowed_statuses') )
+    ? TPW_Member_Access::get_allowed_statuses()
+    : [];
+$directory_status_placeholders = ! empty( $allowed_directory_statuses ) ? implode( ',', array_fill( 0, count( $allowed_directory_statuses ), '%s' ) ) : '';
 $adv_for_members = get_option('tpw_members_enable_advanced_search', '0') === '1';
 $selected_status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
 
@@ -202,6 +206,7 @@ if ( ! $is_admin ) {
 
     // Directory rule: primary members only (no partners/children). Children are hard-excluded.
     $args['directory_primary_only'] = true;
+    $args['share_with_members_only'] = true;
 }
 // Admins can filter by any existing status
 if ( $is_admin && $selected_status !== '' ) {
@@ -396,12 +401,38 @@ $current_view = $initial_view;
                         if ($source_inline === 'dynamic') {
                             // Build options dynamically from DB (core column or meta)
                             if (in_array($bk, $tpw_cols_inline, true)) {
-                                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                                $sql = "SELECT DISTINCT `{$bk}` AS v FROM {$members_table} WHERE `{$bk}` IS NOT NULL AND `{$bk}` <> '' ORDER BY `{$bk}`";
-                                $opts = (array) $wpdb->get_col($sql);
+                                $sql = "SELECT DISTINCT mem.`{$bk}` AS v FROM {$members_table} AS mem";
+                                $params = [];
+                                if ( ! $is_admin ) {
+                                    $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$bk}` IS NOT NULL AND mem.`{$bk}` <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                    if ( $directory_status_placeholders !== '' ) {
+                                        $sql .= " AND mem.status IN ({$directory_status_placeholders})";
+                                        $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
+                                    }
+                                    $sql .= " AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.is_primary = 1 ) AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.role IS NULL OR hm_dir_vis.role <> 'child' )";
+                                } else {
+                                    $sql .= " WHERE mem.`{$bk}` IS NOT NULL AND mem.`{$bk}` <> ''";
+                                }
+                                $sql .= " ORDER BY mem.`{$bk}`";
+                                $opts = empty( $params )
+                                    ? (array) $wpdb->get_col( $sql )
+                                    : (array) $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                             } else {
                                 $meta_table = $wpdb->prefix . 'tpw_member_meta';
-                                $rows = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT meta_value AS v FROM {$meta_table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> '' ORDER BY meta_value", $bk ) );
+                                $sql = "SELECT DISTINCT meta.meta_value AS v FROM {$meta_table} AS meta";
+                                $params = [ $bk ];
+                                if ( ! $is_admin ) {
+                                    $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                    if ( $directory_status_placeholders !== '' ) {
+                                        $sql .= " AND mem.status IN ({$directory_status_placeholders})";
+                                        $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
+                                    }
+                                    $sql .= " AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.is_primary = 1 ) AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.role IS NULL OR hm_dir_vis.role <> 'child' )";
+                                } else {
+                                    $sql .= " WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> ''";
+                                }
+                                $sql .= " ORDER BY meta.meta_value";
+                                $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                                 $opts = (array) $rows;
                             }
                         } else {
@@ -654,24 +685,48 @@ $current_view = $initial_view;
                                 if ($source === 'dynamic') {
                                     global $wpdb; $members_table = $wpdb->prefix . 'tpw_members';
                                     $cache_key = 'tpw_dynamic_options_' . $key_sane;
+                                    if ( ! $is_admin ) {
+                                        $cache_key .= '_member';
+                                    }
                                     $options = get_transient($cache_key);
                                     if ($options === false) {
                                         // Determine source: core column or custom meta
                                         $tpw_cols_dyn = (array) $wpdb->get_col( 'SHOW COLUMNS FROM ' . $members_table, 0 );
                                         if (in_array($key_sane, $tpw_cols_dyn, true)) {
-                                            // Core column: distinct values from members table
-                                            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                                            $sql = "SELECT DISTINCT `{$key_sane}` AS v FROM {$members_table} WHERE `{$key_sane}` IS NOT NULL AND `{$key_sane}` <> '' ORDER BY `{$key_sane}`";
-                                            $rows = $wpdb->get_col($sql);
+                                            $sql = "SELECT DISTINCT mem.`{$key_sane}` AS v FROM {$members_table} AS mem";
+                                            $params = [];
+                                            if ( ! $is_admin ) {
+                                                $sql .= " LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE mem.`{$key_sane}` IS NOT NULL AND mem.`{$key_sane}` <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                                if ( $directory_status_placeholders !== '' ) {
+                                                    $sql .= " AND mem.status IN ({$directory_status_placeholders})";
+                                                    $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
+                                                }
+                                                $sql .= " AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.is_primary = 1 ) AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.role IS NULL OR hm_dir_vis.role <> 'child' )";
+                                            } else {
+                                                $sql .= " WHERE mem.`{$key_sane}` IS NOT NULL AND mem.`{$key_sane}` <> ''";
+                                            }
+                                            $sql .= " ORDER BY mem.`{$key_sane}`";
+                                            $rows = empty( $params )
+                                                ? $wpdb->get_col( $sql )
+                                                : $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                                             $options = array_values( array_filter( array_map('strval', (array) $rows ) ) );
                                         } else {
-                                            // Custom field: distinct values from member meta
                                             $meta_table = $wpdb->prefix . 'tpw_member_meta';
-                                            // Prepared statement: filter by meta_key (string)
-                                            $sql = "SELECT DISTINCT meta_value AS v FROM {$meta_table} WHERE meta_key = %s AND meta_value IS NOT NULL AND meta_value <> '' ORDER BY meta_value";
-                                            $rows = $wpdb->get_col( $wpdb->prepare( $sql, $key_sane ) );
+                                            $sql = "SELECT DISTINCT meta.meta_value AS v FROM {$meta_table} AS meta";
+                                            $params = [ $key_sane ];
+                                            if ( ! $is_admin ) {
+                                                $sql .= " INNER JOIN {$members_table} AS mem ON mem.id = meta.member_id LEFT JOIN {$wpdb->prefix}tpw_members_household_member AS hm_dir_vis ON hm_dir_vis.member_id = mem.id WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> '' AND COALESCE(mem.share_with_members, 1) = 1";
+                                                if ( $directory_status_placeholders !== '' ) {
+                                                    $sql .= " AND mem.status IN ({$directory_status_placeholders})";
+                                                    $params = array_merge( $params, array_values( $allowed_directory_statuses ) );
+                                                }
+                                                $sql .= " AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.is_primary = 1 ) AND ( hm_dir_vis.member_id IS NULL OR hm_dir_vis.role IS NULL OR hm_dir_vis.role <> 'child' )";
+                                            } else {
+                                                $sql .= " WHERE meta.meta_key = %s AND meta.meta_value IS NOT NULL AND meta.meta_value <> ''";
+                                            }
+                                            $sql .= " ORDER BY meta.meta_value";
+                                            $rows = $wpdb->get_col( $wpdb->prepare( $sql, ...$params ) );
                                             $options = array_values( array_filter( array_map('strval', (array) $rows ) ) );
-                                            // Use a different cache scope? We can reuse the same cache key per field key safely
                                         }
                                         set_transient($cache_key, $options, 6 * HOUR_IN_SECONDS);
                                     }
@@ -1137,6 +1192,7 @@ $current_view = $initial_view;
         if ( ! empty($adv_select) ) { $count_args['adv_select'] = $adv_select; }
     if ( ! empty($adv_date_range) ) { $count_args['adv_date_range'] = $adv_date_range; }
     if ( ! empty($adv_select_meta) ) { $count_args['adv_select_meta'] = $adv_select_meta; }
+            if ( ! empty($adv_checkbox) ) { $count_args['adv_checkbox'] = $adv_checkbox; }
         if ( ! $is_admin ) {
             if ( class_exists('TPW_Member_Access') && method_exists('TPW_Member_Access', 'get_allowed_statuses') ) {
                 $count_args['status_in'] = TPW_Member_Access::get_allowed_statuses();
@@ -1146,6 +1202,7 @@ $current_view = $initial_view;
 
             // Directory rule: primary members only (no partners/children). Children are hard-excluded.
             $count_args['directory_primary_only'] = true;
+            $count_args['share_with_members_only'] = true;
         }
         if ( $is_admin && $selected_status !== '' ) { $count_args['status'] = $selected_status; }
         $total_members = $controller->get_total_members_count( $count_args );
