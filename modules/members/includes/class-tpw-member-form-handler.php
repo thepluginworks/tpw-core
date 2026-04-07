@@ -152,14 +152,6 @@ class TPW_Member_Form_Handler {
             wp_die( 'Error creating user: ' . esc_html($user_id->get_error_message()) );
         }
 
-        // Assign administrator role if requested
-        if ( isset($core_data['is_admin']) && intval($core_data['is_admin']) === 1 ) {
-            wp_update_user([
-                'ID'   => $user_id,
-                'role' => 'administrator',
-            ]);
-        }
-
         // Update first and last name in WP user meta
         wp_update_user([
             'ID'         => $user_id,
@@ -170,31 +162,8 @@ class TPW_Member_Form_Handler {
     $core_data['user_id'] = $user_id;
     $core_data['society_id'] = tpw_core_get_site_society_id();
 
-        // Normalize and assign WP Role based on Status
-        $status_role_map = [
-            'Active'      => 'member',
-            'Life Member' => 'member',
-            'Inactive'    => 'inactive_member',
-            'Deceased'    => 'deceased',
-            'Honorary'    => 'honorary_member',
-            'Resigned'    => 'former_member',
-            'Suspended'   => 'suspended',
-            'Pending'     => 'pending_member',
-        ];
-
         // Ensure canonical stored value (e.g., 'life' -> 'Life Member')
         $core_data['status'] = self::normalize_status( $core_data['status'] ?? 'Active' );
-        $status = $core_data['status'];
-        $role = $status_role_map[$status] ?? 'subscriber';
-
-        $user = new WP_User($user_id);
-        // Non-destructively add the mapped role (in case it differs) and ensure 'member' capability
-        if ( $role && $role !== '' ) {
-            $user->add_role( $role ); // add_role keeps existing roles
-        }
-        if ( class_exists('TPW_Member_Roles') ) {
-            TPW_Member_Roles::ensure_member_cap( $user_id );
-        }
 
         // Handle photo upload if enabled (same constraints as edit form)
         $photos_enabled = get_option('tpw_members_use_photos', '0') === '1';
@@ -531,35 +500,6 @@ class TPW_Member_Form_Handler {
                 'first_name' => $core_data['first_name'] ?? '',
                 'last_name'  => $core_data['surname'] ?? '',
             ]);
-
-            // Normalize and assign WP Role based on Status (fallback to subscriber)
-            $status_role_map = [
-                'Active'      => 'member',
-                'Life Member' => 'member',
-                'Inactive'    => 'inactive_member',
-                'Deceased'    => 'deceased',
-                'Honorary'    => 'honorary_member',
-                'Resigned'    => 'former_member',
-                'Suspended'   => 'suspended',
-                'Pending'     => 'pending_member',
-            ];
-
-            // $core_data['status'] already normalized above; provide default if missing
-            $status = $core_data['status'] ?? 'Active';
-            $role = $status_role_map[$status] ?? 'subscriber';
-
-            // Override with Administrator if checked
-            if ( isset($core_data['is_admin']) && intval($core_data['is_admin']) === 1 ) {
-                $role = 'administrator';
-            }
-
-            $user = new WP_User( $member->user_id );
-            if ( $role && $role !== '' ) {
-                $user->add_role( $role );
-            }
-            if ( class_exists('TPW_Member_Roles') ) {
-                TPW_Member_Roles::ensure_member_cap( $member->user_id );
-            }
         }
 
         foreach ( $meta_data as $meta_key => $meta_value ) {

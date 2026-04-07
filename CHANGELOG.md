@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.23.1] - 2026-04-07
+### Fixed
+- Members: fixed a regression where clearing the TPW `is_admin` flag on a linked member could leave the linked WordPress account with the `administrator` role and continue granting admin access.
+- Members: centralized member-to-WordPress role synchronization in the member controller so linked users are re-synced consistently when `user_id`, `status`, or `is_admin` changes.
+
 ## [1.23.0] - 2026-04-07
 ### Changed
 - Members: added a dedicated Privacy settings tab so member visibility and profile-sharing controls are separated from general member system settings.

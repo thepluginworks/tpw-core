@@ -3,6 +3,41 @@
 class TPW_Member_Controller {
 
     /**
+     * Sync TPW-managed WordPress roles for a linked member user.
+     *
+     * @param object|array|null $member Member row.
+     * @return void
+     */
+    protected function sync_linked_member_wp_roles( $member ) {
+        if ( is_object( $member ) ) {
+            $user_id  = isset( $member->user_id ) ? (int) $member->user_id : 0;
+            $status   = isset( $member->status ) ? (string) $member->status : '';
+            $is_admin = ! empty( $member->is_admin );
+        } elseif ( is_array( $member ) ) {
+            $user_id  = isset( $member['user_id'] ) ? (int) $member['user_id'] : 0;
+            $status   = isset( $member['status'] ) ? (string) $member['status'] : '';
+            $is_admin = ! empty( $member['is_admin'] );
+        } else {
+            return;
+        }
+
+        if ( $user_id <= 0 ) {
+            return;
+        }
+
+        if ( ! class_exists( 'TPW_Member_Roles', false ) ) {
+            $roles_file = plugin_dir_path( __FILE__ ) . 'class-tpw-member-roles.php';
+            if ( file_exists( $roles_file ) ) {
+                require_once $roles_file;
+            }
+        }
+
+        if ( class_exists( 'TPW_Member_Roles', false ) ) {
+            TPW_Member_Roles::sync_member_access_roles( $user_id, $status, $is_admin );
+        }
+    }
+
+    /**
      * Return the code-controlled membership entitlement options map.
      *
      * @return array<string,string>
@@ -360,8 +395,15 @@ class TPW_Member_Controller {
         }
 
         $result = $wpdb->insert( $table, $insert );
+        if ( ! $result ) {
+            return false;
+        }
 
-        return $result ? $wpdb->insert_id : false;
+        $member_id = (int) $wpdb->insert_id;
+        $member    = (object) array_merge( [ 'id' => $member_id ], $insert );
+        $this->sync_linked_member_wp_roles( $member );
+
+        return $member_id;
     }
 
     /**
@@ -456,6 +498,10 @@ class TPW_Member_Controller {
 
     $res = $wpdb->update( $table, $update, [ 'id' => $id ] );
         if ( $res !== false ) {
+            if ( array_intersect( [ 'user_id', 'status', 'is_admin' ], array_keys( $update ) ) ) {
+                $this->sync_linked_member_wp_roles( $this->get_member( $id ) );
+            }
+
             // Bust dependent option caches for any updated columns
             if ( ! empty($update) ) {
                 $changed = array_keys($update);

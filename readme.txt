@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.0
+Stable tag: 1.23.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.23.1 =
+- Members: fixed a regression where removing the TPW Administrator flag from a linked member could leave the linked WordPress account with the Administrator role.
+- Members: member-to-WordPress role synchronization is now enforced centrally during member create and update flows so administrator downgrades are applied consistently.
 
 = 1.23.0 =
 - Members: added a dedicated Privacy settings tab to separate visibility and profile-sharing controls from general member settings.
