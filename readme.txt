@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.20.0
+Stable tag: 1.20.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.20.1 =
+- UI: refined the shared TPW button stylesheet to provide a clearer outline button variant for primary and secondary buttons.
+- Members: refined FlexiGolf activation detection used for conditional visibility in member/admin field flows.
 
 = 1.20.0 =
 - Menus: menu item visibility settings now support Gallery Admins across add and edit flows in TPW Control menu management.

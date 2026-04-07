@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.20.1] - 2026-04-07
+### Changed
+- UI: updated the shared TPW button stylesheet to provide a consistent outline button variant for primary and secondary buttons.
+- Members: refined FlexiGolf activation detection used for conditional member/admin field visibility.
+
 ## [1.20.0] - 2026-04-02
 ### Changed
 - Menus: TPW Control menu management now supports the `is_gallery_admin` visibility flag across add-item flows, edit-item saves, current-item summaries, and the edit modal visibility UI.
