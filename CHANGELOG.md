@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.23.4] - 2026-04-14
+### Fixed
+- Members: corrected the front-end member login and password reset flows so submitted passwords are unslashed consistently before WordPress authentication and reset APIs run, preventing quoted or slashed passwords from being saved and checked differently.
+- Members: reset and login notices now persist reliably across redirects, clear stale reset errors after a successful password change, and show a clear success notice after password reset completion.
+- Members: the member login shortcode now renders login, lost-password, and reset-password states separately so the normal login page no longer includes a competing hidden auth form that can interfere with password-manager autofill.
+
 ## [1.23.3] - 2026-04-14
 ### Changed
 - TPW Control: moved Upload Pages admin styling out of the section template and into the existing scoped TPW Control stylesheet, preserving the current interface behaviour while reducing template-embedded presentation code.

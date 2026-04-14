@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.3
+Stable tag: 1.23.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.23.4 =
+- Members: corrected front-end member login and password reset handling so quoted and slashed passwords are passed consistently to WordPress during reset and login.
+- Members: reset and login notices now survive redirects more reliably, clear stale reset errors after a successful reset, and show a clear password reset success message.
+- Members: the member login shortcode now renders separate login, lost-password, and reset-password states so the normal login page no longer includes a competing hidden auth form.
 
 = 1.23.3 =
 - TPW Control: moved Upload Pages admin styling out of the section template and into the existing scoped TPW Control stylesheet, keeping the current interface and behaviour unchanged.

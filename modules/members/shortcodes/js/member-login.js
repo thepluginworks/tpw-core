@@ -27,16 +27,5 @@
       }
     });
 
-    // Toggle forms
-    $(document).on('click', '.tpw-lost-password', function(e){
-      e.preventDefault();
-      $('.tpw-login-form').hide();
-      $('.tpw-reset-form').show();
-    });
-    $(document).on('click', '.tpw-back-to-login', function(e){
-      e.preventDefault();
-      $('.tpw-reset-form').hide();
-      $('.tpw-login-form').show();
-    });
   });
 })(jQuery);

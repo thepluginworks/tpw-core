@@ -119,16 +119,19 @@ class TPW_Member_Login_Shortcode {
         $bundle = self::check_rate_limit();
         if (is_wp_error($bundle)) {
             self::store_message('error', $bundle->get_error_message());
+            self::set_notice_cookie('error', $bundle->get_error_message());
             self::redirect_back_preserving_redirect();
         }
 
         $login = sanitize_text_field($_POST['login'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $password = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : '';
         $remember = !empty($_POST['remember']) ? true : false;
 
         if ($login === '' || $password === '') {
             self::bump_rate_limit($bundle);
-            self::store_message('error', __('Please enter your email/username and password.', 'tpw-core'));
+            $message = __('Please enter your email/username and password.', 'tpw-core');
+            self::store_message('error', $message);
+            self::set_notice_cookie('error', $message);
             self::redirect_back_preserving_redirect();
         }
 
@@ -148,12 +151,9 @@ class TPW_Member_Login_Shortcode {
         $signon = wp_signon($creds, is_ssl());
         if (is_wp_error($signon)) {
             self::bump_rate_limit($bundle);
-            $code = $signon->get_error_code();
-            $msg = __('Login failed. Please check your details and try again.', 'tpw-core');
-            if ($code === 'invalid_username' || $code === 'incorrect_password') {
-                $msg = __('Invalid email/username or password.', 'tpw-core');
-            }
+            $msg = __('Invalid username or password.', 'tpw-core');
             self::store_message('error', $msg);
+            self::set_notice_cookie('error', $msg);
             self::redirect_back_preserving_redirect();
         }
 
@@ -203,13 +203,13 @@ class TPW_Member_Login_Shortcode {
         }
         if ( ! $nonce_ok ) {
             self::store_message('reset_error', __('Security check failed. Please refresh the page and try again.', 'tpw-core'));
-            self::redirect_back_preserving_redirect();
+            self::redirect_back_to_lost_password();
         }
 
         $identifier = sanitize_text_field($_POST['identifier'] ?? '');
         if ($identifier === '') {
             self::store_message('reset_error', __('Please enter your email or username.', 'tpw-core'));
-            self::redirect_back_preserving_redirect();
+            self::redirect_back_to_lost_password();
         }
 
         // Map email to login if needed
@@ -235,7 +235,8 @@ class TPW_Member_Login_Shortcode {
         } else {
             $message = is_wp_error($result) ? $result->get_error_message() : __('Password reset failed. Please try again later.', 'tpw-core');
             self::store_message('reset_error', $message);
-            self::set_notice_cookie('reset_error');
+            self::set_notice_cookie('reset_error', $message);
+            self::redirect_back_to_lost_password();
         }
         self::redirect_back_preserving_redirect();
     }
@@ -244,7 +245,9 @@ class TPW_Member_Login_Shortcode {
         // Nonce
         $nonce_ok = isset($_POST['tpw_member_do_reset_nonce']) && wp_verify_nonce($_POST['tpw_member_do_reset_nonce'], 'tpw_member_do_reset');
         if ( ! $nonce_ok ) {
-            self::store_message('reset_error', __('Security check failed. Please refresh the page and try again.', 'tpw-core'));
+            $message = __('Security check failed. Please refresh the page and try again.', 'tpw-core');
+            self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error', $message);
             $k = sanitize_text_field($_POST['key'] ?? '');
             $l = sanitize_text_field($_POST['login'] ?? '');
             self::redirect_back_to_rp($k, $l);
@@ -252,32 +255,43 @@ class TPW_Member_Login_Shortcode {
 
         $key   = sanitize_text_field($_POST['key'] ?? '');
         $login = sanitize_text_field($_POST['login'] ?? '');
-        $pass1 = (string) ($_POST['pass1'] ?? '');
-        $pass2 = (string) ($_POST['pass2'] ?? '');
+        $pass1 = isset($_POST['pass1']) ? (string) wp_unslash($_POST['pass1']) : '';
+        $pass2 = isset($_POST['pass2']) ? (string) wp_unslash($_POST['pass2']) : '';
 
         if ($key === '' || $login === '') {
-            self::store_message('reset_error', __('Invalid reset link. Please request a new password reset.', 'tpw-core'));
+            $message = __('This password reset link is invalid or has expired. Please request a new password reset.', 'tpw-core');
+            self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error', $message);
             self::redirect_back_preserving_redirect();
         }
         if ($pass1 === '' || $pass2 === '') {
-            self::store_message('reset_error', __('Please enter your new password twice.', 'tpw-core'));
+            $message = __('Please enter your new password twice.', 'tpw-core');
+            self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error', $message);
             self::redirect_back_to_rp($key, $login);
         }
         if ($pass1 !== $pass2) {
-            self::store_message('reset_error', __('Passwords do not match.', 'tpw-core'));
+            $message = __('Passwords do not match.', 'tpw-core');
+            self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error', $message);
             self::redirect_back_to_rp($key, $login);
         }
 
         // Validate the reset key
         $user = check_password_reset_key($key, $login);
         if (is_wp_error($user)) {
-            self::store_message('reset_error', $user->get_error_message());
-            self::redirect_back_preserving_redirect();
+            $message = self::get_reset_key_error_message($user);
+            self::store_message('reset_error', $message);
+            self::set_notice_cookie('reset_error', $message);
+            self::redirect_back_to_rp($key, $login);
         }
 
         // Set the new password
         reset_password($user, $pass1);
-        self::store_message('reset_success', __('Your password has been reset. You can now log in.', 'tpw-core'));
+        self::clear_stored_message('reset_error');
+        $success_message = __('Password successfully reset. Please log in.', 'tpw-core');
+        self::store_message('reset_success', $success_message);
+        self::set_notice_cookie('reset_success', $success_message);
 
         // After successful reset: send the user to the front-end login page, preserving redirect_to.
         $member_login_url = '';
@@ -305,6 +319,22 @@ class TPW_Member_Login_Shortcode {
         }
         wp_safe_redirect( esc_url_raw( $member_login_url ) );
         exit;
+    }
+
+    private static function get_reset_key_error_message( $error ) {
+        if ( is_wp_error( $error ) ) {
+            $code = $error->get_error_code();
+            if ( $code === 'invalid_key' || $code === 'expired_key' ) {
+                return __('This password reset link is invalid or has expired. Please request a new password reset.', 'tpw-core');
+            }
+
+            $message = $error->get_error_message();
+            if ( is_string( $message ) && $message !== '' ) {
+                return $message;
+            }
+        }
+
+        return __('Password reset failed. Please request a new password reset.', 'tpw-core');
     }
 
     /**
@@ -394,6 +424,30 @@ class TPW_Member_Login_Shortcode {
     }
 
     /**
+     * Redirect back to the lost password state, preserving redirect_to.
+     */
+    private static function redirect_back_to_lost_password() {
+        $target = function_exists('get_permalink') ? get_permalink() : home_url('/');
+        $args = [ 'action' => 'lostpassword' ];
+        $requested = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+        if ( is_string( $requested ) ) {
+            $requested = trim( (string) wp_unslash( $requested ) );
+        } else {
+            $requested = '';
+        }
+        if ( $requested !== '' ) {
+            $candidate = esc_url_raw( rawurldecode( $requested ) );
+            $valid = $candidate !== '' ? wp_validate_redirect( $candidate, '' ) : '';
+            if ( $valid !== '' ) {
+                $args['redirect_to'] = rawurlencode( $valid );
+            }
+        }
+        $target = add_query_arg( $args, $target );
+        wp_safe_redirect( $target );
+        exit;
+    }
+
+    /**
      * Redirect back to the rp (set new password) state, preserving key/login and redirect_to.
      */
     private static function redirect_back_to_rp( $key, $login ) {
@@ -424,18 +478,39 @@ class TPW_Member_Login_Shortcode {
         $_SESSION['tpw_member_login_messages'][$type] = wp_kses_post($text);
     }
 
+    private static function clear_stored_message( $type ) {
+        if (!session_id()) { if (!headers_sent()) { @session_start(); } }
+        if ( isset($_SESSION['tpw_member_login_messages']) && is_array($_SESSION['tpw_member_login_messages']) ) {
+            unset($_SESSION['tpw_member_login_messages'][$type]);
+            if ( empty($_SESSION['tpw_member_login_messages']) ) {
+                unset($_SESSION['tpw_member_login_messages']);
+            }
+        }
+    }
+
     /**
      * Set a short-lived cookie to carry notices across redirects when sessions are unreliable.
      */
-    private static function set_notice_cookie( $value ) {
+    private static function set_notice_cookie( $value, $message = '' ) {
         $name   = 'tpw_member_login_notice';
         $expire = time() + MINUTE_IN_SECONDS; // short-lived
         $path   = defined('COOKIEPATH') ? COOKIEPATH : '/';
         $domain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
         $secure = is_ssl();
         $httpOnly = true;
+        $payload = [ 'flag' => (string) $value ];
+        if ( is_string( $message ) && $message !== '' ) {
+            $payload['message'] = (string) $message;
+        }
+        $cookie_value = wp_json_encode( $payload );
+        if ( ! is_string( $cookie_value ) || $cookie_value === '' ) {
+            $cookie_value = (string) $value;
+        } else {
+            $cookie_value = rawurlencode( $cookie_value );
+        }
+
         if ( PHP_VERSION_ID >= 70300 ) {
-            setcookie( $name, (string) $value, [
+            setcookie( $name, $cookie_value, [
                 'expires'  => $expire,
                 'path'     => $path,
                 'domain'   => $domain,
@@ -445,7 +520,7 @@ class TPW_Member_Login_Shortcode {
             ] );
         } else {
             // Fallback for older PHP versions
-            setcookie( $name, (string) $value, $expire, $path, $domain, $secure, $httpOnly );
+            setcookie( $name, $cookie_value, $expire, $path, $domain, $secure, $httpOnly );
         }
     }
 
@@ -466,13 +541,34 @@ class TPW_Member_Login_Shortcode {
             $messages = $_SESSION['tpw_member_login_messages'];
             unset($_SESSION['tpw_member_login_messages']);
         }
+        if ( ! empty( $messages ) && isset($_COOKIE['tpw_member_login_notice']) ) {
+            self::clear_notice_cookie();
+        }
         // Cookie-based fallback for environments where sessions aren't persisted across redirect
         if ( empty( $messages ) && isset($_COOKIE['tpw_member_login_notice']) ) {
-            $flag = sanitize_text_field( wp_unslash( $_COOKIE['tpw_member_login_notice'] ) );
+            $raw_notice = (string) wp_unslash( $_COOKIE['tpw_member_login_notice'] );
+            $flag = '';
+            $fallback_message = '';
+            $decoded_notice = rawurldecode( $raw_notice );
+            $parsed_notice = json_decode( $decoded_notice, true );
+
+            if ( is_array( $parsed_notice ) ) {
+                $flag = isset( $parsed_notice['flag'] ) ? sanitize_text_field( $parsed_notice['flag'] ) : '';
+                if ( isset( $parsed_notice['message'] ) && is_string( $parsed_notice['message'] ) ) {
+                    $fallback_message = wp_kses_post( $parsed_notice['message'] );
+                }
+            } else {
+                $flag = sanitize_text_field( $raw_notice );
+            }
+
             if ( $flag === 'reset_sent' ) {
                 $messages['reset_success'] = __("If an account with that email address exists, you'll receive an email with a link to reset your password shortly. Please check your inbox (and junk folder).", 'tpw-core');
             } elseif ( $flag === 'reset_error' ) {
-                $messages['reset_error'] = __('Password reset failed. Please try again later.', 'tpw-core');
+                $messages['reset_error'] = $fallback_message !== '' ? $fallback_message : __('Password reset failed. Please try again later.', 'tpw-core');
+            } elseif ( $flag === 'reset_success' ) {
+                $messages['reset_success'] = $fallback_message !== '' ? $fallback_message : __('Password successfully reset. Please log in.', 'tpw-core');
+            } elseif ( $flag === 'error' ) {
+                $messages['error'] = $fallback_message !== '' ? $fallback_message : __('Invalid username or password.', 'tpw-core');
             }
             self::clear_notice_cookie();
         }
