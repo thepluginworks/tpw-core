@@ -363,3 +363,8 @@ input[type="reset"].tpw-btn.tpw-btn-lg {
   min-height: var(--tpw-btn-height-lg);
 }
 
+button.tpw-btn.tpw-btn-secondary.tpw-btn-text-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+

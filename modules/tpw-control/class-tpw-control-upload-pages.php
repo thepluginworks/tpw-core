@@ -119,9 +119,13 @@ add_action('wp_ajax_tpw_control_sort_files', function(){
     if ( ! $nonce || ! wp_verify_nonce( $nonce, 'tpw_control_upload_pages' ) ) wp_send_json_error(['message'=>'Bad nonce'], 400);
     if ( ! class_exists('TPW_Control_UI') || ! TPW_Control_UI::user_has_access( [ 'logged_in' => true, 'flags_any' => ['is_committee','is_admin'] ] ) ) wp_send_json_error(['message'=>'No permission'], 403);
     $page_id = isset($_POST['page_id']) ? (int) $_POST['page_id'] : 0;
+    $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int) $_POST['category_id'] : null;
+    $year = isset($_POST['year']) && $_POST['year'] !== '' ? (int) $_POST['year'] : null;
     $order = isset($_POST['order']) && is_array($_POST['order']) ? array_map('intval', $_POST['order']) : [];
     if ( ! $page_id || empty($order) ) wp_send_json_error(['message'=>'Invalid data'], 400);
-    TPW_Control_Upload_Pages::reorder_files( $page_id, $order );
+    if ( ! TPW_Control_Upload_Pages::reorder_files( $page_id, $order, $category_id, $year ) ) {
+        wp_send_json_error(['message' => 'Could not save this group order'], 400);
+    }
     wp_send_json_success();
 });
 
@@ -494,6 +498,61 @@ class TPW_Control_Upload_Pages {
         global $wpdb; $table = $wpdb->prefix . 'tpw_upload_pages';
         return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE slug=%s", sanitize_title( $slug ) ) );
     }
+
+    protected static function is_valid_public_year_param( $value ) {
+        $value = sanitize_text_field( (string) $value );
+        if ( $value === '' ) {
+            return false;
+        }
+
+        $value = strtolower( $value );
+        if ( $value === 'all' || $value === 'none' ) {
+            return true;
+        }
+
+        return (bool) preg_match( '/^\d{4}$/', $value );
+    }
+
+    protected static function is_upload_page_wp_post( $post ) {
+        if ( ! ( $post instanceof WP_Post ) || $post->post_type !== 'page' ) {
+            return false;
+        }
+
+        if ( get_post_meta( $post->ID, '_tpw_page_type', true ) === 'upload_page' ) {
+            return true;
+        }
+
+        return isset( $post->post_content ) && strpos( (string) $post->post_content, '[tpw_upload_page' ) !== false;
+    }
+
+    public static function normalize_public_request_query_vars( $query_vars ) {
+        if ( is_admin() || empty( $_GET['year'] ) || empty( $query_vars['year'] ) ) {
+            return $query_vars;
+        }
+
+        $raw_year = wp_unslash( $_GET['year'] );
+        if ( ! self::is_valid_public_year_param( $raw_year ) ) {
+            return $query_vars;
+        }
+
+        $post = null;
+        if ( ! empty( $query_vars['page_id'] ) ) {
+            $post = get_post( (int) $query_vars['page_id'] );
+        } elseif ( ! empty( $query_vars['pagename'] ) ) {
+            $path = trim( sanitize_text_field( wp_unslash( (string) $query_vars['pagename'] ) ), '/' );
+            if ( $path !== '' ) {
+                $post = get_page_by_path( $path, OBJECT, 'page' );
+            }
+        }
+
+        if ( ! self::is_upload_page_wp_post( $post ) ) {
+            return $query_vars;
+        }
+
+        unset( $query_vars['year'] );
+        return $query_vars;
+    }
+
     protected static function make_wp_page_content( $slug ) {
         $slug = sanitize_title( $slug );
         return '[tpw_upload_page slug="' . $slug . '"]';
@@ -716,8 +775,48 @@ class TPW_Control_Upload_Pages {
         // Post-filter to adjust/augment rows if needed
         return apply_filters( 'tpw_control_upload_pages_files', $rows, (int) $page_id );
     }
-    public static function add_file_record( $page_id, $file_path, $file_url, $file_type, $label = '', $year = null, $sort_order = 0, $thumbnail_url = null, $category_id = null, $uploaded_by = null, $notes = null ) {
+    protected static function normalize_group_category( $category_id ) {
+        $category_id = (int) $category_id;
+        return $category_id > 0 ? $category_id : null;
+    }
+    protected static function normalize_group_year( $year ) {
+        $year = (int) $year;
+        return $year > 0 ? $year : null;
+    }
+    protected static function build_file_group_where_sql( $page_id, $category_id, $year, &$params, $alias = '' ) {
+        $prefix = $alias !== '' ? rtrim( $alias, '.' ) . '.' : '';
+        $params = [ (int) $page_id ];
+        $where = [ "{$prefix}page_id=%d" ];
+        if ( $category_id === null ) {
+            $where[] = "({$prefix}category_id IS NULL OR {$prefix}category_id=0)";
+        } else {
+            $where[] = "{$prefix}category_id=%d";
+            $params[] = (int) $category_id;
+        }
+        if ( $year === null ) {
+            $where[] = "({$prefix}year IS NULL OR {$prefix}year=0)";
+        } else {
+            $where[] = "{$prefix}year=%d";
+            $params[] = (int) $year;
+        }
+        return implode( ' AND ', $where );
+    }
+    protected static function shift_group_sort_orders( $page_id, $category_id, $year ) {
+        global $wpdb; $links = $wpdb->prefix . 'tpw_upload_pages_files';
+        $page_id = (int) $page_id;
+        if ( $page_id <= 0 ) return false;
+        $category_id = self::normalize_group_category( $category_id );
+        $year = self::normalize_group_year( $year );
+        $params = [];
+        $where = self::build_file_group_where_sql( $page_id, $category_id, $year, $params );
+        $sql = "UPDATE {$links} SET sort_order = sort_order + 1 WHERE {$where} AND is_deleted=0";
+        return false !== $wpdb->query( $wpdb->prepare( $sql, $params ) );
+    }
+    public static function add_file_record( $page_id, $file_path, $file_url, $file_type, $label = '', $year = null, $sort_order = 0, $thumbnail_url = null, $category_id = null, $uploaded_by = null, $notes = null, $insert_at_group_top = false ) {
         global $wpdb; $files = $wpdb->prefix . 'tpw_files'; $links = $wpdb->prefix . 'tpw_upload_pages_files';
+        $page_id = (int) $page_id;
+        $category_id = self::normalize_group_category( $category_id );
+        $year = self::normalize_group_year( $year );
         // Upsert registry entry by checksum (preferred) or file_path to allow reuse
         $checksum = null;
         if ( file_exists( $file_path ) && is_readable( $file_path ) && filesize($file_path) > 0 ) {
@@ -742,12 +841,12 @@ class TPW_Control_Upload_Pages {
         }
         // Before inserting a link, ensure an identical active link doesn't already exist
         $conds = [];
-        $conds[] = $wpdb->prepare( 'page_id=%d', (int) $page_id );
+        $conds[] = $wpdb->prepare( 'page_id=%d', $page_id );
         $conds[] = $wpdb->prepare( 'file_id=%d', (int) $fid );
         $conds[] = $wpdb->prepare( 'label=%s', sanitize_text_field( $label ) );
         $conds[] = 'is_deleted=0';
-        if ( $year !== null && $year !== '' ) { $conds[] = $wpdb->prepare( 'year=%d', (int) $year ); } else { $conds[] = 'year IS NULL'; }
-        if ( $category_id ) { $conds[] = $wpdb->prepare( 'category_id=%d', (int) $category_id ); } else { $conds[] = 'category_id IS NULL'; }
+        if ( $year !== null ) { $conds[] = $wpdb->prepare( 'year=%d', (int) $year ); } else { $conds[] = '(year IS NULL OR year=0)'; }
+        if ( $category_id ) { $conds[] = $wpdb->prepare( 'category_id=%d', (int) $category_id ); } else { $conds[] = '(category_id IS NULL OR category_id=0)'; }
         $exists_link = (int) $wpdb->get_var( 'SELECT COUNT(1) FROM ' . $links . ' WHERE ' . implode( ' AND ', $conds ) );
         if ( $exists_link ) {
             // Return the existing link id when possible to avoid duplicates
@@ -755,9 +854,13 @@ class TPW_Control_Upload_Pages {
             $existing_id = (int) $wpdb->get_var( $sel_sql );
             return $existing_id ?: 0;
         }
+        if ( $insert_at_group_top ) {
+            self::shift_group_sort_orders( $page_id, $category_id, $year );
+            $sort_order = 0;
+        }
         // Create link row for this page
         $wpdb->insert( $links, [
-            'page_id' => (int) $page_id,
+            'page_id' => $page_id,
             'file_id' => (int) $fid,
             'category_id' => $category_id ? (int) $category_id : null,
             'label' => sanitize_text_field( $label ),
@@ -844,11 +947,32 @@ class TPW_Control_Upload_Pages {
         if ( ! $cat_ok ) { $new_cat = self::ensure_default_category( (int) $row->page_id ); }
         return false !== $wpdb->update( $links, [ 'is_deleted' => 0, 'deleted_at' => null, 'deleted_by' => null ] + ( $new_cat ? [ 'category_id' => (int) $new_cat ] : [] ), [ 'id' => (int)$id ], [ '%d','%s','%d','%d' ], [ '%d' ] );
     }
-    public static function reorder_files( $page_id, array $ordered_ids ) {
+    public static function reorder_files( $page_id, array $ordered_ids, $category_id = null, $year = null ) {
         global $wpdb; $table = $wpdb->prefix . 'tpw_upload_pages_files';
+        $page_id = (int) $page_id;
+        if ( $page_id <= 0 ) return false;
+        $category_id = self::normalize_group_category( $category_id );
+        $year = self::normalize_group_year( $year );
+        $ordered_ids = array_values( array_unique( array_filter( array_map( 'intval', $ordered_ids ) ) ) );
+        if ( empty( $ordered_ids ) ) return false;
+
+        $params = [];
+        $where = self::build_file_group_where_sql( $page_id, $category_id, $year, $params );
+        $group_ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare(
+            "SELECT id FROM {$table} WHERE {$where} AND is_deleted=0 ORDER BY sort_order ASC, id ASC",
+            $params
+        ) ) );
+        if ( empty( $group_ids ) || count( $group_ids ) !== count( $ordered_ids ) ) return false;
+
+        $expected_ids = $group_ids;
+        $received_ids = $ordered_ids;
+        sort( $expected_ids, SORT_NUMERIC );
+        sort( $received_ids, SORT_NUMERIC );
+        if ( $expected_ids !== $received_ids ) return false;
+
         $order = 0;
         foreach ( $ordered_ids as $fid ) {
-            $wpdb->update( $table, [ 'sort_order' => $order++ ], [ 'id' => (int)$fid, 'page_id' => (int)$page_id ], [ '%d' ], [ '%d','%d' ] );
+            $wpdb->update( $table, [ 'sort_order' => $order++ ], [ 'id' => (int)$fid, 'page_id' => $page_id, 'is_deleted' => 0 ], [ '%d' ], [ '%d','%d','%d' ] );
         }
         do_action( 'tpw_control_upload_pages_files_reordered', (int) $page_id, array_map( 'intval', $ordered_ids ) );
         return true;
@@ -968,12 +1092,15 @@ class TPW_Control_Upload_Pages {
                     $cid = isset($cats[$fid]) && $cats[$fid] !== '' ? (int)$cats[$fid] : null;
                     $rawYear = isset($years[$fid]) ? (string) $years[$fid] : '';
                     $yearVal = ($rawYear === '') ? null : (int) $rawYear;
-                    self::update_file( (int)$fid, [
+                    $data = [
                         'label' => $label,
                         'year'  => $yearVal,
-                        'sort_order' => isset($orders[$fid]) ? (int)$orders[$fid] : 0,
                         'category_id' => $cid,
-                    ] );
+                    ];
+                    if ( isset( $orders[$fid] ) ) {
+                        $data['sort_order'] = (int) $orders[$fid];
+                    }
+                    self::update_file( (int)$fid, $data );
                 }
                 foreach ( $delete as $fid ) {
                     self::delete_file( (int)$fid );
@@ -1294,7 +1421,7 @@ class TPW_Control_Upload_Pages {
 
             // Insert file record
             $uploaded_by = function_exists('get_current_user_id') ? (int) get_current_user_id() : null;
-            $id = self::add_file_record( $page_id, $dest_path, $public_url, ( $mime_type ?: ( $allowed[$ext] ?? 'application/octet-stream' ) ), $label, $year, 0, $thumb_url, $cid, $uploaded_by, null );
+            $id = self::add_file_record( $page_id, $dest_path, $public_url, ( $mime_type ?: ( $allowed[$ext] ?? 'application/octet-stream' ) ), $label, $year, 0, $thumb_url, $cid, $uploaded_by, null, true );
             if ( $id ) { $report['success_count']++; $report['added_ids'][] = (int) $id; }
             else { $report['errors'][] = 'Row ' . ( $line + 2 ) . ': database insert failed for ' . $requested; $report['error_count']++; }
         }
@@ -1427,7 +1554,7 @@ class TPW_Control_Upload_Pages {
             }
 
             $label = $bulk_label !== '' ? $bulk_label : sanitize_file_name( $base );
-            $id = self::add_file_record( $page_id, $dest_path, $public_url, $mime_type, $label, $year, 0, $thumb_url, $category_id, $uploaded_by, null );
+            $id = self::add_file_record( $page_id, $dest_path, $public_url, $mime_type, $label, $year, 0, $thumb_url, $category_id, $uploaded_by, null, true );
             do_action( 'tpw_control_upload_pages_file_added', (int) $id, [
                 'page_id' => (int) $page_id,
                 'file_path' => $dest_path,
@@ -1669,9 +1796,57 @@ class TPW_Control_Upload_Pages {
     $categories = self::get_categories_map( (int)$page->id );
     $layout = isset($page->layout) ? self::sanitize_layout( $page->layout ) : 'table';
 
+        // Optional category grouping/filter via query var ?category=slug
+        $selected_cat = isset($_GET['category']) ? sanitize_title($_GET['category']) : '';
+        if ( $selected_cat === '' && isset($_GET['tpw_cat']) ) { $selected_cat = sanitize_title($_GET['tpw_cat']); }
+        if ( $selected_cat === '' && isset($_GET['cat']) ) { $selected_cat = sanitize_title( $_GET['cat'] ); }
+        if ( $selected_cat !== '' ) {
+            // Filter files by category slug
+            $cat_id = 0; foreach ( $categories as $cid => $meta ) { if ( $meta['slug'] === $selected_cat ) { $cat_id = (int)$cid; break; } }
+            if ( $cat_id ) { $files = array_values( array_filter( (array)$files, function($f) use ($cat_id){ return (int)$f->category_id === $cat_id; } ) ); }
+        }
+
+    // Optional year filter via URL on initial load; client-side changes keep the URL in sync.
+        $selected_year_raw = isset($_GET['year']) ? sanitize_text_field( wp_unslash( $_GET['year'] ) ) : ( isset($_GET['tpw_year']) ? sanitize_text_field( wp_unslash( $_GET['tpw_year'] ) ) : '' );
+        $selected_year = '';
+        if ( $selected_year_raw !== '' ) {
+            if ( strtolower($selected_year_raw) === 'all' ) $selected_year = 'all';
+            else if ( strtolower($selected_year_raw) === 'none' ) $selected_year = 'none';
+            else if ( preg_match('/^\d{4}$/', $selected_year_raw) ) $selected_year = (string) (int) $selected_year_raw;
+        }
+        // Default to the latest available year when no explicit selection is provided.
+        $files_after_cat = $files;
+        $year_param_present = array_key_exists('year', $_GET) || array_key_exists('tpw_year', $_GET);
+        if ( $selected_year === '' && ! $year_param_present ) {
+            $latest_year = 0;
+            $has_none_year = false;
+            foreach ( (array) $files_after_cat as $f ) {
+                $year_value = isset( $f->year ) ? (int) $f->year : 0;
+                if ( $year_value > $latest_year ) {
+                    $latest_year = $year_value;
+                }
+                if ( $year_value === 0 ) {
+                    $has_none_year = true;
+                }
+            }
+            if ( $latest_year > 0 ) {
+                $selected_year = (string) $latest_year;
+            } elseif ( $has_none_year ) {
+                $selected_year = 'none';
+            }
+        }
+        if ( $selected_year !== '' && $selected_year !== 'all' ) {
+            if ( $selected_year === 'none' ) {
+                $files = array_values( array_filter( (array)$files, function($f){ $y = isset($f->year) ? (int)$f->year : 0; return $y === 0; } ) );
+            } else {
+                $ywant = (int) $selected_year;
+                $files = array_values( array_filter( (array)$files, function($f) use ($ywant){ return (int)($f->year ?? 0) === $ywant; } ) );
+            }
+        }
+
         self::enqueue_public_styles();
         ob_start();
-    echo '<div class="tpw-upload-page tpw-upload-' . esc_attr( $layout ) . '" data-page="' . (int) $page->id . '" data-year="' . esc_attr( $selected_year ) . '">';
+        echo '<div class="tpw-upload-page tpw-upload-' . esc_attr( $layout ) . '" data-page="' . (int) $page->id . '" data-year="' . esc_attr( $selected_year ) . '">';
         // Admin-only Edit button to jump to the Upload Pages editor for this page
         if ( class_exists('TPW_Control_UI') && method_exists('TPW_Control_UI','is_admin') && TPW_Control_UI::is_admin() ) {
             // Try to locate the TPW Control hub page (contains [tpw-control])
@@ -1701,39 +1876,6 @@ class TPW_Control_Upload_Pages {
             echo '</div>';
             return ob_get_clean();
         }
-        // Optional category grouping/filter via query var ?tpw_cat=slug (avoid WP core 'cat' conflict)
-        $selected_cat = isset($_GET['tpw_cat']) ? sanitize_title($_GET['tpw_cat']) : '';
-        if ( $selected_cat === '' && isset($_GET['cat']) ) { $selected_cat = sanitize_title( $_GET['cat'] ); }
-        if ( $selected_cat !== '' ) {
-            // Filter files by category slug
-            $cat_id = 0; foreach ( $categories as $cid => $meta ) { if ( $meta['slug'] === $selected_cat ) { $cat_id = (int)$cid; break; } }
-            if ( $cat_id ) { $files = array_values( array_filter( (array)$files, function($f) use ($cat_id){ return (int)$f->category_id === $cat_id; } ) ); }
-        }
-
-    // Optional year filter: legacy support via URL only on initial load; otherwise controlled client-side (data-year)
-        $selected_year_raw = isset($_GET['tpw_year']) ? sanitize_text_field( wp_unslash( $_GET['tpw_year'] ) ) : ( isset($_GET['year']) ? sanitize_text_field( wp_unslash( $_GET['year'] ) ) : '' );
-        $selected_year = '';
-        if ( $selected_year_raw !== '' ) {
-            if ( strtolower($selected_year_raw) === 'none' ) $selected_year = 'none';
-            else if ( preg_match('/^\d{4}$/', $selected_year_raw) ) $selected_year = (string) (int) $selected_year_raw;
-        }
-        // Default to current year if no explicit selection and there are files for the current year in the category-filtered set
-        $files_after_cat = $files;
-        $year_param_present = array_key_exists('tpw_year', $_GET) || array_key_exists('year', $_GET);
-        if ( $selected_year === '' && ! $year_param_present ) {
-            $currY = (int) current_time('Y');
-            $has_curr = false;
-            foreach ( (array) $files_after_cat as $f ) { if ( (int) ($f->year ?? 0) === $currY ) { $has_curr = true; break; } }
-            if ( $has_curr ) { $selected_year = (string) $currY; }
-        }
-        if ( $selected_year !== '' ) {
-            if ( $selected_year === 'none' ) {
-                $files = array_values( array_filter( (array)$files, function($f){ $y = isset($f->year) ? (int)$f->year : 0; return $y === 0; } ) );
-            } else {
-                $ywant = (int) $selected_year;
-                $files = array_values( array_filter( (array)$files, function($f) use ($ywant){ return (int)($f->year ?? 0) === $ywant; } ) );
-            }
-        }
 
         // Build a category list for UI that only includes categories with files (after the year filter, ignoring category selection)
         $files_for_cat_ui = $files_all;
@@ -1759,12 +1901,8 @@ class TPW_Control_Upload_Pages {
             }
         }
 
-        // Group by category then by year
-        $by_cat = [];
-        foreach ( (array)$files as $f ) {
-            $cid = (int)($f->category_id ?? 0);
-            $by_cat[ $cid ][] = $f;
-        }
+        // Group by year then by category
+        $by_year = self::build_frontend_render_groups( $files, $categories );
 
         // Category and Year filter UI
     $has_categories = ! empty( $categories_for_ui );
@@ -1786,12 +1924,17 @@ class TPW_Control_Upload_Pages {
             if ( $has_categories ) {
                 echo '<div class="tpw-filter tpw-filter-cat">';
                 echo '<strong>' . esc_html__('Category:', 'tpw-core') . '</strong> ';
-                $base = remove_query_arg( [ 'tpw_cat', 'cat' ] );
+                $base = remove_query_arg( [ 'category', 'tpw_cat', 'cat' ] );
                 $all_active = ($selected_cat === '');
+                if ( $selected_year !== '' ) {
+                    $base = add_query_arg( 'year', $selected_year, $base );
+                } else {
+                    $base = remove_query_arg( [ 'year', 'tpw_year' ], $base );
+                }
                 $all_url = esc_url( $base );
                 echo '<a class="tpw-btn ' . ( $all_active ? 'tpw-btn-primary' : 'tpw-btn-secondary' ) . ' tpw-cat-filter" data-page="' . (int)$page->id . '" data-cat="" href="' . $all_url . '">' . esc_html__('All', 'tpw-core') . '</a> ';
                 foreach ( $categories_for_ui as $cid => $meta ) {
-                    $url = add_query_arg( 'tpw_cat', $meta['slug'], $base );
+                    $url = add_query_arg( 'category', $meta['slug'], $base );
                     $active = $selected_cat === $meta['slug'];
                     echo '<a class="tpw-btn ' . ( $active ? 'tpw-btn-primary' : 'tpw-btn-secondary' ) . ' tpw-cat-filter" data-page="' . (int)$page->id . '" data-cat="' . esc_attr( $meta['slug'] ) . '" style="margin-left:6px" href="' . esc_url( $url ) . '">' . esc_html( $meta['name'] ) . '</a>';
                 }
@@ -1799,12 +1942,12 @@ class TPW_Control_Upload_Pages {
             }
 
             if ( $year_option_count >= 2 ) {
-                // Year filter as a dropdown; instance-local state and AJAX (no URL changes)
+                // Year filter as a dropdown with deep-linkable state.
                 echo '<div class="tpw-filter tpw-filter-year" style="display:flex;align-items:center;gap:6px">';
                 echo '<label><strong>' . esc_html__('Year:', 'tpw-core') . '</strong> ';
                 echo '<select name="tpw_year" data-page="' . (int) $page->id . '">';
-                $sel = ( $selected_year === '' ) ? ' selected' : '';
-                echo '<option value=""' . $sel . '>' . esc_html__( 'All', 'tpw-core' ) . '</option>';
+                $sel = ( $selected_year === 'all' ) ? ' selected' : '';
+                echo '<option value="all"' . $sel . '>' . esc_html__( 'Show all years', 'tpw-core' ) . '</option>';
                 foreach ( $years as $y ) {
                     $ys = (string) (int) $y; $sel = ( $selected_year === $ys ) ? ' selected' : '';
                     echo '<option value="' . esc_attr( $ys ) . '"' . $sel . '>' . esc_html( $ys ) . '</option>';
@@ -1826,7 +1969,7 @@ class TPW_Control_Upload_Pages {
         // Placeholder for future pagination controls above the list
         $before_list = apply_filters( 'tpw_control_upload_pages_before_list', '', $page, $layout );
         if ( is_string( $before_list ) && $before_list !== '' ) echo $before_list;
-        echo self::render_file_list_inner( $layout, $by_cat, $categories );
+        echo self::render_file_list_inner( $layout, $by_year, $categories );
         // Placeholder for future pagination controls below the list
         $after_list = apply_filters( 'tpw_control_upload_pages_after_list', '', $page, $layout );
         if ( is_string( $after_list ) && $after_list !== '' ) echo $after_list;
@@ -1836,26 +1979,82 @@ class TPW_Control_Upload_Pages {
         return ob_get_clean();
     }
 
-    protected static function render_file_list_inner( $layout, $by_cat, $categories ) {
+    protected static function build_frontend_render_groups( $files, $categories ) {
+        $grouped = [];
+        foreach ( (array) $files as $file ) {
+            $category_id = (int) ( $file->category_id ?? 0 );
+            $year = isset( $file->year ) ? (int) $file->year : 0;
+            if ( ! isset( $grouped[ $year ] ) ) {
+                $grouped[ $year ] = [];
+            }
+            if ( ! isset( $grouped[ $year ][ $category_id ] ) ) {
+                $grouped[ $year ][ $category_id ] = [];
+            }
+            $grouped[ $year ][ $category_id ][] = $file;
+        }
+
+        krsort( $grouped, SORT_NUMERIC );
+
+        $category_order = [];
+        foreach ( (array) $categories as $category_id => $meta ) {
+            $category_order[] = (int) $category_id;
+        }
+        if ( ! in_array( 0, $category_order, true ) ) {
+            $category_order[] = 0;
+        }
+
+        $ordered = [];
+        foreach ( $grouped as $year => $category_groups ) {
+            $ordered[ $year ] = [];
+
+            $append_category = function( $category_id ) use ( &$category_groups, &$ordered, $year ) {
+                $category_id = (int) $category_id;
+                if ( ! isset( $category_groups[ $category_id ] ) ) {
+                    return;
+                }
+
+                $rows = $category_groups[ $category_id ];
+                usort( $rows, function( $left, $right ) {
+                    $sort_compare = (int) ( $left->sort_order ?? 0 ) <=> (int) ( $right->sort_order ?? 0 );
+                    if ( $sort_compare !== 0 ) {
+                        return $sort_compare;
+                    }
+                    return (int) ( $left->id ?? 0 ) <=> (int) ( $right->id ?? 0 );
+                } );
+
+                $ordered[ $year ][ $category_id ] = $rows;
+                unset( $category_groups[ $category_id ] );
+            };
+
+            foreach ( $category_order as $category_id ) {
+                $append_category( $category_id );
+            }
+
+            if ( ! empty( $category_groups ) ) {
+                $remaining_category_ids = array_keys( $category_groups );
+                sort( $remaining_category_ids, SORT_NUMERIC );
+                foreach ( $remaining_category_ids as $category_id ) {
+                    $append_category( $category_id );
+                }
+            }
+        }
+
+        return $ordered;
+    }
+
+    protected static function render_file_list_inner( $layout, $by_year, $categories ) {
         ob_start();
         $idx = 0; // sequential index across all previewable items for Lightbox navigation
         if ( $layout === 'table' ) {
-            foreach ( $by_cat as $cid => $group_cat ) {
-                $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
-                // Group by year within category
-                $by_year = [];
-                foreach ( $group_cat as $f ) { $y = $f->year ?? 0; $by_year[ $y ][] = $f; }
-                krsort( $by_year );
-                foreach ( $by_year as $year => $group ) {
-                    // Section header: Category - Year as h2 (omit year if not set)
-                    $parts = [];
-                    if ( $cat_label !== '' ) $parts[] = (string) $cat_label;
-                    if ( (int)$year > 0 ) $parts[] = (string) $year;
-                    $title = trim( implode( ' - ', $parts ) );
-                    if ( $title === '' ) { $title = esc_html__( 'Documents', 'tpw-core' ); }
-                    echo '<h2>' . esc_html( $title ) . '</h2>';
+            foreach ( $by_year as $year => $category_groups ) {
+                $year_title = (int) $year > 0 ? (string) $year : esc_html__( 'Documents', 'tpw-core' );
+                echo '<h2>' . esc_html( $year_title ) . '</h2>';
+                foreach ( $category_groups as $cid => $group ) {
+                    $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
+                    if ( $cat_label !== '' ) {
+                        echo '<h3>' . esc_html( $cat_label ) . '</h3>';
+                    }
 
-                    // Div-based table using tpw-ui.css classes; single File column
                     echo '<div class="table-container">';
                     foreach ( $group as $f ) {
                         $url = self::build_served_url( (int)$f->id, 'file', 900, false );
@@ -1872,21 +2071,14 @@ class TPW_Control_Upload_Pages {
                 }
             }
         } elseif ( $layout === 'list' ) {
-            foreach ( $by_cat as $cid => $group_cat ) {
-                $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
-                // Group by year within category
-                $by_year = [];
-                foreach ( $group_cat as $f ) { $y = $f->year ?? 0; $by_year[ $y ][] = $f; }
-                krsort( $by_year );
-                foreach ( $by_year as $year => $group ) {
-                    // Section header: Category - Year as h2
-                    $parts = [];
-                    if ( $cat_label !== '' ) $parts[] = (string) $cat_label;
-                    if ( (int)$year > 0 ) $parts[] = (string) $year;
-                    $title = trim( implode( ' - ', $parts ) );
-                    if ( $title === '' ) { $title = esc_html__( 'Documents', 'tpw-core' ); }
-                    echo '<h2>' . esc_html( $title ) . '</h2>';
-
+            foreach ( $by_year as $year => $category_groups ) {
+                $year_title = (int) $year > 0 ? (string) $year : esc_html__( 'Documents', 'tpw-core' );
+                echo '<h2>' . esc_html( $year_title ) . '</h2>';
+                foreach ( $category_groups as $cid => $group ) {
+                    $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
+                    if ( $cat_label !== '' ) {
+                        echo '<h3>' . esc_html( $cat_label ) . '</h3>';
+                    }
                     echo '<ul class="tpw-upload-list">';
                     foreach ( $group as $f ) {
                         $url = self::build_served_url( (int)$f->id, 'file', 900, false );
@@ -1902,20 +2094,14 @@ class TPW_Control_Upload_Pages {
             }
         } else { // cards
             echo '<div class="tpw-upload-cards">';
-            foreach ( $by_cat as $cid => $group_cat ) {
-                $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
-                // Group by year within category
-                $by_year = [];
-                foreach ( $group_cat as $f ) { $y = $f->year ?? 0; $by_year[ $y ][] = $f; }
-                krsort( $by_year );
-                foreach ( $by_year as $year => $group ) {
-                    // Section header: Category - Year as h2
-                    $parts = [];
-                    if ( $cat_label !== '' ) $parts[] = (string) $cat_label;
-                    if ( (int)$year > 0 ) $parts[] = (string) $year;
-                    $title = trim( implode( ' - ', $parts ) );
-                    if ( $title === '' ) { $title = esc_html__( 'Documents', 'tpw-core' ); }
-                    echo '<h2>' . esc_html( $title ) . '</h2>';
+            foreach ( $by_year as $year => $category_groups ) {
+                $year_title = (int) $year > 0 ? (string) $year : esc_html__( 'Documents', 'tpw-core' );
+                echo '<h2>' . esc_html( $year_title ) . '</h2>';
+                foreach ( $category_groups as $cid => $group ) {
+                    $cat_label = isset($categories[$cid]) ? $categories[$cid]['name'] : '';
+                    if ( $cat_label !== '' ) {
+                        echo '<h3>' . esc_html( $cat_label ) . '</h3>';
+                    }
                     foreach ( $group as $f ) {
                         $url = self::build_served_url( (int)$f->id, 'file', 900, false );
                         $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
@@ -1938,8 +2124,8 @@ class TPW_Control_Upload_Pages {
 
     public static function ajax_filter_files() {
         $page_id = isset($_POST['page_id']) ? (int) $_POST['page_id'] : ( isset($_POST['upload_page_id']) ? (int) $_POST['upload_page_id'] : 0 );
-        $cat_slug = isset($_POST['cat']) ? sanitize_title( wp_unslash( $_POST['cat'] ) ) : '';
-    $sel_year_raw = isset($_POST['tpw_year']) ? sanitize_text_field( wp_unslash( $_POST['tpw_year'] ) ) : '';
+        $cat_slug = isset($_POST['category']) ? sanitize_title( wp_unslash( $_POST['category'] ) ) : ( isset($_POST['cat']) ? sanitize_title( wp_unslash( $_POST['cat'] ) ) : '' );
+    $sel_year_raw = isset($_POST['year']) ? sanitize_text_field( wp_unslash( $_POST['year'] ) ) : ( isset($_POST['tpw_year']) ? sanitize_text_field( wp_unslash( $_POST['tpw_year'] ) ) : '' );
         $q = isset($_POST['q']) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '';
         $sort = isset($_POST['sort']) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : '';
         $pg = isset($_POST['pg']) ? max(1, (int) $_POST['pg']) : 0;
@@ -1966,14 +2152,33 @@ class TPW_Control_Upload_Pages {
         $categories = self::get_categories_map( (int)$page->id );
         $selected_year = '';
         if ( $sel_year_raw !== '' ) {
-            if ( strtolower($sel_year_raw) === 'none' ) $selected_year = 'none';
+            if ( strtolower($sel_year_raw) === 'all' ) $selected_year = 'all';
+            else if ( strtolower($sel_year_raw) === 'none' ) $selected_year = 'none';
             else if ( preg_match('/^\d{4}$/', $sel_year_raw) ) $selected_year = (string) (int) $sel_year_raw;
         }
         if ( $cat_slug !== '' && ( $q === '' && $sort === '' && $pg === 0 && $per_page === 0 ) ) {
             $cat_id = 0; foreach ( $categories as $cid => $meta ) { if ( $meta['slug'] === $cat_slug ) { $cat_id = (int)$cid; break; } }
             if ( $cat_id ) { $files = array_values( array_filter( (array)$files, function($f) use ($cat_id){ return (int)$f->category_id === $cat_id; } ) ); }
         }
-        if ( $selected_year !== '' && ( $q === '' && $sort === '' && $pg === 0 && $per_page === 0 ) ) {
+        if ( $selected_year === '' && ! isset($_POST['year']) && ! isset($_POST['tpw_year']) ) {
+            $latest_year = 0;
+            $has_none_year = false;
+            foreach ( (array) $files as $f ) {
+                $year_value = isset( $f->year ) ? (int) $f->year : 0;
+                if ( $year_value > $latest_year ) {
+                    $latest_year = $year_value;
+                }
+                if ( $year_value === 0 ) {
+                    $has_none_year = true;
+                }
+            }
+            if ( $latest_year > 0 ) {
+                $selected_year = (string) $latest_year;
+            } elseif ( $has_none_year ) {
+                $selected_year = 'none';
+            }
+        }
+        if ( $selected_year !== '' && $selected_year !== 'all' && ( $q === '' && $sort === '' && $pg === 0 && $per_page === 0 ) ) {
             if ( $selected_year === 'none' ) {
                 $files = array_values( array_filter( (array)$files, function($f){ $y = isset($f->year) ? (int)$f->year : 0; return $y === 0; } ) );
             } else {
@@ -1981,16 +2186,15 @@ class TPW_Control_Upload_Pages {
                 $files = array_values( array_filter( (array)$files, function($f) use ($ywant){ return (int)($f->year ?? 0) === $ywant; } ) );
             }
         }
-        $by_cat = [];
-        foreach ( (array)$files as $f ) { $cid = (int)($f->category_id ?? 0); $by_cat[$cid][] = $f; }
+        $by_year = self::build_frontend_render_groups( $files, $categories );
         // Allow custom HTML renderer to replace the inner list (for async pagination/search)
         $html_override = apply_filters( 'tpw_control_upload_pages_ajax_list_html', null, $layout, $files, $categories, $page );
-        $html = is_string( $html_override ) ? $html_override : self::render_file_list_inner( $layout, $by_cat, $categories );
+        $html = is_string( $html_override ) ? $html_override : self::render_file_list_inner( $layout, $by_year, $categories );
         $meta = null;
         if ( isset($adv) && is_array($adv) ) {
             $meta = [ 'total' => $adv['total'], 'pg' => $adv['pg'], 'per_page' => $adv['per_page'] ];
         }
-        wp_send_json_success([ 'html' => $html, 'meta' => $meta ]);
+        wp_send_json_success([ 'html' => $html, 'meta' => $meta, 'selected_year' => $selected_year ]);
     }
 
     /**
@@ -2014,7 +2218,7 @@ class TPW_Control_Upload_Pages {
             $joins .= " LEFT JOIN {$cats} c ON c.category_id = l.category_id";
             $where[] = $wpdb->prepare( "c.slug=%s", $cat_slug );
         }
-        if ( $yearRaw !== '' ) {
+        if ( $yearRaw !== '' && strtolower($yearRaw) !== 'all' ) {
             if ( strtolower($yearRaw) === 'none' ) {
                 $where[] = "(l.year IS NULL OR l.year=0)";
             } elseif ( preg_match('/^\d{4}$/', $yearRaw) ) {
@@ -2149,6 +2353,9 @@ class TPW_Control_Upload_Pages {
 
 // Register our upload_dir filter globally at a low priority; it only activates when tpw_upl_editor flag is present.
 add_filter( 'upload_dir', [ 'TPW_Control_Upload_Pages', 'filter_upload_dir_for_editor' ], 50 );
+
+// Prevent WordPress's built-in date query var from turning Upload Page deep links into 404s.
+add_filter( 'request', [ 'TPW_Control_Upload_Pages', 'normalize_public_request_query_vars' ], 20 );
 
 // Register public shortcode to render a single Upload Page by slug
 add_action( 'init', function(){

@@ -161,27 +161,130 @@
 
         // Initialize sortable for files list
         var initSortable = function(){
-            var $tbody = $('#tpw-upl-files-tbody');
-            if (!$tbody.length || !$tbody.sortable) return;
-            $tbody.sortable({
-                handle: '.tpw-upl-handle',
-                axis: 'y',
-                update: function(){
-                    var ids = [];
-                    $tbody.find('tr').each(function(){
-                        var id = $(this).data('file-id');
-                        if (id) ids.push(id);
+            var $groups = $('.tpw-upl-files-group');
+            if (!$groups.length || !$groups.sortable) return;
+            var $filesForm = $('#tpw-upl-form-files');
+            var $unsavedIndicator = $('#tpw-upl-unsaved-indicator');
+            var $filterCategory = $('#tpw-upl-filter-category');
+            var $filterYear = $('#tpw-upl-filter-year');
+            var $filterSearch = $('#tpw-upl-filter-search');
+            var $filterReset = $('#tpw-upl-filter-reset');
+            var $filterEmpty = $('#tpw-upl-filter-empty');
+            var setFilesDirty = function(isDirty){
+                if (!$unsavedIndicator.length) return;
+                $unsavedIndicator.prop('hidden', !isDirty);
+            };
+            var setGroupExpanded = function($group, expanded){
+                if (!$group.length) return;
+                var $toggle = $group.find('.tpw-upl-group-toggle').first();
+                var $body = $group.find('.tpw-upl-group-body').first();
+                $group.toggleClass('is-expanded', expanded).toggleClass('is-collapsed', !expanded);
+                $toggle.attr('aria-expanded', expanded ? 'true' : 'false');
+                $body.prop('hidden', !expanded);
+            };
+            var applyGroupFilters = function(){
+                var categoryVal = ($filterCategory.val() || '').toString();
+                var yearVal = ($filterYear.val() || '').toString();
+                var searchVal = ($filterSearch.val() || '').toLowerCase().trim();
+                var hasActiveFilter = categoryVal !== '' || yearVal !== '' || searchVal !== '';
+                var visibleGroupCount = 0;
+
+                $('.tpw-upl-group').each(function(){
+                    var $group = $(this);
+                    var groupMatchesCategory = categoryVal === '' || ($group.attr('data-category-id') || '') === categoryVal;
+                    var groupMatchesYear = yearVal === '' || ($group.attr('data-year') || '') === yearVal;
+                    var visibleRows = 0;
+
+                    $group.find('.tpw-upl-files-group tr').each(function(){
+                        var $row = $(this);
+                        var rowLabel = ($row.find('input[name^="file_label["]').val() || $row.find('.tpw-upl-preview').data('label') || '').toString().toLowerCase();
+                        var rowMatchesSearch = searchVal === '' || rowLabel.indexOf(searchVal) !== -1;
+                        var rowVisible = groupMatchesCategory && groupMatchesYear && rowMatchesSearch;
+                        $row.toggle(rowVisible);
+                        if (rowVisible) visibleRows++;
                     });
-                    var nonce = $('#tpw-upl-form-files input[name="_wpnonce"]').val();
-                    var pageId = $('#tpw-upl-form-files input[name="upload_page_id"]').val();
-                    var ajaxUrl = window.ajaxurl || (window.TPW_CONTROL && window.TPW_CONTROL.ajax_url) || '/wp-admin/admin-ajax.php';
-                    $.post(ajaxUrl, {
-                        action: 'tpw_control_sort_files',
-                        order: ids,
-                        page_id: pageId,
-                        _wpnonce: nonce
-                    });
+
+                    var groupVisible = groupMatchesCategory && groupMatchesYear && visibleRows > 0;
+                    $group.toggleClass('is-hidden', !groupVisible);
+                    if (groupVisible) {
+                        visibleGroupCount++;
+                        if (hasActiveFilter) {
+                            setGroupExpanded($group, true);
+                        } else {
+                            setGroupExpanded($group, ($group.attr('data-default-expanded') || '') === '1');
+                        }
+                    }
+                });
+
+                if ($filterEmpty.length) {
+                    $filterEmpty.toggleClass('is-visible', visibleGroupCount === 0 && hasActiveFilter);
                 }
+            };
+            var syncGroupOrderInputs = function($group){
+                $group.find('tr').each(function(index){
+                    $(this).find('input[name^="file_order["]').val(index);
+                });
+            };
+
+            $(document).on('click', '.tpw-upl-group-toggle', function(){
+                var $group = $(this).closest('.tpw-upl-group');
+                var isExpanded = $(this).attr('aria-expanded') === 'true';
+                setGroupExpanded($group, !isExpanded);
+            });
+
+            if ($filesForm.length) {
+                $filesForm.on('input change', 'input[name^="file_label["], input[name^="file_year["], select[name^="file_category["]', function(){
+                    setFilesDirty(true);
+                    if (this.name && this.name.indexOf('file_label[') === 0) {
+                        applyGroupFilters();
+                    }
+                });
+                $filesForm.on('submit', function(){
+                    setFilesDirty(false);
+                });
+            }
+
+            if ($filterCategory.length || $filterYear.length || $filterSearch.length) {
+                $filterCategory.on('change', applyGroupFilters);
+                $filterYear.on('change', applyGroupFilters);
+                $filterSearch.on('input', applyGroupFilters);
+                $filterReset.on('click', function(){
+                    $filterCategory.val('');
+                    $filterYear.val('');
+                    $filterSearch.val('');
+                    applyGroupFilters();
+                });
+                applyGroupFilters();
+            }
+
+            $groups.each(function(){
+                var $group = $(this);
+                $group.sortable({
+                    handle: '.tpw-upl-handle',
+                    axis: 'y',
+                    update: function(){
+                        syncGroupOrderInputs($group);
+                        setFilesDirty(true);
+                        var ids = [];
+                        $group.find('tr').each(function(){
+                            var id = $(this).data('file-id');
+                            if (id) ids.push(id);
+                        });
+                        var nonce = $('#tpw-upl-form-files input[name="_wpnonce"]').val();
+                        var pageId = $group.data('page-id') || $('#tpw-upl-form-files input[name="upload_page_id"]').val();
+                        var categoryId = $group.attr('data-category-id') || '';
+                        var year = $group.attr('data-year') || '';
+                        var ajaxUrl = window.ajaxurl || (window.TPW_CONTROL && window.TPW_CONTROL.ajax_url) || '/wp-admin/admin-ajax.php';
+                        $.post(ajaxUrl, {
+                            action: 'tpw_control_sort_files',
+                            order: ids,
+                            page_id: pageId,
+                            category_id: categoryId,
+                            year: year,
+                            _wpnonce: nonce
+                        });
+                    }
+                });
             });
         };
         initSortable();
@@ -437,18 +540,59 @@
         $(document).on('click', '.tpw-lightbox-zoom-in', function(){ currentScale = Math.min(3, currentScale + 0.1); applyZoom(); });
         $(document).on('click', '.tpw-lightbox-zoom-out', function(){ currentScale = Math.max(0.5, currentScale - 0.1); applyZoom(); });
 
-        // Public: AJAX category filter for Upload Pages
-        $(document).on('click', '.tpw-upload-page .tpw-cat-filter', function(e){
-            var $a = $(this);
-            var $wrap = $a.closest('.tpw-upload-page');
-            var pageId = $a.data('page') || $wrap.data('page');
-            if (!pageId) return; // no page context; allow default navigation
-            e.preventDefault();
-            var href = $a.attr('href') || '#';
-            var cat = ($a.data('cat') || '').toString();
-            var yearVal = ($wrap.attr('data-year') || '').toString();
+        function getUploadPageUrlState(){
+            var state = { year: '', category: '' };
+            try {
+                var url = new URL(window.location.href);
+                state.year = (url.searchParams.get('year') || '').toString();
+                state.category = (url.searchParams.get('category') || '').toString();
+            } catch (e) {}
+            return state;
+        }
+
+        function buildUploadPageUrl(state){
+            var url = new URL(window.location.href);
+            var params = url.searchParams;
+            params.delete('year');
+            params.delete('category');
+            params.delete('tpw_year');
+            params.delete('tpw_cat');
+            params.delete('cat');
+            if (state && state.year) params.set('year', state.year);
+            if (state && state.category) params.set('category', state.category);
+            url.search = params.toString();
+            return url.toString();
+        }
+
+        function syncUploadPageFilterUI($wrap, state){
+            if (!$wrap.length) return;
+            var yearVal = state && state.year ? state.year.toString() : '';
+            var catVal = state && state.category ? state.category.toString() : '';
+            $wrap.attr('data-year', yearVal);
+            var $yearSelect = $wrap.find('.tpw-filter-year select[name="tpw_year"]');
+            if ($yearSelect.length) $yearSelect.val(yearVal);
+            $wrap.find('.tpw-cat-filter').each(function(){
+                var $btn = $(this);
+                var btnCat = ($btn.data('cat') || '').toString();
+                var isActive = btnCat === catVal;
+                if (catVal === '') isActive = btnCat === '';
+                $btn.toggleClass('tpw-btn-primary', isActive).toggleClass('tpw-btn-secondary', !isActive);
+                $btn.attr('href', buildUploadPageUrl({ year: yearVal, category: btnCat }));
+            });
+        }
+
+        function applyUploadPageFilters($wrap, state, options){
+            options = options || {};
+            var pageId = $wrap.data('page');
+            if (!pageId) return;
             var ajaxUrl = window.ajaxurl || (window.TPW_CONTROL && window.TPW_CONTROL.ajax_url) || '/wp-admin/admin-ajax.php';
             var $list = $('#tpw-upload-list-' + pageId);
+            var nextState = {
+                year: state && state.year ? state.year.toString() : '',
+                category: state && state.category ? state.category.toString() : ''
+            };
+            var nextUrl = buildUploadPageUrl(nextState);
+
             $wrap.addClass('tpw-is-loading');
             $wrap.find('.tpw-cat-filter').attr('aria-disabled', 'true');
             $list.css('opacity', 0.6);
@@ -457,60 +601,81 @@
                 data: {
                     action: 'tpw_control_filter_files',
                     page_id: pageId,
-                    cat: cat,
-                    tpw_year: yearVal
+                    category: nextState.category,
+                    year: nextState.year
                 }
             }).done(function(resp){
                 if (resp && resp.success && resp.data && typeof resp.data.html === 'string') {
+                    var appliedState = {
+                        year: nextState.year,
+                        category: nextState.category
+                    };
+                    if (typeof resp.data.selected_year === 'string') {
+                        appliedState.year = resp.data.selected_year;
+                    }
                     $list.html(resp.data.html);
-                    // Update active styles within this instance only
-                    $wrap.find('.tpw-cat-filter').removeClass('tpw-btn-primary').addClass('tpw-btn-secondary');
-                    $a.removeClass('tpw-btn-secondary').addClass('tpw-btn-primary');
-                } else {
-                    // Fallback to hard navigation
-                    window.location.href = href;
+                    syncUploadPageFilterUI($wrap, appliedState);
+                    if (options.updateHistory !== false && window.history && window.history.pushState) {
+                        var method = options.historyMode === 'replace' ? 'replaceState' : 'pushState';
+                        window.history[method]({ year: nextState.year, category: nextState.category }, '', nextUrl);
+                    }
+                } else if (options.navigateOnFail !== false) {
+                    window.location.href = nextUrl;
                 }
             }).fail(function(){
-                window.location.href = href;
+                if (options.navigateOnFail !== false) {
+                    window.location.href = nextUrl;
+                }
             }).always(function(){
                 $wrap.removeClass('tpw-is-loading');
                 $wrap.find('.tpw-cat-filter').removeAttr('aria-disabled');
                 $list.css('opacity', '');
             });
+        }
+
+        $('.tpw-upload-page').each(function(){
+            var $wrap = $(this);
+            var state = getUploadPageUrlState();
+            if (!state.year) state.year = ($wrap.attr('data-year') || '').toString();
+            syncUploadPageFilterUI($wrap, state);
         });
 
-        // Instance-local year filter: AJAX, no URL changes
+        // Public: AJAX category filter for Upload Pages with deep-linkable URL state
+        $(document).on('click', '.tpw-upload-page .tpw-cat-filter', function(e){
+            var $a = $(this);
+            var $wrap = $a.closest('.tpw-upload-page');
+            var pageId = $a.data('page') || $wrap.data('page');
+            if (!pageId) return;
+            e.preventDefault();
+            applyUploadPageFilters($wrap, {
+                year: ($wrap.attr('data-year') || '').toString(),
+                category: ($a.data('cat') || '').toString()
+            }, { historyMode: 'push' });
+        });
+
+        // Instance-local year filter with URL/history support
         $(document).on('change', '.tpw-upload-page .tpw-filter-year select[name="tpw_year"]', function(){
             var $sel = $(this);
             var $wrap = $sel.closest('.tpw-upload-page');
             var pageId = $wrap.data('page');
             if (!pageId) return;
-            var yearVal = ($sel.val() || '').toString();
-            // Persist selection on wrapper state (per instance)
-            $wrap.attr('data-year', yearVal);
-            var ajaxUrl = window.ajaxurl || (window.TPW_CONTROL && window.TPW_CONTROL.ajax_url) || '/wp-admin/admin-ajax.php';
-            var $list = $('#tpw-upload-list-' + pageId);
-            $wrap.addClass('tpw-is-loading');
-            $list.css('opacity', 0.6);
             var cat = '';
-            // Preserve current active category button selection (if any)
             var $activeCat = $wrap.find('.tpw-cat-filter.tpw-btn-primary');
             if ($activeCat.length) cat = ($activeCat.data('cat') || '').toString();
-            $.post({
-                url: ajaxUrl,
-                data: {
-                    action: 'tpw_control_filter_files',
-                    page_id: pageId,
-                    cat: cat,
-                    tpw_year: yearVal
-                }
-            }).done(function(resp){
-                if (resp && resp.success && resp.data && typeof resp.data.html === 'string') {
-                    $list.html(resp.data.html);
-                }
-            }).always(function(){
-                $wrap.removeClass('tpw-is-loading');
-                $list.css('opacity', '');
+            applyUploadPageFilters($wrap, {
+                year: ($sel.val() || '').toString(),
+                category: cat
+            }, { historyMode: 'push' });
+        });
+
+        $(window).on('popstate', function(){
+            var state = getUploadPageUrlState();
+            $('.tpw-upload-page').each(function(){
+                var $wrap = $(this);
+                applyUploadPageFilters($wrap, {
+                    year: state.year || '',
+                    category: state.category || ''
+                }, { updateHistory: false, navigateOnFail: false });
             });
         });
 
@@ -539,7 +704,9 @@
             }
 
             function apply() {
-                var $wraps = $('.tpw-admin-ui .wp-editor-wrap');
+                var $wraps = $('.tpw-admin-ui .wp-editor-wrap').filter(function(){
+                    return !$(this).closest('.tpw-admin-editor').length;
+                });
                 if (!$wraps.length) return;
                 $wraps.each(function(){
                     var $w = $(this);

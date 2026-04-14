@@ -38,6 +38,59 @@ echo '<style>
 .tpw-section legend{font-weight:600;padding:0 8px}
 .tpw-section .tpw-fieldset{margin-bottom:8px}
 .tpw-text-muted{color:#666}
+.tpw-upl-files-toolbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:12px 0}
+.tpw-upl-files-toolbar label{display:flex;flex-direction:column;gap:4px;font-weight:600}
+.tpw-upl-files-toolbar input[type=text],.tpw-upl-files-toolbar select{min-width:160px}
+.tpw-upl-group{border:1px solid #e3e3e3;border-radius:8px;background:#fafafa;overflow:hidden}
+.tpw-upl-group.is-hidden{display:none}
+.tpw-upl-group-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f3f4f6;border:0;cursor:pointer;text-align:left;font:inherit}
+.tpw-upl-group-toggle:hover,.tpw-upl-group-toggle:focus{background:#e8edf2}
+.tpw-upl-group-titlewrap{display:flex;align-items:center;gap:10px;min-width:0}
+.tpw-upl-group-caret{display:inline-block;width:12px;transition:transform .15s ease}
+.tpw-upl-group.is-collapsed .tpw-upl-group-caret{transform:rotate(-90deg)}
+.tpw-upl-group-meta{color:#666;font-size:12px;white-space:nowrap}
+.tpw-upl-group-body{padding:0 12px 12px;background:#fff; margin-top:20px;}
+.tpw-upl-group-body[hidden]{display:none}
+.tpw-upl-unsaved{display:inline-flex;align-items:center;gap:6px;color:#92400e;background:#fef3c7;border:1px solid #f3d18b;border-radius:999px;padding:6px 10px;font-size:12px}
+.tpw-upl-filter-empty{display:none;margin-top:12px;padding:10px 12px;border:1px dashed #d1d5db;border-radius:6px;background:#f9fafb;color:#4b5563}
+.tpw-upl-filter-empty.is-visible{display:block}
+.tpw-upl-wrap .tpw-admin-editor{border:1px solid #dcdcde;border-radius:6px;padding:10px;background:#fff}
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-wrap,
+.tpw-upl-wrap .tpw-admin-editor .mce-tinymce,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-container{border-color:#c3c4c7 !important;box-shadow:none !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 8px;background:#fff !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-media-buttons{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0}
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs{display:flex;align-items:flex-end;gap:4px}
+.tpw-upl-wrap .tpw-admin-editor .wp-media-buttons .button,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor,
+.tpw-upl-wrap .tpw-admin-editor .quicktags-toolbar input.ed_button,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-btn button,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-listbox button,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-menubtn button{appearance:none !important;background:#f6f7f7 !important;color:#2c3338 !important;border:1px solid #8c8f94 !important;border-radius:3px !important;box-shadow:0 1px 0 #dcdcde !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;font-size:13px !important;font-weight:400 !important;height:auto !important;letter-spacing:normal !important;line-height:2.15384615 !important;min-height:30px !important;margin:0 4px 0 0 !important;padding:0 10px !important;text-decoration:none !important;text-shadow:none !important;text-transform:none !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-media-buttons .button:hover,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor:hover,
+.tpw-upl-wrap .tpw-admin-editor .quicktags-toolbar input.ed_button:hover,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-btn button:hover,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-listbox button:hover,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-menubtn button:hover{background:#f0f0f1 !important;color:#0a4b78 !important;border-color:#0a4b78 !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-media-buttons .button:focus,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor:focus,
+.tpw-upl-wrap .tpw-admin-editor .quicktags-toolbar input.ed_button:focus,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-btn button:focus,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-listbox button:focus,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-menubtn button:focus{outline:2px solid transparent !important;outline-offset:0 !important;border-color:#2271b1 !important;box-shadow:0 0 0 1px #2271b1 !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor.switch-tmce,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor.switch-html{background:#f6f7f7 !important}
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor.switch-tmce.active,
+.tpw-upl-wrap .tpw-admin-editor .wp-editor-tabs .wp-switch-editor.switch-html.active{background:#fff !important;border-bottom-color:#fff !important;color:#1d2327 !important}
+.tpw-upl-wrap .tpw-admin-editor .quicktags-toolbar,
+.tpw-upl-wrap .tpw-admin-editor .mce-top-part,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar-grp{padding:6px 8px !important;background:#f6f7f7 !important;border-bottom:1px solid #dcdcde !important;box-shadow:none !important}
+.tpw-upl-wrap .tpw-admin-editor .quicktags-toolbar input.ed_button{vertical-align:middle}
+.tpw-upl-wrap .tpw-admin-editor .mce-panel{background:#fff !important;border-color:#dcdcde !important;box-shadow:none !important}
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-ico{color:#50575e !important}
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-active button,
+.tpw-upl-wrap .tpw-admin-editor .mce-toolbar .mce-active:hover button{background:#fff !important;border-color:#8c8f94 !important;box-shadow:inset 0 2px 5px -3px rgba(0,0,0,.35) !important;color:#1d2327 !important}
 </style>';
 ?>
 
@@ -162,6 +215,7 @@ echo '<style>
 
                 <div class="tpw-fieldset" style="margin-top:12px">
                     <label style="display:block;margin-bottom:6px">Description</label>
+                    <div class="tpw-admin-editor wp-core-ui">
                     <?php
                     $editor_id = 'tpw_upl_desc_' . (int) $page->id;
                     $editor_settings = [
@@ -170,8 +224,7 @@ echo '<style>
                         'media_buttons'   => true,
                         'drag_drop_upload'=> true,
                         'teeny'           => false,
-                        // Add our UI class so toolbar/buttons inherit TPW styles instead of the theme
-                        'editor_class'    => 'tpw-admin-ui',
+                        'editor_class'    => 'tpw-admin-editor__textarea',
                         'quicktags'       => true,
                         'tinymce'         => [
                             'toolbar1'          => 'formatselect bold italic underline bullist numlist alignleft aligncenter alignright link unlink removeformat',
@@ -189,6 +242,7 @@ echo '<style>
                         echo '<textarea name="description" rows="10" style="width:100%">' . esc_textarea( (string) $page->description ) . '</textarea>';
                     }
                     ?>
+                    </div>
                     <p class="description">Use headings, bold text, lists, and sizing to format the page text members will see.</p>
                 </div>
 
@@ -284,92 +338,207 @@ echo '<style>
                     </select>
                     <button class="tpw-btn tpw-btn-light" type="submit" formaction="" onclick="this.form.tpw_control_upload_pages_action.value='bulk_files'">Apply</button>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:24px"><input type="checkbox" onclick="document.querySelectorAll('#tpw-upl-files-tbody input[type=checkbox]').forEach(cb=>cb.checked=this.checked)" /></th>
-                            <th style="width:30px"></th>
-                            <th style="width:90px">Preview</th>
-                            <th>Label</th>
-                            <th style="width:160px">Category</th>
-                            <th style="width:110px">Year</th>
-                            <th style="width:100px">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tpw-upl-files-tbody">
-                        <?php foreach ( $files as $idx => $f ): 
-                            $url = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'file', 900, false ) : $f->file_url;
-                            $thumb = $f->thumbnail_url;
-                            $file_type = $f->file_type;
-                            $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
-                            // Determine icon fallback
-                            $icon = '';
-                            $ext = strtolower( pathinfo( parse_url($f->file_url, PHP_URL_PATH), PATHINFO_EXTENSION ) );
-                            $img_base = defined('TPW_CORE_URL') ? TPW_CORE_URL . 'assets/images/' : '';
-                            if ( ! $thumb ) {
-                                if ( in_array( $ext, ['jpg','jpeg','png'], true ) ) {
-                                    $icon = $img_base . 'image-regular-full.svg';
-                                } elseif ( $ext === 'pdf' ) {
-                                    $icon = $img_base . 'file-pdf-regular-full.svg';
-                                } elseif ( in_array( $ext, ['doc','docx'], true ) ) {
-                                    $icon = $img_base . 'file-word-regular-full.svg';
-                                } elseif ( in_array( $ext, ['xls','xlsx'], true ) ) {
-                                    $icon = $img_base . 'file-excel-regular-full.svg';
-                                } elseif ( $ext === 'mp4' ) {
-                                    $icon = $img_base . 'file-video-regular-full.svg';
-                                } else {
-                                    $icon = $img_base . 'file-regular-full.svg';
-                                }
-                            }
-                            ?>
-                            <tr data-file-id="<?php echo (int)$f->id; ?>">
-                                <td><input type="checkbox" name="selected_links[]" value="<?php echo (int)$f->id; ?>" /></td>
-                                <td class="tpw-upl-handle" title="Drag to reorder" style="cursor:move">&#9776;</td>
-                                <td>
-                                    <?php if ( TPW_Control_UI::user_has_access( [ 'logged_in' => true, 'flags_any' => ['is_committee','is_admin'] ] ) ): ?>
-                                        <a href="<?php echo esc_url( $url ); ?>" class="tpw-upl-preview" data-index="<?php echo (int)$idx; ?>" data-type="<?php echo esc_attr( $file_type ); ?>" data-label="<?php echo esc_attr( $label ); ?>">
-                                            <?php if ( $thumb ): ?>
-                                                <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
-                                                <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
+                <?php
+                $category_names = [];
+                $category_positions = [];
+                foreach ( (array) $categories as $cat ) {
+                    $category_names[ (int) $cat->category_id ] = (string) $cat->category_name;
+                    $category_positions[ (int) $cat->category_id ] = count( $category_positions );
+                }
+                $file_groups = [];
+                $preview_index = 0;
+                foreach ( (array) $files as $f ) {
+                    $group_cat = ! empty( $f->category_id ) ? (int) $f->category_id : 0;
+                    $group_year = ! empty( $f->year ) ? (int) $f->year : 0;
+                    if ( ! isset( $file_groups[ $group_cat ] ) ) $file_groups[ $group_cat ] = [];
+                    if ( ! isset( $file_groups[ $group_cat ][ $group_year ] ) ) {
+                        $file_groups[ $group_cat ][ $group_year ] = [];
+                    }
+                    $file_groups[ $group_cat ][ $group_year ][] = $f;
+                }
+                $groups_to_render = [];
+                foreach ( $file_groups as $group_cat => $year_groups ) {
+                    foreach ( $year_groups as $group_year => $group_files ) {
+                        $groups_to_render[] = [
+                            'category_id' => (int) $group_cat,
+                            'year' => (int) $group_year,
+                            'files' => $group_files,
+                            'category_position' => isset( $category_positions[ (int) $group_cat ] ) ? (int) $category_positions[ (int) $group_cat ] : PHP_INT_MAX,
+                        ];
+                    }
+                }
+                usort( $groups_to_render, function( $left, $right ) {
+                    $year_compare = (int) $right['year'] <=> (int) $left['year'];
+                    if ( $year_compare !== 0 ) return $year_compare;
+
+                    $category_compare = (int) $left['category_position'] <=> (int) $right['category_position'];
+                    if ( $category_compare !== 0 ) return $category_compare;
+
+                    return (int) $left['category_id'] <=> (int) $right['category_id'];
+                } );
+                $latest_group_year = 0;
+                $filter_categories = [];
+                $filter_years = [];
+                foreach ( $groups_to_render as $group_item ) {
+                    if ( (int) $group_item['year'] > $latest_group_year ) $latest_group_year = (int) $group_item['year'];
+                    $cat_key = (int) $group_item['category_id'];
+                    if ( ! isset( $filter_categories[ $cat_key ] ) ) {
+                        $filter_categories[ $cat_key ] = [
+                            'label' => $cat_key > 0 && isset( $category_names[ $cat_key ] ) ? $category_names[ $cat_key ] : 'No Category',
+                            'position' => isset( $category_positions[ $cat_key ] ) ? (int) $category_positions[ $cat_key ] : PHP_INT_MAX,
+                        ];
+                    }
+                    $year_key = (int) $group_item['year'];
+                    if ( ! isset( $filter_years[ $year_key ] ) ) $filter_years[ $year_key ] = true;
+                }
+                uasort( $filter_categories, function( $left, $right ) {
+                    $position_compare = (int) $left['position'] <=> (int) $right['position'];
+                    if ( $position_compare !== 0 ) return $position_compare;
+                    return strcmp( (string) $left['label'], (string) $right['label'] );
+                } );
+                $filter_year_values = array_keys( $filter_years );
+                rsort( $filter_year_values, SORT_NUMERIC );
+                ?>
+                <div class="tpw-upl-files-toolbar" aria-label="Filter file groups">
+                    <label>Category
+                        <select id="tpw-upl-filter-category">
+                            <option value="">All categories</option>
+                            <?php foreach ( $filter_categories as $cat_id => $cat_meta ) : ?>
+                                <option value="<?php echo (int) $cat_id > 0 ? (int) $cat_id : 'none'; ?>"><?php echo esc_html( $cat_meta['label'] ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label>Year
+                        <select id="tpw-upl-filter-year">
+                            <option value="">All years</option>
+                            <?php foreach ( $filter_year_values as $filter_year ) : ?>
+                                <option value="<?php echo (int) $filter_year > 0 ? (int) $filter_year : 'none'; ?>"><?php echo esc_html( (int) $filter_year > 0 ? (string) $filter_year : 'No Year' ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label>Search
+                        <input type="text" id="tpw-upl-filter-search" placeholder="Search file labels" />
+                    </label>
+                    <button type="button" class="tpw-btn tpw-btn-light" id="tpw-upl-filter-reset">Reset filters</button>
+                </div>
+                <?php if ( ! empty( $files ) ) : ?>
+                    <?php foreach ( $groups_to_render as $group_index => $group_data ) : ?>
+                        <?php
+                            $group_cat = (int) $group_data['category_id'];
+                            $group_year = (int) $group_data['year'];
+                            $group_files = $group_data['files'];
+                            $group_parts = [];
+                            $group_parts[] = $group_cat > 0 && isset( $category_names[ $group_cat ] ) ? $category_names[ $group_cat ] : 'No Category';
+                            $group_parts[] = $group_year > 0 ? (string) $group_year : 'No Year';
+                            $group_title = implode( ' - ', $group_parts );
+                            $group_count = count( $group_files );
+                            $group_filter_cat = $group_cat > 0 ? (string) $group_cat : 'none';
+                            $group_filter_year = $group_year > 0 ? (string) $group_year : 'none';
+                            $default_open = $latest_group_year > 0 ? ( $group_year === $latest_group_year ) : ( $group_index < 2 );
+                        ?>
+                        <div class="tpw-upl-group <?php echo $default_open ? 'is-expanded' : 'is-collapsed'; ?>" style="margin-top:14px" data-category-id="<?php echo esc_attr( $group_filter_cat ); ?>" data-year="<?php echo esc_attr( $group_filter_year ); ?>" data-default-expanded="<?php echo $default_open ? '1' : '0'; ?>">
+                            <button type="button" class="tpw-upl-group-toggle tpw-btn tpw-btn-secondary tpw-btn-outline tpw-btn-text-left" aria-expanded="<?php echo $default_open ? 'true' : 'false'; ?>">
+                                <span class="tpw-upl-group-titlewrap">
+                                    <span class="tpw-upl-group-caret" aria-hidden="true">▾</span>
+                                    <span><?php echo esc_html( $group_title ); ?></span>
+                                </span>
+                                <span class="tpw-upl-group-meta"><?php echo esc_html( sprintf( _n( '%d file', '%d files', $group_count, 'tpw-core' ), $group_count ) ); ?></span>
+                            </button>
+                            <div class="tpw-upl-group-body"<?php echo $default_open ? '' : ' hidden'; ?>>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width:24px"><input type="checkbox" onclick="(function(hd){var tbl=hd.closest('table');if(tbl){tbl.querySelectorAll('tbody input[type=checkbox]').forEach(function(cb){cb.checked=hd.checked;});}})(this);" /></th>
+                                        <th style="width:30px"></th>
+                                        <th style="width:90px">Preview</th>
+                                        <th>Label</th>
+                                        <th style="width:160px">Category</th>
+                                        <th style="width:110px">Year</th>
+                                        <th style="width:100px">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tpw-upl-files-group" data-page-id="<?php echo (int) $page->id; ?>" data-category-id="<?php echo $group_cat > 0 ? (int) $group_cat : ''; ?>" data-year="<?php echo $group_year > 0 ? (int) $group_year : ''; ?>">
+                                    <?php foreach ( $group_files as $f ) :
+                                        $url = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'file', 900, false ) : $f->file_url;
+                                        $thumb = $f->thumbnail_url;
+                                        $file_type = $f->file_type;
+                                        $label = $f->label !== '' ? $f->label : basename( parse_url($f->file_url, PHP_URL_PATH) );
+                                        $icon = '';
+                                        $ext = strtolower( pathinfo( parse_url($f->file_url, PHP_URL_PATH), PATHINFO_EXTENSION ) );
+                                        $img_base = defined('TPW_CORE_URL') ? TPW_CORE_URL . 'assets/images/' : '';
+                                        if ( ! $thumb ) {
+                                            if ( in_array( $ext, ['jpg','jpeg','png'], true ) ) {
+                                                $icon = $img_base . 'image-regular-full.svg';
+                                            } elseif ( $ext === 'pdf' ) {
+                                                $icon = $img_base . 'file-pdf-regular-full.svg';
+                                            } elseif ( in_array( $ext, ['doc','docx'], true ) ) {
+                                                $icon = $img_base . 'file-word-regular-full.svg';
+                                            } elseif ( in_array( $ext, ['xls','xlsx'], true ) ) {
+                                                $icon = $img_base . 'file-excel-regular-full.svg';
+                                            } elseif ( $ext === 'mp4' ) {
+                                                $icon = $img_base . 'file-video-regular-full.svg';
+                                            } else {
+                                                $icon = $img_base . 'file-regular-full.svg';
+                                            }
+                                        }
+                                    ?>
+                                    <tr data-file-id="<?php echo (int)$f->id; ?>">
+                                        <td><input type="checkbox" name="selected_links[]" value="<?php echo (int)$f->id; ?>" /><input type="hidden" name="file_order[<?php echo (int)$f->id; ?>]" value="<?php echo isset( $f->sort_order ) ? (int) $f->sort_order : 0; ?>" /></td>
+                                        <td class="tpw-upl-handle" title="Drag to reorder" style="cursor:move">&#9776;</td>
+                                        <td>
+                                            <?php if ( TPW_Control_UI::user_has_access( [ 'logged_in' => true, 'flags_any' => ['is_committee','is_admin'] ] ) ): ?>
+                                                <a href="<?php echo esc_url( $url ); ?>" class="tpw-upl-preview" data-index="<?php echo (int) $preview_index; ?>" data-type="<?php echo esc_attr( $file_type ); ?>" data-label="<?php echo esc_attr( $label ); ?>">
+                                                    <?php if ( $thumb ): ?>
+                                                        <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
+                                                        <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
+                                                    <?php else: ?>
+                                                        <img src="<?php echo esc_url( $icon ); ?>" alt="" style="width:48px;height:48px" />
+                                                    <?php endif; ?>
+                                                </a>
                                             <?php else: ?>
+                                                <?php if ( $thumb ): ?>
+                                                    <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
+                                                    <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
+                                                <?php else: ?>
                                                     <img src="<?php echo esc_url( $icon ); ?>" alt="" style="width:48px;height:48px" />
+                                                <?php endif; ?>
                                             <?php endif; ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <?php if ( $thumb ): ?>
-                                            <?php $thumb_served = method_exists('TPW_Control_Upload_Pages','build_served_url') ? TPW_Control_Upload_Pages::build_served_url( (int)$f->id, 'thumb', 900, false ) : $thumb; ?>
-                                            <img src="<?php echo esc_url( $thumb_served ); ?>" alt="" style="width:64px;height:auto;border:1px solid #eee;border-radius:4px" />
-                                        <?php else: ?>
-                                                <img src="<?php echo esc_url( $icon ); ?>" alt="" style="width:48px;height:48px" />
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <input type="text" name="file_label[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->label ); ?>" />
-                                </td>
-                                <td>
-                                    <select name="file_category[<?php echo (int)$f->id; ?>]">
-                                        <option value="">— None —</option>
-                                        <?php foreach ( (array)$categories as $cat ): $sel = isset($f->category_id) && (int)$f->category_id === (int)$cat->category_id ? 'selected' : ''; ?>
-                                            <option value="<?php echo (int)$cat->category_id; ?>" <?php echo $sel; ?>><?php echo esc_html( $cat->category_name ); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input class="tpw-upl-year" type="number" name="file_year[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->year ); ?>" />
-                                </td>
-                                <td>
-                                    <div style="display:flex;gap:6px;align-items:center;justify-content:flex-start">
-                                        <a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener" class="tpw-btn tpw-btn-light" style="padding:2px 8px;font-size:12px">Open</a>
-                                        <button type="button" class="tpw-btn tpw-btn-danger tpw-upl-file-delete" data-file-id="<?php echo (int)$f->id; ?>" data-page-id="<?php echo (int)$page->id; ?>" style="padding:2px 8px;font-size:12px">Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="file_label[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->label ); ?>" />
+                                        </td>
+                                        <td>
+                                            <select name="file_category[<?php echo (int)$f->id; ?>]">
+                                                <option value="">— None —</option>
+                                                <?php foreach ( (array)$categories as $cat ): $sel = isset($f->category_id) && (int)$f->category_id === (int)$cat->category_id ? 'selected' : ''; ?>
+                                                    <option value="<?php echo (int)$cat->category_id; ?>" <?php echo $sel; ?>><?php echo esc_html( $cat->category_name ); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input class="tpw-upl-year" type="number" name="file_year[<?php echo (int)$f->id; ?>]" value="<?php echo esc_attr( $f->year ); ?>" />
+                                        </td>
+                                        <td>
+                                            <div style="display:flex;gap:6px;align-items:center;justify-content:flex-start">
+                                                <a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener" class="tpw-btn tpw-btn-light" style="padding:2px 8px;font-size:12px">Open</a>
+                                                <button type="button" class="tpw-btn tpw-btn-danger tpw-upl-file-delete" data-file-id="<?php echo (int)$f->id; ?>" data-page-id="<?php echo (int)$page->id; ?>" style="padding:2px 8px;font-size:12px">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php $preview_index++; ?>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <div class="tpw-upl-filter-empty" id="tpw-upl-filter-empty">No matching files found for the current filters.</div>
+                <?php else: ?>
+                    <p class="tpw-text-muted">No files uploaded yet.</p>
+                <?php endif; ?>
                 <div class="tpw-upl-actions" style="margin-top:8px">
                     <button class="tpw-btn tpw-btn-secondary" type="submit">Save file changes</button>
+                    <span class="tpw-upl-unsaved" id="tpw-upl-unsaved-indicator" hidden aria-live="polite">Unsaved changes</span>
                 </div>
             </form>
 
