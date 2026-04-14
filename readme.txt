@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.2
+Stable tag: 1.23.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.23.3 =
+- TPW Control: moved Upload Pages admin styling out of the section template and into the existing scoped TPW Control stylesheet, keeping the current interface and behaviour unchanged.
+- TPW Control: centred the existing TPW Control shell within the viewport using the existing container so the sidebar and content layout stay unchanged.
 
 = 1.23.2 =
 - Updates: the WordPress View version details modal now loads its Description and Changelog content from the bundled plugin readme so release notes display properly for GitHub-delivered updates.

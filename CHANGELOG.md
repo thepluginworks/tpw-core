@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.23.3] - 2026-04-14
+### Changed
+- TPW Control: moved Upload Pages admin styling out of the section template and into the existing scoped TPW Control stylesheet, preserving the current interface behaviour while reducing template-embedded presentation code.
+- TPW Control: centred the existing TPW Control shell within the viewport using the existing `.tpw-control` container, keeping the current sidebar and content layout structure unchanged.
+
 ## [1.23.2] - 2026-04-07
 ### Fixed
 - Updates: the WordPress plugin details modal now reads Description and Changelog content from the bundled `readme.txt`, so GitHub-delivered TPW Core updates show the intended release information without depending on `CHANGELOG.md` in the installed package.
