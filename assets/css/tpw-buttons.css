@@ -282,7 +282,7 @@ input[type="reset"].tpw-btn.tpw-btn-warning {
   padding: var(--tpw-btn-padding);
 }
 
-.tpw-btn-light {
+.tpw-btn-light, a.tpw-btn-light  {
   background: var(--tpw-btn-light);
   color: var(--tpw-btn-text-dark);
   border-color: rgba(0,0,0,0.1);

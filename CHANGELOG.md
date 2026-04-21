@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.23.5] - 2026-04-21
+### Changed
+- UI: updated the shared light button selector so link elements using `.tpw-btn-light` receive the same light button styling as button elements.
+
 ## [1.23.4] - 2026-04-14
 ### Fixed
 - Members: corrected the front-end member login and password reset flows so submitted passwords are unslashed consistently before WordPress authentication and reset APIs run, preventing quoted or slashed passwords from being saved and checked differently.

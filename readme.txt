@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.4
+Stable tag: 1.23.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,9 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.23.5 =
+- UI: updated the shared light button selector so link elements using `.tpw-btn-light` receive the same light button styling as button elements.
 
 = 1.23.4 =
 - Members: corrected front-end member login and password reset handling so quoted and slashed passwords are passed consistently to WordPress during reset and login.
