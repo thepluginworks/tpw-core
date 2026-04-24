@@ -457,6 +457,29 @@ add_shortcode('tpw_manage_members', function() {
         }
     }
 
+    if ( isset( $_GET['tpw_password_setup_notice'] ) ) {
+        $notice = sanitize_key( wp_unslash( $_GET['tpw_password_setup_notice'] ) );
+        $messages = [
+            'add_sent' => __( 'Member saved and password setup email sent.', 'tpw-core' ),
+            'resent'   => __( 'Password setup link sent to the member.', 'tpw-core' ),
+        ];
+        if ( isset( $messages[ $notice ] ) ) {
+            echo '<div class="notice notice-success" style="margin:10px 0;"><p>' . esc_html( $messages[ $notice ] ) . '</p></div>';
+        }
+    }
+
+    if ( isset( $_GET['tpw_password_setup_error'] ) ) {
+        $error = sanitize_key( wp_unslash( $_GET['tpw_password_setup_error'] ) );
+        $errors = [
+            'add_send_failed' => __( 'Member saved, but the password setup email could not be sent.', 'tpw-core' ),
+            'send_failed'     => __( 'Password setup email could not be sent.', 'tpw-core' ),
+            'user_missing'    => __( 'This member is not linked to a valid WordPress user.', 'tpw-core' ),
+        ];
+        if ( isset( $errors[ $error ] ) ) {
+            echo '<div class="notice notice-error" style="margin:10px 0;"><p>' . esc_html( $errors[ $error ] ) . '</p></div>';
+        }
+    }
+
     // Show success notice after creating and linking a WP user
     if ( isset($_GET['wp_user_created']) && $_GET['wp_user_created'] === '1' ) {
         echo '<div class="notice notice-success" style="margin:10px 0;"><p>' . esc_html__( 'WordPress user successfully created and linked.', 'tpw-core' ) . '</p></div>';

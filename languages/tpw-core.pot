@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the TPW Core plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.23.5\n"
+"Project-Id-Version: TPW Core 1.24.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-21T15:32:50+00:00\n"
+"POT-Creation-Date: 2026-04-24T10:12:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -50,7 +50,7 @@ msgid "Logout"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:293
-#: includes/tpw-core-loader.php:475
+#: includes/tpw-core-loader.php:493
 #: includes/tpw-core-settings.php:1848
 #: includes/tpw-core-settings.php:2169
 #: modules/members/shortcodes/member-profile.php:13
@@ -1049,8 +1049,8 @@ msgstr ""
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery-index.php:104
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery.php:67
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery.php:100
-#: modules/members/includes/class-tpw-member-admin-actions.php:252
-#: modules/members/includes/class-tpw-member-admin-actions.php:254
+#: modules/members/includes/class-tpw-member-admin-actions.php:328
+#: modules/members/includes/class-tpw-member-admin-actions.php:330
 #: modules/members/shortcodes/member-profile.php:394
 msgid "Yes"
 msgstr ""
@@ -1059,7 +1059,7 @@ msgstr ""
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery-index.php:105
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery.php:68
 #: modules/gallery/elementor/class-tpw-elementor-widget-gallery.php:101
-#: modules/members/includes/class-tpw-member-admin-actions.php:254
+#: modules/members/includes/class-tpw-member-admin-actions.php:330
 msgid "No"
 msgstr ""
 
@@ -1853,7 +1853,7 @@ msgid "(none)"
 msgstr ""
 
 #: modules/members/admin/class-tpw-identity-audit-admin.php:1129
-#: modules/members/includes/class-tpw-member-admin-actions.php:319
+#: modules/members/includes/class-tpw-member-admin-actions.php:395
 msgid "Member"
 msgstr ""
 
@@ -1920,118 +1920,118 @@ msgstr ""
 msgid "Address Lookup"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:207
+#: modules/members/includes/class-tpw-member-admin-actions.php:283
 msgid "Household"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:221
+#: modules/members/includes/class-tpw-member-admin-actions.php:297
 msgid "Household created and member assigned."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:222
+#: modules/members/includes/class-tpw-member-admin-actions.php:298
 msgid "Member assigned to household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:230
+#: modules/members/includes/class-tpw-member-admin-actions.php:306
 msgid "You do not have permission to manage households."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:231
+#: modules/members/includes/class-tpw-member-admin-actions.php:307
 msgid "Household support is disabled."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:232
+#: modules/members/includes/class-tpw-member-admin-actions.php:308
 msgid "Invalid member."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:233
+#: modules/members/includes/class-tpw-member-admin-actions.php:309
 msgid "Cannot create household: member has no society assigned."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:234
+#: modules/members/includes/class-tpw-member-admin-actions.php:310
 msgid "Failed to create household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:235
+#: modules/members/includes/class-tpw-member-admin-actions.php:311
 msgid "Failed to assign member to household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:236
+#: modules/members/includes/class-tpw-member-admin-actions.php:312
 msgid "Please select a valid primary member."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:237
+#: modules/members/includes/class-tpw-member-admin-actions.php:313
 msgid "Household belongs to a different society."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:252
+#: modules/members/includes/class-tpw-member-admin-actions.php:328
 msgid "Assigned:"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:253
+#: modules/members/includes/class-tpw-member-admin-actions.php:329
 msgid "Primary member:"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:254
+#: modules/members/includes/class-tpw-member-admin-actions.php:330
 msgid "Primary member (this record):"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:255
+#: modules/members/includes/class-tpw-member-admin-actions.php:331
 msgid "Role:"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:298
+#: modules/members/includes/class-tpw-member-admin-actions.php:374
 msgid "Household members:"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:313
+#: modules/members/includes/class-tpw-member-admin-actions.php:389
 msgid "Primary"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:315
-#: modules/members/includes/class-tpw-member-admin-actions.php:410
+#: modules/members/includes/class-tpw-member-admin-actions.php:391
+#: modules/members/includes/class-tpw-member-admin-actions.php:486
 #: modules/members/includes/class-tpw-member-ajax.php:698
 msgid "Partner"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:317
-#: modules/members/includes/class-tpw-member-admin-actions.php:411
+#: modules/members/includes/class-tpw-member-admin-actions.php:393
+#: modules/members/includes/class-tpw-member-admin-actions.php:487
 msgid "Child"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:331
+#: modules/members/includes/class-tpw-member-admin-actions.php:407
 msgid "This record"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:349
+#: modules/members/includes/class-tpw-member-admin-actions.php:425
 msgid "Status:"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:349
+#: modules/members/includes/class-tpw-member-admin-actions.php:425
 msgid "Not assigned to a household"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:356
+#: modules/members/includes/class-tpw-member-admin-actions.php:432
 msgid "This member is the primary contact for their household. Household changes are disabled here."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:373
+#: modules/members/includes/class-tpw-member-admin-actions.php:449
 msgid "Change household / primary member"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:374
+#: modules/members/includes/class-tpw-member-admin-actions.php:450
 msgid "Choose a primary member to attach or move this member into that household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:384
+#: modules/members/includes/class-tpw-member-admin-actions.php:460
 msgid "Create new household with this member as primary"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:391
+#: modules/members/includes/class-tpw-member-admin-actions.php:467
 msgid "Choose household (primary member)"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:393
+#: modules/members/includes/class-tpw-member-admin-actions.php:469
 #: modules/members/settings/member-signups-settings.php:36
 #: modules/members/settings/member-signups-settings.php:192
 #: modules/notices/templates/form.php:25
@@ -2039,27 +2039,27 @@ msgstr ""
 msgid "— Select —"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:404
+#: modules/members/includes/class-tpw-member-admin-actions.php:480
 msgid "This will move the member to a different household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:408
+#: modules/members/includes/class-tpw-member-admin-actions.php:484
 msgid "Household role for this member"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:419
+#: modules/members/includes/class-tpw-member-admin-actions.php:495
 msgid "Make this member the primary member for this household"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:421
+#: modules/members/includes/class-tpw-member-admin-actions.php:497
 msgid "This will replace the existing primary member."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:423
+#: modules/members/includes/class-tpw-member-admin-actions.php:499
 msgid "This will replace the existing primary member for this household."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-admin-actions.php:427
+#: modules/members/includes/class-tpw-member-admin-actions.php:503
 msgid "Update household"
 msgstr ""
 
@@ -2194,13 +2194,38 @@ msgstr ""
 msgid "Download Sample CSV Template"
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-form-handler.php:262
-#: modules/members/includes/class-tpw-member-form-handler.php:557
+#: modules/members/includes/class-tpw-member-form-handler.php:277
+#: modules/members/includes/class-tpw-member-form-handler.php:572
 msgid "Invalid member ID."
 msgstr ""
 
-#: modules/members/includes/class-tpw-member-form-handler.php:565
+#: modules/members/includes/class-tpw-member-form-handler.php:580
 msgid "Member not found."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:20
+msgid "Linked WordPress user could not be loaded."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:28
+msgid "Linked WordPress user does not have a valid email address."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:35
+msgid "Password reset functions are unavailable."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:51
+msgid "Password setup URL could not be generated."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:58
+msgid "TPW email service is unavailable."
+msgstr ""
+
+#: modules/members/includes/class-tpw-member-password-setup.php:93
+#: modules/members/shortcodes/members-admin.php:475
+msgid "Password setup email could not be sent."
 msgstr ""
 
 #: modules/members/settings/member-settings.php:184
@@ -2391,7 +2416,7 @@ msgstr ""
 
 #: modules/members/shortcodes/member-profile.php:517
 #: modules/members/shortcodes/member-profile.php:538
-#: modules/members/shortcodes/members-admin.php:473
+#: modules/members/shortcodes/members-admin.php:496
 msgid "Access Denied"
 msgstr ""
 
@@ -2415,11 +2440,27 @@ msgstr ""
 msgid "Member photo updated."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:462
+#: modules/members/shortcodes/members-admin.php:463
+msgid "Member saved and password setup email sent."
+msgstr ""
+
+#: modules/members/shortcodes/members-admin.php:464
+msgid "Password setup link sent to the member."
+msgstr ""
+
+#: modules/members/shortcodes/members-admin.php:474
+msgid "Member saved, but the password setup email could not be sent."
+msgstr ""
+
+#: modules/members/shortcodes/members-admin.php:476
+msgid "This member is not linked to a valid WordPress user."
+msgstr ""
+
+#: modules/members/shortcodes/members-admin.php:485
 msgid "WordPress user successfully created and linked."
 msgstr ""
 
-#: modules/members/shortcodes/members-admin.php:466
+#: modules/members/shortcodes/members-admin.php:489
 msgid "Email address added — you can now create a WordPress user for this member."
 msgstr ""
 

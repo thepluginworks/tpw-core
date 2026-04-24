@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.24.0] - 2026-04-24
+### Changed
+- Members: Add Member now includes an enabled-by-default option to send a secure password setup email immediately after creating a linked WordPress user for the new member.
+- Members: linked members now show a dedicated resend password setup action in Edit Member, including targeted success and error notices in Manage Members.
+- Email: TPW Core now registers a dedicated `member_password_setup` template so password setup subject and body overrides can be managed from the Email Templates settings tab.
+
 ## [1.23.5] - 2026-04-21
 ### Changed
 - UI: updated the shared light button selector so link elements using `.tpw-btn-light` receive the same light button styling as button elements.

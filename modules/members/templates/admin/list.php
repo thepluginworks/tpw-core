@@ -329,7 +329,7 @@ $current_view = $initial_view;
     </script>
     <?php endif; ?>
     <h2>All Members</h2>
-    <?php if ( isset($_GET['saved']) && $_GET['saved'] === '1' ): ?>
+    <?php if ( isset($_GET['saved']) && $_GET['saved'] === '1' && ! isset($_GET['tpw_password_setup_notice']) && ! isset($_GET['tpw_password_setup_error']) ): ?>
         <div class="notice notice-success" style="margin:10px 0;"><p>Member Saved Successfully</p></div>
     <?php endif; ?>
 

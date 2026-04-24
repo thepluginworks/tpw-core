@@ -128,6 +128,8 @@ class TPW_Member_Form_Handler {
     $core_data['email'] = $core_data['email'] ?? sanitize_email( isset($_POST['email']) ? wp_unslash($_POST['email']) : '' );
         $core_data = self::apply_protected_permission_field_rules( $core_data );
 
+        $send_password_setup_email = ! empty( $_POST['send_password_setup_email'] );
+
         if ( empty($core_data['email']) ) {
             wp_die('Email is required to create a new user.');
         }
@@ -241,9 +243,22 @@ class TPW_Member_Form_Handler {
         // Signature: ( string $context, int $member_id )
         do_action( 'tpw_members_admin_form_after_save', 'add', $member_id );
 
-    // Redirect to list view after successful add with a flash flag
-    $redirect_url = add_query_arg( 'saved', '1', site_url( '/manage-members/' ) );
-    wp_safe_redirect( $redirect_url );
+        $redirect_args = [ 'saved' => '1' ];
+        if ( $send_password_setup_email ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-password-setup.php';
+
+            $member = $controller->get_member( $member_id );
+            $email_result = TPW_Member_Password_Setup::send_password_setup_email( $member, (int) $user_id );
+            if ( ! empty( $email_result['success'] ) ) {
+                $redirect_args['tpw_password_setup_notice'] = 'add_sent';
+            } else {
+                $redirect_args['tpw_password_setup_error'] = 'add_send_failed';
+            }
+        }
+
+	// Redirect to list view after successful add with a flash flag
+	$redirect_url = add_query_arg( $redirect_args, site_url( '/manage-members/' ) );
+	wp_safe_redirect( $redirect_url );
         exit;
     }
     public static function handle_edit_form() {

@@ -311,6 +311,17 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
     ?>
 
         <div class="form-group">
+            <label style="display:flex;align-items:flex-start;gap:8px;">
+                <input type="checkbox" name="send_password_setup_email" value="1" checked>
+                <span>
+                    <strong>Send password setup email to member</strong>
+                    <br>
+                    <span class="description">A secure setup link will be emailed after the member and linked WordPress user are created.</span>
+                </span>
+            </label>
+        </div>
+
+        <div class="form-group">
             <button type="submit" class="tpw-btn tpw-btn-primary tpw-submit-btn">Add Member</button>
         </div>
     </form>

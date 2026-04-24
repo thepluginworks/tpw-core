@@ -5,6 +5,7 @@ class TPW_Member_Admin_Actions {
     public static function init() {
         // Secure admin-post handler (logged-in only)
         add_action( 'admin_post_tpw_create_wp_user', [ __CLASS__, 'handle_create_wp_user' ] );
+        add_action( 'admin_post_tpw_send_password_setup', [ __CLASS__, 'handle_send_password_setup' ] );
 
         // Extend the Edit Member admin form with a minimal Household section (UI only).
         add_action( 'tpw_members_admin_form_extra_fields', [ __CLASS__, 'render_household_section' ], 10, 4 );
@@ -37,6 +38,81 @@ class TPW_Member_Admin_Actions {
      */
     protected static function households_enabled() {
         return '1' === get_option( 'tpw_members_enable_households', '0' );
+    }
+
+    /**
+     * Redirect back to the referring page with password setup notice flags.
+     *
+     * @param string $status  success|error.
+     * @param string $message Notice key.
+     * @param int    $member_id Optional member ID for fallback edit URL.
+     * @return void
+     */
+    protected static function redirect_with_password_setup_notice( $status, $message, $member_id = 0 ) {
+        $ref = wp_get_referer();
+        if ( ! $ref ) {
+            $ref = site_url( '/manage-members/?action=edit_form&id=' . (int) $member_id );
+        }
+
+        $args = [];
+        if ( 'success' === $status ) {
+            $args['tpw_password_setup_notice'] = sanitize_key( (string) $message );
+        } else {
+            $args['tpw_password_setup_error'] = sanitize_key( (string) $message );
+        }
+
+        wp_safe_redirect( add_query_arg( $args, $ref ) );
+        exit;
+    }
+
+    /**
+     * Send a fresh password setup link for an existing linked WordPress user.
+     *
+     * Preconditions:
+     * - Nonce: tpw_send_password_setup
+     * - Capability: members admin access
+     * - Member exists and is linked to a valid WordPress user
+     */
+    public static function handle_send_password_setup() {
+        if ( ! is_user_logged_in() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+        }
+
+        if ( ! TPW_Member_Access::can_manage_members_current() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+
+        check_admin_referer( 'tpw_send_password_setup' );
+
+        $member_id = isset( $_REQUEST['member_id'] ) ? (int) $_REQUEST['member_id'] : 0;
+        if ( $member_id <= 0 ) {
+            wp_die( 'Invalid member.', 400 );
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-password-setup.php';
+
+        $controller = new TPW_Member_Controller();
+        $member     = $controller->get_member( $member_id );
+        if ( ! $member ) {
+            wp_die( 'Invalid member.', 404 );
+        }
+
+        $user_id = isset( $member->user_id ) ? (int) $member->user_id : 0;
+        if ( $user_id <= 0 ) {
+            self::redirect_with_password_setup_notice( 'error', 'user_missing', $member_id );
+        }
+
+        $result = TPW_Member_Password_Setup::send_password_setup_email( $member, $user_id );
+        if ( ! empty( $result['success'] ) ) {
+            self::redirect_with_password_setup_notice( 'success', 'resent', $member_id );
+        }
+
+        self::redirect_with_password_setup_notice( 'error', 'send_failed', $member_id );
     }
 
     /**

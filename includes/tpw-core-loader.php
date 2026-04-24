@@ -179,6 +179,24 @@ add_action( 'plugins_loaded', function(){
                 '{organisation_name}',
             ],
         ] );
+        TPW_Email_Template_Registry::register_template( [
+            'key'               => 'member_password_setup',
+            'group'             => 'members',
+            'label'             => 'Member: Password Setup',
+            'default_subject'   => 'Set up your member password',
+            'default_body'      => "Hello {member_name},\n\nA member account has been created or prepared for you on {site_name}.\n\nUse the secure link below to set up your password:\n{password_setup_url}\n\nThis link is time-limited for security. If it expires, you can request a new link from the member login page:\n{member_login_url}\n\nKind regards,\n{organisation_name}",
+            'editable_subject'  => true,
+            'editable_body'     => true,
+            'placeholders'      => [
+                '{member_name}'        => 'Member display name',
+                '{member_first_name}'  => 'Member first name when available',
+                '{password_setup_url}' => 'Secure password setup/reset URL',
+                '{setup_reset_url}'    => 'Alias of the secure password setup/reset URL',
+                '{member_login_url}'   => 'Front-end member login page URL',
+                '{site_name}'          => 'WordPress site name',
+                '{organisation_name}'  => 'TPW brand title or site name',
+            ],
+        ] );
     }
 }, 20 );
 

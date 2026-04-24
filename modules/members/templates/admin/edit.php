@@ -9,11 +9,15 @@ $time_format = tpw_core_get_time_format();
 $member_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $member = $controller->get_member($member_id);
 $meta = TPW_Member_Meta::get_all_meta($member_id);
+$linked_wp_user = ( ! empty( $member->user_id ) ) ? get_userdata( (int) $member->user_id ) : null;
 
 // Precompute Create WP User availability and ids for detached form wiring
 $can_show_create_wp_user = ( empty($member->user_id) && ! empty($member->email) && TPW_Member_Access::can_manage_members_current() );
+$can_show_send_password_setup = ( $linked_wp_user instanceof WP_User && ! empty( $linked_wp_user->user_email ) && TPW_Member_Access::can_manage_members_current() );
 $create_wp_form_id = 'tpw-create-wp-user-form-' . (int) $member_id;
 $create_wp_btn_id  = 'tpw-create-wp-user-btn-' . (int) $member_id;
+$send_password_setup_form_id = 'tpw-send-password-setup-form-' . (int) $member_id;
+$send_password_setup_btn_id  = 'tpw-send-password-setup-btn-' . (int) $member_id;
 $create_wp_admin_post = admin_url('admin-post.php');
 $can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
 $protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
@@ -257,6 +261,13 @@ if ( ! $member ) {
                                     echo '<span>Send login credentials to this member</span>';
                                     echo '</label>';
                                     echo '<button type="button" id="' . esc_attr($create_wp_btn_id) . '" class="tpw-btn tpw-btn-secondary">Create WordPress User</button>';
+                                    echo '</div>';
+                                } elseif ( $key === 'email' && $can_show_send_password_setup ) {
+                                    echo '<div class="description" style="margin-top:8px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;padding:8px;border-radius:6px;">';
+                                    echo '<strong>Send a secure password setup link.</strong><br>The member will receive a fresh time-limited link by email.';
+                                    echo '</div>';
+                                    echo '<div class="tpw-inline-create-user" style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;">';
+                                    echo '<button type="button" id="' . esc_attr($send_password_setup_btn_id) . '" class="tpw-btn tpw-btn-secondary">Send Password Setup Link</button>';
                                     echo '</div>';
                                 }
                             }
@@ -538,6 +549,33 @@ if ( ! $member ) {
             e.preventDefault();
             try { btn.disabled = true; btn.dataset.prevText = btn.textContent; btn.textContent = 'Working…'; } catch(_){}
             // Prefer native submit if available
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+    });
+})();
+</script>
+<?php endif; ?>
+
+<?php if ( $can_show_send_password_setup ) : ?>
+<form id="<?php echo esc_attr( $send_password_setup_form_id ); ?>" method="post" action="<?php echo esc_url( $create_wp_admin_post ); ?>" style="display:none;">
+        <input type="hidden" name="action" value="tpw_send_password_setup">
+        <input type="hidden" name="member_id" value="<?php echo (int) $member_id; ?>">
+        <?php echo wp_nonce_field( 'tpw_send_password_setup', '_wpnonce', true, false ); ?>
+        <input type="submit" value="submit">
+</form>
+<script>
+(function(){
+    document.addEventListener('DOMContentLoaded', function(){
+        var btn = document.getElementById(<?php echo json_encode( $send_password_setup_btn_id ); ?>);
+        var form = document.getElementById(<?php echo json_encode( $send_password_setup_form_id ); ?>);
+        if (!btn || !form) return;
+        btn.addEventListener('click', function(e){
+            e.preventDefault();
+            try { btn.disabled = true; btn.dataset.prevText = btn.textContent; btn.textContent = 'Sending…'; } catch(_){}
             if (typeof form.requestSubmit === 'function') {
                 form.requestSubmit();
             } else {

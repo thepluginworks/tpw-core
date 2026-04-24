@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.5
+Stable tag: 1.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.24.0 =
+- Members: added an optional password setup email during Add Member so linked WordPress users can receive a secure setup link as soon as the member record is created.
+- Members: linked members can now receive a fresh password setup link directly from Edit Member, with dedicated success and failure notices in Manage Members.
+- Email: registered a dedicated Member Password Setup email template so the password setup subject and body can be overridden from TPW Core settings.
 
 = 1.23.5 =
 - UI: updated the shared light button selector so link elements using `.tpw-btn-light` receive the same light button styling as button elements.
