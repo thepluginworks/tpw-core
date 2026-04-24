@@ -24,8 +24,24 @@ defined( 'ABSPATH' ) || exit;
     elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csv_uploaded'])) {
         $importer = new TPW_Member_CSV_Importer();
         $importer->process_mapped_import($_POST);
+    } elseif ( isset( $_GET['import_run'] ) ) {
+        $importer = new TPW_Member_CSV_Importer();
+        $importer->render_saved_password_setup_run( wp_unslash( $_GET['import_run'] ) );
     }
     ?>
+
+    <?php if ( isset( $_GET['tpw_import_password_setup_error'] ) ) : ?>
+        <div class="notice notice-error"><p>
+            <?php
+            $error = sanitize_key( wp_unslash( $_GET['tpw_import_password_setup_error'] ) );
+            if ( 'expired' === $error ) {
+                esc_html_e( 'The password setup email import run has expired or is no longer available.', 'tpw-core' );
+            } else {
+                esc_html_e( 'The password setup email import run is invalid.', 'tpw-core' );
+            }
+            ?>
+        </p></div>
+    <?php endif; ?>
 
     <form method="post" enctype="multipart/form-data" action="?action=import_csv">
         <div class="form-group">

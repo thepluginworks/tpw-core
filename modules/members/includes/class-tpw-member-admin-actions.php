@@ -6,6 +6,7 @@ class TPW_Member_Admin_Actions {
         // Secure admin-post handler (logged-in only)
         add_action( 'admin_post_tpw_create_wp_user', [ __CLASS__, 'handle_create_wp_user' ] );
         add_action( 'admin_post_tpw_send_password_setup', [ __CLASS__, 'handle_send_password_setup' ] );
+        add_action( 'admin_post_tpw_send_import_password_setup_batch', [ __CLASS__, 'handle_send_import_password_setup_batch' ] );
 
         // Extend the Edit Member admin form with a minimal Household section (UI only).
         add_action( 'tpw_members_admin_form_extra_fields', [ __CLASS__, 'render_household_section' ], 10, 4 );
@@ -66,6 +67,29 @@ class TPW_Member_Admin_Actions {
     }
 
     /**
+     * Build the import CSV redirect URL for password setup batch actions.
+     *
+     * @param string $run_id Import run ID.
+     * @param array  $args   Additional query args.
+     * @return string
+     */
+    protected static function get_import_password_setup_redirect_url( $run_id = '', array $args = [] ) {
+        $query_args = array_merge(
+            [
+                'action' => 'import_csv',
+            ],
+            $args
+        );
+
+        $run_id = sanitize_key( (string) $run_id );
+        if ( '' !== $run_id ) {
+            $query_args['import_run'] = $run_id;
+        }
+
+        return add_query_arg( $query_args, site_url( '/manage-members/' ) );
+    }
+
+    /**
      * Send a fresh password setup link for an existing linked WordPress user.
      *
      * Preconditions:
@@ -113,6 +137,110 @@ class TPW_Member_Admin_Actions {
         }
 
         self::redirect_with_password_setup_notice( 'error', 'send_failed', $member_id );
+    }
+
+    /**
+     * Process the next CSV import password setup email batch.
+     *
+     * @return void
+     */
+    public static function handle_send_import_password_setup_batch() {
+        if ( ! is_user_logged_in() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+
+        if ( ! self::user_can_manage() ) {
+            wp_die( 'Permission denied.', 403 );
+        }
+
+        check_admin_referer( 'tpw_send_import_password_setup_batch' );
+
+        $run_id = isset( $_REQUEST['import_run'] ) ? sanitize_key( (string) wp_unslash( $_REQUEST['import_run'] ) ) : '';
+        if ( '' === $run_id ) {
+            wp_safe_redirect( self::get_import_password_setup_redirect_url( '', [ 'tpw_import_password_setup_error' => 'invalid_run' ] ) );
+            exit;
+        }
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-csv-importer.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-password-setup.php';
+
+        $current_user_id = (int) get_current_user_id();
+        $state = TPW_Member_CSV_Importer::get_password_setup_state( $run_id, $current_user_id );
+        if ( empty( $state ) ) {
+            wp_safe_redirect( self::get_import_password_setup_redirect_url( '', [ 'tpw_import_password_setup_error' => 'expired' ] ) );
+            exit;
+        }
+
+        $pending = isset( $state['pending'] ) && is_array( $state['pending'] ) ? array_values( $state['pending'] ) : [];
+        if ( empty( $pending ) ) {
+            wp_safe_redirect( self::get_import_password_setup_redirect_url( $run_id, [ 'tpw_import_password_setup_notice' => 'complete' ] ) );
+            exit;
+        }
+
+        $results = isset( $state['results'] ) && is_array( $state['results'] ) ? $state['results'] : [
+            'sent'    => [],
+            'failed'  => [],
+            'skipped' => [],
+        ];
+        foreach ( [ 'sent', 'failed', 'skipped' ] as $bucket ) {
+            if ( ! isset( $results[ $bucket ] ) || ! is_array( $results[ $bucket ] ) ) {
+                $results[ $bucket ] = [];
+            }
+        }
+
+        $batch_size = TPW_Member_CSV_Importer::get_password_setup_batch_size();
+        $batch      = array_slice( $pending, 0, $batch_size );
+        $remaining  = array_slice( $pending, count( $batch ) );
+        $controller = new TPW_Member_Controller();
+
+        foreach ( $batch as $recipient ) {
+            $member_id = isset( $recipient['member_id'] ) ? (int) $recipient['member_id'] : 0;
+            $user_id   = isset( $recipient['user_id'] ) ? (int) $recipient['user_id'] : 0;
+            $email     = isset( $recipient['email'] ) ? sanitize_email( (string) $recipient['email'] ) : '';
+
+            $member = $member_id > 0 ? $controller->get_member( $member_id ) : null;
+            if ( ! $member || $user_id <= 0 || (int) $member->user_id !== $user_id ) {
+                $results['skipped'][] = [
+                    'email'   => $email,
+                    'message' => __( 'Member is no longer linked to the expected WordPress user.', 'tpw-core' ),
+                ];
+                continue;
+            }
+
+            $result = TPW_Member_Password_Setup::send_password_setup_email( $member, $user_id );
+            if ( ! empty( $result['success'] ) ) {
+                $results['sent'][] = [
+                    'email'   => $email,
+                    'message' => __( 'Password setup email sent.', 'tpw-core' ),
+                ];
+                continue;
+            }
+
+            $results['failed'][] = [
+                'email'   => $email,
+                'message' => isset( $result['message'] ) ? (string) $result['message'] : __( 'Password setup email could not be sent.', 'tpw-core' ),
+            ];
+        }
+
+        $state['pending']           = $remaining;
+        $state['results']           = $results;
+        $state['last_processed_at'] = time();
+        if ( empty( $remaining ) ) {
+            $state['completed_at'] = time();
+        }
+
+        TPW_Member_CSV_Importer::set_password_setup_state( $run_id, $state, $current_user_id );
+
+        wp_safe_redirect(
+            self::get_import_password_setup_redirect_url(
+                $run_id,
+                [
+                    'tpw_import_password_setup_notice' => empty( $remaining ) ? 'complete' : 'progress',
+                ]
+            )
+        );
+        exit;
     }
 
     /**

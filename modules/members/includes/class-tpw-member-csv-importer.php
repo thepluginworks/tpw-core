@@ -1,8 +1,195 @@
 <?php
 
 class TPW_Member_CSV_Importer {
+    const PASSWORD_SETUP_TRANSIENT_PREFIX = 'tpw_csv_password_setup_';
+    const PASSWORD_SETUP_TRANSIENT_TTL    = HOUR_IN_SECONDS;
+    const PASSWORD_SETUP_BATCH_SIZE       = 10;
 
     private array $notices = [];
+
+    protected static function sanitize_import_run_id( $run_id ) {
+        return sanitize_key( (string) $run_id );
+    }
+
+    protected static function build_password_setup_transient_key( $run_id, $user_id = 0 ) {
+        $run_id  = self::sanitize_import_run_id( $run_id );
+        $user_id = (int) $user_id;
+        if ( $user_id <= 0 ) {
+            $user_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+        }
+
+        if ( '' === $run_id || $user_id <= 0 ) {
+            return '';
+        }
+
+        return self::PASSWORD_SETUP_TRANSIENT_PREFIX . $user_id . '_' . $run_id;
+    }
+
+    protected static function generate_import_run_id() {
+        if ( function_exists( 'wp_generate_uuid4' ) ) {
+            return self::sanitize_import_run_id( str_replace( '-', '', wp_generate_uuid4() ) );
+        }
+
+        return self::sanitize_import_run_id( uniqid( 'tpwimport', true ) );
+    }
+
+    public static function get_password_setup_batch_size() {
+        return max( 1, (int) apply_filters( 'tpw_members/csv_password_setup_batch_size', self::PASSWORD_SETUP_BATCH_SIZE ) );
+    }
+
+    protected static function get_default_password_setup_results() {
+        return [
+            'sent'    => [],
+            'failed'  => [],
+            'skipped' => [],
+        ];
+    }
+
+    public static function get_password_setup_state( $run_id, $user_id = 0 ) {
+        $key = self::build_password_setup_transient_key( $run_id, $user_id );
+        if ( '' === $key ) {
+            return [];
+        }
+
+        $state = get_transient( $key );
+        if ( ! is_array( $state ) ) {
+            return [];
+        }
+
+        $state['run_id']  = self::sanitize_import_run_id( isset( $state['run_id'] ) ? $state['run_id'] : $run_id );
+        $state['summary'] = isset( $state['summary'] ) && is_array( $state['summary'] ) ? $state['summary'] : [];
+        $state['pending'] = isset( $state['pending'] ) && is_array( $state['pending'] ) ? array_values( $state['pending'] ) : [];
+        $state['results'] = isset( $state['results'] ) && is_array( $state['results'] ) ? $state['results'] : self::get_default_password_setup_results();
+
+        foreach ( [ 'sent', 'failed', 'skipped' ] as $bucket ) {
+            if ( ! isset( $state['results'][ $bucket ] ) || ! is_array( $state['results'][ $bucket ] ) ) {
+                $state['results'][ $bucket ] = [];
+            }
+        }
+
+        return $state;
+    }
+
+    public static function set_password_setup_state( $run_id, array $state, $user_id = 0 ) {
+        $key = self::build_password_setup_transient_key( $run_id, $user_id );
+        if ( '' === $key ) {
+            return false;
+        }
+
+        $state['run_id'] = self::sanitize_import_run_id( $run_id );
+        return set_transient( $key, $state, self::PASSWORD_SETUP_TRANSIENT_TTL );
+    }
+
+    public static function delete_password_setup_state( $run_id, $user_id = 0 ) {
+        $key = self::build_password_setup_transient_key( $run_id, $user_id );
+        if ( '' === $key ) {
+            return false;
+        }
+
+        return delete_transient( $key );
+    }
+
+    protected function render_password_setup_result_card( array $state ) {
+        $run_id          = isset( $state['run_id'] ) ? self::sanitize_import_run_id( $state['run_id'] ) : '';
+        $summary         = isset( $state['summary'] ) && is_array( $state['summary'] ) ? $state['summary'] : [];
+        $results         = isset( $state['results'] ) && is_array( $state['results'] ) ? $state['results'] : self::get_default_password_setup_results();
+        $pending         = isset( $state['pending'] ) && is_array( $state['pending'] ) ? array_values( $state['pending'] ) : [];
+        $eligible_count  = isset( $summary['eligible_count'] ) ? (int) $summary['eligible_count'] : 0;
+        $pending_count   = count( $pending );
+        $sent_count      = isset( $results['sent'] ) && is_array( $results['sent'] ) ? count( $results['sent'] ) : 0;
+        $failed_count    = isset( $results['failed'] ) && is_array( $results['failed'] ) ? count( $results['failed'] ) : 0;
+        $skipped_count   = isset( $results['skipped'] ) && is_array( $results['skipped'] ) ? count( $results['skipped'] ) : 0;
+        $processed_count = $sent_count + $failed_count + $skipped_count;
+
+        echo '<div class="notice notice-info" style="margin:16px 0;padding:12px 14px;">';
+        echo '<h3 style="margin-top:0;">' . esc_html__( 'Password Setup Emails', 'tpw-core' ) . '</h3>';
+        echo '<p>' . esc_html( sprintf( __( 'Eligible newly imported linked members: %d', 'tpw-core' ), $eligible_count ) ) . '</p>';
+
+        $excluded_reasons = [
+            'existing_user_count'          => __( 'Existing WordPress users excluded', 'tpw-core' ),
+            'invalid_or_missing_email_count' => __( 'Rows without a valid email excluded', 'tpw-core' ),
+            'unlinked_user_count'          => __( 'Rows without a new linked WordPress user excluded', 'tpw-core' ),
+            'other_skipped_count'          => __( 'Other skipped rows excluded', 'tpw-core' ),
+        ];
+
+        $has_exclusions = false;
+        foreach ( $excluded_reasons as $key => $label ) {
+            if ( ! empty( $summary[ $key ] ) ) {
+                $has_exclusions = true;
+                break;
+            }
+        }
+
+        if ( $has_exclusions ) {
+            echo '<ul style="margin:8px 0 12px 18px;">';
+            foreach ( $excluded_reasons as $key => $label ) {
+                $count = isset( $summary[ $key ] ) ? (int) $summary[ $key ] : 0;
+                if ( $count <= 0 ) {
+                    continue;
+                }
+                echo '<li>' . esc_html( sprintf( '%s: %d', $label, $count ) ) . '</li>';
+            }
+            echo '</ul>';
+        }
+
+        if ( $processed_count > 0 ) {
+            echo '<p>' . esc_html( sprintf( __( 'Sent: %1$d, Failed: %2$d, Skipped: %3$d, Remaining: %4$d', 'tpw-core' ), $sent_count, $failed_count, $skipped_count, $pending_count ) ) . '</p>';
+        }
+
+        if ( $eligible_count <= 0 ) {
+            echo '<p>' . esc_html__( 'No newly created and linked WordPress users were created in this import, so there are no password setup emails to send.', 'tpw-core' ) . '</p>';
+        } elseif ( $pending_count > 0 ) {
+            $button_label = ( $processed_count > 0 )
+                ? __( 'Continue sending remaining password setup emails', 'tpw-core' )
+                : __( 'Send password setup emails to newly imported members', 'tpw-core' );
+
+            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:12px 0 0;">';
+            wp_nonce_field( 'tpw_send_import_password_setup_batch' );
+            echo '<input type="hidden" name="action" value="tpw_send_import_password_setup_batch">';
+            echo '<input type="hidden" name="import_run" value="' . esc_attr( $run_id ) . '">';
+            echo '<button type="submit" class="button button-primary">' . esc_html( $button_label ) . '</button>';
+            echo '</form>';
+        } else {
+            echo '<p>' . esc_html__( 'Password setup email sending is complete for this import run.', 'tpw-core' ) . '</p>';
+        }
+
+        $issue_rows = [];
+        if ( ! empty( $results['failed'] ) && is_array( $results['failed'] ) ) {
+            $issue_rows = array_merge( $issue_rows, $results['failed'] );
+        }
+        if ( ! empty( $results['skipped'] ) && is_array( $results['skipped'] ) ) {
+            $issue_rows = array_merge( $issue_rows, $results['skipped'] );
+        }
+
+        if ( ! empty( $issue_rows ) ) {
+            echo '<details style="margin-top:12px;"><summary>' . esc_html__( 'View failed or skipped recipients', 'tpw-core' ) . '</summary>';
+            echo '<table class="widefat striped" style="margin-top:10px;"><thead><tr><th>' . esc_html__( 'Email', 'tpw-core' ) . '</th><th>' . esc_html__( 'Result', 'tpw-core' ) . '</th></tr></thead><tbody>';
+            foreach ( $issue_rows as $row ) {
+                $email   = isset( $row['email'] ) ? (string) $row['email'] : '';
+                $message = isset( $row['message'] ) ? (string) $row['message'] : __( 'No details available.', 'tpw-core' );
+                echo '<tr><td>' . esc_html( $email ) . '</td><td>' . esc_html( $message ) . '</td></tr>';
+            }
+            echo '</tbody></table>';
+            echo '</details>';
+        }
+
+        echo '</div>';
+    }
+
+    public function render_saved_password_setup_run( $run_id ) {
+        $run_id = self::sanitize_import_run_id( $run_id );
+        if ( '' === $run_id ) {
+            return;
+        }
+
+        $state = self::get_password_setup_state( $run_id );
+        if ( empty( $state ) ) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'The password setup email import run has expired or is no longer available.', 'tpw-core' ) . '</p></div>';
+            return;
+        }
+
+        $this->render_password_setup_result_card( $state );
+    }
 
     private function log_debug(string $message): void {
         // Log to uploads/tpw_import_debug.log; fall back to error_log if not writable
@@ -348,6 +535,11 @@ class TPW_Member_CSV_Importer {
 
         $imported = 0;
         $import_summary = [];
+        $eligible_recipients = [];
+        $existing_user_count = 0;
+        $invalid_or_missing_email_count = 0;
+        $unlinked_user_count = 0;
+        $other_skipped_count = 0;
 
         foreach ( $rows as $row_index => $row ) {
             $member_data = [];
@@ -368,6 +560,7 @@ class TPW_Member_CSV_Importer {
             if ( $has_valid_email ) {
                 $existing_user = get_user_by('email', $email);
                 if ( $existing_user ) {
+                    $existing_user_count++;
                     if ( $dedupe_action === 'skip' ) {
                         $import_summary[] = [ 'email' => $email, 'status' => '⚠️ Skipped – Email exists' ];
                         continue;
@@ -444,6 +637,7 @@ class TPW_Member_CSV_Importer {
                     isset($member_data['surname']) ? $member_data['surname'] : ''
                 );
                 if ( '' === $user_login ) {
+                    $other_skipped_count++;
                     $import_summary[] = [ 'email' => $email, 'status' => '⚠️ Skipped – Unable to generate unique username' ];
                     continue;
                 }
@@ -470,6 +664,12 @@ class TPW_Member_CSV_Importer {
                     'last_name'    => $member_data['surname'] ?? '',
                 ] );
 
+                if ( is_wp_error( $user_id ) ) {
+                    $unlinked_user_count++;
+                    $import_summary[] = [ 'email' => $email, 'status' => '⚠️ Skipped – WordPress user could not be created' ];
+                    continue;
+                }
+
                 if ( ! is_wp_error( $user_id ) ) {
                     global $wpdb;
                     $table = $wpdb->prefix . 'tpw_members';
@@ -489,6 +689,8 @@ class TPW_Member_CSV_Importer {
 
                     $insert_result = $wpdb->insert( $table, $insert_data );
                     if ( false === $insert_result ) {
+                        $unlinked_user_count++;
+                        $import_summary[] = [ 'email' => $email, 'status' => '⚠️ Skipped – Member could not be linked to the new WordPress user' ];
                         error_log('❌ DB Insert failed. Error: ' . $wpdb->last_error);
                         error_log('❌ Data tried to insert: ' . print_r($insert_data, true));
                     } else {
@@ -500,9 +702,15 @@ class TPW_Member_CSV_Importer {
                         // Save custom fields into meta table, using correct member_id
                         // Insert flow: keep detail logs off per requirement focus
                         $this->save_custom_meta( $member_id, $member_data, $expected_fields, false, '', false );
+                        $eligible_recipients[] = [
+                            'member_id' => $member_id,
+                            'user_id'   => (int) $user_id,
+                            'email'     => $email,
+                        ];
                     }
                 }
             } else {
+                $invalid_or_missing_email_count++;
                 // No valid email: dedupe using username (fallback to First+Surname)
                 if ( $is_dry_run ) {
                     continue;
@@ -578,6 +786,31 @@ class TPW_Member_CSV_Importer {
             }
             echo '</tbody></table><br>';
         }
+
+        if ( ! $is_dry_run ) {
+            $run_id = self::generate_import_run_id();
+            $summary = [
+                'eligible_count'                 => count( $eligible_recipients ),
+                'existing_user_count'            => $existing_user_count,
+                'invalid_or_missing_email_count' => $invalid_or_missing_email_count,
+                'unlinked_user_count'            => $unlinked_user_count,
+                'other_skipped_count'            => $other_skipped_count,
+                'imported_count'                 => (int) $imported,
+            ];
+
+            $state = [
+                'run_id'        => $run_id,
+                'owner_user_id' => get_current_user_id(),
+                'created_at'    => time(),
+                'summary'       => $summary,
+                'pending'       => $eligible_recipients,
+                'results'       => self::get_default_password_setup_results(),
+            ];
+
+            self::set_password_setup_state( $run_id, $state, get_current_user_id() );
+            $this->render_password_setup_result_card( $state );
+        }
+
         set_transient('tpw_last_csv_mapping_' . get_current_user_id(), $_POST['field_map'], HOUR_IN_SECONDS);
 
         $this->render_notices();

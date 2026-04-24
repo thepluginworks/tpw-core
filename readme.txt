@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.24.0
+Stable tag: 1.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.25.0 =
+- Members: CSV member imports now stage password setup recipients only for newly created and linked WordPress users, then present a post-import action to send secure setup emails after the import completes.
+- Members: the CSV import results screen now shows password setup eligibility, excluded-row counts, and final sent, failed, skipped, and remaining totals for each import run.
+- Members: CSV import password setup sending now runs through a protected batched admin-post flow with transient-backed progress tracking so imports do not send email inline and authorised managers can resume a saved run safely.
 
 = 1.24.0 =
 - Members: added an optional password setup email during Add Member so linked WordPress users can receive a secure setup link as soon as the member record is created.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.25.0] - 2026-04-24
+### Changed
+- Members: CSV member imports now stage password setup recipients only for newly created and linked WordPress users, then present a post-import action to send secure setup emails after the import completes.
+- Members: the CSV import results screen now shows password setup eligibility, excluded-row counts, and final sent, failed, skipped, and remaining totals for each import run.
+- Members: CSV import password setup sending now runs through a protected batched admin-post flow with transient-backed progress tracking so imports do not send email inline and authorised managers can resume a saved run safely.
+
 ## [1.24.0] - 2026-04-24
 ### Changed
 - Members: Add Member now includes an enabled-by-default option to send a secure password setup email immediately after creating a linked WordPress user for the new member.
