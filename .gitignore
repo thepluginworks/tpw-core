@@ -14,7 +14,7 @@ ai-session.md
 phpcs.xml
 CODING_STANDARDS.md
 release-workflow.agent.md
-testing.agent.md
+core-testing.agent.md
 
 # === Build artifacts ===
 *.zip
