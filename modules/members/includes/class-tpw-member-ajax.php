@@ -22,6 +22,7 @@ class TPW_Member_Ajax {
         add_action( 'wp_ajax_tpw_member_get_details', [ __CLASS__, 'get_details' ] );
         add_action( 'wp_ajax_tpw_member_send_email', [ __CLASS__, 'send_email' ] );
         add_action( 'wp_ajax_tpw_member_profile_update', [ __CLASS__, 'profile_update' ] );
+        add_action( 'admin_post_tpw_member_profile_change_password', [ __CLASS__, 'profile_change_password' ] );
         // Photo management (admin only) for immediate actions on edit form
         add_action( 'wp_ajax_tpw_member_photo_delete', [ __CLASS__, 'photo_delete' ] );
         add_action( 'wp_ajax_tpw_member_photo_replace', [ __CLASS__, 'photo_replace' ] );
@@ -65,6 +66,69 @@ class TPW_Member_Ajax {
         if ( ! wp_verify_nonce( $nonce, $action ) ) {
             wp_send_json_error( [ 'message' => 'Invalid nonce' ], 403 );
         }
+    }
+
+    /**
+     * Build a redirect URL back to the front-end member profile page.
+     *
+     * @param string $section Target profile section slug.
+     * @param array  $args    Additional query args.
+     * @return string
+     */
+    protected static function get_profile_redirect_url( $section = 'profile', array $args = [] ) {
+        $section = sanitize_key( (string) $section );
+
+        $fallback = home_url( '/' );
+        $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
+        if ( $profile_page_id > 0 ) {
+            $profile_url = get_permalink( $profile_page_id );
+            if ( is_string( $profile_url ) && '' !== $profile_url ) {
+                $fallback = $profile_url;
+            }
+        }
+
+        $referer = wp_get_referer();
+        if ( is_string( $referer ) && '' !== $referer ) {
+            $validated = wp_validate_redirect( $referer, '' );
+            if ( '' !== $validated ) {
+                $fallback = $validated;
+            }
+        }
+
+        $url = remove_query_arg( [ 'tpw_member_password_notice', 'tpw_member_password_error' ], $fallback );
+        if ( '' !== $section && 'profile' !== $section ) {
+            $url = add_query_arg( 'section', $section, $url );
+        } else {
+            $url = remove_query_arg( 'section', $url );
+        }
+
+        if ( ! empty( $args ) ) {
+            $url = add_query_arg( $args, $url );
+        }
+
+        return $url;
+    }
+
+    /**
+     * Redirect back to the Change Password profile tab with a notice or error.
+     *
+     * @param string $status success|error.
+     * @param string $code   Notice or error code.
+     * @return void
+     */
+    protected static function redirect_with_profile_password_notice( $status, $code ) {
+        $status = ( 'success' === $status ) ? 'success' : 'error';
+        $code   = sanitize_key( (string) $code );
+        $args   = [];
+
+        if ( 'success' === $status ) {
+            $args['tpw_member_password_notice'] = $code;
+        } else {
+            $args['tpw_member_password_error'] = $code;
+        }
+
+        wp_safe_redirect( self::get_profile_redirect_url( 'password', $args ) );
+        exit;
     }
 
     /**
@@ -987,6 +1051,84 @@ class TPW_Member_Ajax {
             }
         }
         wp_send_json_success(['message'=>'Saved', 'field_key' => $field_key ]);
+    }
+
+    /**
+     * Member self-service: change the current user's password from the front end.
+     *
+     * Uses a normal POST form and always operates on the logged-in user only.
+     *
+     * @return void
+     */
+    public static function profile_change_password() {
+        if ( ! is_user_logged_in() ) {
+            wp_die( 'Access denied', 403 );
+        }
+
+        $nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'tpw_member_profile_change_password' ) ) {
+            self::redirect_with_profile_password_notice( 'error', 'invalid_nonce' );
+        }
+
+        $admin_can_view = apply_filters( 'tpw_members/wp_admin_can_view_profile', true );
+        $allow_all_statuses = apply_filters( 'tpw_members/profile_allow_all_statuses', true );
+
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+
+        $user = wp_get_current_user();
+        if ( ! ( $user instanceof WP_User ) || (int) $user->ID <= 0 ) {
+            wp_die( 'Access denied', 403 );
+        }
+
+        $controller = new TPW_Member_Controller();
+        $member = $controller->get_member_by_user_id( (int) $user->ID );
+        if ( ! $member ) {
+            self::redirect_with_profile_password_notice( 'error', 'member_not_found' );
+        }
+
+        if ( ! ( current_user_can( 'manage_options' ) && $admin_can_view ) ) {
+            if ( ! $allow_all_statuses && ! TPW_Member_Access::is_member_current() ) {
+                self::redirect_with_profile_password_notice( 'error', 'access_denied' );
+            }
+        }
+
+        $current_password = isset( $_POST['current_password'] ) ? (string) wp_unslash( $_POST['current_password'] ) : '';
+        $new_password     = isset( $_POST['new_password'] ) ? (string) wp_unslash( $_POST['new_password'] ) : '';
+        $confirm_password = isset( $_POST['confirm_password'] ) ? (string) wp_unslash( $_POST['confirm_password'] ) : '';
+
+        if ( '' === $current_password ) {
+            self::redirect_with_profile_password_notice( 'error', 'current_required' );
+        }
+
+        if ( '' === $new_password || '' === $confirm_password ) {
+            self::redirect_with_profile_password_notice( 'error', 'new_required' );
+        }
+
+        if ( $new_password !== $confirm_password ) {
+            self::redirect_with_profile_password_notice( 'error', 'mismatch' );
+        }
+
+        if ( ! wp_check_password( $current_password, $user->user_pass, $user->ID ) ) {
+            self::redirect_with_profile_password_notice( 'error', 'current_invalid' );
+        }
+
+        if ( wp_check_password( $new_password, $user->user_pass, $user->ID ) ) {
+            self::redirect_with_profile_password_notice( 'error', 'same_as_current' );
+        }
+
+        $updated = wp_update_user(
+            [
+                'ID'        => (int) $user->ID,
+                'user_pass' => $new_password,
+            ]
+        );
+
+        if ( is_wp_error( $updated ) ) {
+            self::redirect_with_profile_password_notice( 'error', 'update_failed' );
+        }
+
+        self::redirect_with_profile_password_notice( 'success', 'changed' );
     }
 
         /**

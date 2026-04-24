@@ -16,6 +16,14 @@ function tpw_member_profile_get_builtin_sections() {
       'callback' => 'tpw_member_profile_render_profile_section',
       'show'     => true,
     ],
+    'password' => [
+      'slug'     => 'password',
+      'label'    => __( 'Change Password', 'tpw-core' ),
+      'icon'     => '',
+      'priority' => 20,
+      'callback' => 'tpw_member_profile_render_password_section',
+      'show'     => true,
+    ],
   ];
 }
 
@@ -138,11 +146,15 @@ function tpw_member_profile_get_active_section_slug( array $sections ) {
 }
 
 function tpw_member_profile_get_section_url( $slug ) {
+  $base_url = 'password' === $slug
+    ? remove_query_arg( 'section' )
+    : remove_query_arg( [ 'section', 'tpw_member_password_notice', 'tpw_member_password_error' ] );
+
   if ( $slug === 'profile' ) {
-    return remove_query_arg( 'section' );
+    return $base_url;
   }
 
-  return add_query_arg( 'section', $slug );
+  return add_query_arg( 'section', $slug, $base_url );
 }
 
 function tpw_member_profile_get_section_icon_html( $icon ) {
@@ -211,6 +223,132 @@ function tpw_member_profile_render_active_section( array $section, $member, arra
     $profile_sections = $sections;
     include $section['template'];
   }
+
+  return ob_get_clean();
+}
+
+function tpw_member_profile_enqueue_frontend_assets( $member, array $args = [] ) {
+  $handle = 'tpw-member-profile';
+  $password_meter_enabled = ! empty( $args['password_meter'] );
+  $current_user = wp_get_current_user();
+  $password_user_inputs = [];
+
+  if ( $password_meter_enabled ) {
+    $password_user_inputs = array_filter(
+      array_unique(
+        array_map(
+          'strval',
+          [
+            is_object( $member ) && isset( $member->first_name ) ? $member->first_name : '',
+            is_object( $member ) && isset( $member->surname ) ? $member->surname : '',
+            is_object( $member ) && isset( $member->email ) ? $member->email : '',
+            $current_user instanceof WP_User ? $current_user->user_login : '',
+            $current_user instanceof WP_User ? $current_user->display_name : '',
+            $current_user instanceof WP_User ? $current_user->user_email : '',
+          ]
+        )
+      )
+    );
+  }
+
+  wp_enqueue_script( $handle, plugins_url('js/member-profile.js', __FILE__), ['jquery'], filemtime( plugin_dir_path(__FILE__) . 'js/member-profile.js' ), true );
+  wp_localize_script( $handle, 'TPW_MEMBER_PROFILE', [
+    'nonce'   => wp_create_nonce('tpw_member_profile_update'),
+    'ajaxUrl' => admin_url('admin-ajax.php'),
+    'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],
+    'passwordMeterEnabled' => $password_meter_enabled,
+    'passwordUserInputs'   => array_values( $password_user_inputs ),
+    'passwordMeterLabels'  => [
+      'empty'    => __( 'Use a strong password that you do not use elsewhere.', 'tpw-core' ),
+      '0'        => __( 'Too short', 'tpw-core' ),
+      '1'        => __( 'Very weak', 'tpw-core' ),
+      '2'        => __( 'Weak', 'tpw-core' ),
+      '3'        => __( 'Medium', 'tpw-core' ),
+      '4'        => __( 'Strong', 'tpw-core' ),
+      '5'        => __( 'Passwords do not match', 'tpw-core' ),
+      'unknown'  => __( 'Password strength could not be determined.', 'tpw-core' ),
+    ],
+  ] );
+
+  if ( $password_meter_enabled ) {
+    wp_enqueue_script( 'password-strength-meter' );
+  }
+
+  wp_enqueue_style( 'tpw-member-admin-style', plugins_url('../assets/css/member-admin.css', __FILE__), [], filemtime( plugin_dir_path(__FILE__) . '../assets/css/member-admin.css' ) );
+}
+
+function tpw_member_profile_get_password_notice_message( $code ) {
+  switch ( sanitize_key( (string) $code ) ) {
+    case 'changed':
+      return __( 'Your password has been updated.', 'tpw-core' );
+    default:
+      return '';
+  }
+}
+
+function tpw_member_profile_get_password_error_message( $code ) {
+  switch ( sanitize_key( (string) $code ) ) {
+    case 'access_denied':
+      return __( 'You do not have permission to change that password.', 'tpw-core' );
+    case 'member_not_found':
+      return __( 'Your linked member record could not be loaded.', 'tpw-core' );
+    case 'invalid_nonce':
+      return __( 'Your password change request expired. Please try again.', 'tpw-core' );
+    case 'current_required':
+      return __( 'Enter your current password.', 'tpw-core' );
+    case 'new_required':
+      return __( 'Enter and confirm your new password.', 'tpw-core' );
+    case 'mismatch':
+      return __( 'Your new passwords do not match.', 'tpw-core' );
+    case 'same_as_current':
+      return __( 'Your new password must be different from your current password.', 'tpw-core' );
+    case 'current_invalid':
+      return __( 'Your current password is incorrect.', 'tpw-core' );
+    case 'update_failed':
+      return __( 'Your password could not be updated. Please try again.', 'tpw-core' );
+    default:
+      return __( 'Your password could not be updated.', 'tpw-core' );
+  }
+}
+
+function tpw_member_profile_render_password_section( $member ) {
+  tpw_member_profile_enqueue_frontend_assets( $member, [ 'password_meter' => true ] );
+
+  $notice = isset( $_GET['tpw_member_password_notice'] ) ? tpw_member_profile_get_password_notice_message( wp_unslash( $_GET['tpw_member_password_notice'] ) ) : '';
+  $error  = isset( $_GET['tpw_member_password_error'] ) ? tpw_member_profile_get_password_error_message( wp_unslash( $_GET['tpw_member_password_error'] ) ) : '';
+
+  ob_start();
+  echo '<div class="tpw-section">';
+  echo '<h2>' . esc_html__( 'Change Password', 'tpw-core' ) . '</h2>';
+
+  if ( '' !== $notice ) {
+    echo '<div class="notice notice-success"><p>' . esc_html( $notice ) . '</p></div>';
+  }
+  if ( '' !== $error ) {
+    echo '<div class="notice notice-error"><p>' . esc_html( $error ) . '</p></div>';
+  }
+
+  echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="tpw-member-password-form">';
+  wp_nonce_field( 'tpw_member_profile_change_password' );
+  echo '<input type="hidden" name="action" value="tpw_member_profile_change_password">';
+  echo '<div class="form-group">';
+  echo '<label for="tpw-member-current-password"><strong>' . esc_html__( 'Current password', 'tpw-core' ) . '</strong></label>';
+  echo '<input type="password" id="tpw-member-current-password" name="current_password" autocomplete="current-password" required>';
+  echo '</div>';
+  echo '<div class="form-group">';
+  echo '<label for="tpw-member-new-password"><strong>' . esc_html__( 'New password', 'tpw-core' ) . '</strong></label>';
+  echo '<input type="password" id="tpw-member-new-password" name="new_password" autocomplete="new-password" required>';
+  echo '<p class="description" id="tpw-member-password-guidance">' . esc_html__( 'Use a strong password that you do not use elsewhere.', 'tpw-core' ) . '</p>';
+  echo '<progress id="tpw-member-password-strength" class="tpw-member-password-strength" max="4" value="0" aria-describedby="tpw-member-password-guidance tpw-member-password-strength-result"></progress>';
+  echo '<p class="description" id="tpw-member-password-strength-result" aria-live="polite">' . esc_html__( 'Use a strong password that you do not use elsewhere.', 'tpw-core' ) . '</p>';
+  echo '</div>';
+  echo '<div class="form-group">';
+  echo '<label for="tpw-member-confirm-password"><strong>' . esc_html__( 'Confirm new password', 'tpw-core' ) . '</strong></label>';
+  echo '<input type="password" id="tpw-member-confirm-password" name="confirm_password" autocomplete="new-password" required>';
+  echo '</div>';
+  echo '<p><button type="submit" class="tpw-btn tpw-btn-primary">' . esc_html__( 'Update Password', 'tpw-core' ) . '</button></p>';
+  echo '</form>';
+  echo '</div>';
 
   return ob_get_clean();
 }
@@ -405,14 +543,7 @@ function tpw_member_profile_render_profile_section( $member ) {
   <?php
 
   // Enqueue and localize assets
-  $handle = 'tpw-member-profile';
-  wp_enqueue_script( $handle, plugins_url('js/member-profile.js', __FILE__), ['jquery'], filemtime( plugin_dir_path(__FILE__) . 'js/member-profile.js' ), true );
-  wp_localize_script( $handle, 'TPW_MEMBER_PROFILE', [
-    'nonce'   => wp_create_nonce('tpw_member_profile_update'),
-    'ajaxUrl' => admin_url('admin-ajax.php'),
-    'labels'  => [ 'edit' => __('Edit','tpw-core'), 'confirm' => __('Confirm','tpw-core') ],
-  ] );
-  wp_enqueue_style( 'tpw-member-admin-style', plugins_url('../assets/css/member-admin.css', __FILE__), [], filemtime( plugin_dir_path(__FILE__) . '../assets/css/member-admin.css' ) );
+  tpw_member_profile_enqueue_frontend_assets( $member );
 
   // Inline JS for photo actions in edit mode (re-uses self-edit nonce)
   if ( $photos_enabled && $photo_mode === 'edit' ) {

@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the TPW Core plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.25.0\n"
+"Project-Id-Version: TPW Core 1.26.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"

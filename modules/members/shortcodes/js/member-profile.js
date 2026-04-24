@@ -3,6 +3,56 @@
     return $.post(TPW_MEMBER_PROFILE.ajaxUrl, $.extend({action: action, _wpnonce: TPW_MEMBER_PROFILE.nonce}, data||{}));
   }
 
+  function initPasswordMeter(){
+    if (!TPW_MEMBER_PROFILE || !TPW_MEMBER_PROFILE.passwordMeterEnabled) {
+      return;
+    }
+
+    var $form = $('.tpw-member-password-form').first();
+    if (!$form.length) {
+      return;
+    }
+
+    var $newPassword = $form.find('[name="new_password"]');
+    var $confirmPassword = $form.find('[name="confirm_password"]');
+    var $meter = $('#tpw-member-password-strength');
+    var $result = $('#tpw-member-password-strength-result');
+    var labels = TPW_MEMBER_PROFILE.passwordMeterLabels || {};
+    var userInputs = TPW_MEMBER_PROFILE.passwordUserInputs || [];
+
+    function setState(score, message){
+      if ($meter.length) {
+        var safeScore = score === 5 ? 0 : Math.max(0, Math.min(4, score));
+        $meter.val(safeScore).attr('value', safeScore);
+      }
+      if ($result.length) {
+        $result.text(message || labels.unknown || '');
+      }
+    }
+
+    function calculate(){
+      var newPassword = $newPassword.val() || '';
+      var confirmPassword = $confirmPassword.val() || '';
+
+      if (!newPassword) {
+        setState(0, labels.empty || '');
+        return;
+      }
+
+      if (!window.wp || !wp.passwordStrength || typeof wp.passwordStrength.meter !== 'function') {
+        setState(0, labels.unknown || '');
+        return;
+      }
+
+      var score = wp.passwordStrength.meter(newPassword, userInputs, confirmPassword);
+      var message = labels[String(score)] || labels.unknown || '';
+      setState(score, message);
+    }
+
+    $newPassword.add($confirmPassword).on('input', calculate);
+    calculate();
+  }
+
   // Open modal with field
   $(document).on('click', '.tpw-profile-edit', function(){
     var type = $(this).data('field-type') || 'text';
@@ -76,6 +126,8 @@
   // Some sites render that UI outside the Elementor section (e.g., appended via filters).
   // We defensively move its heading and form into .tpw-profile to keep it visually grouped.
   $(function(){
+    initPasswordMeter();
+
     var $profile = $('.tpw-profile').first();
     if (!$profile.length) return;
 

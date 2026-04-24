@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.26.0] - 2026-04-24
+### Changed
+- Members: [tpw_member_profile] now includes a dedicated Change Password tab where linked members can update their own password from the front end using current-password verification and WordPress-native password handling.
+- Members: password change success and error notices now remain scoped to the Change Password tab instead of being carried into sibling profile-tab URLs.
+
 ## [1.25.0] - 2026-04-24
 ### Changed
 - Members: CSV member imports now stage password setup recipients only for newly created and linked WordPress users, then present a post-import action to send secure setup emails after the import completes.

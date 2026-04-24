@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.25.0
+Stable tag: 1.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.26.0 =
+- Members: [tpw_member_profile] now includes a dedicated Change Password tab where linked members can update their own password from the front end using current-password verification and WordPress-native password handling.
+- Members: password change success and error notices now remain scoped to the Change Password tab instead of being carried into sibling profile-tab URLs.
 
 = 1.25.0 =
 - Members: CSV member imports now stage password setup recipients only for newly created and linked WordPress users, then present a post-import action to send secure setup emails after the import completes.
