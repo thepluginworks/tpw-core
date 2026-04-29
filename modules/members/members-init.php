@@ -19,7 +19,12 @@ if ( defined( 'TPW_MEMBERS_ACTIVE' ) && TPW_MEMBERS_ACTIVE ) {
 
 if ( $tpw_members_active ) {
     require_once TPW_CORE_PATH . 'modules/members/class-tpw-members-db.php';
+    require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-email-sync.php';
     add_action( 'admin_init', [ 'TPW_Members_DB', 'ensure_core_schema' ], 5 );
+
+    if ( class_exists( 'TPW_Member_Email_Sync' ) ) {
+        TPW_Member_Email_Sync::init();
+    }
 
     if ( ! function_exists('tpw_members_get_display_name') ) {
         /**

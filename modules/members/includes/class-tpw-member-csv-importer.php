@@ -541,6 +541,10 @@ class TPW_Member_CSV_Importer {
         $unlinked_user_count = 0;
         $other_skipped_count = 0;
 
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
+        $member_controller = new TPW_Member_Controller();
+
         foreach ( $rows as $row_index => $row ) {
             $member_data = [];
             if ( empty($row) || count(array_filter($row)) === 0 ) {
@@ -601,8 +605,26 @@ class TPW_Member_CSV_Importer {
                     if ( $existing_member_id > 0 ) {
                         // Update existing member
                         $row_info = sprintf('(row=%d, username=%s)', $row_index + 2, $member_data['username'] ?? '');
+                        $existing_member = $member_controller->get_member( $existing_member_id );
+                        if ( $existing_member && isset( $existing_member->user_id ) && (int) $existing_member->user_id > 0 ) {
+                            $sync_result = TPW_Member_Email_Sync::sync_linked_member_email(
+                                $member_controller,
+                                $existing_member,
+                                $email,
+                                array( 'source' => 'csv_import_existing_user' )
+                            );
+                            if ( is_wp_error( $sync_result ) ) {
+                                $other_skipped_count++;
+                                $import_summary[] = array( 'email' => $email, 'status' => '⚠️ Skipped – Linked email could not be synchronized' );
+                                continue;
+                            }
+
+                            unset( $set['email'] );
+                        }
                         $this->log_debug('Updating existing tpw_members row id ' . $existing_member_id . ' for user_id ' . (int) $existing_user->ID . ' ' . $row_info);
-                        $wpdb->update( $table, $set, [ 'id' => $existing_member_id ] );
+                        if ( ! empty( $set ) ) {
+                            $wpdb->update( $table, $set, [ 'id' => $existing_member_id ] );
+                        }
                         // Save custom fields to meta
                         $this->log_debug('Member matched (update): member_id=' . $existing_member_id . ', unique_identifier=' . ( $member_data['unique_identifier'] ?? '(none)' ) . ' ' . $row_info );
                         $this->save_custom_meta( $existing_member_id, $member_data, $expected_fields, true, $row_info, true );
@@ -612,6 +634,7 @@ class TPW_Member_CSV_Importer {
                         // Insert new member row linked to the existing user
                         $set['user_id'] = (int) $existing_user->ID;
                         $set['username'] = (string) $existing_user->user_login;
+                        $set['email'] = sanitize_email( (string) $existing_user->user_email );
                         $wpdb->insert( $table, $set );
                         $member_id = (int) $wpdb->insert_id;
                         $this->log_debug('Inserted new tpw_members row id ' . $member_id . ' for existing user_id ' . (int) $existing_user->ID);

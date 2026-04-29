@@ -118,6 +118,7 @@ class TPW_Member_Admin_Actions {
         }
 
         require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+        require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-email-sync.php';
         require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-password-setup.php';
 
         $controller = new TPW_Member_Controller();
@@ -129,6 +130,11 @@ class TPW_Member_Admin_Actions {
         $user_id = isset( $member->user_id ) ? (int) $member->user_id : 0;
         if ( $user_id <= 0 ) {
             self::redirect_with_password_setup_notice( 'error', 'user_missing', $member_id );
+        }
+
+        $sync_state = TPW_Member_Email_Sync::get_linked_email_state( $member );
+        if ( ! empty( $sync_state['has_drift'] ) ) {
+            self::redirect_with_password_setup_notice( 'error', 'email_mismatch', $member_id );
         }
 
         $result = TPW_Member_Password_Setup::send_password_setup_email( $member, $user_id );

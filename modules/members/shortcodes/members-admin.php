@@ -474,6 +474,7 @@ add_shortcode('tpw_manage_members', function() {
             'add_send_failed' => __( 'Member saved, but the password setup email could not be sent.', 'tpw-core' ),
             'send_failed'     => __( 'Password setup email could not be sent.', 'tpw-core' ),
             'user_missing'    => __( 'This member is not linked to a valid WordPress user.', 'tpw-core' ),
+            'email_mismatch' => __( 'Password setup email is blocked because the member email and linked WordPress account email do not match. Resolve the mismatch first.', 'tpw-core' ),
         ];
         if ( isset( $errors[ $error ] ) ) {
             echo '<div class="notice notice-error" style="margin:10px 0;"><p>' . esc_html( $errors[ $error ] ) . '</p></div>';

@@ -11,6 +11,134 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TPW_Member_Email_Sync {
 	/**
+	 * Register reverse-sync hooks.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_action( 'profile_update', array( __CLASS__, 'handle_wp_profile_update' ), 20, 3 );
+	}
+
+	/**
+	 * Build the current linked-email state for a member.
+	 *
+	 * @param object        $member  Member row.
+	 * @param WP_User|null  $wp_user Optional preloaded WordPress user.
+	 * @return array<string, mixed>
+	 */
+	public static function get_linked_email_state( $member, $wp_user = null ) {
+		$member_id      = ( is_object( $member ) && isset( $member->id ) ) ? (int) $member->id : 0;
+		$user_id        = ( is_object( $member ) && isset( $member->user_id ) ) ? (int) $member->user_id : 0;
+		$member_email   = ( is_object( $member ) && isset( $member->email ) ) ? trim( (string) $member->email ) : '';
+		$linked_user    = $wp_user instanceof WP_User ? $wp_user : ( $user_id > 0 ? get_user_by( 'id', $user_id ) : null );
+		$wp_email       = ( $linked_user instanceof WP_User && isset( $linked_user->user_email ) ) ? trim( (string) $linked_user->user_email ) : '';
+		$member_compare = self::normalize_for_compare( $member_email );
+		$wp_compare     = self::normalize_for_compare( $wp_email );
+		$has_link       = $user_id > 0;
+
+		return array(
+			'member_id'                => $member_id,
+			'user_id'                  => $user_id,
+			'is_linked'                => $has_link,
+			'linked_user_loaded'       => $linked_user instanceof WP_User,
+			'member_email'             => $member_email,
+			'wp_email'                 => $wp_email,
+			'member_compare'           => $member_compare,
+			'wp_compare'               => $wp_compare,
+			'emails_match'             => $has_link && $linked_user instanceof WP_User && '' !== $member_compare && $member_compare === $wp_compare,
+			'has_drift'                => $has_link && $linked_user instanceof WP_User && $member_compare !== $wp_compare,
+			'can_send_password_setup'  => $has_link && $linked_user instanceof WP_User && '' !== $wp_compare && $member_compare === $wp_compare,
+			'password_setup_recipient' => $wp_email,
+		);
+	}
+
+	/**
+	 * Synchronize the linked member email to match a WordPress user email change.
+	 *
+	 * @param int                $user_id        WordPress user ID.
+	 * @param WP_User|object|null $old_user_data Previous user object when available.
+	 * @param array<string,mixed> $userdata      Submitted user data.
+	 * @return void
+	 */
+	public static function handle_wp_profile_update( $user_id, $old_user_data = null, $userdata = array() ) {
+		$user_id = (int) $user_id;
+		if ( $user_id <= 0 ) {
+			return;
+		}
+
+		$wp_user = get_user_by( 'id', $user_id );
+		if ( ! ( $wp_user instanceof WP_User ) ) {
+			return;
+		}
+
+		$old_email = '';
+		if ( $old_user_data instanceof WP_User && isset( $old_user_data->user_email ) ) {
+			$old_email = (string) $old_user_data->user_email;
+		} elseif ( is_object( $old_user_data ) && isset( $old_user_data->user_email ) ) {
+			$old_email = (string) $old_user_data->user_email;
+		}
+
+		if ( self::normalize_for_compare( $old_email ) === self::normalize_for_compare( (string) $wp_user->user_email ) ) {
+			return;
+		}
+
+		require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-controller.php';
+
+		$controller = new TPW_Member_Controller();
+		$member     = $controller->get_member_by_user_id( $user_id );
+		if ( ! $member || ! isset( $member->id ) ) {
+			return;
+		}
+
+		$state = self::get_linked_email_state( $member, $wp_user );
+		if ( empty( $state['has_drift'] ) ) {
+			return;
+		}
+
+		$updated = $controller->update_member(
+			(int) $member->id,
+			array(
+				'email' => (string) $wp_user->user_email,
+			)
+		);
+
+		if ( false === $updated ) {
+			if ( function_exists( 'error_log' ) ) {
+				error_log(
+					'[TPW Members] Reverse linked email sync failed source=profile_update member_id=' . (int) $member->id .
+					' user_id=' . $user_id .
+					' wp_email=' . (string) $wp_user->user_email
+				);
+			}
+			return;
+		}
+
+		do_action(
+			'tpw_members_linked_email_synced',
+			array(
+				'member_id'           => (int) $member->id,
+				'user_id'             => $user_id,
+				'source'              => 'wp_profile_update',
+				'requested_email'     => (string) $wp_user->user_email,
+				'normalized_email'    => sanitize_email( (string) $wp_user->user_email ),
+				'member_email_before' => isset( $member->email ) ? (string) $member->email : '',
+				'wp_email_before'     => $old_email,
+				'member_email_after'  => (string) $wp_user->user_email,
+				'wp_email_after'      => (string) $wp_user->user_email,
+				'did_update_member'   => true,
+				'did_update_wp_user'  => false,
+				'outcome'             => 'reverse_sync_member',
+			),
+			$member,
+			$wp_user,
+			array(
+				'source' => 'wp_profile_update',
+				'raw'    => $userdata,
+			)
+		);
+	}
+
+	/**
 	 * Synchronize a linked member email without changing user_login.
 	 *
 	 * @param TPW_Member_Controller $controller      Member controller.

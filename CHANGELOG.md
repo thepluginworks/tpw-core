@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.26.1] - 2026-04-29
+### Changed
+- Members: linked member and WordPress user email addresses now stay synchronized across admin edits, WordPress profile edits, self-service profile email changes, and existing-user CSV imports.
+- Members: Edit Member now blocks password setup sends when linked email drift exists, shows the true WordPress recipient address clearly, and reduces synced-state UI noise.
+
 ## [1.26.0] - 2026-04-24
 ### Changed
 - Members: [tpw_member_profile] now includes a dedicated Change Password tab where linked members can update their own password from the front end using current-password verification and WordPress-native password handling.

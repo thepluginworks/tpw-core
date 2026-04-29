@@ -13,6 +13,20 @@ class TPW_Member_Form_Handler {
         return TPW_Member_Access::can_manage_members_current();
     }
 
+    protected static function redirect_edit_form_with_email_error( $member_id, $error_code ) {
+        $edit_url = add_query_arg(
+            [
+                'action'                 => 'edit_form',
+                'id'                     => (int) $member_id,
+                'tpw_member_email_error' => sanitize_key( (string) $error_code ),
+            ],
+            site_url( '/manage-members/' )
+        );
+
+        wp_safe_redirect( $edit_url );
+        exit;
+    }
+
     /**
      * Determine if the current request is within the Manage Members page context.
      * Uses presence of the [tpw_manage_members] shortcode on the current page content
@@ -359,18 +373,18 @@ class TPW_Member_Form_Handler {
             if ( is_wp_error( $sync_result ) ) {
                 $error_code = $sync_result->get_error_code();
                 if ( 'tpw_member_email_invalid' === $error_code ) {
-                    wp_die( 'Please enter a valid email address.', '', [ 'response' => 400 ] );
+                    self::redirect_edit_form_with_email_error( $member_id, 'invalid' );
                 }
 
                 if ( 'tpw_member_email_broken_link' === $error_code ) {
-                    wp_die( 'This member is linked to a WordPress user that could not be loaded. Repair the account link before changing the email.', '', [ 'response' => 409 ] );
+                    self::redirect_edit_form_with_email_error( $member_id, 'broken_link' );
                 }
 
                 if ( 'tpw_member_email_conflict' === $error_code ) {
-                    wp_die( 'That email address is already in use by another WordPress account. Use a different email or link the correct account first.', '', [ 'response' => 409 ] );
+                    self::redirect_edit_form_with_email_error( $member_id, 'conflict' );
                 }
 
-                wp_die( 'The member email could not be synchronized with the linked WordPress account. No email change was saved.', '', [ 'response' => 500 ] );
+                self::redirect_edit_form_with_email_error( $member_id, 'sync_failed' );
             }
 
             unset( $core_data['email'] );
