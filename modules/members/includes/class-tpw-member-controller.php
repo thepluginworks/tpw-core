@@ -8,7 +8,9 @@ class TPW_Member_Controller {
      * @param object|array|null $member Member row.
      * @return void
      */
-    protected function sync_linked_member_wp_roles( $member ) {
+    protected function sync_linked_member_wp_roles( $member, $args = [] ) {
+        $member = $this->reconcile_linked_member_admin_state( $member, $args );
+
         if ( is_object( $member ) ) {
             $user_id  = isset( $member->user_id ) ? (int) $member->user_id : 0;
             $status   = isset( $member->status ) ? (string) $member->status : '';
@@ -33,8 +35,80 @@ class TPW_Member_Controller {
         }
 
         if ( class_exists( 'TPW_Member_Roles', false ) ) {
-            TPW_Member_Roles::sync_member_access_roles( $user_id, $status, $is_admin );
+            TPW_Member_Roles::sync_member_access_roles(
+                $user_id,
+                $status,
+                $is_admin,
+                [
+                    'allow_admin_removal' => ! empty( $args['explicit_admin_change'] ),
+                ]
+            );
         }
+    }
+
+    /**
+     * Reconcile linked administrator drift for a member row.
+     *
+     * For linked members, a WordPress user who already has the administrator
+     * role is canonical for upward healing: tpw_members.is_admin should be 1.
+     * Downward changes must remain explicit and intentional.
+     *
+     * @param object|array|null $member Member row.
+     * @param array             $args   Optional context arguments.
+     * @return object|array|null
+     */
+    public function reconcile_linked_member_admin_state( $member, $args = [] ) {
+        if ( ! is_object( $member ) && ! is_array( $member ) ) {
+            return $member;
+        }
+
+        if ( ! empty( $args['explicit_admin_change'] ) ) {
+            return $member;
+        }
+
+        $member_id = is_object( $member ) ? ( isset( $member->id ) ? (int) $member->id : 0 ) : ( isset( $member['id'] ) ? (int) $member['id'] : 0 );
+        $user_id   = is_object( $member ) ? ( isset( $member->user_id ) ? (int) $member->user_id : 0 ) : ( isset( $member['user_id'] ) ? (int) $member['user_id'] : 0 );
+        $is_admin  = is_object( $member ) ? ! empty( $member->is_admin ) : ! empty( $member['is_admin'] );
+
+        if ( $member_id <= 0 || $user_id <= 0 || $is_admin ) {
+            return $member;
+        }
+
+        if ( ! class_exists( 'TPW_Member_Roles', false ) ) {
+            $roles_file = plugin_dir_path( __FILE__ ) . 'class-tpw-member-roles.php';
+            if ( file_exists( $roles_file ) ) {
+                require_once $roles_file;
+            }
+        }
+
+        if ( ! class_exists( 'TPW_Member_Roles', false ) || ! TPW_Member_Roles::user_has_role( $user_id, 'administrator' ) ) {
+            return $member;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'tpw_members';
+        $updated = $wpdb->update(
+            $table,
+            [
+                'is_admin'   => 1,
+                'updated_at' => current_time( 'mysql' ),
+            ],
+            [ 'id' => $member_id ],
+            [ '%d', '%s' ],
+            [ '%d' ]
+        );
+
+        if ( false === $updated ) {
+            return $member;
+        }
+
+        if ( is_object( $member ) ) {
+            $member->is_admin = 1;
+            return $member;
+        }
+
+        $member['is_admin'] = 1;
+        return $member;
     }
 
     /**
@@ -337,7 +411,7 @@ class TPW_Member_Controller {
      * @param array $data Column => value map for tpw_members
      * @return int|false Inserted member ID or false on failure
      */
-    public function add_member( $data ) {
+    public function add_member( $data, $args = [] ) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
 
@@ -401,7 +475,7 @@ class TPW_Member_Controller {
 
         $member_id = (int) $wpdb->insert_id;
         $member    = (object) array_merge( [ 'id' => $member_id ], $insert );
-        $this->sync_linked_member_wp_roles( $member );
+        $this->sync_linked_member_wp_roles( $member, $args );
 
         return $member_id;
     }
@@ -414,7 +488,7 @@ class TPW_Member_Controller {
      * @param array $data Partial column => value map
      * @return int|false Rows affected or false on error
      */
-    public function update_member( $id, $data ) {
+    public function update_member( $id, $data, $args = [] ) {
         global $wpdb;
         $table = $wpdb->prefix . 'tpw_members';
 
@@ -499,7 +573,7 @@ class TPW_Member_Controller {
     $res = $wpdb->update( $table, $update, [ 'id' => $id ] );
         if ( $res !== false ) {
             if ( array_intersect( [ 'user_id', 'status', 'is_admin' ], array_keys( $update ) ) ) {
-                $this->sync_linked_member_wp_roles( $this->get_member( $id ) );
+                $this->sync_linked_member_wp_roles( $this->get_member( $id ), $args );
             }
 
             // Bust dependent option caches for any updated columns

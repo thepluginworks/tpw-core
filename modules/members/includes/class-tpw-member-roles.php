@@ -92,6 +92,28 @@ class TPW_Member_Roles {
 	}
 
 	/**
+	 * Check whether a user currently has a specific WordPress role.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $role    Role slug.
+	 * @return bool
+	 */
+	public static function user_has_role( $user_id, $role ) {
+		$user_id = (int) $user_id;
+		$role    = is_string( $role ) ? trim( $role ) : '';
+		if ( $user_id <= 0 || '' === $role ) {
+			return false;
+		}
+
+		$user = new WP_User( $user_id );
+		if ( ! $user || ! $user->exists() ) {
+			return false;
+		}
+
+		return in_array( $role, (array) $user->roles, true );
+	}
+
+	/**
 	 * Resolve the legacy WP role mapped from a TPW member status.
 	 *
 	 * @param string $status Canonical member status.
@@ -119,13 +141,17 @@ class TPW_Member_Roles {
 	}
 
 	/**
-	 * Sync the WordPress administrator role from the TPW is_admin flag.
+	 * Add the WordPress administrator role when TPW admin access is enabled.
 	 *
-	 * @param int  $user_id  User ID.
-	 * @param bool $is_admin Whether the user should have WordPress admin access.
+	 * Generic member saves must never revoke administrator access as a side effect.
+	 * Revocation, when needed, must be handled by an explicit dedicated action.
+	 *
+	 * @param int  $user_id       User ID.
+	 * @param bool $is_admin      Whether TPW admin access is enabled.
+	 * @param bool $allow_removal Whether the sync may revoke administrator.
 	 * @return void
 	 */
-	public static function sync_admin_role( $user_id, $is_admin ) {
+	public static function sync_admin_role( $user_id, $is_admin, $allow_removal = false ) {
 		$user_id = (int) $user_id;
 		if ( $user_id <= 0 ) {
 			return;
@@ -136,27 +162,32 @@ class TPW_Member_Roles {
 			return;
 		}
 
-		self::remove_role( $user_id, 'administrator' );
+		if ( $allow_removal ) {
+			self::remove_role( $user_id, 'administrator' );
+		}
 	}
 
 	/**
 	 * Apply the TPW-managed WordPress roles for a member-linked user.
 	 *
-	 * This keeps the existing additive status-role behavior intact while making
-	 * administrator role downgrades explicit when the TPW admin flag is cleared.
+	 * This keeps the existing additive status-role behavior intact while preserving
+	 * any existing WordPress administrator role during ordinary member saves.
 	 *
 	 * @param int    $user_id  User ID.
 	 * @param string $status   Canonical member status.
 	 * @param bool   $is_admin Whether TPW admin access is enabled.
+	 * @param array  $args     Optional sync arguments.
 	 * @return void
 	 */
-	public static function sync_member_access_roles( $user_id, $status, $is_admin ) {
+	public static function sync_member_access_roles( $user_id, $status, $is_admin, $args = array() ) {
 		$user_id = (int) $user_id;
 		if ( $user_id <= 0 ) {
 			return;
 		}
 
-		self::sync_admin_role( $user_id, (bool) $is_admin );
+		$allow_admin_removal = ! empty( $args['allow_admin_removal'] );
+
+		self::sync_admin_role( $user_id, (bool) $is_admin, $allow_admin_removal );
 
 		$role = self::get_status_role_for_status( $status );
 		if ( '' !== $role ) {

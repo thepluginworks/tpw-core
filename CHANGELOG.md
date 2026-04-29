@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.26.2] - 2026-04-29
+### Changed
+- Members: linked TPW administrator state now stays synchronised with the linked WordPress `administrator` role for linked members. Existing linked WordPress administrators auto-heal `tpw_members.is_admin` upward, missing `is_admin` checkboxes preserve the current state, explicit ticks grant administrator, and explicit unticks remove administrator only when intentionally submitted from an editable admin field.
+
 ## [1.26.1] - 2026-04-29
 ### Changed
 - Members: linked member and WordPress user email addresses now stay synchronized across admin edits, WordPress profile edits, self-service profile email changes, and existing-user CSV imports.

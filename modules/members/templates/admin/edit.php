@@ -8,6 +8,7 @@ $time_format = tpw_core_get_time_format();
 
 $member_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $member = $controller->get_member($member_id);
+$member = $controller->reconcile_linked_member_admin_state( $member );
 $meta = TPW_Member_Meta::get_all_meta($member_id);
 $linked_wp_user = ( ! empty( $member->user_id ) ) ? get_userdata( (int) $member->user_id ) : null;
 
@@ -204,6 +205,9 @@ if ( ! $member ) {
 
                     case 'checkbox':
                         $checked = $value == '1' ? 'checked' : '';
+                        if ( $is_protected_permission_field && ! $is_disabled_permission_field ) {
+                            echo '<input type="hidden" name="tpw_explicit_protected_checkboxes[]" value="' . esc_attr( $key ) . '">';
+                        }
                         if ( $inline_checkbox ) {
                             echo '<div class="tpw-inline-checkbox" style="' . esc_attr( $wrapper_style ) . '">'
                                 . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>'
@@ -250,6 +254,9 @@ if ( ! $member ) {
                             echo '</select>';
                         } elseif ( in_array( $key, $known_checkbox_fields ) ) {
                             $checked = $value == '1' ? 'checked' : '';
+                            if ( $is_protected_permission_field && ! $is_disabled_permission_field ) {
+                                echo '<input type="hidden" name="tpw_explicit_protected_checkboxes[]" value="' . esc_attr( $key ) . '">';
+                            }
                             if ( $inline_checkbox ) {
                                 echo '<div class="tpw-inline-checkbox" style="' . esc_attr( $wrapper_style ) . '">'
                                     . '<input type="checkbox" name="' . esc_attr($key) . '" id="' . esc_attr($key) . '" value="1" ' . $checked . $disabled_attr . '>'

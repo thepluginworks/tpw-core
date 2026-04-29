@@ -2,6 +2,30 @@
 
 class TPW_Member_Form_Handler {
     /**
+     * Check whether a protected checkbox field was explicitly submitted by the edit form.
+     *
+     * Protected permission fields must only change when the edit UI intentionally
+     * rendered them as editable controls for an authorized actor.
+     *
+     * @param string $field_key Field key.
+     * @return bool
+     */
+    protected static function protected_checkbox_was_explicitly_submitted( $field_key ) {
+        $field_key = sanitize_key( (string) $field_key );
+        if ( '' === $field_key ) {
+            return false;
+        }
+
+        $raw = isset( $_POST['tpw_explicit_protected_checkboxes'] ) ? wp_unslash( $_POST['tpw_explicit_protected_checkboxes'] ) : array();
+        if ( ! is_array( $raw ) ) {
+            return false;
+        }
+
+        $submitted = array_map( 'sanitize_key', $raw );
+        return in_array( $field_key, $submitted, true );
+    }
+
+    /**
      * Determine if the current user is allowed to manage members.
      * Aligns with AJAX permissions (admins always, optionally committee based on setting).
      */
@@ -181,7 +205,13 @@ class TPW_Member_Form_Handler {
         // Ensure canonical stored value (e.g., 'life' -> 'Life Member')
         $core_data['status'] = self::normalize_status( $core_data['status'] ?? 'Active' );
 
-        // Handle photo upload if enabled (same constraints as edit form)
+        $updated = $controller->update_member(
+            $member_id,
+            $core_data,
+            [
+                'explicit_admin_change' => $explicit_admin_change,
+            ]
+        );
         $photos_enabled = get_option('tpw_members_use_photos', '0') === '1';
         if ( $photos_enabled && isset($_FILES['member_photo_file']) && is_array($_FILES['member_photo_file']) && ! empty($_FILES['member_photo_file']['name']) ) {
             $file = $_FILES['member_photo_file'];
@@ -306,6 +336,18 @@ class TPW_Member_Form_Handler {
         // Load existing member to detect WHI changes
         $controller = new TPW_Member_Controller();
         $member_before = $controller->get_member($member_id);
+        if ( $member_before ) {
+            $member_before = $controller->reconcile_linked_member_admin_state( $member_before );
+        }
+
+        if ( ! class_exists( 'TPW_Member_Access' ) ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-tpw-member-access.php';
+        }
+
+        $explicit_admin_change = false;
+        if ( TPW_Member_Access::can_edit_protected_member_permission_fields_current() ) {
+            $explicit_admin_change = self::protected_checkbox_was_explicitly_submitted( 'is_admin' );
+        }
 
         foreach ( $enabled_fields as $field ) {
             $key = $field['key'];
@@ -321,8 +363,17 @@ class TPW_Member_Form_Handler {
                 $value = null;
             }
 
-            // Normalize core checkbox flags to explicit 0/1 so unchecked persists as 0
+            $is_protected_permission_field = class_exists( 'TPW_Member_Access' )
+                && TPW_Member_Access::is_protected_member_permission_field( $key );
+
+            // Normalize core checkbox flags to explicit 0/1 so unchecked persists as 0.
+            // Protected permission fields are different: only change them when the
+            // edit form explicitly submitted that protected control.
             if ( $field['is_core'] && ( ($field['type'] ?? '') === 'checkbox' || in_array( $key, $known_core_checkboxes, true ) ) ) {
+                if ( $is_protected_permission_field && ! self::protected_checkbox_was_explicitly_submitted( $key ) ) {
+                    continue;
+                }
+
                 $core_data[$key] = isset($_POST[$key]) ? 1 : 0;
                 continue;
             }
@@ -475,7 +526,13 @@ class TPW_Member_Form_Handler {
         }
 
     $controller = new TPW_Member_Controller();
-    $updated = $controller->update_member($member_id, $core_data);
+        $updated = $controller->update_member(
+            $member_id,
+            $core_data,
+            [
+                'explicit_admin_change' => $explicit_admin_change,
+            ]
+        );
 
         // After successful update, delete stale photo file from disk if needed
         $redirect_msg = '';
