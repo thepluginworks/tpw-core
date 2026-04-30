@@ -52,6 +52,25 @@ class TPW_Member_Form_Handler {
     }
 
     /**
+     * Delete a newly created WordPress user after a failed member add.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return void
+     */
+    protected static function rollback_created_user( $user_id ) {
+        $user_id = (int) $user_id;
+        if ( $user_id <= 0 ) {
+            return;
+        }
+
+        if ( ! function_exists( 'wp_delete_user' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+        }
+
+        wp_delete_user( $user_id );
+    }
+
+    /**
      * Determine if the current request is within the Manage Members page context.
      * Uses presence of the [tpw_manage_members] shortcode on the current page content
      * instead of relying on a hardcoded slug.
@@ -205,13 +224,6 @@ class TPW_Member_Form_Handler {
         // Ensure canonical stored value (e.g., 'life' -> 'Life Member')
         $core_data['status'] = self::normalize_status( $core_data['status'] ?? 'Active' );
 
-        $updated = $controller->update_member(
-            $member_id,
-            $core_data,
-            [
-                'explicit_admin_change' => $explicit_admin_change,
-            ]
-        );
         $photos_enabled = get_option('tpw_members_use_photos', '0') === '1';
         if ( $photos_enabled && isset($_FILES['member_photo_file']) && is_array($_FILES['member_photo_file']) && ! empty($_FILES['member_photo_file']['name']) ) {
             $file = $_FILES['member_photo_file'];
@@ -272,6 +284,7 @@ class TPW_Member_Form_Handler {
         $member_id = $controller->add_member($core_data);
 
         if ( ! $member_id ) {
+            self::rollback_created_user( $user_id );
             wp_die( 'Failed to save member record.' );
         }
 

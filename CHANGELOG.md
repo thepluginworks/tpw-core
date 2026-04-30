@@ -2,10 +2,14 @@
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-04-30
+
 ### Changed
 - Members: added compatibility-era `tpw_members.is_secretary` and `tpw_members.is_treasurer` storage, seeded those fields into Manage Members, and grouped the in-scope Core access and office flags under a new `Access & Office Roles` section on Add/Edit Member screens.
 - Members: protected Manage Members permission-field enforcement now includes `is_secretary` and `is_treasurer`, while keeping `is_admin` special-case WordPress administrator synchronisation intact.
 - Permissions: documented and implemented the Phase 1 Core compatibility read path through `tpw_core_user_can()`, including `tpw_members_manage`, `tpw_payments_manage`, and `tpw_events_manage` office-role mappings without widening unrelated module migrations.
+- Members: Add Member now rolls back the newly created linked WordPress user if member-row persistence fails, preventing orphan partial creates on add failures.
+- Members: linked TPW administrator saves now promote the linked WordPress user to `administrator` as the primary WordPress role when `is_admin = 1`, while preserving explicit authorised removals and stale-mismatch repair on later saves.
 
 ## [1.26.2] - 2026-04-29
 ### Changed

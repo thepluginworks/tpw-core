@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.26.2
+Stable tag: 1.27.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.27.0 =
+- Members: added Secretary and Treasurer as compatibility-era office-role fields in Manage Members and grouped the in-scope access and office flags under a new Access & Office Roles section on Add and Edit Member screens.
+- Permissions: expanded the TPW Core compatibility read path through `tpw_core_user_can()` so members, payments, and events checks can resolve the new office-role mappings without widening unrelated module migrations.
+- Members: protected permission-field enforcement now covers Secretary and Treasurer, Add Member no longer leaves a partial create behind on member-save failure, and linked Administrator edits now keep the linked WordPress user's primary role aligned with the final saved admin state.
 
 = 1.26.1 =
 - Members: linked member and WordPress user email addresses now stay synchronized across admin edits, WordPress profile edits, self-service profile email changes, and existing-user CSV imports.

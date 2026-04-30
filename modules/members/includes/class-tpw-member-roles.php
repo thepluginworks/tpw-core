@@ -151,6 +151,45 @@ class TPW_Member_Roles {
 	 * @param bool $allow_removal Whether the sync may revoke administrator.
 	 * @return void
 	 */
+	protected static function promote_role_to_primary( $user_id, $role ) {
+		$user_id = (int) $user_id;
+		$role    = is_string( $role ) ? trim( $role ) : '';
+
+		if ( $user_id <= 0 || '' === $role ) {
+			return;
+		}
+
+		$user = new WP_User( $user_id );
+		if ( ! $user || ! $user->exists() ) {
+			return;
+		}
+
+		$current_roles = array_values( array_filter( array_unique( array_map( 'strval', (array) $user->roles ) ) ) );
+		if ( ! in_array( $role, $current_roles, true ) ) {
+			$user->add_role( $role );
+			$current_roles[] = $role;
+		}
+
+		if ( isset( $current_roles[0] ) && $current_roles[0] === $role ) {
+			return;
+		}
+
+		$roles_to_restore = array_values(
+			array_filter(
+				$current_roles,
+				static function( $current_role ) use ( $role ) {
+					return $current_role !== $role;
+				}
+			)
+		);
+
+		$user->set_role( $role );
+
+		foreach ( $roles_to_restore as $restore_role ) {
+			$user->add_role( $restore_role );
+		}
+	}
+
 	public static function sync_admin_role( $user_id, $is_admin, $allow_removal = false ) {
 		$user_id = (int) $user_id;
 		if ( $user_id <= 0 ) {
@@ -158,7 +197,7 @@ class TPW_Member_Roles {
 		}
 
 		if ( $is_admin ) {
-			self::add_role( $user_id, 'administrator' );
+			self::promote_role_to_primary( $user_id, 'administrator' );
 			return;
 		}
 
