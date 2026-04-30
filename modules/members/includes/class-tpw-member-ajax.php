@@ -614,7 +614,7 @@ class TPW_Member_Ajax {
 
                 // Fetch all meta for this member
                 $meta = TPW_Member_Meta::get_all_meta( $requested_id );
-                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer' ];
+                $known_checkbox_fields = [ 'is_committee', 'is_match_manager', 'is_admin', 'is_manage_members', 'is_secretary', 'is_treasurer', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer' ];
                 if ( ! class_exists( 'TPW_Identity_Compat' ) ) {
                     require_once plugin_dir_path( __FILE__ ) . 'class-tpw-identity-compat.php';
                 }

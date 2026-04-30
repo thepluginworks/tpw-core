@@ -82,7 +82,7 @@ add_action( 'before_woocommerce_init', function() {
 } );
 
 // Define the current members DB version
-define( 'TPW_MEMBERS_DB_VERSION', '0.3.9' );
+define( 'TPW_MEMBERS_DB_VERSION', '0.4.0' );
 
 // Run DB upgrades if needed
 add_action( 'admin_init', 'tpw_maybe_upgrade_members_db' );

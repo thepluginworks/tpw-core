@@ -28,8 +28,11 @@ This matrix explains the *default intent*.
    - WP Admin implicitly has all TPW capabilities.
 
 2. **Capabilities, not roles, are enforced**
-   - Plugins check `current_user_can( 'tpw_xxx' )`.
+   - Plugin-facing TPW checks use `tpw_core_user_can( 'tpw_xxx', $user_id )`.
    - Roles map to capabilities via TPW Core logic.
+
+Current Phase 1 Core note:
+- Secretary and Treasurer remain compatibility-era storage in `tpw_members`; plugins must not query raw flags directly.
 
 3. **Defaults are adjustable**
    - Clubs may grant or revoke capabilities (e.g. give Treasurer temporary member-import access).
@@ -77,8 +80,11 @@ This matrix explains the *default intent*.
 | Capability | Admin | Secretary | Treasurer | Committee | Auditor |
 |-----------|------|-----------|-----------|-----------|---------|
 | `tpw_payments_view` | ✔ | ✔ | ✔ | ✖ | ✔ |
-| `tpw_payments_manage` | ✔ | ✔ | ✔ | ✖ | ✖ |
+| `tpw_payments_manage` | ✔ | ✖ | ✔ | ✖ | ✖ |
 | `tpw_payments_export` | ✔ | ✔ | ✔ | ✖ | ✔ |
+
+Current Core compatibility bridge note:
+- `tpw_payments_manage` currently resolves through WordPress Administrator, `is_admin`, or `is_treasurer`.
 
 ---
 
@@ -172,6 +178,9 @@ This matrix explains the *default intent*.
 | `tpw_events_manage` | ✔ | ✔ |
 | `tpw_venues_manage` | ✔ | ✔ |
 | `tpw_events_settings_manage` | ✔ | ✖ |
+
+Current Core compatibility bridge note:
+- `tpw_events_manage` currently resolves through WordPress Administrator, `is_admin`, or `is_secretary` until later events-module migration work defines a dedicated long-term owner.
 
 ---
 

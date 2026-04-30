@@ -27,6 +27,13 @@ $excluded_keys = [ 'user_pass', 'password', 'password_hash' ];
 $can_edit_protected_permission_fields = TPW_Member_Access::can_edit_protected_member_permission_fields_current();
 $protected_permission_fields = TPW_Member_Access::get_protected_member_permission_fields();
 $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_Helper::should_render_lookup_ui();
+$known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_manage_members', 'is_secretary', 'is_treasurer', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
+
+$grouped = [];
+foreach ( $fields as $field ) {
+    $section_name = isset( $field['section'] ) && $field['section'] !== '' ? $field['section'] : 'General';
+    $grouped[ $section_name ][] = $field;
+}
 ?>
 
 <div class="tpw-member-form">
@@ -34,7 +41,10 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
     <form method="post" action="" enctype="multipart/form-data">
         <?php wp_nonce_field('tpw_add_member_action', 'tpw_add_member_nonce'); ?>
 
-        <?php foreach ( $fields as $field ): ?>
+        <?php foreach ( $grouped as $section_name => $section_fields ) : ?>
+            <fieldset class="tpw-section">
+                <legend class="tpw-section__legend"><?php echo esc_html( $section_name ); ?></legend>
+        <?php foreach ( $section_fields as $field ): ?>
             <?php
                 // Only enabled fields are returned from loader. Extra guard in case of legacy data
                 if ( isset($field['is_enabled']) && (int)$field['is_enabled'] === 0 ) continue;
@@ -44,7 +54,7 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
             <div class="form-group">
                 <?php
                 $label_text = ($field['key'] === 'status') ? 'Member Status' : $field['label'];
-                $is_inline_checkbox = in_array($field['key'], ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_manage_members','is_volunteer'], true);
+                $is_inline_checkbox = in_array($field['key'], $known_checkbox_fields, true);
                 $is_protected_permission_field = in_array( $field['key'], $protected_permission_fields, true );
                 $is_disabled_permission_field = $is_protected_permission_field && ! $can_edit_protected_permission_fields;
                 $disabled_attr = $is_disabled_permission_field ? ' disabled aria-disabled="true"' : '';
@@ -57,7 +67,7 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
 
                 <?php
                 // Force known tinyint fields to checkbox if type is not explicitly set
-                $tinyint_flags = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer'];
+                $tinyint_flags = $known_checkbox_fields;
                 if (in_array($field['key'], $tinyint_flags, true)) {
                     $field['type'] = 'checkbox';
                 }
@@ -162,6 +172,8 @@ $show_address_lookup_ui = class_exists( 'TPW_Postcode_Helper' ) && TPW_Postcode_
                 }
                 ?>
             </div>
+        <?php endforeach; ?>
+            </fieldset>
         <?php endforeach; ?>
 
         <?php if ( get_option('tpw_members_use_photos', '0') === '1' ) : ?>

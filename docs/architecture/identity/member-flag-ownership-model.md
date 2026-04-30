@@ -20,6 +20,8 @@ It covers the current Phase 2C classification of the known member flags:
 
 - `is_admin`
 - `is_manage_members`
+- `is_secretary`
+- `is_treasurer`
 - `is_committee`
 - `is_match_manager`
 - `is_noticeboard_admin`
@@ -48,6 +50,8 @@ The Phase 2C core rule is frozen as follows:
 This rule applies even where a flag currently influences authority-sensitive behaviour.
 
 The existence of a flag in `tpw_members` does not make that flag part of the canonical identity model. Storage location is not the same as architectural meaning or long-term ownership.
+
+Secretary and Treasurer currently live in `tpw_members` as compatibility-era storage columns (`is_secretary` and `is_treasurer`). That storage is transitional. Plugin code must use `tpw_core_user_can()` and must not treat raw member flags as the long-term contract.
 
 ## 5. Classification Model
 
@@ -110,6 +114,26 @@ Migration difficulty identifies how safely the flag could be moved, wrapped, rep
 
 ### 6.3 `is_committee`
 
+### 6.3 `is_secretary`
+
+- **Ownership:** shared / ambiguous
+- **System role:** responsibility / permission / legacy signal
+- **Why it exists today:** compatibility-era office role storage currently used by the Core helper layer for member-management and events-management checks
+- **Risk level:** high
+- **Migration difficulty:** complex
+- **Conservative notes:** this flag currently lives in `tpw_members` for compatibility only. Plugins must not read it directly; the supported read path is `tpw_core_user_can()`.
+
+### 6.4 `is_treasurer`
+
+- **Ownership:** shared / ambiguous
+- **System role:** responsibility / permission / legacy signal
+- **Why it exists today:** compatibility-era office role storage currently used by the Core helper layer for payments-management checks
+- **Risk level:** high
+- **Migration difficulty:** complex
+- **Conservative notes:** this flag currently lives in `tpw_members` for compatibility only. Plugins must not read it directly; the supported read path is `tpw_core_user_can()`.
+
+### 6.5 `is_committee`
+
 - **Ownership:** shared / ambiguous
 - **System role:** responsibility / legacy signal
 - **Why it exists today:** historical broad committee marker reused across more than one area as a shorthand for recognised responsibility and sometimes for authority assumptions
@@ -117,7 +141,7 @@ Migration difficulty identifies how safely the flag could be moved, wrapped, rep
 - **Migration difficulty:** complex
 - **Conservative notes:** committee is too broad to treat as a safe universal permission signal and too widely reused to move casually. Ownership must be clarified before migration, and current behaviour must be preserved while that clarification happens.
 
-### 6.4 `is_match_manager`
+### 6.6 `is_match_manager`
 
 - **Ownership:** plugin-owned (FlexiGolf)
 - **System role:** responsibility / legacy signal
@@ -126,7 +150,7 @@ Migration difficulty identifies how safely the flag could be moved, wrapped, rep
 - **Migration difficulty:** complex
 - **Conservative notes:** this flag should not be promoted into Core identity or cross-plugin authority. Later migration may standardise its read path, but any redesign should remain anchored to the FlexiGolf domain.
 
-### 6.5 `is_noticeboard_admin`
+### 6.7 `is_noticeboard_admin`
 
 - **Ownership:** plugin-owned
 - **System role:** permission / responsibility / legacy signal
@@ -135,7 +159,7 @@ Migration difficulty identifies how safely the flag could be moved, wrapped, rep
 - **Migration difficulty:** complex
 - **Conservative notes:** this flag should remain plugin-scoped. It must not be elevated into Core identity or treated as a general-purpose platform authority signal during Phase 2C.
 
-### 6.6 `is_gallery_admin`
+### 6.8 `is_gallery_admin`
 
 - **Ownership:** plugin-owned
 - **System role:** permission / responsibility / legacy signal
@@ -144,7 +168,7 @@ Migration difficulty identifies how safely the flag could be moved, wrapped, rep
 - **Migration difficulty:** complex
 - **Conservative notes:** this flag should remain plugin-scoped and compatibility-preserved. Phase 2C does not authorise broad reinterpretation or promotion into platform identity or Core-wide authority.
 
-### 6.7 `is_volunteer`
+### 6.9 `is_volunteer`
 
 - **Ownership:** plugin-owned or domain-owned
 - **System role:** responsibility / legacy signal
@@ -159,6 +183,8 @@ The primary member-flag blockers for safe forward migration are:
 
 - `is_admin`
 - `is_manage_members`
+- `is_secretary`
+- `is_treasurer`
 - `is_committee`
 
 These are the main blockers because they combine one or more of the following risks:
@@ -178,6 +204,7 @@ The following Phase 2C conclusions are frozen:
 
 - no member flag is canonical identity
 - Core authority flags must be preserved exactly for now
+- Secretary and Treasurer remain compatibility-era storage columns in `tpw_members`, not the long-term plugin contract
 - shared or ambiguous flags require ownership clarification before migration
 - plugin-scoped flags must not be promoted to Core identity
 - no flag should be removed or repurposed during Phase 2C

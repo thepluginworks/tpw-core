@@ -39,9 +39,11 @@ class TPW_Members_DB {
             is_committee TINYINT(1) DEFAULT 0,
             is_match_manager TINYINT(1) DEFAULT 0,
             is_admin TINYINT(1) DEFAULT 0,
+            is_manage_members TINYINT(1) DEFAULT 0,
+            is_secretary TINYINT(1) NOT NULL DEFAULT 0,
+            is_treasurer TINYINT(1) NOT NULL DEFAULT 0,
             is_noticeboard_admin TINYINT(1) DEFAULT 0,
             is_gallery_admin TINYINT(1) DEFAULT 0,
-            is_manage_members TINYINT(1) DEFAULT 0,
             is_volunteer TINYINT(1) DEFAULT 0,
             share_with_members TINYINT(1) DEFAULT 1,
 
@@ -179,6 +181,8 @@ class TPW_Members_DB {
         }
 
         self::ensure_member_field_settings_rows( $fs_table );
+    self::ensure_member_field_sections_option();
+    self::ensure_access_office_role_field_order( $fs_table );
 
         // New table: member field visibility per group
         $sql_visibility = "CREATE TABLE {$wpdb->prefix}tpw_member_field_visibility (
@@ -229,6 +233,106 @@ class TPW_Members_DB {
         $exists_field_settings = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $field_settings_table ) );
         if ( $exists_field_settings === $field_settings_table ) {
             self::ensure_member_field_settings_rows( $field_settings_table );
+            self::ensure_member_field_sections_option();
+            self::ensure_access_office_role_field_order( $field_settings_table );
+        }
+    }
+
+    private static function get_access_office_role_field_keys() {
+        return [
+            'is_admin',
+            'is_manage_members',
+            'is_secretary',
+            'is_treasurer',
+            'is_noticeboard_admin',
+            'is_gallery_admin',
+        ];
+    }
+
+    private static function ensure_member_field_sections_option() {
+        $sections_map = get_option( 'tpw_member_field_sections', [] );
+        if ( ! is_array( $sections_map ) ) {
+            $sections_map = [];
+        }
+
+        $target_section = 'Access & Office Roles';
+        $updated        = false;
+
+        foreach ( self::get_access_office_role_field_keys() as $field_key ) {
+            $current_section = isset( $sections_map[ $field_key ] ) ? trim( (string) $sections_map[ $field_key ] ) : '';
+            if ( $current_section === $target_section ) {
+                continue;
+            }
+
+            $sections_map[ $field_key ] = $target_section;
+            $updated = true;
+        }
+
+        if ( $updated ) {
+            update_option( 'tpw_member_field_sections', $sections_map );
+        }
+    }
+
+    private static function ensure_access_office_role_field_order( $table_name ) {
+        global $wpdb;
+
+        $rows = $wpdb->get_results( "SELECT field_key, sort_order FROM {$table_name} ORDER BY sort_order ASC, id ASC" );
+        if ( empty( $rows ) ) {
+            return;
+        }
+
+        $current_order = [];
+        $sort_map      = [];
+        foreach ( (array) $rows as $row ) {
+            if ( ! isset( $row->field_key ) ) {
+                continue;
+            }
+
+            $field_key       = (string) $row->field_key;
+            $current_order[] = $field_key;
+            $sort_map[ $field_key ] = isset( $row->sort_order ) ? (int) $row->sort_order : 0;
+        }
+
+        $target_keys = array_values( array_intersect( self::get_access_office_role_field_keys(), $current_order ) );
+        if ( empty( $target_keys ) ) {
+            return;
+        }
+
+        $current_target_order = array_values( array_filter( $current_order, function( $field_key ) {
+            return in_array( $field_key, self::get_access_office_role_field_keys(), true );
+        } ) );
+
+        if ( $current_target_order === $target_keys ) {
+            return;
+        }
+
+        $insert_index = count( $current_order );
+        foreach ( $target_keys as $field_key ) {
+            $position = array_search( $field_key, $current_order, true );
+            if ( false !== $position ) {
+                $insert_index = min( $insert_index, (int) $position );
+            }
+        }
+
+        $non_target_order = array_values( array_filter( $current_order, function( $field_key ) {
+            return ! in_array( $field_key, self::get_access_office_role_field_keys(), true );
+        } ) );
+
+        $new_order = $non_target_order;
+        array_splice( $new_order, $insert_index, 0, $target_keys );
+
+        foreach ( $new_order as $sort_order => $field_key ) {
+            if ( isset( $sort_map[ $field_key ] ) && $sort_map[ $field_key ] === (int) $sort_order ) {
+                continue;
+            }
+
+            $wpdb->update(
+                $table_name,
+                [ 'sort_order' => (int) $sort_order ],
+                [ 'field_key' => $field_key ],
+                [ '%d' ],
+                [ '%s' ]
+            );
         }
     }
 
@@ -279,6 +383,27 @@ class TPW_Members_DB {
         if ( ! $has_is_manage_members ) {
             $after_column = $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin';
             $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_manage_members TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
+            $has_is_manage_members = 1;
+        }
+
+        $has_is_secretary = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_secretary'",
+            $table_name
+        ) );
+        if ( ! $has_is_secretary ) {
+            $after_column = $has_is_manage_members ? 'is_manage_members' : ( $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin' );
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_secretary TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
+            $has_is_secretary = 1;
+        }
+
+        $has_is_treasurer = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_treasurer'",
+            $table_name
+        ) );
+        if ( ! $has_is_treasurer ) {
+            $after_column = $has_is_secretary ? 'is_secretary' : ( $has_is_manage_members ? 'is_manage_members' : ( $has_is_gallery_admin ? 'is_gallery_admin' : 'is_noticeboard_admin' ) );
+            $wpdb->query( "ALTER TABLE $table_name ADD COLUMN is_treasurer TINYINT(1) NOT NULL DEFAULT 0 AFTER {$after_column}" );
+            $has_is_treasurer = 1;
         }
 
         // Safety net: ensure the is_volunteer column exists for upgraded installs
@@ -327,7 +452,19 @@ class TPW_Members_DB {
                 'field_key'    => 'is_manage_members',
                 'custom_label' => 'Members Manager',
                 'field_type'   => 'checkbox',
-                'insert_after' => [ 'is_gallery_admin', 'is_noticeboard_admin' ],
+                'insert_after' => [ 'is_admin' ],
+            ],
+            [
+                'field_key'    => 'is_secretary',
+                'custom_label' => 'Secretary',
+                'field_type'   => 'checkbox',
+                'insert_after' => [ 'is_manage_members' ],
+            ],
+            [
+                'field_key'    => 'is_treasurer',
+                'custom_label' => 'Treasurer',
+                'field_type'   => 'checkbox',
+                'insert_after' => [ 'is_secretary' ],
             ],
             [
                 'field_key'    => 'share_with_members',

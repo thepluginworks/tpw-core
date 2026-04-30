@@ -174,7 +174,7 @@ $viewable_selected = get_option( 'tpw_member_viewable_fields', [] );
 $viewable_selected = is_array($viewable_selected) ? $viewable_selected : [];
 $editable_selected = array_values( array_unique( array_merge( $editable_selected, [ 'share_with_members' ] ) ) );
 $viewable_selected = array_values( array_unique( array_merge( $viewable_selected, [ 'share_with_members' ] ) ) );
-$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
+$protected_keys = [ 'status', 'is_committee', 'is_match_manager', 'is_admin', 'is_manage_members', 'is_secretary', 'is_treasurer', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer', 'password_hash', 'user_id', 'society_id' ];
 $never_view_keys = [ 'password_hash', 'user_id', 'society_id' ];
 $profile_page_id = (int) get_option( 'tpw_member_profile_page_id', 0 );
 

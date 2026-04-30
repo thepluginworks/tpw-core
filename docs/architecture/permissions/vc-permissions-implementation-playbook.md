@@ -26,13 +26,18 @@
    - ❌ `current_user_can('tpw_treasurer')`
    - ✔ Only capability strings defined in the permissions specs.
 
-4. **Never invent capability names**
+4. **Never read raw TPW office-role flags in plugin code**
+   - ❌ direct reads of `tpw_members.is_secretary` or `tpw_members.is_treasurer`
+   - ❌ direct SQL against TPW member office-role flags as a plugin contract
+   - ✔ Use `tpw_core_user_can( 'tpw_xxx', $user_id )`
+
+5. **Never invent capability names**
    - Use only capabilities defined in:
      - `tpw-core.permissions.md`
      - the plugin’s own `tpw-<plugin>.permissions.md`
    - If a capability is missing, STOP and update the docs first.
 
-5. **No cross-plugin permission coupling**
+6. **No cross-plugin permission coupling**
    - Do not call permission helpers defined in other plugins
      (e.g. Subscriptions’ `tpw_user_can()` inside RSVP).
    - Each plugin enforces its own permissions.
@@ -50,6 +55,7 @@ Before changing any code, Visual Core MUST:
    - the screen / action being changed
    - the required capability
    - any ownership or field‑level policy
+   - whether the plugin-facing check should call `tpw_core_user_can()`
 4. Cross‑check intent in:
    - `tpw-core/docs/architecture/permissions/role-capability-matrix.md`
 
@@ -63,6 +69,7 @@ Before changing any code, Visual Core MUST:
 1. Add capability checks **in addition to** existing checks.
 2. Preserve `manage_options` and other legacy access paths.
 3. Ensure WP Admin access still works.
+4. Where TPW Core already exposes a compatibility helper mapping, prefer `tpw_core_user_can()` over new raw-flag reads.
 
 ### Step B — Server‑Side Before UI
 1. Enforce capabilities on:

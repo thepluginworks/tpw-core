@@ -127,6 +127,10 @@ class TPW_Identity_Compat {
 			'is_gallery_admin'     => 'is_gallery_admin',
 			'manage_members'       => 'is_manage_members',
 			'is_manage_members'    => 'is_manage_members',
+			'secretary'            => 'is_secretary',
+			'is_secretary'         => 'is_secretary',
+			'treasurer'            => 'is_treasurer',
+			'is_treasurer'         => 'is_treasurer',
 			'volunteer'            => 'is_volunteer',
 			'is_volunteer'         => 'is_volunteer',
 		);

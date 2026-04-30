@@ -27,14 +27,17 @@ All TPW plugins **must rely on these definitions** and must not invent their own
 ## 2. Core Principles (Non‑Negotiable)
 
 1. **Capabilities are the contract**
-   - All permission checks in code MUST use:
+   - Plugin-facing TPW permission checks in code MUST use:
      ```
-     current_user_can( 'tpw_xxx' )
+     tpw_core_user_can( 'tpw_xxx', $user_id )
      ```
+   - For current-user checks, omit `$user_id` or pass `0`.
    - Code MUST NOT check WordPress role slugs, TPW member flags, or group labels directly.
 
 2. **Office roles are club facts**
-   - Secretary, Treasurer, Committee, Match Manager, etc. are stored in TPW Members.
+   - Secretary, Treasurer, Committee, Match Manager, etc. are club facts.
+   - Secretary and Treasurer currently live in `tpw_members` as compatibility-era storage columns (`is_secretary`, `is_treasurer`).
+   - Raw storage is not the long-term plugin contract.
    - They do NOT imply WordPress Administrator access.
 
 3. **WordPress Administrator is a permanent override**
@@ -44,6 +47,23 @@ All TPW plugins **must rely on these definitions** and must not invent their own
 4. **No silent behaviour changes**
    - Any tightening of permissions must be gated and testable.
    - Legacy behaviour must remain functional until explicitly changed.
+
+### Phase 1 Core Compatibility Mapping
+
+The current TPW Core compatibility layer exposes these office-role aligned checks:
+
+- `tpw_members_manage` = WordPress Administrator / `is_admin` / `is_manage_members` / `is_secretary`
+- `tpw_payments_manage` = WordPress Administrator / `is_admin` / `is_treasurer`
+- `tpw_events_manage` = WordPress Administrator / `is_admin` / `is_secretary`
+
+Manage Members protected fields in this phase are:
+
+- `is_admin`
+- `is_manage_members`
+- `is_secretary`
+- `is_treasurer`
+
+`is_admin` remains special because it synchronises with the linked WordPress `administrator` role.
 
 ---
 
@@ -100,6 +120,7 @@ Used for managing the club’s member register and role flags.
 Notes:
 - Subscriptions onboarding does **not** require member creation.
 - Treasurer may be granted `tpw_members_manage` temporarily for migrations, then removed.
+- Plugins must call `tpw_core_user_can()` instead of reading raw member flags.
 
 ---
 

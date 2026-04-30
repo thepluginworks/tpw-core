@@ -22,7 +22,7 @@ class TPW_Member_Access {
      * @return string[]
      */
     public static function get_protected_member_permission_fields() {
-        return [ 'is_admin', 'is_manage_members' ];
+        return [ 'is_admin', 'is_manage_members', 'is_secretary', 'is_treasurer' ];
     }
 
     /**
@@ -78,6 +78,8 @@ class TPW_Member_Access {
             'is_admin',
             'is_committee',
             'is_match_manager',
+            'is_secretary',
+            'is_treasurer',
             'is_noticeboard_admin',
             'is_gallery_admin',
             'is_manage_members',
@@ -123,6 +125,7 @@ class TPW_Member_Access {
      * - WordPress admins
      * - TPW Core admins via tpw_members.is_admin
      * - Members managers via tpw_members.is_manage_members
+    * - Secretaries via tpw_members.is_secretary
      *
      * @param int $user_id Optional user ID.
      * @return bool
@@ -138,7 +141,84 @@ class TPW_Member_Access {
         }
 
         return self::user_has_member_flag( 'is_admin', $user_id )
+            || self::user_has_member_flag( 'is_secretary', $user_id )
             || self::user_has_member_flag( 'is_manage_members', $user_id );
+    }
+
+    /**
+     * Check if a user can manage finance/payments.
+     *
+     * Access is granted to:
+     * - WordPress admins
+     * - TPW Core admins via tpw_members.is_admin
+     * - Treasurers via tpw_members.is_treasurer
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function can_manage_finance_user( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        if ( self::user_is_wp_admin( $user_id ) ) {
+            return true;
+        }
+
+        return self::user_has_member_flag( 'is_admin', $user_id )
+            || self::user_has_member_flag( 'is_treasurer', $user_id );
+    }
+
+    /**
+     * Check whether the current user can manage finance/payments.
+     *
+     * @return bool
+     */
+    public static function can_manage_finance_current() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        return self::can_manage_finance_user( (int) get_current_user_id() );
+    }
+
+    /**
+     * Check if a user can manage events.
+     *
+     * Access is granted to:
+     * - WordPress admins
+     * - TPW Core admins via tpw_members.is_admin
+     * - Secretaries via tpw_members.is_secretary
+     *
+     * @param int $user_id Optional user ID.
+     * @return bool
+     */
+    public static function can_manage_events_user( $user_id = 0 ) {
+        $user_id = self::normalize_user_id( $user_id );
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        if ( self::user_is_wp_admin( $user_id ) ) {
+            return true;
+        }
+
+        return self::user_has_member_flag( 'is_admin', $user_id )
+            || self::user_has_member_flag( 'is_secretary', $user_id );
+    }
+
+    /**
+     * Check whether the current user can manage events.
+     *
+     * @return bool
+     */
+    public static function can_manage_events_current() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        return self::can_manage_events_user( (int) get_current_user_id() );
     }
 
     /**

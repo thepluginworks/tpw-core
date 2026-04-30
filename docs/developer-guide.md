@@ -2,6 +2,27 @@
 
 Reference for actions and filters provided by TPW Core modules. For usage examples, see the relevant sections below.
 
+## Permissions Compatibility
+
+TPW Core's current plugin-facing permission bridge is:
+
+```php
+tpw_core_user_can( string $ability, int $user_id = 0 )
+```
+
+Use this helper for TPW capability-style checks instead of querying raw `tpw_members` office-role flags.
+
+Current compatibility-era office-role storage:
+
+- `is_secretary`
+- `is_treasurer`
+
+These columns currently live in `tpw_members` for compatibility only and are not the long-term plugin contract.
+
+Protected Manage Members permission fields are currently `is_admin`, `is_manage_members`, `is_secretary`, and `is_treasurer`.
+
+`is_admin` remains special because it synchronises with the linked WordPress `administrator` role.
+
 ### Core
 - tpw_core_loaded — Fires when core initialization finishes.
 	- File: `includes/class-tpw-core.php`

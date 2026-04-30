@@ -97,7 +97,7 @@ if ( ! $member ) {
         ?>
 
         <?php 
-        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_noticeboard_admin', 'is_gallery_admin', 'is_manage_members', 'is_volunteer'];
+        $known_checkbox_fields = ['is_committee', 'is_match_manager', 'is_admin', 'is_manage_members', 'is_secretary', 'is_treasurer', 'is_noticeboard_admin', 'is_gallery_admin', 'is_volunteer'];
         // Group by section after sorting
         $grouped = [];
         foreach ($fields as $f) {
@@ -131,7 +131,7 @@ if ( ! $member ) {
             <div class="form-group">
                 <?php
                     $label_text = ($key === 'status') ? 'Member Status' : $field['label'];
-                    $inline_checkbox = in_array($key, ['is_committee','is_match_manager','is_admin','is_noticeboard_admin','is_gallery_admin','is_manage_members','is_volunteer'], true);
+                    $inline_checkbox = in_array($key, $known_checkbox_fields, true);
                     $is_protected_permission_field = in_array( $key, $protected_permission_fields, true );
                     $is_disabled_permission_field = $is_protected_permission_field && ! $can_edit_protected_permission_fields;
                     $disabled_attr = $is_disabled_permission_field ? ' disabled aria-disabled="true"' : '';

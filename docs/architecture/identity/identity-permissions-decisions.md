@@ -87,6 +87,8 @@ This rule does not apply to plugin-specific responsibility roles.
 
 Responsibility roles such as Match Manager, Secretary, Treasurer, or Committee may be owned by their respective plugins if they represent operational permissions rather than identity.
 
+For the current Core Phase 1 compatibility slice, Secretary and Treasurer are stored in `tpw_members` as `is_secretary` and `is_treasurer`. Those columns are compatibility-era storage only and are not the long-term plugin-facing contract.
+
 ## 7. Responsibility / Permission Role Direction
 
 Roles such as Secretary, Treasurer, Committee, Match Manager, and similar club-office or operational roles are responsibility roles, not identity roles.
@@ -99,7 +101,7 @@ The audit indicates that current ownership sits largely in TPW Access Control, b
 
 ### Legacy Responsibility Flags
 
-Certain responsibility indicators currently exist as fields on the TPW Core member record, including examples such as `is_committee`, `is_match_manager`, and `is_admin`.
+Certain responsibility indicators currently exist as fields on the TPW Core member record, including examples such as `is_committee`, `is_match_manager`, `is_secretary`, `is_treasurer`, and `is_admin`.
 
 These fields are not identity signals.
 
@@ -109,7 +111,7 @@ During Phase 2 migration, these fields must be treated as compatibility-era sign
 
 Plugins must not introduce new direct reads of these raw member fields going forward.
 
-Once the Core compatibility layer helpers are introduced, plugins must use those helpers instead of reading the fields directly.
+Plugins must use `tpw_core_user_can( string $ability, int $user_id = 0 )` and other approved compatibility helpers instead of reading the fields directly.
 
 This abstraction is required so the ecosystem can later relocate, normalise, or redesign responsibility storage without breaking plugin behaviour.
 
@@ -134,6 +136,15 @@ It must not be casually refactored alongside other compatibility-era responsibil
 Any future redesign of how TPW assigns WordPress Administrator privileges must be handled as an explicit architecture decision.
 
 That redesign must not be folded into helper-layer migration work or general responsibility-flag cleanup.
+
+The current protected Manage Members fields are:
+
+- `is_admin`
+- `is_manage_members`
+- `is_secretary`
+- `is_treasurer`
+
+`is_admin` remains special because it still synchronises with the linked WordPress `administrator` role.
 
 ## 8. Subscriptions and Membership Status
 

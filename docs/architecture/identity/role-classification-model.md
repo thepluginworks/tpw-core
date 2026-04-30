@@ -77,9 +77,11 @@ They must not be used to infer membership identity.
 
 Current ownership of these roles is mixed across the ecosystem. The exact long-term ownership model remains subject to implementation planning.
 
+In the current Core compatibility layer, Secretary and Treasurer also exist as `tpw_members.is_secretary` and `tpw_members.is_treasurer`. Those columns are compatibility-era storage, not the long-term contract plugins should read.
+
 ### Historical Responsibility Flags in Core
 
-Some responsibility indicators currently exist as fields in the TPW Core members table, including examples such as committee membership and match manager status.
+Some responsibility indicators currently exist as fields in the TPW Core members table, including examples such as secretary, treasurer, committee membership, and match manager status.
 
 Their current storage location does not imply long-term architectural ownership by TPW Core.
 
@@ -88,6 +90,8 @@ These fields are treated as legacy compatibility signals rather than the target 
 Responsibility roles may ultimately move to plugin-owned storage or to more structured assignment models where that better reflects the domain.
 
 During migration, the compatibility layer should abstract access to these signals so plugins are no longer coupled directly to the Core schema.
+
+For current plugin code, that abstraction point is `tpw_core_user_can()` rather than direct raw-flag reads.
 
 ## 6. Category 3 - Plugin-Local Responsibility Roles
 

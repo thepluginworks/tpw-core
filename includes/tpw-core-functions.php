@@ -446,6 +446,24 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
             return $wp_user_can( $uid, 'manage_options' );
         };
 
+        $tpw_finance_can_manage = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
+            $ensure_member_access();
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_finance_user' ) ) {
+                return TPW_Member_Access::can_manage_finance_user( $uid );
+            }
+
+            return $wp_user_can( $uid, 'manage_options' );
+        };
+
+        $tpw_events_can_manage = static function( int $uid ) use ( $wp_user_can, $ensure_member_access ): bool {
+            $ensure_member_access();
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_events_user' ) ) {
+                return TPW_Member_Access::can_manage_events_user( $uid );
+            }
+
+            return $wp_user_can( $uid, 'manage_options' );
+        };
+
         // Members directory eligibility as currently enforced by the manage-members shortcode.
         // Delegates to:
         // - TPW_Member_Access::get_allowed_statuses()
@@ -487,10 +505,16 @@ if ( ! function_exists( 'tpw_core_user_can' ) ) {
             // Existing enforcement points: Payments settings/admin pages currently gate on manage_options.
             // (No finer-grained separation exists in Core today; keep behaviour identical.)
             case 'tpw_payments_view':
-            case 'tpw_payments_manage':
             case 'tpw_payments_methods_view':
             case 'tpw_payments_methods_manage':
                 return $wp_user_can( $user_id, 'manage_options' );
+
+            case 'tpw_payments_manage':
+                return $tpw_finance_can_manage( $user_id );
+
+            // === Events ===
+            case 'tpw_events_manage':
+                return $tpw_events_can_manage( $user_id );
 
             // === Menus (meal choices library) ===
             // Existing enforcement points: modules/menus/* admin pages gate on manage_options.

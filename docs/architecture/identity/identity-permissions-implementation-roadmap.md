@@ -70,6 +70,13 @@ The compatibility layer introduced in Phase 2 should centralise interpretation o
 
 This guardrail reduces the risk of privilege escalation caused by responsibility flags being reused inconsistently across the ecosystem.
 
+Current TPW Core Phase 1 implementation note:
+
+- Secretary and Treasurer are now stored in `tpw_members` as compatibility-era office-role columns only
+- plugin-facing permission reads should use `tpw_core_user_can()` rather than raw flag reads
+- protected Manage Members fields are currently `is_admin`, `is_manage_members`, `is_secretary`, and `is_treasurer`
+- `is_admin` remains a special case because it still synchronises with the linked WordPress `administrator` role
+
 ## 5. Phase 3 - Responsibility Role Boundary
 
 The third phase should settle the ownership and lifecycle model for responsibility roles such as Secretary, Treasurer, Committee, Match Manager, and similar office or operational roles.
@@ -82,6 +89,8 @@ This phase should define:
 - how those roles are provisioned or synchronised
 - how they map to capabilities
 - how live legacy role usage is preserved during transition
+
+Until that phase is complete, Secretary and Treasurer should be treated as office roles with compatibility-era storage in TPW Core, not as a stable raw-schema contract for plugins.
 
 ## 6. Phase 4 - Permissions Migration by Plugin
 
