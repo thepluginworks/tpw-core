@@ -14,6 +14,76 @@
   }
   function clearError(){ showError(''); }
 
+  function isSquareDebugEnabled(){
+    try {
+      return window.TPW_DEBUG_SQUARE === true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function squareDebug(level, message, meta){
+    var fn;
+    if (!isSquareDebugEnabled()) return;
+    try {
+      fn = (console && typeof console[level] === 'function') ? console[level] : console.log;
+      if (typeof meta !== 'undefined') {
+        fn.call(console, '[TPW Square Debug] ' + message, meta);
+      } else {
+        fn.call(console, '[TPW Square Debug] ' + message);
+      }
+    } catch (e) {}
+  }
+
+  function normalizeSquareCountry(value){
+    var normalized;
+    var aliases = {
+      'UK': 'GB',
+      'UNITED KINGDOM': 'GB',
+      'GREAT BRITAIN': 'GB',
+      'BRITAIN': 'GB',
+      'ENGLAND': 'GB',
+      'SCOTLAND': 'GB',
+      'WALES': 'GB',
+      'NORTHERN IRELAND': 'GB'
+    };
+
+    if (typeof value !== 'string') return '';
+    normalized = value.trim().toUpperCase();
+    if (!normalized) return '';
+    if (aliases[normalized]) return aliases[normalized];
+    if (/^[A-Z]{2}$/.test(normalized)) return normalized;
+    return '';
+  }
+
+  function getNormalizedBillingCountry(cfg, billing){
+    var billingCountry = normalizeSquareCountry(
+      billing && (billing.countryCode || billing.country_code || billing.country)
+    );
+    var fallbackCountry = normalizeSquareCountry(
+      cfg && (cfg.defaultCountry || cfg.siteCountry || cfg.countryCode || cfg.country)
+    );
+
+    if (billingCountry) {
+      squareDebug('info', 'Square billing country normalized from billing contact', {
+        source: 'billing',
+        countryCode: billingCountry
+      });
+      return billingCountry;
+    }
+
+    if (fallbackCountry) {
+      squareDebug('info', 'Square billing country fallback applied', {
+        source: 'config',
+        countryCode: fallbackCountry
+      });
+      return fallbackCountry;
+    }
+
+    squareDebug('warn', 'Square billing country omitted because no valid value was available');
+    return '';
+  }
+
   var state = {
     cfg: null,
     payments: null,
@@ -103,6 +173,8 @@
             sellerKeyedIn: false
           };
           if (billing && typeof billing === 'object') {
+            var normalizedCountryCode = getNormalizedBillingCountry(state.cfg, billing);
+
             verificationDetails.billingContact = {
               familyName: billing.familyName || billing.lastName || undefined,
               givenName: billing.givenName || billing.firstName || undefined,
@@ -110,9 +182,9 @@
               phone: billing.phone || undefined,
               addressLines: Array.isArray(billing.addressLines) ? billing.addressLines : (billing.address ? [billing.address] : undefined),
               city: billing.city || undefined,
-              postalCode: billing.postalCode || billing.postcode || undefined,
-              countryCode: billing.countryCode || 'GB'
+              postalCode: billing.postalCode || billing.postcode || undefined
             };
+            if (normalizedCountryCode) { verificationDetails.billingContact.countryCode = normalizedCountryCode; }
             if (billing.state) { verificationDetails.billingContact.state = billing.state; }
           }
         }
@@ -130,12 +202,9 @@
         return { ok: true, nonce: result.token };
       }
       var msg = (result && result.errors && result.errors[0] && result.errors[0].message) || ('Card tokenization failed: ' + (result && result.status ? result.status : 'UNKNOWN'));
-      // Dev-only console logging to aid SCA testing
-      try { console.warn('[TPW Square] tokenize status:', result && result.status, 'errors:', result && result.errors); } catch(_) {}
       showError(msg);
       return { ok: false, errors: result && result.errors ? result.errors : [{ message: msg }] };
     } catch (err) {
-      try { console.error('[TPW Square] tokenize exception:', err); } catch(_) {}
       showError(err && err.message ? err.message : 'Payment error');
       return { ok: false, errors: [{ message: (err && err.message) || 'Payment error' }] };
     }

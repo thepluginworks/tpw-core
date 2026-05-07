@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.28.1] - 2026-05-07
+
+### Fixed
+- Payments: Square billing verification now normalizes billing-contact country values to ISO 3166-1 alpha-2 codes before tokenization, maps supported UK variants such as `UK`, `England`, and `Scotland` to `GB`, and omits invalid free-text values unless a valid configured site-country fallback is available.
+
 ## [1.28.0] - 2026-05-07
 
 ### Changed

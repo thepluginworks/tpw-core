@@ -941,6 +941,7 @@ if ( ! function_exists( 'tpw_core_get_payments_page_config' ) ) {
                 'code'   => function_exists('tpw_core_get_currency_code') ? tpw_core_get_currency_code() : 'GBP',
                 'symbol' => function_exists('tpw_core_get_currency_symbol') ? tpw_core_get_currency_symbol() : '£',
             ],
+            'defaultCountry' => function_exists( 'tpw_core_get_default_country' ) ? tpw_core_get_default_country() : 'GB',
             'square' => [
                 'appId'      => get_option('tpw_square_app_id'),
                 'locationId' => get_option('tpw_square_location_id'),

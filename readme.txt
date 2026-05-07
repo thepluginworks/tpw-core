@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.28.0
+Stable tag: 1.28.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,9 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.28.1 =
+- Payments: Square billing verification now normalizes billing-contact country values to ISO alpha-2 codes before tokenization, maps supported UK variants such as UK, England, and Scotland to GB, and omits invalid free-text values unless a valid configured site-country fallback is available.
 
 = 1.28.0 =
 - UI: added a reusable TPW app navigation pattern with primary and secondary variants so shared admin and front-end screens can use button-like workspace and detail tabs from the Core stylesheet.
