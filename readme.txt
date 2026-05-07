@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.27.0
+Stable tag: 1.28.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.28.0 =
+- UI: added a reusable TPW app navigation pattern with primary and secondary variants so shared admin and front-end screens can use button-like workspace and detail tabs from the Core stylesheet.
+- UI: app navigation links now suppress theme underline overrides, keep the intended dark secondary-button look for inactive primary tabs, and preserve the accent-filled active state with responsive wrapping and accessible focus handling.
 
 = 1.27.0 =
 - Members: added Secretary and Treasurer as compatibility-era office-role fields in Manage Members and grouped the in-scope access and office flags under a new Access & Office Roles section on Add and Edit Member screens.

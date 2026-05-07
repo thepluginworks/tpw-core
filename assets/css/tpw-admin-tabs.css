@@ -53,3 +53,148 @@
 	border-bottom: 1px solid var(--tpw-border-color, var(--tpw-border, #ccd0d4));
 }
 .tpw-member-profile-nav .tpw-tabs { margin-bottom: 0; }
+
+.tpw-app-nav {
+	--tpw-app-nav-accent-color: var(--tpw-app-nav-accent, var(--tpw-accent-color, var(--tpw-primary, #2271b1)));
+	--tpw-app-nav-border: var(--tpw-border-color, var(--tpw-border, #ccd0d4));
+	--tpw-app-nav-bg: var(--tpw-bg-color, var(--tpw-bg-light, #f6f7f7));
+	--tpw-app-nav-text: var(--tpw-text-color, var(--tpw-text-dark, #1d2327));
+	--tpw-app-nav-radius: var(--tpw-btn-radius, var(--tpw-radius, 7px));
+	--tpw-app-nav-gap: 8px;
+	--tpw-app-nav-item-height: 36px;
+	--tpw-app-nav-item-padding-x: 14px;
+	--tpw-app-nav-item-font-size: 13px;
+	--tpw-app-nav-item-font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600));
+	--tpw-app-nav-focus-ring: color-mix(in oklab, var(--tpw-app-nav-accent-color) 28%, white 72%);
+
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--tpw-app-nav-gap);
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.tpw-app-nav-item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--tpw-app-nav-item-height);
+	padding: 0 var(--tpw-app-nav-item-padding-x);
+	border: 1px solid var(--tpw-app-nav-border);
+	border-radius: var(--tpw-app-nav-radius);
+	background: var(--tpw-app-nav-bg);
+	color: var(--tpw-app-nav-text);
+	font-size: var(--tpw-app-nav-item-font-size);
+	font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"));
+	font-weight: var(--tpw-app-nav-item-font-weight);
+	line-height: 1.2;
+	text-decoration: none;
+	text-decoration-line: none;
+	white-space: nowrap;
+	cursor: pointer;
+	box-sizing: border-box;
+	transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease-in-out;
+}
+
+.tpw-app-nav .tpw-app-nav-item,
+.tpw-app-nav .tpw-app-nav-item:hover,
+.tpw-app-nav .tpw-app-nav-item:focus,
+.tpw-app-nav .tpw-app-nav-item:focus-visible,
+.tpw-app-nav .tpw-app-nav-item:active,
+.tpw-app-nav .tpw-app-nav-item:visited {
+	text-decoration: none !important;
+	text-decoration-line: none !important;
+}
+
+.tpw-app-nav-item:hover {
+	background: color-mix(in oklab, var(--tpw-app-nav-accent-color) 5%, var(--tpw-app-nav-bg));
+	border-color: color-mix(in oklab, var(--tpw-app-nav-accent-color) 24%, var(--tpw-app-nav-border));
+	color: var(--tpw-app-nav-text);
+	filter: brightness(0.99);
+}
+
+.tpw-app-nav-item:focus {
+	outline: none;
+}
+
+.tpw-app-nav-item:focus-visible {
+	outline: 2px solid var(--tpw-app-nav-focus-ring);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--tpw-app-nav-accent-color) 18%, white 82%);
+	text-decoration: none;
+}
+
+.tpw-app-nav-item:active {
+	transform: translateY(1px);
+}
+
+.tpw-app-nav-item:where([aria-current="page"], [aria-current="true"], [aria-selected="true"]) {
+	background: var(--tpw-app-nav-accent-color);
+	border-color: var(--tpw-app-nav-accent-color);
+	color: #fff;
+	box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+}
+
+.tpw-app-nav-item:where([aria-current="page"], [aria-current="true"], [aria-selected="true"]):hover {
+	background: color-mix(in oklab, var(--tpw-app-nav-accent-color) 92%, black 8%);
+	border-color: color-mix(in oklab, var(--tpw-app-nav-accent-color) 90%, black 10%);
+	color: #fff;
+	filter: none;
+}
+
+.tpw-app-nav-item:where([disabled], [aria-disabled="true"]) {
+	opacity: 0.65;
+	cursor: not-allowed;
+	pointer-events: none;
+	box-shadow: none;
+	transform: none;
+}
+
+.tpw-app-nav--primary {
+	--tpw-app-nav-gap: 10px;
+	--tpw-app-nav-item-height: 38px;
+	--tpw-app-nav-item-padding-x: 16px;
+	--tpw-app-nav-item-font-size: var(--tpw-btn-font-size, 0.9rem);
+	--tpw-app-nav-radius: var(--tpw-btn-radius, var(--tpw-radius, 7px));
+	margin-bottom: 16px;
+}
+
+.tpw-app-nav--primary .tpw-app-nav-item:not(:where([aria-current="page"], [aria-current="true"], [aria-selected="true"])) {
+	background: var(--tpw-btn-secondary, #6c757d);
+	border-color: var(--tpw-btn-secondary, #6c757d);
+	color: var(--tpw-btn-text-light, #fff);
+}
+
+.tpw-app-nav--primary .tpw-app-nav-item:not(:where([aria-current="page"], [aria-current="true"], [aria-selected="true"])):hover {
+	background: color-mix(in oklab, var(--tpw-btn-secondary, #6c757d) 90%, black 10%);
+	border-color: color-mix(in oklab, var(--tpw-btn-secondary, #6c757d) 88%, black 12%);
+	color: var(--tpw-btn-text-light, #fff);
+	filter: none;
+}
+
+.tpw-app-nav--secondary {
+	--tpw-app-nav-gap: 6px;
+	--tpw-app-nav-item-height: 32px;
+	--tpw-app-nav-item-padding-x: 12px;
+	--tpw-app-nav-item-font-size: 12px;
+	--tpw-app-nav-radius: 999px;
+	margin-bottom: 10px;
+}
+
+@media (max-width: 782px) {
+	.tpw-app-nav {
+		gap: 6px;
+	}
+
+	.tpw-app-nav-item {
+		flex: 1 1 auto;
+		justify-content: center;
+		white-space: normal;
+	}
+
+	.tpw-app-nav--secondary .tpw-app-nav-item {
+		min-height: 30px;
+	}
+}

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.28.0] - 2026-05-07
+
+### Changed
+- UI: added a reusable `.tpw-app-nav` navigation pattern with dedicated primary and secondary variants so TPW admin and front-end interfaces can render button-like workspace and detail navigation from the shared Core stylesheet.
+- UI: app navigation links now resist theme underline overrides, keep the intended secondary-button inactive styling for primary nav items, and preserve the accent-filled active state with accessible hover, focus, disabled, and responsive wrapping behaviour.
+
 ## [1.27.0] - 2026-04-30
 
 ### Changed
