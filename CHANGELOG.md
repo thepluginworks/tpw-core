@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.28.2] - 2026-05-08
+
+### Fixed
+- UI: shared admin tab and button selectors now include `.tpw-admin-ui`-scoped counterparts so TPW admin interfaces keep their intended styling when rendered inside admin wrapper contexts that do not match the original unscoped selectors.
+
 ## [1.28.1] - 2026-05-07
 
 ### Fixed
