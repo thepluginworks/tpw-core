@@ -2,6 +2,8 @@
 
 This document explains where TPW Core's branding and typography CSS Custom Properties ("tokens") are defined, how they are injected into pages, and how to extend them (e.g. adding semantic notice colors such as `--tpw-color-success`).
 
+Canonical wrapper and enqueue contract: [architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). This file is an implementation reference, not the primary contract for wrapper placement, handle stability, or migration rules.
+
 ---
 
 ## Overview
@@ -206,6 +208,7 @@ button.primary { background: var(--tpw-btn-primary); color: var(--tpw-btn-text-l
 * `includes/tpw-core-settings.php` – Generation & injection logic.
 * `assets/css/tpw-buttons.css` – Baseline button system & default fallbacks.
 * `assets/css/tpw-admin-ui.css` – Admin UI styling that consumes typography and heading tokens.
+* `docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md` – Canonical shared UI wrapper and enqueue contract.
 * `docs/help/tpw-branding.md` – User-facing explanation of branding tab (should be cross-referenced here after extensions).
 
 ---

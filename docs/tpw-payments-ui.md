@@ -4,18 +4,26 @@ This guide defines the layout, styling, and behaviour standards for the My Payme
 
 Applies to: wp‑admin pages and front‑end pages wrapped with the TPW admin UI scope.
 
+Canonical contract: [architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). Read that document first for the authoritative wrapper, handle, migration, and compatibility rules.
+
 ---
 
 ## Enqueue and scope
 
 Use the same Core styles that power other admin‑like UIs.
 
-1) Scoped admin UI (layout, typography, inputs)
+This document is module-specific guidance for the Payments Hub. The wrapper and enqueue contract itself is defined in [architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md).
+
+1) Front-end/base TPW UI layer
+- Handle: `tpw-ui`
+- File: `assets/css/tpw-ui.css`
+
+2) Scoped admin UI (layout, typography, inputs)
 - Handle: `tpw-admin-ui`
 - File: `assets/css/tpw-admin-ui.css`
 - Scope wrapper: `.tpw-admin-ui`
 
-2) TPW button system
+3) TPW button system
 - Handle: `tpw-buttons`
 - File: `assets/css/tpw-buttons.css`
 - Classes: `.tpw-btn` + variants (primary, secondary, danger, light, dark)
@@ -28,6 +36,7 @@ Example (wp‑admin page or front‑end template you control):
 
 ```php
 if ( defined('TPW_CORE_URL') ) {
+  wp_enqueue_style( 'tpw-ui',       TPW_CORE_URL . 'assets/css/tpw-ui.css',       [], null );
     wp_enqueue_style( 'tpw-admin-ui', TPW_CORE_URL . 'assets/css/tpw-admin-ui.css', [], null );
     wp_enqueue_style( 'tpw-buttons',  TPW_CORE_URL . 'assets/css/tpw-buttons.css',  [], null );
 }
@@ -292,4 +301,4 @@ add_filter( 'tpw_core_register_payment_sources', function( $sources ) {
 - For front‑end embeds, prefer adding an outer `.tpw-frontend-ui` class as needed; the admin scope works in both contexts.
 - Avoid redefining colors; lean on `--tpw-*` tokens from Branding and UI Theme. If you add success/warning/danger, expose them as CSS vars and use `color-mix()` to keep soft backgrounds.
 
-See also: Branding → `docs/help/tpw-branding.md`, Admin UI CSS → `assets/css/tpw-admin-ui.css`, Buttons → `assets/css/tpw-buttons.css`.
+See also: Shared UI contract → `docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md`, Branding → `docs/help/tpw-branding.md`, Admin UI CSS → `assets/css/tpw-admin-ui.css`, Buttons → `assets/css/tpw-buttons.css`.

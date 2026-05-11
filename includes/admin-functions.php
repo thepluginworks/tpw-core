@@ -246,6 +246,17 @@ add_action( 'wp_enqueue_scripts', function(){
     if ( ! $should_enqueue ) return;
     if ( ! defined('TPW_CORE_PATH') || ! defined('TPW_CORE_URL') ) return;
 
+    if ( function_exists( 'tpw_core_enqueue_shared_ui_assets' ) ) {
+        tpw_core_enqueue_shared_ui_assets(
+            array(
+                'ui'       => false,
+                'admin_ui' => false,
+                'buttons'  => true,
+            )
+        );
+        return;
+    }
+
     // Base button system
     $btn_file = TPW_CORE_PATH . 'assets/css/tpw-buttons.css';
     $btn_url  = TPW_CORE_URL . 'assets/css/tpw-buttons.css';

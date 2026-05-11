@@ -1,5 +1,6 @@
-  /* Token variables scoped to .tpw-admin-ui */
-  .tpw-admin-ui {
+  /* Token variables scoped to TPW UI wrappers */
+  .tpw-admin-ui,
+  .tpw-frontend-ui {
     --tpw-font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     /* New typography tokens for buttons/text within TPW Admin UI */
     --tpw-font-weight: 600;            /* default */
@@ -35,58 +36,66 @@
   }
 
   /* Reset inherited styles inside the namespace, then apply consistent box model and font */
-  .tpw-admin-ui * {
+  .tpw-admin-ui *,
+  .tpw-frontend-ui * {
     box-sizing: border-box;
   }
   .tpw-admin-ui *::before,
-  .tpw-admin-ui *::after { box-sizing: border-box; }
+  .tpw-admin-ui *::after,
+  .tpw-frontend-ui *::before,
+  .tpw-frontend-ui *::after { box-sizing: border-box; }
 
   /* Base text & links */
-  .tpw-admin-ui :where(a) { color: var(--tpw-accent-color); text-decoration: none; }
-  .tpw-admin-ui :where(a:hover, a:focus) { text-decoration: underline; }
+  .tpw-admin-ui :where(a),
+  .tpw-frontend-ui :where(a) { color: var(--tpw-accent-color); text-decoration: none; }
+  .tpw-admin-ui :where(a:hover, a:focus),
+  .tpw-frontend-ui :where(a:hover, a:focus) { text-decoration: underline; }
 
   /* Headings */
-  .tpw-admin-ui :where(h1, h2, h3, h4, h5, h6) {
+  .tpw-admin-ui :where(h1, h2, h3, h4, h5, h6),
+  .tpw-frontend-ui :where(h1, h2, h3, h4, h5, h6) {
     color: var(--tpw-text-color);
     margin: 0 0 0.75em;
     line-height: 1.25;
     font-weight: var(--tpw-hn-weight, 600);
     font-family: var(--tpw-heading-font, var(--tpw-font-family));
   }
-  .tpw-admin-ui :where(h1) { font-size: var(--tpw-h1-size, 1.75rem); font-weight: var(--tpw-h1-weight, 700); color: var(--tpw-h1-color, var(--tpw-text-color)); }
-  .tpw-admin-ui :where(h2) { font-size: var(--tpw-h2-size, 1.5rem);  font-weight: var(--tpw-h2-weight, 600); color: var(--tpw-h2-color, var(--tpw-text-color)); }
-  .tpw-admin-ui :where(h3) { font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, var(--tpw-text-color)); }
-  .tpw-admin-ui :where(h4) { font-size: var(--tpw-h4-size, 1.125rem);font-weight: var(--tpw-h4-weight, 600); color: var(--tpw-h4-color, var(--tpw-text-color)); }
-  .tpw-admin-ui :where(h5) { font-size: var(--tpw-h5-size, 1rem);    font-weight: var(--tpw-h5-weight, 600); color: var(--tpw-h5-color, var(--tpw-text-color)); }
-  .tpw-admin-ui :where(h6) { font-size: var(--tpw-h6-size, 0.875rem);font-weight: var(--tpw-h6-weight, 600); color: var(--tpw-h6-color, var(--tpw-text-color)); }
-
-  /* Front-end admin-like wrapper: apply the same heading tokens when used */
-  .tpw-frontend-ui :where(h1, h2, h3, h4, h5, h6) {
-    color: inherit;
-    margin: 0 0 0.75em;
-    line-height: 1.25;
-    font-family: var(--tpw-heading-font, var(--tpw-font-family, inherit));
-  }
-  .tpw-frontend-ui :where(h1) { font-size: var(--tpw-h1-size, 1.75rem); font-weight: var(--tpw-h1-weight, 700); color: var(--tpw-h1-color, inherit); }
-  .tpw-frontend-ui :where(h2) { font-size: var(--tpw-h2-size, 1.5rem);  font-weight: var(--tpw-h2-weight, 600); color: var(--tpw-h2-color, inherit); }
-  .tpw-frontend-ui :where(h3) { font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, inherit); }
-  .tpw-frontend-ui :where(h4) { font-size: var(--tpw-h4-size, 1.125rem);font-weight: var(--tpw-h4-weight, 600); color: var(--tpw-h4-color, inherit); }
-  .tpw-frontend-ui :where(h5) { font-size: var(--tpw-h5-size, 1rem);    font-weight: var(--tpw-h5-weight, 600); color: var(--tpw-h5-color, inherit); }
-  .tpw-frontend-ui :where(h6) { font-size: var(--tpw-h6-size, 0.875rem);font-weight: var(--tpw-h6-weight, 600); color: var(--tpw-h6-color, inherit); }
+  .tpw-admin-ui :where(h1),
+  .tpw-frontend-ui :where(h1) { font-size: var(--tpw-h1-size, 1.75rem); font-weight: var(--tpw-h1-weight, 700); color: var(--tpw-h1-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h2),
+  .tpw-frontend-ui :where(h2) { font-size: var(--tpw-h2-size, 1.5rem);  font-weight: var(--tpw-h2-weight, 600); color: var(--tpw-h2-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h3),
+  .tpw-frontend-ui :where(h3) { font-size: var(--tpw-h3-size, 1.25rem); font-weight: var(--tpw-h3-weight, 600); color: var(--tpw-h3-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h4),
+  .tpw-frontend-ui :where(h4) { font-size: var(--tpw-h4-size, 1.125rem);font-weight: var(--tpw-h4-weight, 600); color: var(--tpw-h4-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h5),
+  .tpw-frontend-ui :where(h5) { font-size: var(--tpw-h5-size, 1rem);    font-weight: var(--tpw-h5-weight, 600); color: var(--tpw-h5-color, var(--tpw-text-color)); }
+  .tpw-admin-ui :where(h6),
+  .tpw-frontend-ui :where(h6) { font-size: var(--tpw-h6-size, 0.875rem);font-weight: var(--tpw-h6-weight, 600); color: var(--tpw-h6-color, var(--tpw-text-color)); }
 
   /* Paragraphs and small */
-  .tpw-admin-ui :where(p) { margin: 0 0 1em; }
-  .tpw-admin-ui :where(small, .description) { color: var(--tpw-muted-color); }
+  .tpw-admin-ui :where(p),
+  .tpw-frontend-ui :where(p) { margin: 0 0 1em; }
+  .tpw-admin-ui :where(small, .description),
+  .tpw-frontend-ui :where(small, .description) { color: var(--tpw-muted-color); }
 
   /* Layout helpers */
-  .tpw-admin-ui :where(.tpw-row) { display: flex; flex-wrap: wrap; gap: 12px; }
-  .tpw-admin-ui :where(.tpw-col) { flex: 1 1 0; min-width: 200px; }
-  .tpw-admin-ui :where(.tpw-section) { margin: 0 0 1.25rem; }
+  .tpw-admin-ui :where(.tpw-row),
+  .tpw-frontend-ui :where(.tpw-row) { display: flex; flex-wrap: wrap; gap: 12px; }
+  .tpw-admin-ui :where(.tpw-col),
+  .tpw-frontend-ui :where(.tpw-col) { flex: 1 1 0; min-width: 200px; }
+  .tpw-admin-ui :where(.tpw-section),
+  .tpw-frontend-ui :where(.tpw-section) { margin: 0 0 1.25rem; }
 
   /* Tables */
-  .tpw-admin-ui :where(table) { width: 100%; border-collapse: collapse; }
-  .tpw-admin-ui :where(th, td) { padding: 8px 10px; border: 1px solid var(--tpw-border-color); text-align: left; }
-  .tpw-admin-ui :where(thead th) { background: #f6f7f7; }
+  .tpw-admin-ui :where(.tpw-table-container),
+  .tpw-frontend-ui :where(.tpw-table-container) { width: 100%; overflow-x: auto; }
+  .tpw-admin-ui :where(table),
+  .tpw-frontend-ui :where(table) { width: 100%; border-collapse: collapse; }
+  .tpw-admin-ui :where(th, td),
+  .tpw-frontend-ui :where(th, td) { padding: 8px 10px; border: 1px solid var(--tpw-border-color); text-align: left; }
+  .tpw-admin-ui :where(thead th),
+  .tpw-frontend-ui :where(thead th) { background: #f6f7f7; }
 
   /* Buttons */
   /* Base button styles apply only to un-variant buttons, preserving .tpw-btn-* variants */
@@ -95,7 +104,13 @@
                        input[type="submit"]:not([class*="tpw-btn-"]),
                        a.button,
                        .button),
-  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]) {
+  .tpw-frontend-ui :where(button:not([class*="tpw-btn-"]),
+                          input[type="button"]:not([class*="tpw-btn-"]),
+                          input[type="submit"]:not([class*="tpw-btn-"]),
+                          a.button,
+                          .button),
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]),
+  .tpw-frontend-ui .tpw-btn:not([class*="tpw-btn-"]) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -152,31 +167,46 @@
                        input[type="submit"]:hover:not([class*="tpw-btn-"]),
                        a.button:hover,
                        .button:hover),
-  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]):hover {
+  .tpw-frontend-ui :where(button:hover:not([class*="tpw-btn-"]),
+                          input[type="button"]:hover:not([class*="tpw-btn-"]),
+                          input[type="submit"]:hover:not([class*="tpw-btn-"]),
+                          a.button:hover,
+                          .button:hover),
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]):hover,
+  .tpw-frontend-ui .tpw-btn:not([class*="tpw-btn-"]):hover {
     filter: brightness(0.98);
   }
   .tpw-admin-ui :where(button:disabled:not([class*="tpw-btn-"]),
                        input[type="button"][disabled]:not([class*="tpw-btn-"]),
                        input[type="submit"][disabled]:not([class*="tpw-btn-"])),
+  .tpw-frontend-ui :where(button:disabled:not([class*="tpw-btn-"]),
+                          input[type="button"][disabled]:not([class*="tpw-btn-"]),
+                          input[type="submit"][disabled]:not([class*="tpw-btn-"])),
   .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"]):disabled,
-  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"])[disabled] {
+  .tpw-admin-ui .tpw-btn:not([class*="tpw-btn-"])[disabled],
+  .tpw-frontend-ui .tpw-btn:not([class*="tpw-btn-"]):disabled,
+  .tpw-frontend-ui .tpw-btn:not([class*="tpw-btn-"])[disabled] {
     opacity: .6;
     cursor: not-allowed;
   }
   .tpw-admin-ui :where(.button.button-secondary,
-                       .button-secondary) {
+                       .button-secondary),
+  .tpw-frontend-ui :where(.button.button-secondary,
+                          .button-secondary) {
     background: #f6f7f7;
     color: var(--tpw-text-color);
     border-color: var(--tpw-border-color);
   }
 
   /* Ensure .tpw-btn-* variants keep their global styling (from tpw-buttons.css) */
-  .tpw-admin-ui .tpw-btn[class*="tpw-btn-"] {
+  .tpw-admin-ui .tpw-btn[class*="tpw-btn-"],
+  .tpw-frontend-ui .tpw-btn[class*="tpw-btn-"] {
     font: inherit;
     box-sizing: border-box;
   }
   /* Apply typography tokens to all TPW buttons within the scoped UI */
-  .tpw-admin-ui .tpw-btn {
+  .tpw-admin-ui .tpw-btn,
+  .tpw-frontend-ui .tpw-btn {
     font-weight: var(--tpw-font-weight);
     text-transform: var(--tpw-text-transform);
     letter-spacing: var(--tpw-letter-spacing);
@@ -191,7 +221,15 @@
                        input[type="password"],
                        input[type="search"],
                        select,
-                       textarea) {
+                       textarea),
+  .tpw-frontend-ui :where(input[type="text"],
+                          input[type="email"],
+                          input[type="number"],
+                          input[type="url"],
+                          input[type="password"],
+                          input[type="search"],
+                          select,
+                          textarea) {
     width: 100%;
     max-width: 600px;
     padding: var(--tpw-input-padding);
@@ -200,20 +238,28 @@
     background: var(--tpw-input-bg);
     color: var(--tpw-input-text);
   }
-  .tpw-admin-ui :where(textarea) { min-height: 120px; }
+  .tpw-admin-ui :where(textarea),
+  .tpw-frontend-ui :where(textarea) { min-height: 120px; }
   .tpw-admin-ui :where(input:focus,
                        select:focus,
-                       textarea:focus) {
+                       textarea:focus),
+  .tpw-frontend-ui :where(input:focus,
+                          select:focus,
+                          textarea:focus) {
     outline: 2px solid color-mix(in oklab, var(--tpw-input-focus) 40%, white 60%);
     outline-offset: 1px;
     border-color: var(--tpw-input-focus);
   }
 
   /* Notices */
-  .tpw-admin-ui :where(.notice) { padding: 10px 12px; border: 1px solid var(--tpw-border-color); border-left-width: 4px; background: #fff; }
-  .tpw-admin-ui :where(.notice.notice-success) { border-left-color: #00a32a; }
-  .tpw-admin-ui :where(.notice.notice-warning) { border-left-color: #dba617; }
-  .tpw-admin-ui :where(.notice.notice-error) { border-left-color: #d63638; }
+  .tpw-admin-ui :where(.notice),
+  .tpw-frontend-ui :where(.notice) { padding: 10px 12px; border: 1px solid var(--tpw-border-color); border-left-width: 4px; background: #fff; }
+  .tpw-admin-ui :where(.notice.notice-success),
+  .tpw-frontend-ui :where(.notice.notice-success) { border-left-color: #00a32a; }
+  .tpw-admin-ui :where(.notice.notice-warning),
+  .tpw-frontend-ui :where(.notice.notice-warning) { border-left-color: #dba617; }
+  .tpw-admin-ui :where(.notice.notice-error),
+  .tpw-frontend-ui :where(.notice.notice-error) { border-left-color: #d63638; }
 
   /* TPW semantic notice tokens (admin + front-end via shared classes)
      Uses global --tpw-color-* variables defined by Branding tab. */
@@ -285,24 +331,28 @@
   }
 
   /* Cards */
-  .tpw-admin-ui :where(.tpw-card) {
+  .tpw-admin-ui :where(.tpw-card),
+  .tpw-frontend-ui :where(.tpw-card) {
     border: 1px solid var(--tpw-border-color);
     border-radius: 8px;
     background: var(--tpw-bg-color);
     padding: 14px;
   }
-  .tpw-admin-ui :where(.tpw-card + .tpw-card) { margin-top: 12px; }
+  .tpw-admin-ui :where(.tpw-card + .tpw-card),
+  .tpw-frontend-ui :where(.tpw-card + .tpw-card) { margin-top: 12px; }
 
   /* Payments Hub (front-end) -------------------------------------------------
      Standard two-pane layout used by templates/members/profile/payments/*
      Classes are documented in docs/tpw-payments-ui.md */
-  .tpw-admin-ui :where(.tpw-layout) {
+  .tpw-admin-ui :where(.tpw-layout),
+  .tpw-frontend-ui :where(.tpw-layout) {
     display: flex;
     gap: 16px;
     align-items: flex-start;
     margin-top: 8px;
   }
-  .tpw-admin-ui :where(.tpw-sidebar) {
+  .tpw-admin-ui :where(.tpw-sidebar),
+  .tpw-frontend-ui :where(.tpw-sidebar) {
     flex: 0 0 260px;
     width: 260px;
     min-width: 220px;
@@ -311,12 +361,14 @@
     border-radius: var(--tpw-input-radius, 8px);
     background: color-mix(in oklab, var(--tpw-accent-color) 4%, var(--tpw-bg-color));
   }
-  .tpw-admin-ui :where(.tpw-content) {
+  .tpw-admin-ui :where(.tpw-content),
+  .tpw-frontend-ui :where(.tpw-content) {
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu) {
+  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu),
+  .tpw-frontend-ui :where(.tpw-sidebar .tpw-menu) {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -324,14 +376,16 @@
     flex-direction: column;
     gap: 6px;
   }
-  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-sidebar-heading {
+  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-sidebar-heading,
+  .tpw-frontend-ui .tpw-layout .tpw-sidebar .tpw-sidebar-heading {
     margin: 0 0 12px;
     font-size: calc(var(--tpw-h6-size, 0.875rem) * 0.9);
     font-weight: 500;
     color: var(--tpw-muted-color);
     line-height: 1.2;
   }
-  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a) {
+  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a),
+  .tpw-frontend-ui :where(.tpw-sidebar .tpw-menu a) {
     display: block;
     width: 100%;
     padding: 10px 12px;
@@ -342,43 +396,51 @@
     text-decoration: none;
     line-height: 1.2;
   }
-  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a:hover) {
+  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a:hover),
+  .tpw-frontend-ui :where(.tpw-sidebar .tpw-menu a:hover) {
     text-decoration: none;
     background: color-mix(in oklab, var(--tpw-accent-color) 6%, var(--tpw-bg-color));
   }
 
   /* Payments Hub sidebar link normalization (Tier-2): token-based + no underlines
      Use higher specificity than global link rules and layered theme styles. */
-  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a {
+  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a,
+  .tpw-frontend-ui .tpw-layout .tpw-sidebar .tpw-menu a {
     text-decoration: none;
     color: var(--tpw-text-color);
     font-weight: 500;
     transition: var(--e-a-transition-hover, 0.2s ease);
   }
-  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a:hover {
+  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a:hover,
+  .tpw-frontend-ui .tpw-layout .tpw-sidebar .tpw-menu a:hover {
     color: var(--tpw-accent-color);
     text-decoration: none;
   }
   /* Keep active state styling unchanged on hover (left accent remains; avoid color shift). */
-  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a.is-active:hover {
+  .tpw-admin-ui .tpw-layout .tpw-sidebar .tpw-menu a.is-active:hover,
+  .tpw-frontend-ui .tpw-layout .tpw-sidebar .tpw-menu a.is-active:hover {
     color: var(--tpw-text-color);
   }
-  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a:focus-visible) {
+  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a:focus-visible),
+  .tpw-frontend-ui :where(.tpw-sidebar .tpw-menu a:focus-visible) {
     outline: 2px solid color-mix(in oklab, var(--tpw-accent-color) 40%, white 60%);
     outline-offset: 2px;
   }
-  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a.is-active) {
+  .tpw-admin-ui :where(.tpw-sidebar .tpw-menu a.is-active),
+  .tpw-frontend-ui :where(.tpw-sidebar .tpw-menu a.is-active) {
     background: color-mix(in oklab, var(--tpw-accent-color) 12%, var(--tpw-bg-color));
     border-color: color-mix(in oklab, var(--tpw-accent-color) 28%, var(--tpw-border-color));
     box-shadow: inset 3px 0 0 0 var(--tpw-accent-color);
   }
 
   @media (max-width: 980px) {
-    .tpw-admin-ui :where(.tpw-layout) {
+    .tpw-admin-ui :where(.tpw-layout),
+    .tpw-frontend-ui :where(.tpw-layout) {
       flex-direction: column;
       gap: 12px;
     }
-    .tpw-admin-ui :where(.tpw-sidebar) {
+    .tpw-admin-ui :where(.tpw-sidebar),
+    .tpw-frontend-ui :where(.tpw-sidebar) {
       width: 100%;
       flex: 1 1 auto;
     }

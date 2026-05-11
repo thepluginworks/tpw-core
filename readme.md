@@ -57,6 +57,7 @@ Exact shortcodes used on a site depend on which TPW modules are active.
 
 - Admin and help topics: [docs/help/README.md](docs/help/README.md)
 - General developer guidance: [docs/developer-guide.md](docs/developer-guide.md)
+- Shared UI contract: [docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md)
 - Full release history: [CHANGELOG.md](CHANGELOG.md)
 
 ## For developers
@@ -65,6 +66,7 @@ Developer and internal documentation remains in the repository. Start with:
 
 - [docs/developer-guide.md](docs/developer-guide.md)
 - [docs/architecture/README.md](docs/architecture/README.md)
+- [docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md)
 - [docs/help/README.md](docs/help/README.md)
 - [CODING_STANDARDS.md](CODING_STANDARDS.md)
 

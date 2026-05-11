@@ -33,11 +33,18 @@ Supporting permissions architecture references include:
 - [docs/architecture/permissions/role-capability-matrix.md](permissions/role-capability-matrix.md)
 - [docs/architecture/permissions/vc-permissions-implementation-playbook.md](permissions/vc-permissions-implementation-playbook.md)
 
+## UI Architecture
+
+UI architecture defines the canonical wrapper, shared component, and enqueue contract for TPW Core and consumer plugins.
+
+The canonical shared UI contract is [docs/architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](ui/tpw-core-ui-wrapper-enqueue-contract.md).
+
 ## Architectural Separation
 
 Identity and permissions are separate architectural layers.
 
 - Identity determines who a person is.
 - Permissions determine what a person can do.
+- UI architecture determines how shared TPW screens, wrappers, and shared UI assets are integrated safely.
 
 They are related, but they are not the same concern and should be documented separately.

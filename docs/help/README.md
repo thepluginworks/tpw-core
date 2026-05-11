@@ -2,6 +2,9 @@
 
 A quick index of module help topics for browsing in GitHub and for reference from Admin Help.
 
+- [Shared UI Wrapper and Enqueue Contract](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md)
+  - Canonical wrapper, component-scope, and asset-loading contract for TPW Core and consumer plugins.
+
 - [Members](members.md)
   - Manage member records, profile shortcode, login redirect, and extension hooks.
 - [Payments](payments.md)
@@ -15,7 +18,7 @@ A quick index of module help topics for browsing in GitHub and for reference fro
 - [Postcodes](postcodes.md)
   - Pluggable providers, AJAX lookup action, and helper usage.
 - [Branding](tpw-branding.md)
-  - UI Theme tokens, `.tpw-admin-ui` wrapper, and TPW button system.
+  - UI Theme tokens, wrapper usage, and TPW button system. Read the shared UI contract first for canonical wrapper and enqueue rules.
 - [Access Control](access-control.md)
   - Members‑based access model and key filters for gating UI/routes.
 - [TPW Control](tpw-control.md)

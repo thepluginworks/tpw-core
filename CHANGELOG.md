@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.29.0] - 2026-05-11
+
+### Changed
+- UI: TPW Core now provides a reusable shared UI enqueue helper for the canonical `tpw-ui`, `tpw-admin-ui`, and `tpw-buttons` styles so shared wrapper-based screens can load the Core UI stack more consistently.
+- UI: shared TPW buttons, app navigation, cards, notices, tables, and form styling now apply consistently inside `.tpw-frontend-ui` as well as `.tpw-admin-ui`, improving frontend wrapper protection for shared Core interfaces.
+- Documentation: added the canonical TPW Core shared UI wrapper and enqueue contract and linked the relevant help and architecture guides back to that source of truth.
+
 ## [1.28.2] - 2026-05-08
 
 ### Fixed

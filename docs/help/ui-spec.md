@@ -2,6 +2,8 @@
 
 This document defines the structural and component conventions for TPW admin pages. It complements the Branding guide and avoids repeating colour, font, or token values. For all token definitions and theming details, see Branding and tokens → [tpw-branding.md](tpw-branding.md).
 
+Canonical contract: [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). Read that document first for authoritative wrapper placement, asset-handle rules, compatibility expectations, and rollout order.
+
 ---
 
 ## Overview
@@ -17,6 +19,7 @@ This document defines the structural and component conventions for TPW admin pag
 Canonical wrapper: `.tpw-admin-ui`
 
 - Wrap all TPW-styled admin pages with `.tpw-admin-ui` to get the scoped resets and theme application.
+- The wrapper must sit around the full rendered TPW screen, not only around one inner panel or card.
 - Inside structure (recommended skeleton):
 
 ```html
@@ -150,8 +153,11 @@ For additional real-world examples, refer to the Members and FlexiGolf admin tem
 
 ## Asset Enqueuing
 
+This section is implementation guidance layered on top of the canonical contract in [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md).
+
 Reference handles and usage are documented in [tpw-branding.md](tpw-branding.md). In summary:
 
+- `tpw-ui.css` — Front-end/base TPW UI layer (handle: `tpw-ui`)
 - `tpw-admin-ui.css` — Scoped admin layout and resets (handle: `tpw-admin-ui`)
 - `tpw-buttons.css` — Global button system (handle: `tpw-buttons`)
 
@@ -180,5 +186,6 @@ if ( defined('TPW_CORE_URL') ) {
 
 ## Related documentation
 
+- Shared UI contract → [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md)
 - Branding and tokens → [tpw-branding.md](tpw-branding.md)
 - Developer guidance → [../developer-guide.md](../developer-guide.md)

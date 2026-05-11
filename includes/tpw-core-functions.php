@@ -1042,6 +1042,81 @@ if ( ! function_exists( 'tpw_core_sanitize_payments_page_config' ) ) {
 }
 
 /**
+ * Enqueue shared TPW Core UI styles using the canonical Core handles.
+ *
+ * @since 1.28.3
+ *
+ * @param array $args Optional flags controlling which shared assets are enqueued.
+ *                    Supported keys:
+ *                    - ui (bool)       Enqueue `tpw-ui`. Default true.
+ *                    - admin_ui (bool) Enqueue `tpw-admin-ui`. Default true.
+ *                    - buttons (bool)  Enqueue `tpw-buttons`. Default true.
+ * @return void
+ */
+if ( ! function_exists( 'tpw_core_enqueue_shared_ui_assets' ) ) {
+    function tpw_core_enqueue_shared_ui_assets( array $args = array() ): void {
+        if ( ! defined( 'TPW_CORE_PATH' ) || ! defined( 'TPW_CORE_URL' ) || ! function_exists( 'wp_style_is' ) ) {
+            return;
+        }
+
+        $settings = wp_parse_args(
+            $args,
+            array(
+                'ui'       => true,
+                'admin_ui' => true,
+                'buttons'  => true,
+            )
+        );
+
+        $assets = array(
+            'ui'       => array(
+                'handle' => 'tpw-ui',
+                'file'   => TPW_CORE_PATH . 'assets/css/tpw-ui.css',
+                'url'    => TPW_CORE_URL . 'assets/css/tpw-ui.css',
+                'deps'   => array(),
+            ),
+            'admin_ui' => array(
+                'handle' => 'tpw-admin-ui',
+                'file'   => TPW_CORE_PATH . 'assets/css/tpw-admin-ui.css',
+                'url'    => TPW_CORE_URL . 'assets/css/tpw-admin-ui.css',
+                'deps'   => array( 'tpw-ui' ),
+            ),
+            'buttons'  => array(
+                'handle' => 'tpw-buttons',
+                'file'   => TPW_CORE_PATH . 'assets/css/tpw-buttons.css',
+                'url'    => TPW_CORE_URL . 'assets/css/tpw-buttons.css',
+                'deps'   => array( 'tpw-ui' ),
+            ),
+        );
+
+		if ( empty( $settings['ui'] ) ) {
+			$assets['admin_ui']['deps'] = array();
+			$assets['buttons']['deps']  = array();
+		}
+
+        foreach ( $assets as $key => $asset ) {
+            if ( empty( $settings[ $key ] ) ) {
+                continue;
+            }
+
+            $handle = $asset['handle'];
+
+            if ( wp_style_is( $handle, 'enqueued' ) ) {
+                continue;
+            }
+
+            if ( wp_style_is( $handle, 'registered' ) ) {
+                wp_enqueue_style( $handle );
+                continue;
+            }
+
+            $version = file_exists( $asset['file'] ) ? filemtime( $asset['file'] ) : null;
+            wp_enqueue_style( $handle, $asset['url'], $asset['deps'], $version );
+        }
+    }
+}
+
+/**
  * Enqueue the Square Web Payments SDK (sandbox or production) and the Core payments bootstrap JS.
  * Optionally localize a config array to `tpwPaymentsConfig` if provided; otherwise builds a default.
  *

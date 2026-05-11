@@ -4,6 +4,8 @@ This page shows how an external plugin (e.g., FlexiTicket or RSVP) can plug into
 
 Applies to: front‑end forms and custom wp‑admin pages you own.
 
+Canonical contract: [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). Read that document first for the authoritative wrapper, handle, compatibility, and rollout rules for shared UI integration.
+
 ---
 
 ## 1) Enqueue Core UI + Payments bootstrap
@@ -11,6 +13,7 @@ Applies to: front‑end forms and custom wp‑admin pages you own.
 Use Core CSS for consistent UI and the tiny JS bootstrap that mounts Square:
 
 - CSS
+  - `tpw-ui`        → front-end/base TPW UI layer for public/member screens
   - `tpw-admin-ui` → layout/typography/widgets (scoped to `.tpw-admin-ui`)
   - `tpw-buttons`  → button styles
 - JS
@@ -21,6 +24,7 @@ Example (PHP):
 
 ```php
 if ( defined('TPW_CORE_URL') ) {
+  wp_enqueue_style('tpw-ui',        TPW_CORE_URL . 'assets/css/tpw-ui.css',       [], null);
     wp_enqueue_style('tpw-admin-ui', TPW_CORE_URL . 'assets/css/tpw-admin-ui.css', [], null);
     wp_enqueue_style('tpw-buttons',  TPW_CORE_URL . 'assets/css/tpw-buttons.css',  [], null);
 }
@@ -39,13 +43,15 @@ if ( function_exists('tpw_core_enqueue_payments_assets') ) {
 }
 ```
 
-Wrap your form with the Core scope:
+Wrap your full TPW checkout screen with the Core scope required by the contract:
 
 ```html
-<div class="tpw-admin-ui">
+<div class="tpw-frontend-ui tpw-admin-ui">
   <!-- your form -->
 </div>
 ```
+
+Use `.tpw-frontend-ui` for public/member-facing payment screens. Add `.tpw-admin-ui` only when the screen intentionally consumes the admin-like shared component scope documented by Core.
 
 ---
 

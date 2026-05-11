@@ -4,6 +4,8 @@ This guide shows how to consume the TPW Core Branding and UI Theme settings from
 
 Applies to: wp-admin and front-end pages.
 
+Canonical contract: [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). Read that document first for authoritative wrapper placement, handle usage, compatibility, and rollout rules.
+
 ---
 
 ## What the Branding tab configures
@@ -55,7 +57,14 @@ Integration guidance will follow separately; for now, other TPW plugins can refe
 
 ## Enqueue: which stylesheets to use
 
+This section is usage guidance. The canonical contract for wrapper selection, handle stability, and migration rules lives in [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md).
+
 Use these handles/paths exposed by TPW Core.
+
+0) Front-end/base TPW UI layer
+- Handle: `tpw-ui`
+- File: `assets/css/tpw-ui.css`
+- Purpose: shared front-end/base UI layer for TPW screens, especially public/member-facing screens using `.tpw-frontend-ui`
 
 1) Global TPW button system (admin + front-end)
 - Handle: `tpw-buttons`
@@ -92,6 +101,8 @@ Note: On many TPW admin screens, TPW Core already enqueues #2 automatically. If 
 ---
 
 ## Wrappers and classes to apply
+
+Use the canonical wrapper rules in [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md). In particular, wrappers must sit around the full rendered TPW screen, not only an inner card or panel.
 
 - For wp-admin pages you build: wrap your page content in `.tpw-admin-ui` to get the scoped UI theme + resets.
 ```php
@@ -137,6 +148,8 @@ The Branding tab emits variables to `:root`, so your CSS can use them directly:
 When you wrap in `.tpw-admin-ui`, additional scoped tokens exist for inputs and buttons (see `assets/css/tpw-admin-ui.css`).
 
 ### Front-end field validation (universal)
+
+For public and member-facing screens, pair this guidance with the canonical `.tpw-frontend-ui` rules in [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md).
 
 For TPW-styled front-end forms wrapped in `.tpw-frontend-ui`, invalid field containers can use `.tpw-field--invalid` to inherit the global warning token automatically:
 
@@ -225,6 +238,7 @@ add_shortcode( 'my_action_link', function(){
 
 - You do not need to re-emit tokens: Core prints them in heads on both admin and front-end. You only need to load the CSS that uses them.
 - If Elementor or themes override typography, the `.tpw-admin-ui` scope neutralizes most globals using `@layer` + `all: revert-layer`. Keep your admin markup inside that wrapper.
+- For public/member-facing wrapper behaviour and migration safety, treat `.tpw-frontend-ui` and `.tpw-admin-ui` as contract-defined roots from [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md](../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md).
 - For WordPress native button elements (`<button>`, `<input type=submit>`), also add `tpw-btn` + variant classes to get consistent styling.
 - The `tpw-admin-tabs.css` utilities are optional; prefer WP’s `nav-tab` when in wp-admin.
 
