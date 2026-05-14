@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-05-14
+
+### Fixed
+- Fixed FlexiClub System Pages "Re-create" so it uses the same option-backed page registry as registration and lookup. Missing registered pages, including FlexiEvent Event Admin, can now be restored, and AJAX failures now return clearer error messages instead of a generic "Operation failed".
+
 ## [2.2.0] - 2026-05-14
 
 ### Changed
