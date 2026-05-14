@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-05-14
+
+### Fixed
+- Updates: corrected the public manifest and release download endpoints used by the built-in GitHub updater so FlexiClub installs check the renamed `tpw-flexiclub` repository and GitHub Pages manifest location correctly.
+
 ## [2.0.0] - 2026-05-14
 
 ### Changed

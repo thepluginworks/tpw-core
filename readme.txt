@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,9 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 2.0.1 =
+- Updates: corrected the public manifest and release download URLs used by the built-in updater so FlexiClub sites check the renamed `tpw-flexiclub` repository and GitHub Pages manifest location correctly.
 
 = 2.0.0 =
 - Release delivery: renamed the plugin package, bootstrap file, updater metadata, and public release artifacts from `tpw-core` to `tpw-flexiclub` so the distributed FlexiClub product name, install package, and update manifest now align.

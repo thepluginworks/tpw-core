@@ -14,14 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class TPW_Core_Updater {
-	const MANIFEST_URL = 'https://thepluginworks.github.io/tpw-core/tpw-flexiclub.json';
+	const MANIFEST_URL = 'https://thepluginworks.github.io/tpw-flexiclub/tpw-flexiclub.json';
 	const PLUGIN_SLUG = 'tpw-flexiclub';
 	const PLUGIN_BASENAME = 'tpw-flexiclub/tpw-flexiclub.php';
 	const CACHE_KEY = 'tpw_core_update_manifest';
 	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
 	const FAILURE_CACHE_TTL = HOUR_IN_SECONDS;
 	const HOMEPAGE = 'https://thepluginworks.com/';
-	const DOWNLOAD_URL = 'https://github.com/thepluginworks/tpw-core/releases/latest/download/tpw-flexiclub.zip';
+	const DOWNLOAD_URL = 'https://github.com/thepluginworks/tpw-flexiclub/releases/latest/download/tpw-flexiclub.zip';
 
 	/**
 	 * Per-request manifest cache so a forced refresh only performs one remote request.

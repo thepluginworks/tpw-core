@@ -5,7 +5,7 @@
  * Description: Free base platform for shared member, payment, page, branding, and admin tools across the FlexiClub ecosystem.
  * Author: ThePluginWorks
  * Author URI: https://thepluginworks.com/
- * Version: 2.0.0
+ * Version: 2.0.1
  * Text Domain: tpw-core
  * Domain Path: /languages
  */
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'TPW_CORE_VERSION' ) ) {
-    define( 'TPW_CORE_VERSION', '2.0.0' );
+    define( 'TPW_CORE_VERSION', '2.0.1' );
 }
 
 // Define paths
