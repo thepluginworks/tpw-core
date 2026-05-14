@@ -1,8 +1,8 @@
 <?php
 /**
- * TPW Core Settings and Member Menu swapper.
+ * FlexiClub Settings and Member Menu swapper.
  *
- * Registers the Settings → TPW Core page with tabbed content for Branding,
+ * Registers the Settings → FlexiClub page with tabbed content for Branding,
  * Member Menu, Features, Email, Email Templates, and System Pages.
  *
  * @since 1.0.0
@@ -23,8 +23,8 @@ add_action( 'init', function () {
 // 2) Add Settings page under Settings
 add_action( 'admin_menu', function () {
     add_options_page(
-        __( 'TPW Core Settings', 'tpw-core' ),
-        __( 'TPW Core', 'tpw-core' ),
+        __( 'FlexiClub Settings', 'tpw-core' ),
+        __( 'FlexiClub', 'tpw-core' ),
         'manage_options',
         'tpw-core-settings',
         'tpw_core_render_settings_page'
@@ -81,7 +81,7 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
             } elseif ( $redirect_notice === 'email_logs_cleared' ) {
                 echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Email logs cleared.', 'tpw-core' ) . '</p></div>';
             } elseif ( $redirect_notice === 'email_logs_class_missing' ) {
-                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs are unavailable. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs are unavailable. Please ensure FlexiClub is fully updated.', 'tpw-core' ) . '</p></div>';
             }
         }
 
@@ -95,11 +95,11 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
         }
 
         if ( $current_tab === 'email' && ! class_exists( 'TPW_Core_Email_Settings' ) ) {
-            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email settings class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email settings class not found. Please ensure FlexiClub is fully updated.', 'tpw-core' ) . '</p></div>';
         }
 
 		if ( $current_tab === 'email-logs' && ! class_exists( 'TPW_Email_Logs' ) ) {
-			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs class not found. Please ensure TPW Core is fully updated.', 'tpw-core' ) . '</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Email logs class not found. Please ensure FlexiClub is fully updated.', 'tpw-core' ) . '</p></div>';
 		}
 
         if ( $current_tab === 'email-templates' ) {
@@ -121,7 +121,7 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
             if ( ! tpw_core_profile_page_is_configured() ) {
                 $url = add_query_arg( 'tab', 'profile', admin_url( 'options-general.php?page=tpw-core-settings' ) );
                 echo '<div class="notice notice-warning is-dismissible"><p>'
-                    . esc_html__( 'TPW Core: The Member Profile page is not configured. ', 'tpw-core' )
+                    . esc_html__( 'FlexiClub: The Member Profile page is not configured. ', 'tpw-core' )
                     . '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Select a Profile page now', 'tpw-core' ) . '</a>'
                     . '</p></div>';
             } else {
@@ -131,7 +131,7 @@ if ( ! function_exists( 'tpw_core_output_core_settings_warnings' ) ) {
                     if ( $p && 'page' === $p->post_type && 'publish' !== $p->post_status ) {
                         $edit = get_edit_post_link( $pid, '' );
                         echo '<div class="notice notice-error is-dismissible"><p>'
-                            . esc_html__( 'TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published.', 'tpw-core' )
+                            . esc_html__( 'FlexiClub: The selected Member Profile page is not published. Members cannot view it until it is Public and Published.', 'tpw-core' )
                             . ( $edit ? ' <a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit page', 'tpw-core' ) . '</a>' : '' )
                             . '</p></div>';
                     }
@@ -189,7 +189,7 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         <?php
         if ( function_exists( 'tpw_core_render_settings_header' ) ) {
             tpw_core_render_settings_header(
-                __( 'TPW Core Settings', 'tpw-core' ),
+                __( 'FlexiClub Settings', 'tpw-core' ),
                 __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
             );
         }

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.30.0] - 2026-05-14
+
+### Changed
+- Branding: updated the plugin header, admin settings labels, updater metadata, and release workflow surfaces to use the FlexiClub product name consistently.
+- Email: the default shared email footer branding now shows FlexiClub.
+- Documentation: refreshed the public readme and admin help copy so the shared platform is described consistently as FlexiClub.
+
 ## [1.29.0] - 2026-05-11
 
 ### Changed

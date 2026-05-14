@@ -542,7 +542,7 @@ class TPW_Email {
                 <div><?php echo $body; ?></div>
             </div>
             <div style="font-family:Arial,sans-serif;max-width:640px;margin:10px auto 0;font-size:11px;color:#9ca3af;text-align:center;">
-                Powered by <a href="https://thepluginworks.com/" target="_blank" rel="noopener noreferrer" style="color:#9ca3af;text-decoration:underline">ThePluginWorks</a>
+                Powered by <a href="https://thepluginworks.com/" target="_blank" rel="noopener noreferrer" style="color:#9ca3af;text-decoration:underline">FlexiClub</a>
             </div>
         </body>
         </html>

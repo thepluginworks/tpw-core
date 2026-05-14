@@ -1,22 +1,21 @@
 <?php
 /**
- * Plugin Name: TPW Core
+ * Plugin Name: FlexiClub
  * Plugin URI: https://thepluginworks.com/
- * Description: Core plugin for ThePluginWorks RSVP and Event Management System.
+ * Description: Free base platform for shared member, payment, page, branding, and admin tools across the FlexiClub ecosystem.
  * Author: ThePluginWorks
  * Author URI: https://thepluginworks.com/
- * Version: 1.29.0
+ * Version: 1.30.0
  * Text Domain: tpw-core
  * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly.
+    exit; // Exit if accessed directly.
 }
 
-// Define plugin version constant
 if ( ! defined( 'TPW_CORE_VERSION' ) ) {
-    define( 'TPW_CORE_VERSION', '1.29.0' );
+    define( 'TPW_CORE_VERSION', '1.30.0' );
 }
 
 // Define paths

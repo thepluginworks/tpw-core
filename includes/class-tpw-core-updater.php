@@ -133,9 +133,9 @@ class TPW_Core_Updater {
 		$sections = self::get_plugin_information_sections();
 
 		return (object) array(
-			'name'          => 'TPW Core',
+			'name'          => 'FlexiClub',
 			'slug'          => self::PLUGIN_SLUG,
-			'plugin_name'   => 'TPW Core',
+			'plugin_name'   => 'FlexiClub',
 			'version'       => $version,
 			'author'        => '<a href="' . esc_url( self::HOMEPAGE ) . '">ThePluginWorks</a>',
 			'homepage'      => self::HOMEPAGE,
@@ -448,7 +448,7 @@ class TPW_Core_Updater {
 
 		$description = ! empty( $sections['description'] )
 			? self::format_readme_section_html( $sections['description'] )
-			: '<p>TPW Core provides shared RSVP, member, payment, branding, and system-page functionality for the TPW plugin ecosystem.</p>';
+			: '<p>FlexiClub provides the free shared member, payment, branding, and system-page platform for the wider plugin ecosystem.</p>';
 
 		$changelog = ! empty( $sections['changelog'] )
 			? self::format_readme_section_html( $sections['changelog'] )

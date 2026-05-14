@@ -113,8 +113,8 @@ jobs:
             gh release upload "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" --clobber
           else
             gh release create "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" \
-              --title "TPW Core ${VERSION}" \
-              --notes "Automated release for TPW Core ${VERSION}." \
+              --title "FlexiClub ${VERSION}" \
+              --notes "Automated release for FlexiClub ${VERSION}." \
               --target "$GITHUB_SHA"
           fi
 

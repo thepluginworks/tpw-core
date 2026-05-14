@@ -1,15 +1,15 @@
 # Copyright (C) 2026 ThePluginWorks
-# This file is distributed under the same license as the TPW Core plugin.
+# This file is distributed under the same license as the FlexiClub plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: TPW Core 1.29.0\n"
+"Project-Id-Version: FlexiClub 1.30.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-11T12:13:14+00:00\n"
+"POT-Creation-Date: 2026-05-14T11:45:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -17,7 +17,7 @@ msgstr ""
 #. Plugin Name of the plugin
 #: tpw-core.php
 #: includes/tpw-core-settings.php:27
-msgid "TPW Core"
+msgid "FlexiClub"
 msgstr ""
 
 #. Plugin URI of the plugin
@@ -28,7 +28,7 @@ msgstr ""
 
 #. Description of the plugin
 #: tpw-core.php
-msgid "Core plugin for ThePluginWorks RSVP and Event Management System."
+msgid "Free base platform for shared member, payment, page, branding, and admin tools across the FlexiClub ecosystem."
 msgstr ""
 
 #. Author of the plugin
@@ -288,7 +288,7 @@ msgstr ""
 
 #: includes/tpw-core-settings.php:26
 #: includes/tpw-core-settings.php:192
-msgid "TPW Core Settings"
+msgid "FlexiClub Settings"
 msgstr ""
 
 #: includes/tpw-core-settings.php:64
@@ -316,7 +316,7 @@ msgid "Email logs cleared."
 msgstr ""
 
 #: includes/tpw-core-settings.php:84
-msgid "Email logs are unavailable. Please ensure TPW Core is fully updated."
+msgid "Email logs are unavailable. Please ensure FlexiClub is fully updated."
 msgstr ""
 
 #: includes/tpw-core-settings.php:93
@@ -324,11 +324,11 @@ msgid "System Pages template not found."
 msgstr ""
 
 #: includes/tpw-core-settings.php:98
-msgid "Email settings class not found. Please ensure TPW Core is fully updated."
+msgid "Email settings class not found. Please ensure FlexiClub is fully updated."
 msgstr ""
 
 #: includes/tpw-core-settings.php:102
-msgid "Email logs class not found. Please ensure TPW Core is fully updated."
+msgid "Email logs class not found. Please ensure FlexiClub is fully updated."
 msgstr ""
 
 #: includes/tpw-core-settings.php:107
@@ -340,8 +340,7 @@ msgid "Unknown template key."
 msgstr ""
 
 #: includes/tpw-core-settings.php:124
-#: includes/tpw-core-settings.php:2024
-msgid "TPW Core: The Member Profile page is not configured. "
+msgid "FlexiClub: The Member Profile page is not configured. "
 msgstr ""
 
 #: includes/tpw-core-settings.php:125
@@ -350,8 +349,7 @@ msgid "Select a Profile page now"
 msgstr ""
 
 #: includes/tpw-core-settings.php:134
-#: includes/tpw-core-settings.php:2036
-msgid "TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published."
+msgid "FlexiClub: The selected Member Profile page is not published. Members cannot view it until it is Public and Published."
 msgstr ""
 
 #: includes/tpw-core-settings.php:135
@@ -838,6 +836,14 @@ msgstr ""
 #: includes/tpw-core-settings.php:1590
 #: includes/tpw-core-settings.php:1655
 msgid "You do not have permission to manage settings."
+msgstr ""
+
+#: includes/tpw-core-settings.php:2024
+msgid "TPW Core: The Member Profile page is not configured. "
+msgstr ""
+
+#: includes/tpw-core-settings.php:2036
+msgid "TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published."
 msgstr ""
 
 #: modules/email/class-tpw-email-form.php:23

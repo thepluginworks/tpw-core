@@ -1,22 +1,22 @@
-=== TPW Core ===
+=== FlexiClub ===
 Contributors: thepluginworks
 Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.29.0
+Stable tag: 1.30.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Shared member, payment, page, and admin tools for TPW-powered WordPress sites and TPW add-on plugins.
+Free base platform for shared member, payment, page, and admin tools across FlexiClub-powered WordPress sites and add-on plugins.
 
 == Description ==
 
-TPW Core is the central engine that powers ThePluginWorks plugin ecosystem.
+FlexiClub is the free base platform that powers the FlexiClub plugin ecosystem.
 
-It provides shared functionality used across TPW plugins, ensuring everything works together consistently and reliably.
+It provides shared functionality used across add-ons and integrations, ensuring everything works together consistently and reliably.
 
-With TPW Core installed, your plugins can:
+With FlexiClub installed, your plugins can:
 
 - manage member accounts, roles, and profiles
 - handle login, registration, and access control
@@ -24,9 +24,9 @@ With TPW Core installed, your plugins can:
 - apply consistent branding and UI styles
 - share system pages and common functionality across modules
 
-TPW Core is required by many TPW plugins and is typically installed automatically when needed.
+FlexiClub is required by many ecosystem plugins and is typically installed automatically when needed.
 
-You do not use TPW Core directly — it works behind the scenes to support the plugins you install.
+You do not use FlexiClub directly in the same way as a feature add-on — it works behind the scenes to support the plugins you install.
 
 Learn more about ThePluginWorks ecosystem:
 https://www.thepluginworks.com
@@ -34,24 +34,24 @@ https://www.thepluginworks.com
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/tpw-core/` or install it using your normal plugin deployment process.
-2. Activate TPW Core in WordPress.
-3. Activate any TPW add-on plugins that require TPW Core.
-4. Review shared settings under Settings > TPW Core.
+2. Activate FlexiClub in WordPress.
+3. Activate any add-on plugins that require FlexiClub.
+4. Review shared settings under Settings > FlexiClub.
 5. Check that your required login, profile, join, or thank-you pages are set up for the TPW modules you use.
 
 == Frequently Asked Questions ==
 
-= What is TPW Core used for? =
-TPW Core provides the shared services and admin tools used by TPW plugins, including member flows, payments, shared pages, and common settings.
+= What is FlexiClub used for? =
+FlexiClub provides the shared services and admin tools used by ecosystem plugins, including member flows, payments, shared pages, and common settings.
 
-= Can I use TPW Core on its own? =
-Usually it is used together with other TPW plugins. Some shared screens and shortcodes may still be available on their own, but its main role is to support the wider TPW plugin set.
+= Can I use FlexiClub on its own? =
+Usually it is used together with other FlexiClub add-ons. Some shared screens and shortcodes may still be available on their own, but its main role is to support the wider plugin set.
 
 = Where do I manage core settings? =
-Go to Settings > TPW Core in the WordPress admin area.
+Go to Settings > FlexiClub in the WordPress admin area.
 
 = Do I need to create any pages? =
-Many TPW setups use shared pages such as login, profile, join, control, or thank-you pages. The exact pages depend on which TPW plugins are active on your site.
+Many FlexiClub setups use shared pages such as login, profile, join, control, or thank-you pages. The exact pages depend on which plugins are active on your site.
 
 == Shortcodes ==
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 1.30.0 =
+- Branding: the plugin header, admin settings labels, updater metadata, and customer-facing release surfaces now use the FlexiClub product name consistently.
+- Email: the default shared email footer branding now shows FlexiClub.
+- Documentation: refreshed the public and admin-facing setup copy to describe the shared platform using the FlexiClub name.
 
 = 1.29.0 =
 - UI: TPW Core now provides a reusable shared UI enqueue path for the canonical TPW shared styles, making wrapper-based UI integration more consistent across Core screens.
