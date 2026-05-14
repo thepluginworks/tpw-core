@@ -249,7 +249,8 @@ add_action('init', 'tpw_core_load_optional_modules', 20);
  *
  * Filters (booleans):
  * - tpw_show_dining_menu — load menu admin UIs
- * - tpw_show_payment_settings — expose Payments settings page
+ * - tpw_core/payments_required — declare that Core payment settings are required
+ * - tpw_show_payment_settings — legacy compatibility signal for payment settings
  * - tpw_enable_create_menu — enable legacy Create Menu tools
  *
  * @since 1.0.0
@@ -275,7 +276,7 @@ function tpw_core_load_optional_modules() {
         TPW_Course_Choice_Form_Admin::init();
     }
 
-    if ( apply_filters('tpw_show_payment_settings', false) ) {
+    if ( function_exists( 'tpw_core_payments_required' ) ? tpw_core_payments_required() : apply_filters( 'tpw_show_payment_settings', false ) ) {
         require_once TPW_CORE_PATH . 'modules/payments/class-tpw-payments-admin.php';
         TPW_Payments_Admin::init();
     }

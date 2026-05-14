@@ -18,6 +18,16 @@ if ( defined( 'TPW_MEMBERS_ACTIVE' ) && TPW_MEMBERS_ACTIVE ) {
 }
 
 if ( $tpw_members_active ) {
+    if ( function_exists( 'tpw_register_module' ) ) {
+        tpw_register_module( 'members', [
+            'title'       => 'Members',
+            'plugin'      => 'tpw-core',
+            'status'      => 'active',
+            'has_ui'      => true,
+            'description' => 'Shared members profiles, login, join, and management tools.',
+        ] );
+    }
+
     require_once TPW_CORE_PATH . 'modules/members/class-tpw-members-db.php';
     require_once TPW_CORE_PATH . 'modules/members/includes/class-tpw-member-email-sync.php';
     add_action( 'admin_init', [ 'TPW_Members_DB', 'ensure_core_schema' ], 5 );

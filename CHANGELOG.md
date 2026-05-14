@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-05-14
+
+### Changed
+- Members: `tpw_members_module_enabled()` now defaults to enabled on standalone FlexiClub sites when the Core members table exists or the members module has already been provisioned, while preserving the existing constant and filter override architecture.
+- Payments: the main FlexiClub `Payment Methods` settings tab is now hidden by default unless a plugin declares payments are required via `tpw_core/payments_required`, with legacy `tpw_show_payment_settings` still honored for backwards compatibility.
+
 ## [2.0.1] - 2026-05-14
 
 ### Fixed

@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the FlexiClub plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: FlexiClub 2.0.1\n"
+"Project-Id-Version: FlexiClub 2.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-flexiclub\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-14T14:42:45+00:00\n"
+"POT-Creation-Date: 2026-05-14T18:09:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -37,22 +37,22 @@ msgid "ThePluginWorks"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:219
-#: includes/tpw-core-settings.php:2091
+#: includes/tpw-core-settings.php:2107
 msgid "Members Menu"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:232
-#: includes/tpw-core-settings.php:1849
-#: includes/tpw-core-settings.php:2103
-#: modules/members/members-init.php:200
-#: modules/members/members-init.php:213
+#: includes/tpw-core-settings.php:1865
+#: includes/tpw-core-settings.php:2119
+#: modules/members/members-init.php:210
+#: modules/members/members-init.php:223
 msgid "Logout"
 msgstr ""
 
 #: includes/class-tpw-core-activator.php:293
-#: includes/tpw-core-loader.php:493
-#: includes/tpw-core-settings.php:1848
-#: includes/tpw-core-settings.php:2169
+#: includes/tpw-core-loader.php:494
+#: includes/tpw-core-settings.php:1864
+#: includes/tpw-core-settings.php:2185
 #: modules/members/shortcodes/member-profile.php:13
 #: modules/members/shortcodes/member-profile.php:375
 msgid "My Profile"
@@ -73,7 +73,7 @@ msgid "My Payments"
 msgstr ""
 
 #: includes/class-tpw-member-payments.php:85
-#: includes/tpw-core-settings.php:179
+#: includes/tpw-core-settings.php:183
 msgid "Payment Methods"
 msgstr ""
 
@@ -247,7 +247,7 @@ msgid "Read More"
 msgstr ""
 
 #: includes/noticeboard/shortcodes/noticeboard-list.php:117
-#: includes/tpw-core-settings.php:783
+#: includes/tpw-core-settings.php:799
 #: modules/gallery/templates/list.php:51
 #: modules/members/shortcodes/member-profile.php:258
 #: modules/members/shortcodes/member-profile.php:431
@@ -287,7 +287,7 @@ msgid "TPW Member Menu"
 msgstr ""
 
 #: includes/tpw-core-settings.php:26
-#: includes/tpw-core-settings.php:192
+#: includes/tpw-core-settings.php:206
 msgid "FlexiClub Settings"
 msgstr ""
 
@@ -344,7 +344,7 @@ msgid "FlexiClub: The Member Profile page is not configured. "
 msgstr ""
 
 #: includes/tpw-core-settings.php:125
-#: includes/tpw-core-settings.php:2025
+#: includes/tpw-core-settings.php:2041
 msgid "Select a Profile page now"
 msgstr ""
 
@@ -353,7 +353,7 @@ msgid "FlexiClub: The selected Member Profile page is not published. Members can
 msgstr ""
 
 #: includes/tpw-core-settings.php:135
-#: includes/tpw-core-settings.php:2037
+#: includes/tpw-core-settings.php:2053
 msgid "Edit page"
 msgstr ""
 
@@ -381,134 +381,138 @@ msgstr ""
 msgid "Email Templates"
 msgstr ""
 
-#: includes/tpw-core-settings.php:180
+#: includes/tpw-core-settings.php:186
 msgid "System Pages"
 msgstr ""
 
-#: includes/tpw-core-settings.php:193
+#: includes/tpw-core-settings.php:208
 msgid "Configure branding, menus, email, payment methods, and system pages."
 msgstr ""
 
-#: includes/tpw-core-settings.php:264
-#: includes/tpw-core-settings.php:1201
+#: includes/tpw-core-settings.php:209
+msgid "Configure branding, menus, email, and system pages."
+msgstr ""
+
+#: includes/tpw-core-settings.php:280
+#: includes/tpw-core-settings.php:1217
 msgid "Font family"
 msgstr ""
 
-#: includes/tpw-core-settings.php:267
-#: includes/tpw-core-settings.php:1204
+#: includes/tpw-core-settings.php:283
+#: includes/tpw-core-settings.php:1220
 msgid "Applies within .tpw-admin-ui only."
 msgstr ""
 
-#: includes/tpw-core-settings.php:271
-#: includes/tpw-core-settings.php:1208
+#: includes/tpw-core-settings.php:287
+#: includes/tpw-core-settings.php:1224
 msgid "Font weight"
 msgstr ""
 
-#: includes/tpw-core-settings.php:282
-#: includes/tpw-core-settings.php:1219
+#: includes/tpw-core-settings.php:298
+#: includes/tpw-core-settings.php:1235
 msgid "Text transform"
 msgstr ""
 
-#: includes/tpw-core-settings.php:293
-#: includes/tpw-core-settings.php:1230
+#: includes/tpw-core-settings.php:309
+#: includes/tpw-core-settings.php:1246
 msgid "Letter spacing"
 msgstr ""
 
-#: includes/tpw-core-settings.php:299
-#: includes/tpw-core-settings.php:1236
+#: includes/tpw-core-settings.php:315
+#: includes/tpw-core-settings.php:1252
 msgid "Text shadow"
 msgstr ""
 
-#: includes/tpw-core-settings.php:305
-#: includes/tpw-core-settings.php:1242
+#: includes/tpw-core-settings.php:321
+#: includes/tpw-core-settings.php:1258
 msgid "Button background colour"
 msgstr ""
 
-#: includes/tpw-core-settings.php:312
-#: includes/tpw-core-settings.php:1249
+#: includes/tpw-core-settings.php:328
+#: includes/tpw-core-settings.php:1265
 msgid "Button text colour"
 msgstr ""
 
-#: includes/tpw-core-settings.php:319
-#: includes/tpw-core-settings.php:1256
+#: includes/tpw-core-settings.php:335
+#: includes/tpw-core-settings.php:1272
 msgid "Accent colour"
 msgstr ""
 
-#: includes/tpw-core-settings.php:327
+#: includes/tpw-core-settings.php:343
 msgid "Save UI Theme"
 msgstr ""
 
-#: includes/tpw-core-settings.php:351
+#: includes/tpw-core-settings.php:367
 msgid "No content registered for this tab."
 msgstr ""
 
-#: includes/tpw-core-settings.php:379
+#: includes/tpw-core-settings.php:395
 msgid "Default Login Page"
 msgstr ""
 
-#: includes/tpw-core-settings.php:390
-#: includes/tpw-core-settings.php:407
+#: includes/tpw-core-settings.php:406
+#: includes/tpw-core-settings.php:423
 msgid "No published pages found."
 msgstr ""
 
-#: includes/tpw-core-settings.php:392
+#: includes/tpw-core-settings.php:408
 msgid "Select the page members should be redirected to when login is required. Used by FlexiEvent and other TPW modules."
 msgstr ""
 
-#: includes/tpw-core-settings.php:396
+#: includes/tpw-core-settings.php:412
 msgid "Redirect After Login"
 msgstr ""
 
-#: includes/tpw-core-settings.php:409
+#: includes/tpw-core-settings.php:425
 msgid "Choose a page to send members to immediately after they log in. Leave as “No redirect” to go to the site home."
 msgstr ""
 
-#: includes/tpw-core-settings.php:414
+#: includes/tpw-core-settings.php:430
 msgid "Save Features"
 msgstr ""
 
-#: includes/tpw-core-settings.php:434
+#: includes/tpw-core-settings.php:450
 msgid "Replace Which Menu Location for Members?"
 msgstr ""
 
-#: includes/tpw-core-settings.php:441
-#: includes/tpw-core-settings.php:1690
+#: includes/tpw-core-settings.php:457
+#: includes/tpw-core-settings.php:1706
 msgid "Logged-in users will see the TPW Member Menu at this location if a menu is assigned to it."
 msgstr ""
 
-#: includes/tpw-core-settings.php:446
+#: includes/tpw-core-settings.php:462
 msgid "Save Member Menu"
 msgstr ""
 
-#: includes/tpw-core-settings.php:487
+#: includes/tpw-core-settings.php:503
 msgid "Recent email dispatch attempts recorded by the central core dispatcher. The latest 100 entries are shown, newest first, and logs older than 30 days are removed automatically."
 msgstr ""
 
-#: includes/tpw-core-settings.php:492
+#: includes/tpw-core-settings.php:508
 msgid "Clear Logs"
 msgstr ""
 
-#: includes/tpw-core-settings.php:498
+#: includes/tpw-core-settings.php:514
 msgid "Timestamp"
 msgstr ""
 
-#: includes/tpw-core-settings.php:499
+#: includes/tpw-core-settings.php:515
 msgid "Recipient"
 msgstr ""
 
-#: includes/tpw-core-settings.php:500
-#: includes/tpw-core-settings.php:718
-#: includes/tpw-core-settings.php:723
+#: includes/tpw-core-settings.php:516
+#: includes/tpw-core-settings.php:734
+#: includes/tpw-core-settings.php:739
 #: modules/email/templates/email-form.php:48
 #: modules/email/templates/email-form.php:49
 msgid "Subject"
 msgstr ""
 
-#: includes/tpw-core-settings.php:501
+#: includes/tpw-core-settings.php:517
 msgid "Context"
 msgstr ""
 
-#: includes/tpw-core-settings.php:502
+#: includes/tpw-core-settings.php:518
 #: modules/members/admin/class-tpw-identity-audit-admin.php:990
 #: modules/members/includes/class-tpw-member-csv-importer.php:803
 #: modules/members/signups/class-tpw-signup-attempts-admin.php:111
@@ -516,178 +520,178 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: includes/tpw-core-settings.php:503
+#: includes/tpw-core-settings.php:519
 msgid "Error"
 msgstr ""
 
-#: includes/tpw-core-settings.php:509
+#: includes/tpw-core-settings.php:525
 msgid "No email log entries found."
 msgstr ""
 
-#: includes/tpw-core-settings.php:555
+#: includes/tpw-core-settings.php:571
 msgid "Displayed in email headers. Leave blank to use your Site Title."
 msgstr ""
 
-#: includes/tpw-core-settings.php:559
+#: includes/tpw-core-settings.php:575
 msgid "Enable Throttling"
 msgstr ""
 
-#: includes/tpw-core-settings.php:563
+#: includes/tpw-core-settings.php:579
 msgid "Limit the rate of outgoing emails"
 msgstr ""
 
-#: includes/tpw-core-settings.php:568
+#: includes/tpw-core-settings.php:584
 msgid "Max Emails Per Minute"
 msgstr ""
 
-#: includes/tpw-core-settings.php:574
+#: includes/tpw-core-settings.php:590
 msgid "Delay Between Emails (sec)"
 msgstr ""
 
-#: includes/tpw-core-settings.php:580
+#: includes/tpw-core-settings.php:596
 msgid "Enable Logging"
 msgstr ""
 
-#: includes/tpw-core-settings.php:584
+#: includes/tpw-core-settings.php:600
 msgid "Record email activity (via hooks)"
 msgstr ""
 
-#: includes/tpw-core-settings.php:589
+#: includes/tpw-core-settings.php:605
 msgid "Enable Test Mode"
 msgstr ""
 
-#: includes/tpw-core-settings.php:593
+#: includes/tpw-core-settings.php:609
 msgid "Send all emails to a single test address"
 msgstr ""
 
-#: includes/tpw-core-settings.php:598
+#: includes/tpw-core-settings.php:614
 msgid "Test Email Recipient"
 msgstr ""
 
-#: includes/tpw-core-settings.php:601
+#: includes/tpw-core-settings.php:617
 msgid "Used only when Test Mode is enabled."
 msgstr ""
 
-#: includes/tpw-core-settings.php:605
+#: includes/tpw-core-settings.php:621
 msgid "Fallback Logo URL"
 msgstr ""
 
-#: includes/tpw-core-settings.php:608
+#: includes/tpw-core-settings.php:624
 msgid "Select Image"
 msgstr ""
 
-#: includes/tpw-core-settings.php:609
+#: includes/tpw-core-settings.php:625
 msgid "Clear"
 msgstr ""
 
-#: includes/tpw-core-settings.php:610
+#: includes/tpw-core-settings.php:626
 msgid "Optional fallback logo displayed in email templates. PNG/JPG only for base64 copy."
 msgstr ""
 
-#: includes/tpw-core-settings.php:613
+#: includes/tpw-core-settings.php:629
 msgid "Current Logo Preview"
 msgstr ""
 
-#: includes/tpw-core-settings.php:620
+#: includes/tpw-core-settings.php:636
 msgid "Embed Logo as Inline Image (base64)"
 msgstr ""
 
-#: includes/tpw-core-settings.php:622
+#: includes/tpw-core-settings.php:638
 msgid "Use this if you want to embed the logo directly in the email for clients that block remote images. Not recommended for large images."
 msgstr ""
 
-#: includes/tpw-core-settings.php:625
+#: includes/tpw-core-settings.php:641
 msgid "Base64 copy is stored."
 msgstr ""
 
-#: includes/tpw-core-settings.php:626
+#: includes/tpw-core-settings.php:642
 msgid "Reset"
 msgstr ""
 
-#: includes/tpw-core-settings.php:629
+#: includes/tpw-core-settings.php:645
 msgid "No base64 copy stored yet. It will be created automatically when you select a compatible image (PNG/JPG, ≤50KB, ≤400px wide)."
 msgstr ""
 
-#: includes/tpw-core-settings.php:636
+#: includes/tpw-core-settings.php:652
 msgid "Save Email Settings"
 msgstr ""
 
-#: includes/tpw-core-settings.php:707
+#: includes/tpw-core-settings.php:723
 msgid "Back to list"
 msgstr ""
 
-#: includes/tpw-core-settings.php:715
+#: includes/tpw-core-settings.php:731
 msgid "Template"
 msgstr ""
 
-#: includes/tpw-core-settings.php:716
+#: includes/tpw-core-settings.php:732
 msgid "Group"
 msgstr ""
 
-#: includes/tpw-core-settings.php:720
+#: includes/tpw-core-settings.php:736
 msgid "Use placeholders below in the subject."
 msgstr ""
 
-#: includes/tpw-core-settings.php:723
+#: includes/tpw-core-settings.php:739
 msgid "Subject is not editable for this template."
 msgstr ""
 
-#: includes/tpw-core-settings.php:726
-#: includes/tpw-core-settings.php:735
+#: includes/tpw-core-settings.php:742
+#: includes/tpw-core-settings.php:751
 msgid "Body"
 msgstr ""
 
-#: includes/tpw-core-settings.php:732
+#: includes/tpw-core-settings.php:748
 msgid "You can use the placeholders below in the body."
 msgstr ""
 
-#: includes/tpw-core-settings.php:735
+#: includes/tpw-core-settings.php:751
 msgid "Body is not editable for this template."
 msgstr ""
 
-#: includes/tpw-core-settings.php:738
+#: includes/tpw-core-settings.php:754
 msgid "Include fallback logo"
 msgstr ""
 
-#: includes/tpw-core-settings.php:739
+#: includes/tpw-core-settings.php:755
 msgid "Show the configured fallback logo at the top of this email"
 msgstr ""
 
-#: includes/tpw-core-settings.php:743
+#: includes/tpw-core-settings.php:759
 msgid "Available placeholders"
 msgstr ""
 
-#: includes/tpw-core-settings.php:751
+#: includes/tpw-core-settings.php:767
 msgid "No placeholders defined for this template."
 msgstr ""
 
-#: includes/tpw-core-settings.php:756
+#: includes/tpw-core-settings.php:772
 msgid "Save Template"
 msgstr ""
 
-#: includes/tpw-core-settings.php:757
+#: includes/tpw-core-settings.php:773
 msgid "Reset to Default"
 msgstr ""
 
-#: includes/tpw-core-settings.php:765
+#: includes/tpw-core-settings.php:781
 msgid "Registered email templates from TPW plugins. Edit to override the default subject/body and choose whether to include the fallback logo."
 msgstr ""
 
-#: includes/tpw-core-settings.php:767
+#: includes/tpw-core-settings.php:783
 msgid "No templates registered yet."
 msgstr ""
 
-#: includes/tpw-core-settings.php:774
+#: includes/tpw-core-settings.php:790
 #: modules/members/settings/member-signups-settings.php:151
 #: modules/payments/class-tpw-card-on-the-day-settings.php:75
 msgid "Label"
 msgstr ""
 
-#: includes/tpw-core-settings.php:775
+#: includes/tpw-core-settings.php:791
 msgid "Key"
 msgstr ""
 
-#: includes/tpw-core-settings.php:776
+#: includes/tpw-core-settings.php:792
 #: modules/gallery/templates/categories.php:28
 #: modules/gallery/templates/list.php:35
 #: modules/menus/class-tpw-menus-frontend-admin.php:370
@@ -698,11 +702,11 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: includes/tpw-core-settings.php:794
-#: includes/tpw-core-settings.php:1315
-#: includes/tpw-core-settings.php:1522
-#: includes/tpw-core-settings.php:1542
-#: includes/tpw-core-settings.php:1566
+#: includes/tpw-core-settings.php:810
+#: includes/tpw-core-settings.php:1331
+#: includes/tpw-core-settings.php:1538
+#: includes/tpw-core-settings.php:1558
+#: includes/tpw-core-settings.php:1582
 #: modules/gallery/elementor/ajax.php:16
 #: modules/gallery/gallery-loader.php:138
 #: modules/gallery/gallery-loader.php:148
@@ -723,126 +727,126 @@ msgstr ""
 msgid "Permission denied"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1052
+#: includes/tpw-core-settings.php:1068
 msgid "Heading font family"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1055
+#: includes/tpw-core-settings.php:1071
 msgid "Leave empty to inherit the UI Theme font. Applies to h1–h6 within TPW UIs."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1065
+#: includes/tpw-core-settings.php:1081
 msgid "colour / size / weight"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1073
+#: includes/tpw-core-settings.php:1089
 msgid "Default"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1077
+#: includes/tpw-core-settings.php:1093
 msgid "Leave colour empty to inherit. Size accepts px, rem, or em. Weight: choose Default to use the built-in scale."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1116
+#: includes/tpw-core-settings.php:1132
 msgid "Used for .tpw-action-edit buttons in admin module lists."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1132
+#: includes/tpw-core-settings.php:1148
 msgid "Large buttons font size"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1133
+#: includes/tpw-core-settings.php:1149
 msgid "Used by .tpw-btn-lg."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1136
+#: includes/tpw-core-settings.php:1152
 msgid "Large buttons padding"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1137
+#: includes/tpw-core-settings.php:1153
 msgid "CSS shorthand accepted. Used by .tpw-btn-lg."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1140
+#: includes/tpw-core-settings.php:1156
 msgid "Large buttons height"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1141
+#: includes/tpw-core-settings.php:1157
 msgid "Minimum height for .tpw-btn-lg. Use a unit such as px, rem, or em."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1148
+#: includes/tpw-core-settings.php:1164
 msgid "Background/base colour for success states. Supports CSS functions (color-mix, var())."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1155
+#: includes/tpw-core-settings.php:1171
 msgid "Base colour for informational notices. Typically uses the UI accent."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1163
+#: includes/tpw-core-settings.php:1179
 msgid "High-attention but non-fatal states."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1170
+#: includes/tpw-core-settings.php:1186
 msgid "Critical / failure state colour, usually matches Danger button."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1174
+#: includes/tpw-core-settings.php:1190
 msgid "Buttons Height"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1177
+#: includes/tpw-core-settings.php:1193
 msgid "Optional. Sets a fixed height for TPW buttons. Use a unit (e.g., 32px). Leave blank or set to “auto” to size by padding."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1181
+#: includes/tpw-core-settings.php:1197
 msgid "Buttons Font Weight"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1189
+#: includes/tpw-core-settings.php:1205
 msgid "Overrides UI weight for TPW buttons only. Leave as 600 for the default."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1193
+#: includes/tpw-core-settings.php:1209
 msgid "Buttons Font Family"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1196
+#: includes/tpw-core-settings.php:1212
 msgid "Optional. Overrides UI font for TPW buttons only. If empty, buttons use the UI Theme font or the system stack."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1263
 #: includes/tpw-core-settings.php:1279
+#: includes/tpw-core-settings.php:1295
 msgid "Inherit global site styles on admin screens (front-end only)"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1268
-#: includes/tpw-core-settings.php:1288
+#: includes/tpw-core-settings.php:1284
+#: includes/tpw-core-settings.php:1304
 msgid "Do not apply TPW Admin UI wrapper/styles on front-end shortcodes. Useful when using Elementor/Theme global styles."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1270
+#: includes/tpw-core-settings.php:1286
 msgid "Does not affect wp-admin. Only front-end admin-like pages (shortcodes) are affected."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1290
+#: includes/tpw-core-settings.php:1306
 msgid "This does not affect wp-admin. It applies only to front-end admin-like pages powered by TPW shortcodes."
 msgstr ""
 
-#: includes/tpw-core-settings.php:1295
+#: includes/tpw-core-settings.php:1311
 msgid "Save Branding"
 msgstr ""
 
-#: includes/tpw-core-settings.php:1590
-#: includes/tpw-core-settings.php:1655
+#: includes/tpw-core-settings.php:1606
+#: includes/tpw-core-settings.php:1671
 msgid "You do not have permission to manage settings."
 msgstr ""
 
-#: includes/tpw-core-settings.php:2024
+#: includes/tpw-core-settings.php:2040
 msgid "TPW Core: The Member Profile page is not configured. "
 msgstr ""
 
-#: includes/tpw-core-settings.php:2036
+#: includes/tpw-core-settings.php:2052
 msgid "TPW Core: The selected Member Profile page is not published. Members cannot view it until it is Public and Published."
 msgstr ""
 

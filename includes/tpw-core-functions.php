@@ -912,18 +912,65 @@ if ( ! function_exists( 'tpw_is_module_registered' ) ) {
     }
 }
 
+if ( ! function_exists( 'tpw_core_members_table_exists' ) ) {
+    /**
+     * Determine whether the Core members table exists.
+     */
+    function tpw_core_members_table_exists(): bool {
+        static $exists = null;
+
+        if ( null !== $exists ) {
+            return $exists;
+        }
+
+        global $wpdb;
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || empty( $wpdb->prefix ) || ! method_exists( $wpdb, 'get_var' ) || ! method_exists( $wpdb, 'prepare' ) ) {
+            $exists = false;
+            return $exists;
+        }
+
+        $table_name = $wpdb->prefix . 'tpw_members';
+        $exists     = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name );
+
+        return $exists;
+    }
+}
+
 /**
  * Determine if the Members module should be enabled for front-end features.
  *
- * Returns true when TPW_MEMBERS_ACTIVE is defined and truthy. Filterable via
- * 'tpw_members/module_enabled' to support future toggles.
+ * Defaults to enabled when TPW_MEMBERS_ACTIVE is truthy, when Core has already
+ * provisioned and registered the members module, or when the members table
+ * exists on the current site. Filterable via 'tpw_members/module_enabled'.
  */
 function tpw_members_module_enabled(): bool {
-    $enabled = defined('TPW_MEMBERS_ACTIVE') && TPW_MEMBERS_ACTIVE;
+    $enabled = ( defined( 'TPW_MEMBERS_ACTIVE' ) && TPW_MEMBERS_ACTIVE )
+        || tpw_is_module_registered( 'members' )
+        || tpw_core_members_table_exists();
+
     /**
      * Filter: allow products to override Members module enabled flag.
      */
     return (bool) apply_filters( 'tpw_members/module_enabled', $enabled );
+}
+
+if ( ! function_exists( 'tpw_core_payments_required' ) ) {
+    /**
+     * Determine whether shared Core payment settings should be available.
+     *
+     * The new canonical declaration is `tpw_core/payments_required`. The legacy
+     * `tpw_show_payment_settings` signal still counts as true for backwards
+     * compatibility with existing add-ons.
+     */
+    function tpw_core_payments_required(): bool {
+        $required = (bool) apply_filters( 'tpw_core/payments_required', false );
+
+        if ( ! $required ) {
+            $required = (bool) apply_filters( 'tpw_show_payment_settings', false );
+        }
+
+        return $required;
+    }
 }
 
 /**

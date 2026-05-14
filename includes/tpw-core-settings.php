@@ -169,19 +169,33 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         }
 
         // Build tabs (extensible)
-        $tabs = apply_filters( 'tpw_core_settings_tabs', [
-            'branding'    => __( 'Branding', 'tpw-core' ),
-            'member-menu' => __( 'Member Menu', 'tpw-core' ),
-            'features'    => __( 'Features', 'tpw-core' ),
-            'email'       => __( 'Email Settings', 'tpw-core' ),
-            'email-logs'  => __( 'Email Logs', 'tpw-core' ),
+        $tabs = [
+            'branding'        => __( 'Branding', 'tpw-core' ),
+            'member-menu'     => __( 'Member Menu', 'tpw-core' ),
+            'features'        => __( 'Features', 'tpw-core' ),
+            'email'           => __( 'Email Settings', 'tpw-core' ),
+            'email-logs'      => __( 'Email Logs', 'tpw-core' ),
             'email-templates' => __( 'Email Templates', 'tpw-core' ),
-            'payment-methods' => __( 'Payment Methods', 'tpw-core' ),
-            'system-pages' => __( 'System Pages', 'tpw-core' ),
-        ] );
-        $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'member-menu';
+        ];
+
+        $payments_required = function_exists( 'tpw_core_payments_required' ) && tpw_core_payments_required();
+        if ( $payments_required ) {
+            $tabs['payment-methods'] = __( 'Payment Methods', 'tpw-core' );
+        }
+
+        $tabs['system-pages'] = __( 'System Pages', 'tpw-core' );
+        $tabs                 = apply_filters( 'tpw_core_settings_tabs', $tabs );
+
+        $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'member-menu'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         if ( $current_tab === '' ) {
             $current_tab = 'member-menu';
+        }
+
+        if ( ! isset( $tabs[ $current_tab ] ) ) {
+            $tab_keys    = array_keys( $tabs );
+            $current_tab = in_array( 'member-menu', $tab_keys, true )
+                ? 'member-menu'
+                : ( isset( $tab_keys[0] ) ? (string) $tab_keys[0] : 'member-menu' );
         }
 
         $base_url = admin_url( 'options-general.php?page=tpw-core-settings' );
@@ -190,7 +204,9 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         if ( function_exists( 'tpw_core_render_settings_header' ) ) {
             tpw_core_render_settings_header(
                 __( 'FlexiClub Settings', 'tpw-core' ),
-                __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
+				$payments_required
+					? __( 'Configure branding, menus, email, payment methods, and system pages.', 'tpw-core' )
+					: __( 'Configure branding, menus, email, and system pages.', 'tpw-core' )
             );
         }
         ?>

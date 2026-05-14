@@ -8,6 +8,20 @@ Canonical contract: [../architecture/ui/tpw-core-ui-wrapper-enqueue-contract.md]
 
 ---
 
+## 0) Declare that your plugin requires Core payment settings
+
+If your plugin depends on FlexiClub-managed payment methods, declare that requirement during bootstrap so the shared Payment Methods settings tab and admin wiring are available:
+
+```php
+add_filter( 'tpw_core/payments_required', '__return_true' );
+```
+
+Backwards compatibility:
+- FlexiClub still honors the legacy `tpw_show_payment_settings` signal.
+- New integrations should prefer `tpw_core/payments_required`.
+
+---
+
 ## 1) Enqueue Core UI + Payments bootstrap
 
 Use Core CSS for consistent UI and the tiny JS bootstrap that mounts Square:

@@ -136,6 +136,10 @@ Protected Manage Members permission fields are currently `is_admin`, `is_manage_
 	- Description: Inject API credentials per provider key.
 
 ### Payments
+- tpw_core/payments_required (filter) — Declare that shared Core payment settings are required.
+	- File: `includes/tpw-core-functions.php`, `includes/tpw-core-settings.php`, `includes/tpw-core-loader.php`
+	- Since: 2.0.2
+	- Description: Return true from a consumer plugin when FlexiClub Payment Methods settings and admin wiring should be available. Legacy `tpw_show_payment_settings` remains honored as a compatibility signal.
 - tpw_payment_completed (action) — Payment completed webhook event.
 	- File: `modules/payments/webhook.php`
 	- Since: 1.0.0
