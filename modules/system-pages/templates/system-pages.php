@@ -135,15 +135,29 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
         btn.disabled = true;
         ajax(url, { action: op==='unlink' ? 'tpw_system_page_unlink' : 'tpw_system_page_recreate', slug: slug, nonce: nonce })
             .then(function(res){
-                if (res && res.success && res.data && res.data.rowHtml) {
-                    var wrapper = document.createElement('tbody');
-                    wrapper.innerHTML = res.data.rowHtml.trim();
-                    var newRow = wrapper.querySelector('tr');
-                    if (row && newRow) {
-                        row.parentNode.replaceChild(newRow, row);
+                if (res && res.success) {
+                    if (res.data && res.data.rowHtml) {
+                        var wrapper = document.createElement('tbody');
+                        wrapper.innerHTML = res.data.rowHtml.trim();
+                        var newRow = wrapper.querySelector('tr');
+                        if (row && newRow) {
+                            row.parentNode.replaceChild(newRow, row);
+                            return;
+                        }
                     }
+                    if (res.data && res.data.reload) {
+                        window.location.reload();
+                        return;
+                    }
+                    window.location.reload();
                 } else {
-                    alert((res && res.data) ? (res.data.message || 'Operation failed') : 'Operation failed');
+                    var message = 'Operation failed';
+                    if (res && typeof res.data === 'string' && res.data) {
+                        message = res.data;
+                    } else if (res && res.data && res.data.message) {
+                        message = res.data.message;
+                    }
+                    alert(message);
                 }
             })
             .catch(function(){ alert('Request failed'); })

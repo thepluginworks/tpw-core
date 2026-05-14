@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-05-14
+
+### Changed
+- System Pages: administrators can now clear stored system page mappings and recreate canonical FlexiClub system pages directly from the settings screen.
+- System Pages: page recreation now preserves clearer error handling for missing slugs, trashed pages, and page creation failures so recovery is more reliable.
+
 ## [2.1.0] - 2026-05-14
 
 ### Changed

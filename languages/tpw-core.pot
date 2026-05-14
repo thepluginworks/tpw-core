@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the FlexiClub plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: FlexiClub 2.1.0\n"
+"Project-Id-Version: FlexiClub 2.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-flexiclub\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-14T18:09:33+00:00\n"
+"POT-Creation-Date: 2026-05-14T19:54:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
@@ -64,6 +64,72 @@ msgstr ""
 
 #: includes/class-tpw-core-system-pages.php:43
 msgid "Member Login"
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:192
+#: includes/class-tpw-core-system-pages.php:330
+msgid "Missing system page slug."
+msgstr ""
+
+#. translators: %s: system page slug
+#: includes/class-tpw-core-system-pages.php:225
+#, php-format
+msgid "The page for slug \"%s\" is currently in Trash. Empty Trash or restore that page before recreating it."
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:463
+#: includes/class-tpw-core-system-pages.php:503
+#: includes/tpw-core-settings.php:810
+#: includes/tpw-core-settings.php:1331
+#: includes/tpw-core-settings.php:1538
+#: includes/tpw-core-settings.php:1558
+#: includes/tpw-core-settings.php:1582
+#: modules/gallery/elementor/ajax.php:16
+#: modules/gallery/gallery-loader.php:138
+#: modules/gallery/gallery-loader.php:148
+#: modules/gallery/gallery-loader.php:165
+#: modules/gallery/gallery-loader.php:183
+#: modules/gallery/gallery-loader.php:195
+#: modules/gallery/gallery-loader.php:208
+#: modules/gallery/gallery-loader.php:220
+#: modules/gallery/gallery-loader.php:230
+#: modules/gallery/gallery-loader.php:240
+#: modules/gallery/gallery-loader.php:252
+#: modules/gallery/gallery-loader.php:264
+#: modules/gallery/gallery-loader.php:277
+#: modules/gallery/gallery-loader.php:291
+#: modules/system-pages/class-tpw-core-system-pages.php:359
+#: modules/system-pages/class-tpw-core-system-pages.php:427
+#: modules/system-pages/class-tpw-core-system-pages.php:444
+msgid "Permission denied"
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:472
+#: includes/class-tpw-core-system-pages.php:512
+#: modules/system-pages/class-tpw-core-system-pages.php:429
+#: modules/system-pages/class-tpw-core-system-pages.php:446
+msgid "Bad nonce"
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:481
+#: includes/class-tpw-core-system-pages.php:521
+#: modules/system-pages/class-tpw-core-system-pages.php:431
+#: modules/system-pages/class-tpw-core-system-pages.php:448
+msgid "Missing slug"
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:485
+msgid "Failed to unlink page mapping."
+msgstr ""
+
+#: includes/class-tpw-core-system-pages.php:490
+msgid "Page mapping cleared."
+msgstr ""
+
+#. translators: %s: system page slug
+#: includes/class-tpw-core-system-pages.php:533
+#, php-format
+msgid "Page \"%s\" recreated."
 msgstr ""
 
 #: includes/class-tpw-member-payments.php:30
@@ -700,31 +766,6 @@ msgstr ""
 #: modules/menus/class-tpw-menus-frontend-admin.php:605
 #: modules/system-pages/templates/system-pages.php:39
 msgid "Actions"
-msgstr ""
-
-#: includes/tpw-core-settings.php:810
-#: includes/tpw-core-settings.php:1331
-#: includes/tpw-core-settings.php:1538
-#: includes/tpw-core-settings.php:1558
-#: includes/tpw-core-settings.php:1582
-#: modules/gallery/elementor/ajax.php:16
-#: modules/gallery/gallery-loader.php:138
-#: modules/gallery/gallery-loader.php:148
-#: modules/gallery/gallery-loader.php:165
-#: modules/gallery/gallery-loader.php:183
-#: modules/gallery/gallery-loader.php:195
-#: modules/gallery/gallery-loader.php:208
-#: modules/gallery/gallery-loader.php:220
-#: modules/gallery/gallery-loader.php:230
-#: modules/gallery/gallery-loader.php:240
-#: modules/gallery/gallery-loader.php:252
-#: modules/gallery/gallery-loader.php:264
-#: modules/gallery/gallery-loader.php:277
-#: modules/gallery/gallery-loader.php:291
-#: modules/system-pages/class-tpw-core-system-pages.php:359
-#: modules/system-pages/class-tpw-core-system-pages.php:427
-#: modules/system-pages/class-tpw-core-system-pages.php:444
-msgid "Permission denied"
 msgstr ""
 
 #: includes/tpw-core-settings.php:1068
@@ -3472,16 +3513,6 @@ msgstr ""
 #: modules/system-pages/class-tpw-core-system-pages.php:411
 #, php-format
 msgid "Failed to recreate page '%s'."
-msgstr ""
-
-#: modules/system-pages/class-tpw-core-system-pages.php:429
-#: modules/system-pages/class-tpw-core-system-pages.php:446
-msgid "Bad nonce"
-msgstr ""
-
-#: modules/system-pages/class-tpw-core-system-pages.php:431
-#: modules/system-pages/class-tpw-core-system-pages.php:448
-msgid "Missing slug"
 msgstr ""
 
 #: modules/system-pages/class-tpw-core-system-pages.php:433

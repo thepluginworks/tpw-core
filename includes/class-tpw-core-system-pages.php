@@ -155,6 +155,116 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
         public static function get_page_id( $key ) { return self::get_id( $key ); }
 
         /**
+         * Persist or remove a stored page ID override for a slug.
+         *
+         * @param string $slug System page slug.
+         * @param int    $page_id Linked page ID, or 0 to clear the mapping.
+         * @return bool True when the option write completed.
+         */
+        protected static function persist_override( $slug, $page_id ) {
+            $s = sanitize_key( (string) $slug );
+            if ( '' === $s ) {
+                return false;
+            }
+
+            self::load_overrides();
+            $page_id = absint( $page_id );
+
+            if ( 0 < $page_id ) {
+                self::$overrides[ $s ] = array( 'wp_page_id' => $page_id );
+            } else {
+                unset( self::$overrides[ $s ] );
+            }
+
+            update_option( 'tpw_core_system_pages', self::$overrides );
+            return true;
+        }
+
+        /**
+         * Internal ensure helper that preserves WP_Error details for callers that need them.
+         *
+         * @param string $slug System page slug.
+         * @return int|WP_Error Page ID on success, or WP_Error on failure.
+         */
+        protected static function ensure_page_result( $slug ) {
+            $s = sanitize_key( (string) $slug );
+            if ( '' === $s ) {
+                return new WP_Error( 'tpw_system_page_missing_slug', __( 'Missing system page slug.', 'tpw-core' ) );
+            }
+
+            self::boot_defaults();
+            self::load_overrides();
+
+            $id = self::get_id( $s );
+            if ( 0 < $id ) {
+                return (int) $id;
+            }
+
+            $def = array();
+            if ( isset( self::$registry[ $s ] ) && is_array( self::$registry[ $s ] ) ) {
+                $def = self::$registry[ $s ];
+            }
+
+            $title = ucwords( str_replace( '-', ' ', $s ) );
+            if ( isset( $def['title'] ) ) {
+                $title = (string) $def['title'];
+            }
+
+            $shortcode = '';
+            if ( isset( $def['shortcode'] ) ) {
+                $shortcode = (string) $def['shortcode'];
+            }
+
+            $maybe = get_page_by_path( $s );
+            if ( $maybe && 'page' === $maybe->post_type ) {
+                if ( 'trash' === $maybe->post_status ) {
+                    return new WP_Error(
+                        'tpw_system_page_in_trash',
+                        sprintf(
+                            /* translators: %s: system page slug */
+                            __( 'The page for slug "%s" is currently in Trash. Empty Trash or restore that page before recreating it.', 'tpw-core' ),
+                            $s
+                        )
+                    );
+                }
+
+                if ( 'publish' !== $maybe->post_status ) {
+                    $updated = wp_update_post(
+                        array(
+                            'ID'          => (int) $maybe->ID,
+                            'post_status' => 'publish',
+                        ),
+                        true
+                    );
+
+                    if ( is_wp_error( $updated ) ) {
+                        return $updated;
+                    }
+                }
+
+                $id = (int) $maybe->ID;
+            } else {
+                $id = wp_insert_post(
+                    array(
+                        'post_type'    => 'page',
+                        'post_status'  => 'publish',
+                        'post_title'   => $title,
+                        'post_name'    => $s,
+                        'post_content' => $shortcode,
+                    ),
+                    true
+                );
+
+                if ( is_wp_error( $id ) ) {
+                    return $id;
+                }
+            }
+
+            self::persist_override( $s, (int) $id );
+            return (int) $id;
+        }
+
+        /**
          * Register a system page programmatically.
          * Safe to call multiple times; later calls overwrite fields, not IDs.
          * @param string $slug
@@ -185,46 +295,44 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
      * @since 1.0.0
      */
     public static function ensure_page( $slug ) {
-            $s = sanitize_key( (string) $slug );
-            if ( $s === '' ) return 0;
-            self::boot_defaults();
-            self::load_overrides();
-
-            // Already linked?
-            $id = self::get_id( $s );
-            if ( $id > 0 ) return $id;
-
-            // Prepare payload from registry
-            $def = self::$registry[ $s ] ?? [];
-            $title = isset( $def['title'] ) ? (string) $def['title'] : ucwords( str_replace( '-', ' ', $s ) );
-            $shortcode = isset( $def['shortcode'] ) ? (string) $def['shortcode'] : '';
-
-            // Try to find a draft/privately published page by path
-            $maybe = get_page_by_path( $s );
-            if ( $maybe && $maybe->post_type === 'page' ) {
-                // Promote to publish if needed
-                if ( $maybe->post_status !== 'publish' ) {
-                    wp_update_post( [ 'ID' => (int) $maybe->ID, 'post_status' => 'publish' ] );
-                }
-                $id = (int) $maybe->ID;
-            } else {
-                // Create new page
-                $id = wp_insert_post( [
-                    'post_type'    => 'page',
-                    'post_status'  => 'publish',
-                    'post_title'   => $title,
-                    'post_name'    => $s,
-                    'post_content' => $shortcode,
-                ], true );
-                if ( is_wp_error( $id ) ) {
-                    return 0;
-                }
+            $result = self::ensure_page_result( $slug );
+            if ( is_wp_error( $result ) ) {
+                return 0;
             }
 
-            // Persist mapping in option
-            self::$overrides[ $s ] = [ 'wp_page_id' => (int) $id ];
-            update_option( 'tpw_core_system_pages', self::$overrides );
-            return (int) $id;
+            return (int) $result;
+        }
+
+        /**
+         * Clear any stored page mapping for a slug.
+         *
+         * @param string $slug System page slug.
+         * @return bool True when the mapping was cleared or did not exist.
+         */
+        public static function unlink( $slug ) {
+            $s = sanitize_key( (string) $slug );
+            if ( '' === $s ) {
+                return false;
+            }
+
+            return self::persist_override( $s, 0 );
+        }
+
+        /**
+         * Recreate a system page using the canonical option-backed implementation.
+         *
+         * @param string $slug System page slug.
+         * @return int|WP_Error Page ID on success, or WP_Error on failure.
+         */
+        public static function recreate_page( $slug ) {
+            $s = sanitize_key( (string) $slug );
+            if ( '' === $s ) {
+                return new WP_Error( 'tpw_system_page_missing_slug', __( 'Missing system page slug.', 'tpw-core' ) );
+            }
+
+            self::unlink( $s );
+
+            return self::ensure_page_result( $s );
         }
 
         /**
@@ -327,6 +435,110 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
          */
         public static function ensure_tables() { /* no-op in scaffold */ }
     }
+}
+
+if ( ! function_exists( 'tpw_core_system_pages_ajax_error' ) ) {
+    /**
+     * Send a structured JSON error for System Pages AJAX requests.
+     *
+     * @param string $message Error message.
+     * @param int    $status  HTTP status code.
+     * @return void
+     */
+    function tpw_core_system_pages_ajax_error( $message, $status = 500 ) {
+        wp_send_json_error(
+            array(
+                'message' => (string) $message,
+            ),
+            (int) $status
+        );
+    }
+}
+
+if ( ! has_action( 'wp_ajax_tpw_system_page_unlink' ) ) {
+    add_action(
+        'wp_ajax_tpw_system_page_unlink',
+        function() {
+            if ( ! current_user_can( 'manage_options' ) ) {
+                tpw_core_system_pages_ajax_error( __( 'Permission denied', 'tpw-core' ), 403 );
+            }
+
+            $nonce = '';
+            if ( isset( $_POST['nonce'] ) ) {
+                $nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+            }
+
+            if ( ! wp_verify_nonce( $nonce, 'tpw_system_pages_ajax' ) ) {
+                tpw_core_system_pages_ajax_error( __( 'Bad nonce', 'tpw-core' ), 400 );
+            }
+
+            $slug = '';
+            if ( isset( $_POST['slug'] ) ) {
+                $slug = sanitize_key( wp_unslash( $_POST['slug'] ) );
+            }
+
+            if ( '' === $slug ) {
+                tpw_core_system_pages_ajax_error( __( 'Missing slug', 'tpw-core' ), 400 );
+            }
+
+            if ( false === TPW_Core_System_Pages::unlink( $slug ) ) {
+                tpw_core_system_pages_ajax_error( __( 'Failed to unlink page mapping.', 'tpw-core' ) );
+            }
+
+            wp_send_json_success(
+                array(
+                    'message' => __( 'Page mapping cleared.', 'tpw-core' ),
+                    'reload'  => true,
+                )
+            );
+        }
+    );
+}
+
+if ( ! has_action( 'wp_ajax_tpw_system_page_recreate' ) ) {
+    add_action(
+        'wp_ajax_tpw_system_page_recreate',
+        function() {
+            if ( ! current_user_can( 'manage_options' ) ) {
+                tpw_core_system_pages_ajax_error( __( 'Permission denied', 'tpw-core' ), 403 );
+            }
+
+            $nonce = '';
+            if ( isset( $_POST['nonce'] ) ) {
+                $nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+            }
+
+            if ( ! wp_verify_nonce( $nonce, 'tpw_system_pages_ajax' ) ) {
+                tpw_core_system_pages_ajax_error( __( 'Bad nonce', 'tpw-core' ), 400 );
+            }
+
+            $slug = '';
+            if ( isset( $_POST['slug'] ) ) {
+                $slug = sanitize_key( wp_unslash( $_POST['slug'] ) );
+            }
+
+            if ( '' === $slug ) {
+                tpw_core_system_pages_ajax_error( __( 'Missing slug', 'tpw-core' ), 400 );
+            }
+
+            $result = TPW_Core_System_Pages::recreate_page( $slug );
+            if ( is_wp_error( $result ) ) {
+                tpw_core_system_pages_ajax_error( $result->get_error_message() );
+            }
+
+            wp_send_json_success(
+                array(
+                    'message' => sprintf(
+                        /* translators: %s: system page slug */
+                        __( 'Page "%s" recreated.', 'tpw-core' ),
+                        $slug
+                    ),
+                    'pageId'  => (int) $result,
+                    'reload'  => true,
+                )
+            );
+        }
+    );
 }
 
 ?>
