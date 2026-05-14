@@ -17,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: tpw-core-release
+  group: tpw-flexiclub-release
   cancel-in-progress: false
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PLUGIN_VERSION="$(grep -m1 '^ \* Version:' tpw-core.php | sed 's/^ \* Version: *//')"
+          PLUGIN_VERSION="$(grep -m1 '^ \* Version:' tpw-flexiclub.php | sed 's/^ \* Version: *//')"
           INPUT_TAG="${{ inputs.tag }}"
 
           if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
@@ -64,8 +64,8 @@ jobs:
 
           VERSION="${TAG_NAME#v}"
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/tpw-core.zip"
-          MANIFEST_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/tpw-core.json"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/tpw-flexiclub.zip"
+          MANIFEST_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/tpw-flexiclub.json"
           RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}"
 
           echo "plugin_version=${PLUGIN_VERSION}" >> "$GITHUB_OUTPUT"
@@ -81,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ZIP_PATH="$RUNNER_TEMP/tpw-core.zip"
+          ZIP_PATH="$RUNNER_TEMP/tpw-flexiclub.zip"
           bash scripts/build-release-package.sh "$ZIP_PATH"
 
           echo "zip_path=${ZIP_PATH}" >> "$GITHUB_OUTPUT"
@@ -93,8 +93,8 @@ jobs:
 
           FIRST_ENTRY="$(unzip -Z1 "${{ steps.package.outputs.zip_path }}" | head -n 1)"
 
-          if [ "$FIRST_ENTRY" != 'tpw-core/' ]; then
-            echo "Expected archive root to be tpw-core/, got: $FIRST_ENTRY" >&2
+          if [ "$FIRST_ENTRY" != 'tpw-flexiclub/' ]; then
+            echo "Expected archive root to be tpw-flexiclub/, got: $FIRST_ENTRY" >&2
             exit 1
           fi
 
@@ -110,9 +110,9 @@ jobs:
           ZIP_PATH="${{ steps.package.outputs.zip_path }}"
 
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" --clobber
+            gh release upload "$TAG_NAME" "$ZIP_PATH#tpw-flexiclub.zip" --clobber
           else
-            gh release create "$TAG_NAME" "$ZIP_PATH#tpw-core.zip" \
+            gh release create "$TAG_NAME" "$ZIP_PATH#tpw-flexiclub.zip" \
               --title "FlexiClub ${VERSION}" \
               --notes "Automated release for FlexiClub ${VERSION}." \
               --target "$GITHUB_SHA"
@@ -124,7 +124,7 @@ jobs:
           set -euo pipefail
 
           mkdir -p dist
-          cat > dist/tpw-core.json <<EOF
+          cat > dist/tpw-flexiclub.json <<EOF
           {
             "version": "${{ steps.metadata.outputs.version }}",
             "download_url": "${{ steps.metadata.outputs.download_url }}"

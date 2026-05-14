@@ -5,7 +5,7 @@ set -euo pipefail
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_SLUG="tpw-core"
+PLUGIN_SLUG="tpw-flexiclub"
 OUTPUT_PATH="${1:-}"
 
 if [[ -z "$OUTPUT_PATH" ]]; then

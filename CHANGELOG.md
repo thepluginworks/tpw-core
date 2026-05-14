@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-05-14
+
+### Changed
+- Release delivery: renamed the plugin package, bootstrap file, updater metadata, and public release artifacts from `tpw-core` to `tpw-flexiclub` so the distributed FlexiClub product name, install package, and update manifest now align.
+- Menus: theme overrides can now use `theme/tpw-flexiclub/menus/menu-modal.php`, while existing `theme/tpw-core/menus/menu-modal.php` overrides remain supported for backward compatibility.
+- Documentation: refreshed installation, branding, developer, and security references so deployment and integration guidance points to the new FlexiClub plugin paths.
+
 ## [1.30.0] - 2026-05-14
 
 ### Changed

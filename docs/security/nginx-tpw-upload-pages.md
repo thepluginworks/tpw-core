@@ -24,7 +24,7 @@ location ^~ /wp-content/uploads/tpw-upload-pages/ {
 ```
 
 Notes:
-- The application will generate signed, time-limited URLs pointing to `/wp-content/plugins/tpw-core/modules/tpw-control/serve.php`, which performs permission checks and streams the file.
+- The application will generate signed, time-limited URLs pointing to `/wp-content/plugins/tpw-flexiclub/modules/tpw-control/serve.php`, which performs permission checks and streams the file.
 - Ensure your general PHP handling location passes requests for `serve.php` to PHP-FPM.
 - Token TTL defaults to about 10–15 minutes; links expire automatically.
 - If you use a CDN or caching layer, bypass/ignore cache for `serve.php` responses to prevent leaking content.

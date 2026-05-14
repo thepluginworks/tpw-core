@@ -9,7 +9,7 @@ class TPW_Email_Form {
     }
 
     public static function register_assets() {
-        $base = plugins_url( '', TPW_CORE_PATH . 'tpw-core.php' ); // not used directly; we will use plugins_url with __FILE__ analogues
+        $base = plugins_url( '', TPW_CORE_PATH . 'tpw-flexiclub.php' ); // not used directly; we will use plugins_url with __FILE__ analogues
         wp_register_style( 'tpw-email-css', plugins_url( 'assets/email.css', __FILE__ ), [], filemtime( plugin_dir_path(__FILE__) . 'assets/email.css' ) );
         wp_register_script( 'tpw-email-js', plugins_url( 'assets/email.js', __FILE__ ), [ 'jquery' ], filemtime( plugin_dir_path(__FILE__) . 'assets/email.js' ), true );
         $policy_max = 5 * 1024 * 1024; // 5MB policy cap

@@ -2,37 +2,37 @@
 # This file is distributed under the same license as the FlexiClub plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: FlexiClub 1.30.0\n"
+"Project-Id-Version: FlexiClub 2.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tpw-core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-14T11:45:57+00:00\n"
+"POT-Creation-Date: 2026-05-14T13:18:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tpw-core\n"
 
 #. Plugin Name of the plugin
-#: tpw-core.php
+#: tpw-flexiclub.php
 #: includes/tpw-core-settings.php:27
 msgid "FlexiClub"
 msgstr ""
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
-#: tpw-core.php
+#: tpw-flexiclub.php
 msgid "https://thepluginworks.com/"
 msgstr ""
 
 #. Description of the plugin
-#: tpw-core.php
+#: tpw-flexiclub.php
 msgid "Free base platform for shared member, payment, page, branding, and admin tools across the FlexiClub ecosystem."
 msgstr ""
 
 #. Author of the plugin
-#: tpw-core.php
+#: tpw-flexiclub.php
 msgid "ThePluginWorks"
 msgstr ""
 

@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.30.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,7 +33,7 @@ https://www.thepluginworks.com
 
 == Installation ==
 
-1. Upload the plugin folder to `/wp-content/plugins/tpw-core/` or install it using your normal plugin deployment process.
+1. Upload the plugin folder to `/wp-content/plugins/tpw-flexiclub/` or install it using your normal plugin deployment process.
 2. Activate FlexiClub in WordPress.
 3. Activate any add-on plugins that require FlexiClub.
 4. Review shared settings under Settings > FlexiClub.
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 2.0.0 =
+- Release delivery: renamed the plugin package, bootstrap file, updater metadata, and public release artifacts from `tpw-core` to `tpw-flexiclub` so the distributed FlexiClub product name, install package, and update manifest now align.
+- Menus: theme overrides can now use `theme/tpw-flexiclub/menus/menu-modal.php`, while existing `theme/tpw-core/menus/menu-modal.php` overrides remain supported for backward compatibility.
+- Documentation: refreshed installation, branding, developer, and security references so deployment and integration guidance points to the new FlexiClub plugin paths.
 
 = 1.30.0 =
 - Branding: the plugin header, admin settings labels, updater metadata, and customer-facing release surfaces now use the FlexiClub product name consistently.

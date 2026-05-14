@@ -14,7 +14,8 @@ Event Menus let you define menus (courses and choices) and attach them to events
 
 ## Extending
 - Use TPW_Menus::get_menu_payload( $event_id ) to reuse payload server‑side.
-- Theme override: create template at theme/tpw-core/menus/menu-modal.php to customize markup.
+- Theme override: create template at theme/tpw-flexiclub/menus/menu-modal.php to customize markup.
+- Legacy override support: existing theme/tpw-core/menus/menu-modal.php overrides still load for backward compatibility.
 
 ## References
 - Developer Guide → ../developer-guide.md

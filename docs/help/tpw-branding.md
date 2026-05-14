@@ -72,7 +72,7 @@ Use these handles/paths exposed by TPW Core.
 - Purpose: provides `.tpw-btn` base + variants and consumes Branding tokens
 - Example (admin or front-end):
 ```php
-$base = defined('TPW_CORE_URL') ? TPW_CORE_URL : plugin_dir_url( __FILE__ ) . '../tpw-core/';
+$base = defined('TPW_CORE_URL') ? TPW_CORE_URL : plugin_dir_url( __FILE__ ) . '../tpw-flexiclub/';
 wp_enqueue_style( 'tpw-buttons', trailingslashit( $base ) . 'assets/css/tpw-buttons.css', [], null );
 ```
 

@@ -1,4 +1,4 @@
-# TPW Core Plugin – Release Checklist
+# FlexiClub Plugin – Release Checklist
 
 Use this guide whenever you're releasing a new version to GitHub.
 

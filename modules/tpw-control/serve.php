@@ -1,7 +1,7 @@
 <?php
 /**
  * Secure file serving endpoint for TPW Control Upload Pages.
- * Usage: /wp-content/plugins/tpw-core/modules/tpw-control/serve.php?f=<id>&v=<file|thumb>&exp=<ts>&sig=<hmac>&dl=0|1
+ * Usage: /wp-content/plugins/tpw-flexiclub/modules/tpw-control/serve.php?f=<id>&v=<file|thumb>&exp=<ts>&sig=<hmac>&dl=0|1
  */
 
 // Bootstrap WordPress

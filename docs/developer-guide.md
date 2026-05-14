@@ -29,7 +29,7 @@ Protected Manage Members permission fields are currently `is_admin`, `is_manage_
 	- Since: 1.0.0
 	- Description: Bootstrap point for add-ons to hook into after dependencies are loaded.
 - tpw_core/login_url (filter) — Resolve the front-end login URL.
-	- File: `tpw-core.php` and `includes/tpw-core-loader.php` (consumer)
+	- File: `tpw-flexiclub.php` and `includes/tpw-core-loader.php` (consumer)
 	- Since: 1.0.0
 	- Description: Return a login URL; core provides defaults and honours redirect_to.
 - tpw_core_is_admin_screen (filter) — Identify TPW admin screens.
@@ -69,7 +69,7 @@ Protected Manage Members permission fields are currently `is_admin`, `is_manage_
 
 ### Members
 - tpw_member_login_redirect (filter) — Post-login redirect URL.
-	- File: `tpw-core.php` (default implementation), `modules/members/shortcodes/member-login.php` (consumers)
+	- File: `tpw-flexiclub.php` (default implementation), `modules/members/shortcodes/member-login.php` (consumers)
 	- Since: 1.0.0
 	- Description: Decide where members land after login.
 - tpw_members/allowed_statuses (filter) — Valid statuses for visibility.
