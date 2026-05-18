@@ -1802,11 +1802,12 @@ class TPW_FlexiClub_Admin_Menu {
 		if ( ! class_exists( 'TPW_Core_System_Pages' ) || ! method_exists( 'TPW_Core_System_Pages', 'get_all' ) ) {
 			return [
 				'configured_count' => null,
+				'registered_total' => 0,
 				'required_complete'=> false,
-				'status_label'     => __( 'Needs review', 'tpw-core' ),
-				'status_tone'      => 'warning',
+				'status_label'     => __( 'Missing', 'tpw-core' ),
+				'status_tone'      => 'error',
 				'metric_text'      => __( 'Review the current system page assignments for FlexiClub and add-on features.', 'tpw-core' ),
-				'metric_value'     => __( 'Review', 'tpw-core' ),
+				'metric_value'     => __( 'Missing', 'tpw-core' ),
 				'card_text'        => __( 'The full registered system-page set could not be resolved safely on this request.', 'tpw-core' ),
 			];
 		}
@@ -1832,18 +1833,20 @@ class TPW_FlexiClub_Admin_Menu {
 		if ( $registered_total < 1 ) {
 			return [
 				'configured_count' => null,
+				'registered_total' => 0,
 				'required_complete'=> false,
-				'status_label'     => __( 'Needs review', 'tpw-core' ),
-				'status_tone'      => 'warning',
+				'status_label'     => __( 'Missing', 'tpw-core' ),
+				'status_tone'      => 'error',
 				'metric_text'      => __( 'Review the current system page assignments for FlexiClub and add-on features.', 'tpw-core' ),
-				'metric_value'     => __( 'Review', 'tpw-core' ),
+				'metric_value'     => __( 'Missing', 'tpw-core' ),
 				'card_text'        => __( 'No registered system pages were found in the resolved ecosystem registry.', 'tpw-core' ),
 			];
 		}
 
-		$complete     = $registered_total === $configured_count;
-		$status_label = $complete ? __( 'Configured', 'tpw-core' ) : __( 'Needs review', 'tpw-core' );
-		$status_tone  = $complete ? 'neutral' : 'warning';
+		$complete      = $registered_total === $configured_count;
+		$missing_count = $registered_total - $configured_count;
+		$status_label  = $complete ? __( 'Complete', 'tpw-core' ) : __( 'Needs review', 'tpw-core' );
+		$status_tone   = $complete ? 'success' : 'warning';
 		$metric_value = sprintf(
 			/* translators: 1: configured pages, 2: registered pages */
 			__( '%1$s / %2$s', 'tpw-core' ),
@@ -1853,6 +1856,7 @@ class TPW_FlexiClub_Admin_Menu {
 
 		return [
 			'configured_count' => $configured_count,
+			'registered_total' => $registered_total,
 			'required_complete'=> $complete,
 			'status_label'     => $status_label,
 			'status_tone'      => $status_tone,
@@ -1863,7 +1867,14 @@ class TPW_FlexiClub_Admin_Menu {
 				number_format_i18n( $registered_total )
 			),
 			'metric_value'     => $metric_value,
-			'card_text'        => __( 'Required system pages are ready, including add-on registrations.', 'tpw-core' ),
+			'card_text'        => $complete
+				? __( 'All required system pages are published and ready to use.', 'tpw-core' )
+				: sprintf(
+					/* translators: 1: configured pages, 2: missing pages */
+					_n( '%1$s required page is ready and %2$s still needs review.', '%1$s required pages are ready and %2$s still need review.', $missing_count, 'tpw-core' ),
+					number_format_i18n( $configured_count ),
+					number_format_i18n( $missing_count )
+				),
 		];
 	}
 
@@ -1907,37 +1918,94 @@ class TPW_FlexiClub_Admin_Menu {
 		$registered  = self::tpw_control_section_is_registered( 'upload-pages' );
 		$page_status = self::locate_shortcode_page( 'tpw-control', 'tpw-control' );
 		$ready       = $registered && ! empty( $page_status['page_exists'] ) && ! empty( $page_status['shortcode_present'] );
+		$has_usage   = $page_count > 0 || $file_count > 0;
 
 		return [
-			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs review', 'tpw-core' ),
-			'status_tone'  => $ready ? 'neutral' : 'warning',
+			'status_label' => $ready ? ( $has_usage ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ) : __( 'Needs review', 'tpw-core' ),
+			'status_tone'  => $ready ? ( $has_usage ? 'success' : 'neutral' ) : 'warning',
 			'metric_value' => self::format_metric_value( $page_count ),
-			'card_text'    => $page_count > 0
-				? __( 'Archive tools are ready for organising member-facing files and pages.', 'tpw-core' )
-				: __( 'Use the existing archive tools to add and organise club files.', 'tpw-core' ),
+			'card_text'    => ! $ready
+				? __( 'The archive tools need review before members can rely on them.', 'tpw-core' )
+				: ( $has_usage
+					? sprintf(
+						/* translators: 1: archive pages count, 2: archived file count */
+						__( '%1$s archive pages and %2$s files are currently in use.', 'tpw-core' ),
+						number_format_i18n( $page_count ),
+						number_format_i18n( $file_count )
+					)
+					: __( 'Archive tools are available whenever you need to add upload and archive pages.', 'tpw-core' ) ),
 		];
 	}
 
 	protected static function get_menu_permissions_summary() {
 		global $wpdb;
 
-		$menus_count       = function_exists( 'wp_get_nav_menus' ) ? count( wp_get_nav_menus() ) : 0;
-		$configured_count  = (int) $wpdb->get_var(
+		$menus_count          = function_exists( 'wp_get_nav_menus' ) ? count( wp_get_nav_menus() ) : 0;
+		$configured_count     = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->postmeta} WHERE meta_key = %s",
 				'_tpw_visibility_json'
 			)
 		);
-		$configured        = $configured_count > 0;
+		$raw_rule_rows         = (array) $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+				'_tpw_visibility_json'
+			)
+		);
+		$invalid_rule_count    = 0;
+		$valid_rule_item_count = 0;
+
+		foreach ( $raw_rule_rows as $raw_rule ) {
+			$parsed_rule = is_string( $raw_rule ) ? json_decode( $raw_rule, true ) : ( is_array( $raw_rule ) ? $raw_rule : null );
+
+			if ( ! is_array( $parsed_rule ) ) {
+				$invalid_rule_count++;
+				continue;
+			}
+
+			$has_any_rule = false;
+			foreach ( $parsed_rule as $rule_value ) {
+				if ( is_array( $rule_value ) && ! empty( array_filter( $rule_value ) ) ) {
+					$has_any_rule = true;
+					break;
+				}
+
+				if ( ! is_array( $rule_value ) && '' !== (string) $rule_value && null !== $rule_value ) {
+					$has_any_rule = true;
+					break;
+				}
+			}
+
+			if ( $has_any_rule ) {
+				$valid_rule_item_count++;
+			}
+		}
+
+		$configured = $valid_rule_item_count > 0;
+		$status_label = $invalid_rule_count > 0
+			? __( 'Needs review', 'tpw-core' )
+			: ( $configured ? __( 'In use', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) );
+		$status_tone  = $invalid_rule_count > 0
+			? 'warning'
+			: ( $configured ? 'success' : 'neutral' );
+		$card_text    = $invalid_rule_count > 0
+			? __( 'Some menu permission rules could not be read and should be reviewed.', 'tpw-core' )
+			: ( $configured
+				? sprintf(
+					/* translators: %s: count of protected menu items */
+					_n( '%s menu item uses permission rules.', '%s menu items use permission rules.', $valid_rule_item_count, 'tpw-core' ),
+					number_format_i18n( $valid_rule_item_count )
+				)
+				: __( 'Menu permissions are available when you need to restrict navigation.', 'tpw-core' ) );
 
 		return [
 			'configured'   => $configured,
-			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Needs review', 'tpw-core' ),
-			'status_tone'  => $configured ? 'neutral' : 'warning',
+			'invalid_rules' => $invalid_rule_count,
+			'status_label' => $status_label,
+			'status_tone'  => $status_tone,
 			'metric_value' => self::format_metric_value( $menus_count ),
-			'card_text'    => $configured
-				? __( 'Control which audiences can see and access club navigation items.', 'tpw-core' )
-				: __( 'Review which front-end menus and items members are allowed to see.', 'tpw-core' ),
+			'card_text'    => $card_text,
 		];
 	}
 
@@ -1992,11 +2060,11 @@ class TPW_FlexiClub_Admin_Menu {
 
 		return [
 			'configured'   => $configured,
-			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Ready', 'tpw-core' ),
+			'status_label' => __( 'Ready', 'tpw-core' ),
 			'status_tone'  => 'neutral',
-			'metric_value' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Review', 'tpw-core' ),
+			'metric_value' => __( 'Available', 'tpw-core' ),
 			'card_text'    => $configured
-				? __( 'Core branding, login, or platform settings have already been configured.', 'tpw-core' )
+				? __( 'Core branding, login, and platform settings are ready to review or refine.', 'tpw-core' )
 				: __( 'Review the main FlexiClub settings to tailor the platform for your club.', 'tpw-core' ),
 		];
 	}

@@ -1,0 +1,623 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: dashboard_detailed_audit.spec.ts >> detailed flexiclub dashboard audit
+- Location: dashboard_detailed_audit.spec.ts:3:5
+
+# Error details
+
+```
+Test timeout of 90000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation "Main menu":
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#wpbody-content"
+    - link "Skip to toolbar" [ref=e4] [cursor=pointer]:
+      - /url: "#wp-toolbar"
+    - list [ref=e7]:
+      - listitem [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: index.php
+          - generic [ref=e10]: 
+          - generic [ref=e11]: Dashboard
+        - list [ref=e12]:
+          - listitem [ref=e13]:
+            - link "Home" [ref=e14] [cursor=pointer]:
+              - /url: index.php
+          - listitem [ref=e15]:
+            - link "Updates 1" [ref=e16] [cursor=pointer]:
+              - /url: update-core.php
+              - text: Updates
+              - generic [ref=e17]: "1"
+      - listitem [ref=e18]:
+        - link "Elementor" [ref=e19] [cursor=pointer]:
+          - /url: admin.php?page=elementor-home
+          - generic [ref=e21]: Elementor
+        - list [ref=e22]:
+          - listitem [ref=e23]:
+            - link "Home" [ref=e24] [cursor=pointer]:
+              - /url: admin.php?page=elementor-home
+          - listitem [ref=e25]:
+            - link "Editor" [ref=e26] [cursor=pointer]:
+              - /url: admin.php?page=elementor
+          - listitem [ref=e27]:
+            - link "Theme Builder" [ref=e28] [cursor=pointer]:
+              - /url: http://substest1.local/wp-admin/admin.php?page=elementor-app&ver=4.0.7&return_to=/wp-admin/admin.php?page=tpw-flexiclub-dashboard#/site-editor
+          - listitem [ref=e29]:
+            - link "Submissions" [ref=e30] [cursor=pointer]:
+              - /url: admin.php?page=e-form-submissions
+      - listitem [ref=e31]
+      - listitem [ref=e33]:
+        - link "Posts" [ref=e34] [cursor=pointer]:
+          - /url: edit.php
+          - generic [ref=e35]: 
+          - generic [ref=e36]: Posts
+        - list [ref=e37]:
+          - listitem [ref=e38]:
+            - link "All Posts" [ref=e39] [cursor=pointer]:
+              - /url: edit.php
+          - listitem [ref=e40]:
+            - link "Add Post" [ref=e41] [cursor=pointer]:
+              - /url: post-new.php
+          - listitem [ref=e42]:
+            - link "Categories" [ref=e43] [cursor=pointer]:
+              - /url: edit-tags.php?taxonomy=category
+          - listitem [ref=e44]:
+            - link "Tags" [ref=e45] [cursor=pointer]:
+              - /url: edit-tags.php?taxonomy=post_tag
+      - listitem [ref=e46]:
+        - link "FlexiEvent" [ref=e47] [cursor=pointer]:
+          - /url: admin.php?page=tpw-flexievent-dashboard
+          - generic [ref=e48]: 
+          - generic [ref=e49]: FlexiEvent
+        - list [ref=e50]:
+          - listitem [ref=e51]:
+            - link "Dashboard" [ref=e52] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexievent-dashboard
+          - listitem [ref=e53]:
+            - link "All Events" [ref=e54] [cursor=pointer]:
+              - /url: edit.php?post_type=tpw_event
+          - listitem [ref=e55]:
+            - link "All Venues" [ref=e56] [cursor=pointer]:
+              - /url: edit.php?post_type=venue
+          - listitem [ref=e57]:
+            - link "Event Categories" [ref=e58] [cursor=pointer]:
+              - /url: admin.php?page=tpw_event_categories
+          - listitem [ref=e59]:
+            - link "Venue Types" [ref=e60] [cursor=pointer]:
+              - /url: admin.php?page=flexievent-venue-types
+          - listitem [ref=e61]:
+            - link "Simple RSVP Responses" [ref=e62] [cursor=pointer]:
+              - /url: admin.php?page=flexievent-simple-rsvp-responses
+          - listitem [ref=e63]:
+            - link "Recurring Events" [ref=e64] [cursor=pointer]:
+              - /url: admin.php?page=flexievent-recurring-events
+          - listitem
+          - listitem
+          - listitem [ref=e65]:
+            - link "Settings" [ref=e66] [cursor=pointer]:
+              - /url: admin.php?page=flexievent-settings
+          - listitem [ref=e67]:
+            - link "Help" [ref=e68] [cursor=pointer]:
+              - /url: admin.php?page=flexievent-help
+          - listitem [ref=e69]:
+            - link "Contact Us" [ref=e70] [cursor=pointer]:
+              - /url: https://wp.freemius.com/contact/?page=tpw-flexiclub-dashboard&plugin_id=19606&plugin_public_key=pk_093099cf93170a755b6c8afdefa8c&plugin_version=1.13.1&s_ctx_type=install&s_ctx_id=20018680&s_ctx_ts=1779123715&s_ctx_secure=c7c1a0c94e1a6f8a4cc13c600655abd1&wp_login_url=http%3A%2F%2Fsubstest1.local%2Fwp-login.php&site_url=http%3A%2F%2Fsubstest1.local&is_standalone=true&parent_url=http%3A%2F%2Fsubstest1.local%2Fwp-admin%2Fwp-admin%2Fadmin.php%3Fpage%3Dtpw-flexiclub-dashboard
+      - listitem [ref=e71]:
+        - link "Media" [ref=e72] [cursor=pointer]:
+          - /url: upload.php
+          - generic [ref=e73]: 
+          - generic [ref=e74]: Media
+        - list [ref=e75]:
+          - listitem [ref=e76]:
+            - link "Library" [ref=e77] [cursor=pointer]:
+              - /url: upload.php
+          - listitem [ref=e78]:
+            - link "Add Media File" [ref=e79] [cursor=pointer]:
+              - /url: media-new.php
+      - listitem [ref=e80]:
+        - link "Pages" [ref=e81] [cursor=pointer]:
+          - /url: edit.php?post_type=page
+          - generic [ref=e82]: 
+          - generic [ref=e83]: Pages
+        - list [ref=e84]:
+          - listitem [ref=e85]:
+            - link "All Pages" [ref=e86] [cursor=pointer]:
+              - /url: edit.php?post_type=page
+          - listitem [ref=e87]:
+            - link "Add Page" [ref=e88] [cursor=pointer]:
+              - /url: post-new.php?post_type=page
+      - listitem [ref=e89]:
+        - link "Comments" [ref=e90] [cursor=pointer]:
+          - /url: edit-comments.php
+          - generic [ref=e91]: 
+          - generic [ref=e92]: Comments
+      - text: 
+      - listitem [ref=e93]:
+        - link "Noticeboard" [ref=e94] [cursor=pointer]:
+          - /url: edit.php?post_type=tpw_notice
+          - generic [ref=e95]: 
+          - generic [ref=e96]: Noticeboard
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "Noticeboard" [ref=e99] [cursor=pointer]:
+              - /url: edit.php?post_type=tpw_notice
+          - listitem [ref=e100]:
+            - link "Add New Notice" [ref=e101] [cursor=pointer]:
+              - /url: post-new.php?post_type=tpw_notice
+          - listitem [ref=e102]:
+            - link "Notice Categories" [ref=e103] [cursor=pointer]:
+              - /url: edit-tags.php?taxonomy=tpw_notice_category&post_type=tpw_notice
+      - listitem [ref=e104]:
+        - link "FlexiClub" [ref=e105] [cursor=pointer]:
+          - /url: admin.php?page=tpw-flexiclub-dashboard
+          - generic [ref=e106]: 
+          - generic [ref=e107]: FlexiClub
+        - list [ref=e108]:
+          - listitem [ref=e109]:
+            - link "Dashboard" [ref=e110] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-dashboard
+          - listitem [ref=e111]:
+            - link "Manage Members" [ref=e112] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-manage-members
+          - listitem [ref=e113]:
+            - link "Noticeboard" [ref=e114] [cursor=pointer]:
+              - /url: edit.php?post_type=tpw_notice
+          - listitem [ref=e115]:
+            - link "Gallery Admin" [ref=e116] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-gallery-admin
+          - listitem [ref=e117]:
+            - link "Upload Pages / Archive" [ref=e118] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-upload-pages
+          - listitem [ref=e119]:
+            - link "Menu Permissions" [ref=e120] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-menu-manager
+          - listitem [ref=e121]:
+            - link "System Pages" [ref=e122] [cursor=pointer]:
+              - /url: options-general.php?page=tpw-core-settings&tab=system-pages
+          - listitem [ref=e123]:
+            - link "Settings" [ref=e124] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-settings
+          - listitem [ref=e125]:
+            - link "Logs" [ref=e126] [cursor=pointer]:
+              - /url: admin.php?page=tpw-flexiclub-logs
+      - text: 
+      - listitem [ref=e127]
+      - listitem [ref=e129]:
+        - link "Hello" [ref=e130] [cursor=pointer]:
+          - /url: admin.php?page=hello-elementor
+          - generic [ref=e131]: 
+          - generic [ref=e132]: Hello
+        - list [ref=e133]:
+          - listitem [ref=e134]:
+            - link "Home" [ref=e135] [cursor=pointer]:
+              - /url: admin.php?page=hello-elementor
+          - listitem [ref=e136]:
+            - link "Settings" [ref=e137] [cursor=pointer]:
+              - /url: admin.php?page=hello-elementor-settings
+          - listitem [ref=e138]:
+            - link "Theme Builder" [ref=e139] [cursor=pointer]:
+              - /url: admin.php?page=elementor-app&ver=4.0.7#site-editor
+          - listitem [ref=e140]:
+            - link "AI Site Planner" [ref=e141] [cursor=pointer]:
+              - /url: admin.php?page=hello-elementor-ai-site-planner
+      - listitem [ref=e142]:
+        - link "Appearance" [ref=e143] [cursor=pointer]:
+          - /url: themes.php
+          - generic [ref=e144]: 
+          - generic [ref=e145]: Appearance
+        - list [ref=e146]:
+          - listitem [ref=e147]:
+            - link "Themes" [ref=e148] [cursor=pointer]:
+              - /url: themes.php
+          - listitem [ref=e149]:
+            - link "Design" [ref=e150] [cursor=pointer]:
+              - /url: site-editor.php
+          - listitem [ref=e151]:
+            - link "Customise" [ref=e152] [cursor=pointer]:
+              - /url: customize.php?return=%2Fwp-admin%2Fadmin.php%3Fpage%3Dtpw-flexiclub-dashboard
+          - listitem [ref=e153]:
+            - link "Menus" [ref=e154] [cursor=pointer]:
+              - /url: nav-menus.php
+          - listitem [ref=e155]:
+            - link "Theme file editor" [ref=e156] [cursor=pointer]:
+              - /url: theme-editor.php
+      - listitem [ref=e157]:
+        - link "Plugins 1" [ref=e158] [cursor=pointer]:
+          - /url: plugins.php
+          - generic [ref=e159]: 
+          - generic [ref=e160]:
+            - text: Plugins
+            - generic [ref=e161]: "1"
+        - list [ref=e162]:
+          - listitem [ref=e163]:
+            - link "Installed Plugins" [ref=e164] [cursor=pointer]:
+              - /url: plugins.php
+          - listitem [ref=e165]:
+            - link "Add Plugin" [ref=e166] [cursor=pointer]:
+              - /url: plugin-install.php
+          - listitem [ref=e167]:
+            - link "Plugin file editor" [ref=e168] [cursor=pointer]:
+              - /url: plugin-editor.php
+      - listitem [ref=e169]:
+        - link "Users" [ref=e170] [cursor=pointer]:
+          - /url: users.php
+          - generic [ref=e171]: 
+          - generic [ref=e172]: Users
+        - list [ref=e173]:
+          - listitem [ref=e174]:
+            - link "All Users" [ref=e175] [cursor=pointer]:
+              - /url: users.php
+          - listitem [ref=e176]:
+            - link "Add User" [ref=e177] [cursor=pointer]:
+              - /url: user-new.php
+          - listitem [ref=e178]:
+            - link "Profile" [ref=e179] [cursor=pointer]:
+              - /url: profile.php
+      - listitem [ref=e180]:
+        - link "Tools" [ref=e181] [cursor=pointer]:
+          - /url: tools.php
+          - generic [ref=e182]: 
+          - generic [ref=e183]: Tools
+        - list [ref=e184]:
+          - listitem [ref=e185]:
+            - link "Available Tools" [ref=e186] [cursor=pointer]:
+              - /url: tools.php
+          - listitem [ref=e187]:
+            - link "Import" [ref=e188] [cursor=pointer]:
+              - /url: import.php
+          - listitem [ref=e189]:
+            - link "Export" [ref=e190] [cursor=pointer]:
+              - /url: export.php
+          - listitem [ref=e191]:
+            - link "Site Health 1" [ref=e192] [cursor=pointer]:
+              - /url: site-health.php
+              - text: Site Health
+              - generic [ref=e193]: "1"
+          - listitem [ref=e194]:
+            - link "Export Personal Data" [ref=e195] [cursor=pointer]:
+              - /url: export-personal-data.php
+          - listitem [ref=e196]:
+            - link "Erase Personal Data" [ref=e197] [cursor=pointer]:
+              - /url: erase-personal-data.php
+          - listitem [ref=e198]:
+            - link "Payment Logs" [ref=e199] [cursor=pointer]:
+              - /url: tools.php?page=tpw-payment-logs
+          - listitem [ref=e200]:
+            - link "RSVP Feedback" [ref=e201] [cursor=pointer]:
+              - /url: tools.php?page=tpw-feedback-admin
+      - listitem [ref=e202]:
+        - link "Settings" [ref=e203] [cursor=pointer]:
+          - /url: options-general.php
+          - generic [ref=e204]: 
+          - generic [ref=e205]: Settings
+        - list [ref=e206]:
+          - listitem [ref=e207]:
+            - link "General" [ref=e208] [cursor=pointer]:
+              - /url: options-general.php
+          - listitem [ref=e209]:
+            - link "Writing" [ref=e210] [cursor=pointer]:
+              - /url: options-writing.php
+          - listitem [ref=e211]:
+            - link "Reading" [ref=e212] [cursor=pointer]:
+              - /url: options-reading.php
+          - listitem [ref=e213]:
+            - link "Discussion" [ref=e214] [cursor=pointer]:
+              - /url: options-discussion.php
+          - listitem [ref=e215]:
+            - link "Media" [ref=e216] [cursor=pointer]:
+              - /url: options-media.php
+          - listitem [ref=e217]:
+            - link "Permalinks" [ref=e218] [cursor=pointer]:
+              - /url: options-permalink.php
+          - listitem [ref=e219]:
+            - link "Privacy" [ref=e220] [cursor=pointer]:
+              - /url: options-privacy.php
+          - listitem [ref=e221]:
+            - link "FlexiClub" [ref=e222] [cursor=pointer]:
+              - /url: options-general.php?page=tpw-core-settings
+      - listitem [ref=e223]:
+        - button "Collapse Main menu" [expanded] [ref=e224] [cursor=pointer]:
+          - generic [ref=e226]: Collapse Menu
+  - generic [ref=e227]:
+    - generic [ref=e228]:
+      - navigation "Toolbar":
+        - menu:
+          - group [ref=e229]:
+            - menuitem "About WordPress" [ref=e230] [cursor=pointer]:
+              - generic [ref=e232]: About WordPress
+          - group [ref=e233]:
+            - menuitem "substest1" [ref=e234] [cursor=pointer]
+          - group [ref=e235]:
+            - menuitem "1 update available" [ref=e236] [cursor=pointer]:
+              - generic [ref=e238]: "1"
+              - generic [ref=e239]: 1 update available
+          - group [ref=e240]:
+            - menuitem "0 Comments in moderation" [ref=e241] [cursor=pointer]:
+              - generic [ref=e243]: "0"
+              - generic [ref=e244]: 0 Comments in moderation
+          - group [ref=e245]:
+            - menuitem "New" [ref=e246] [cursor=pointer]:
+              - generic [ref=e248]: New
+        - menu [ref=e249]:
+          - group [ref=e250]:
+            - menuitem "Hi, moodadmin" [ref=e251] [cursor=pointer]
+    - main [ref=e252]:
+      - generic [ref=e255]:
+        - generic [ref=e256]:
+          - generic [ref=e257]:
+            - generic [ref=e258]:
+              - img "FlexiClub" [ref=e259]
+              - paragraph [ref=e261]: Your club. Your members. Your community.
+            - generic [ref=e262]:
+              - generic [ref=e263]: Version
+              - strong [ref=e264]: 2.2.1
+          - generic [ref=e265]:
+            - generic [ref=e266]:
+              - heading "Welcome back, moodadmin" [level=2] [ref=e267]
+              - paragraph [ref=e268]: Here’s what’s happening across your club operations today.
+            - generic [ref=e269]:
+              - link "View members" [ref=e270] [cursor=pointer]:
+                - /url: http://substest1.local/manage-members/?action=list
+                - generic [ref=e271]:
+                  - generic [ref=e272]: Total Members
+                  - generic [ref=e273]: "38"
+              - link "View notices" [ref=e274] [cursor=pointer]:
+                - /url: http://substest1.local/wp-admin/edit.php?post_type=tpw_notice
+                - generic [ref=e275]:
+                  - generic [ref=e276]: Active Notices
+                  - generic [ref=e277]: "1"
+              - link "View events" [ref=e278] [cursor=pointer]:
+                - /url: http://substest1.local/wp-admin/edit.php?post_type=tpw_event
+                - generic [ref=e279]:
+                  - generic [ref=e280]: Upcoming Events
+                  - generic [ref=e281]: "2"
+        - generic [ref=e282]:
+          - generic [ref=e283]:
+            - generic [ref=e284]:
+              - generic [ref=e286]:
+                - heading "Club Overview" [level=2] [ref=e287]
+                - paragraph [ref=e288]: A snapshot of your key management areas.
+              - generic [ref=e289]:
+                - generic [ref=e290]:
+                  - generic [ref=e292]: 
+                  - generic [ref=e293]:
+                    - generic [ref=e294]:
+                      - heading "Members" [level=3] [ref=e295]
+                      - generic [ref=e296]: Active
+                    - generic [ref=e297]: "38"
+                    - paragraph [ref=e298]: Member records are ready to manage across the club workspace.
+                  - link "Manage members" [ref=e300] [cursor=pointer]:
+                    - /url: http://substest1.local/manage-members/?action=list
+                - generic [ref=e301]:
+                  - generic [ref=e303]: 
+                  - generic [ref=e304]:
+                    - generic [ref=e305]:
+                      - heading "Noticeboard" [level=3] [ref=e306]
+                      - generic [ref=e307]: Active
+                    - generic [ref=e308]: "1"
+                    - paragraph [ref=e309]: Share updates, reminders, and club announcements from one place.
+                  - link "Open noticeboard" [ref=e311] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/edit.php?post_type=tpw_notice
+                - generic [ref=e312]:
+                  - generic [ref=e314]: 
+                  - generic [ref=e315]:
+                    - generic [ref=e316]:
+                      - heading "Gallery Admin" [level=3] [ref=e317]
+                      - generic [ref=e318]: Ready
+                    - generic [ref=e319]: "0"
+                    - paragraph [ref=e320]: Manage gallery collections and image libraries for club content.
+                  - link "Open gallery admin" [ref=e322] [cursor=pointer]:
+                    - /url: http://substest1.local/gallery-admin/
+                - generic [ref=e323]:
+                  - generic [ref=e325]: 
+                  - generic [ref=e326]:
+                    - generic [ref=e327]:
+                      - heading "Upload Pages / Archive" [level=3] [ref=e328]
+                      - generic [ref=e329]: Ready
+                    - generic [ref=e330]: "0"
+                    - paragraph [ref=e331]: Archive tools are available whenever you need to add upload and archive pages.
+                  - link "Open archive tools" [ref=e333] [cursor=pointer]:
+                    - /url: http://substest1.local/tpw-admin/?action=upload-pages
+                - generic [ref=e334]:
+                  - generic [ref=e336]: 
+                  - generic [ref=e337]:
+                    - generic [ref=e338]:
+                      - heading "Menu Permissions" [level=3] [ref=e339]
+                      - generic [ref=e340]: In use
+                    - generic [ref=e341]: "1"
+                    - paragraph [ref=e342]: 1 menu item uses permission rules.
+                  - link "Review permissions" [ref=e344] [cursor=pointer]:
+                    - /url: http://substest1.local/tpw-admin/?action=menu-manager
+                - generic [ref=e345]:
+                  - generic [ref=e347]: 
+                  - generic [ref=e348]:
+                    - generic [ref=e349]:
+                      - heading "System Pages" [level=3] [ref=e350]
+                      - generic [ref=e351]: Complete
+                    - generic [ref=e352]: 6 / 6
+                    - paragraph [ref=e353]: All required system pages are published and ready to use.
+                  - link "Open system pages" [ref=e355] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/options-general.php?page=tpw-core-settings&tab=system-pages
+                - generic [ref=e356]:
+                  - generic [ref=e358]: 
+                  - generic [ref=e359]:
+                    - generic [ref=e360]:
+                      - heading "Payments" [level=3] [ref=e361]
+                      - generic [ref=e362]: Inactive
+                    - generic [ref=e363]: Optional
+                    - paragraph [ref=e364]: No payment-enabled modules are currently active.
+                - generic [ref=e365]:
+                  - generic [ref=e367]: 
+                  - generic [ref=e368]:
+                    - generic [ref=e369]:
+                      - heading "Settings" [level=3] [ref=e370]
+                      - generic [ref=e371]: Ready
+                    - generic [ref=e372]: Configured
+                    - paragraph [ref=e373]: Core branding, login, and platform settings are ready to review or refine.
+                  - link "Open settings" [ref=e375] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/admin.php?page=tpw-flexiclub-settings
+                - generic [ref=e376]:
+                  - generic [ref=e378]: 
+                  - generic [ref=e379]:
+                    - generic [ref=e380]:
+                      - heading "Logs" [level=3] [ref=e381]
+                      - generic [ref=e382]: Healthy
+                    - generic [ref=e383]: "8"
+                    - paragraph [ref=e384]: Email and payment logs are available for operational review.
+                  - link "View logs" [ref=e386] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/admin.php?page=tpw-flexiclub-logs
+            - generic [ref=e387]:
+              - generic [ref=e389]:
+                - heading "Extend FlexiClub" [level=2] [ref=e390]
+                - paragraph [ref=e391]: Add powerful add-ons to grow your club.
+              - generic [ref=e392]:
+                - generic [ref=e393]:
+                  - generic [ref=e394]:
+                    - heading "FlexiEvent" [level=3] [ref=e395]
+                    - generic [ref=e396]: Active
+                  - paragraph [ref=e397]: Events, scheduling, and club activities.
+                  - link "Manage events" [ref=e399] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/edit.php?post_type=tpw_event
+                - generic [ref=e400]:
+                  - generic [ref=e401]:
+                    - heading "FlexiSubscriptions" [level=3] [ref=e402]
+                    - generic [ref=e403]: Installed
+                  - paragraph [ref=e404]: Membership subscriptions and renewals.
+                  - link "Activate plugin" [ref=e406] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/plugins.php?action=activate&plugin=tpw-subscriptions%2Ftpw-subscriptions.php&_wpnonce=ac9d32de08
+                - generic [ref=e407]:
+                  - generic [ref=e408]:
+                    - heading "FlexiTicket" [level=3] [ref=e409]
+                    - generic [ref=e410]: Installed
+                  - paragraph [ref=e411]: Ticketing and event sales for members.
+                  - link "Activate plugin" [ref=e413] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/plugins.php?action=activate&plugin=tpw-flexiticket%2Fflexiticket.php&_wpnonce=189edf0ae0
+                - generic [ref=e414]:
+                  - generic [ref=e415]:
+                    - heading "FlexiLedger" [level=3] [ref=e416]
+                    - generic [ref=e417]: Installed
+                  - paragraph [ref=e418]: Financial tracking and reconciliation tools.
+                  - link "Activate plugin" [ref=e420] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/plugins.php?action=activate&plugin=tpw-flexiledger%2Ftpw-flexiledger.php&_wpnonce=2fa27c0be8
+                - generic [ref=e421]:
+                  - generic [ref=e422]:
+                    - heading "FlexiGolf" [level=3] [ref=e423]
+                    - generic [ref=e424]: Available
+                  - paragraph [ref=e425]: Fixtures, results, and match administration.
+                  - link "Learn more" [ref=e427] [cursor=pointer]:
+                    - /url: https://thepluginworks.com/FlexiGolf
+                - generic [ref=e428]:
+                  - generic [ref=e429]:
+                    - heading "FlexiPolicy" [level=3] [ref=e430]
+                    - generic [ref=e431]: Available
+                  - paragraph [ref=e432]: Club documents, policy delivery, and acknowledgements.
+                  - link "Learn more" [ref=e434] [cursor=pointer]:
+                    - /url: https://thepluginworks.com/FlexiPolicy
+                - generic [ref=e435]:
+                  - generic [ref=e436]:
+                    - heading "FlexiRota" [level=3] [ref=e437]
+                    - generic [ref=e438]: Available
+                  - paragraph [ref=e439]: Volunteer and duty rota planning.
+                  - link "Learn more" [ref=e441] [cursor=pointer]:
+                    - /url: https://thepluginworks.com/FlexiRota
+                - generic [ref=e442]:
+                  - generic [ref=e443]:
+                    - heading "Lodge RSVP" [level=3] [ref=e444]
+                    - generic [ref=e445]: Installed
+                  - paragraph [ref=e446]: Responses, attendance, and payment-ready RSVPs.
+                  - link "Activate plugin" [ref=e448] [cursor=pointer]:
+                    - /url: http://substest1.local/wp-admin/plugins.php?action=activate&plugin=tpw-rsvp-lodge-meetings%2Ftpw-rsvp-lodge-meetings.php&_wpnonce=690e814e26
+          - complementary [ref=e449]:
+            - generic [ref=e450]:
+              - heading "Quick Actions" [level=2] [ref=e453]
+              - generic [ref=e454]:
+                - link "Setup Checklist" [ref=e455] [cursor=pointer]:
+                  - /url: http://substest1.local/wp-admin/admin.php?page=tpw-flexiclub-dashboard&tpw_flexiclub_show_checklist=1#tpw-flexiclub-checklist
+                  - generic [ref=e456]: Setup Checklist
+                  - generic [ref=e457]: 
+                - link "Add New Member" [ref=e458] [cursor=pointer]:
+                  - /url: http://substest1.local/manage-members/?action=add
+                  - generic [ref=e459]: Add New Member
+                  - generic [ref=e460]: 
+                - link "Add New Notice" [ref=e461] [cursor=pointer]:
+                  - /url: http://substest1.local/wp-admin/post-new.php?post_type=tpw_notice
+                  - generic [ref=e462]: Add New Notice
+                  - generic [ref=e463]: 
+                - link "Add Gallery Images" [ref=e464] [cursor=pointer]:
+                  - /url: http://substest1.local/gallery-admin/
+                  - generic [ref=e465]: Add Gallery Images
+                  - generic [ref=e466]: 
+                - link "Create or Check System Pages" [ref=e467] [cursor=pointer]:
+                  - /url: http://substest1.local/wp-admin/options-general.php?page=tpw-core-settings&tab=system-pages
+                  - generic [ref=e468]: Create or Check System Pages
+                  - generic [ref=e469]: 
+                - link "Review Menu Permissions" [ref=e470] [cursor=pointer]:
+                  - /url: http://substest1.local/tpw-admin/?action=menu-manager
+                  - generic [ref=e471]: Review Menu Permissions
+                  - generic [ref=e472]: 
+                - link "View Logs" [ref=e473] [cursor=pointer]:
+                  - /url: http://substest1.local/wp-admin/admin.php?page=tpw-flexiclub-logs
+                  - generic [ref=e474]: View Logs
+                  - generic [ref=e475]: 
+            - generic [ref=e476]:
+              - generic [ref=e478]:
+                - heading "Recent Activity" [level=2] [ref=e479]
+                - paragraph [ref=e480]: Latest operational updates across members, notices, and logs.
+              - generic [ref=e481]:
+                - generic [ref=e482]:
+                  - generic [ref=e483]:
+                    - 'heading "Notice published: 1st Notice" [level=3] [ref=e484]'
+                    - paragraph [ref=e485]: Noticeboard
+                  - generic [ref=e486]: 4 hours ago
+                - generic [ref=e487]:
+                  - generic [ref=e488]:
+                    - heading "AlanClean4 Model profile updated" [level=3] [ref=e489]
+                    - paragraph [ref=e490]: Members
+                  - generic [ref=e491]: 1 week ago
+                - generic [ref=e492]:
+                  - generic [ref=e493]:
+                    - heading "AlanClean3 Model profile updated" [level=3] [ref=e494]
+                    - paragraph [ref=e495]: Members
+                  - generic [ref=e496]: 1 week ago
+                - generic [ref=e497]:
+                  - generic [ref=e498]:
+                    - heading "Email sent successfully" [level=3] [ref=e499]
+                    - paragraph [ref=e500]: Email to sync.admin.edited.20260429@example.test
+                  - generic [ref=e501]: 3 weeks ago
+                - generic [ref=e502]:
+                  - generic [ref=e503]:
+                    - heading "Email sent successfully" [level=3] [ref=e504]
+                    - paragraph [ref=e505]: Email to smoke.add.20260429@example.test
+                  - generic [ref=e506]: 3 weeks ago
+            - generic [ref=e507]:
+              - heading "System Status" [level=2] [ref=e510]
+              - generic [ref=e511]:
+                - generic [ref=e512]:
+                  - generic [ref=e513]: Members module
+                  - strong [ref=e514]: Active
+                - generic [ref=e515]:
+                  - generic [ref=e516]: Required pages
+                  - strong [ref=e517]: Complete
+                - generic [ref=e518]:
+                  - generic [ref=e519]: Recent logs
+                  - strong [ref=e520]: Healthy
+  - contentinfo [ref=e521]:
+    - paragraph [ref=e522]:
+      - generic [ref=e523]:
+        - text: Thank you for creating with
+        - link "WordPress" [ref=e524] [cursor=pointer]:
+          - /url: https://en-gb.wordpress.org/
+        - text: .
+    - paragraph [ref=e525]: Version 6.9.4
+```
