@@ -6,18 +6,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="tpw-flexiclub-dashboard__hero tpw-card">
 	<div class="tpw-flexiclub-dashboard__brand-row">
 		<div class="tpw-flexiclub-dashboard__brand">
-			<div class="tpw-flexiclub-dashboard__brand-mark">
-				<?php if ( ! empty( $dashboard['icon_url'] ) ) : ?>
-					<img src="<?php echo esc_url( $dashboard['icon_url'] ); ?>" alt="" />
-				<?php else : ?>
-					<span class="dashicons dashicons-groups" aria-hidden="true"></span>
-				<?php endif; ?>
-			</div>
+			<?php if ( ! empty( $dashboard['logo_url'] ) ) : ?>
+				<img class="tpw-flexiclub-dashboard__logo" src="<?php echo esc_url( $dashboard['logo_url'] ); ?>" alt="<?php esc_attr_e( 'FlexiClub', 'tpw-core' ); ?>" />
+			<?php else : ?>
+				<h1><?php esc_html_e( 'FlexiClub', 'tpw-core' ); ?></h1>
+			<?php endif; ?>
 			<div class="tpw-flexiclub-dashboard__brand-copy">
-				<?php if ( ! empty( $dashboard['logo_url'] ) ) : ?>
-					<img class="tpw-flexiclub-dashboard__logo" src="<?php echo esc_url( $dashboard['logo_url'] ); ?>" alt="<?php esc_attr_e( 'FlexiClub', 'tpw-core' ); ?>" />
-				<?php endif; ?>
-				<h1><?php esc_html_e( 'FlexiClub Dashboard', 'tpw-core' ); ?></h1>
 				<p class="tpw-flexiclub-dashboard__tagline"><?php esc_html_e( 'Your club. Your members. Your community.', 'tpw-core' ); ?></p>
 			</div>
 		</div>

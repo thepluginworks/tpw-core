@@ -1342,11 +1342,46 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	protected static function get_events_summary() {
+		global $wpdb;
+
+		$table_name    = $wpdb->prefix . 'tpw_events';
+		$table_exists  = self::table_exists( $table_name );
+		$event_count   = null;
+		$metric_text   = __( 'Available when FlexiEvent is active.', 'tpw-core' );
+		$action_label  = __( 'Explore add-ons', 'tpw-core' );
+		$action_url    = '#tpw-flexiclub-extend';
+
+		if ( $table_exists ) {
+			$today = gmdate( 'Y-m-d' );
+			$query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE event_begin_date >= %s AND event_status = %s",
+				$today,
+				'published'
+			);
+			$event_count = (int) $wpdb->get_var( $query );
+
+			if ( $event_count >= 0 ) {
+				$metric_text = $event_count > 0
+					? sprintf(
+						/* translators: %s: number of upcoming events */
+						__( '%s upcoming events scheduled.', 'tpw-core' ),
+						number_format_i18n( $event_count )
+					)
+					: __( 'No upcoming events at this time.', 'tpw-core' );
+				$action_label = __( 'View events', 'tpw-core' );
+				$action_url   = admin_url( 'admin.php?page=flexievent-events' );
+			}
+		} else {
+			$metric_text = __( 'FlexiEvent is active with event management available.', 'tpw-core' );
+			$action_label = __( 'Explore add-ons', 'tpw-core' );
+			$action_url   = '#tpw-flexiclub-extend';
+		}
+
 		return [
-			'count'       => null,
-			'metric_text' => __( 'Available when FlexiEvent is active.', 'tpw-core' ),
-			'action_label'=> __( 'Explore add-ons', 'tpw-core' ),
-			'action_url'  => '#tpw-flexiclub-extend',
+			'count'        => $event_count,
+			'metric_text'  => $metric_text,
+			'action_label' => $action_label,
+			'action_url'   => $action_url,
 		];
 	}
 
