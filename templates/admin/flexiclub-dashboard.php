@@ -39,12 +39,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<div class="tpw-flexiclub-dashboard__summary-grid">
 			<?php foreach ( $dashboard['summary_cards'] as $card ) : ?>
-				<div class="tpw-flexiclub-dashboard__summary-card">
+				<?php if ( ! empty( $card['action_url'] ) ) : ?>
+					<a class="tpw-flexiclub-dashboard__summary-card tpw-flexiclub-dashboard__summary-card--link" href="<?php echo esc_url( $card['action_url'] ); ?>" aria-label="<?php echo esc_attr( $card['action_label'] ?? $card['title'] ); ?>">
+				<?php else : ?>
+					<div class="tpw-flexiclub-dashboard__summary-card">
+				<?php endif; ?>
 					<div class="tpw-flexiclub-dashboard__summary-copy">
 						<span class="tpw-flexiclub-dashboard__summary-label"><?php echo esc_html( $card['title'] ); ?></span>
 						<div class="tpw-flexiclub-dashboard__metric"><?php echo esc_html( $card['value'] ); ?></div>
 					</div>
-				</div>
+				<?php if ( ! empty( $card['action_url'] ) ) : ?>
+					</a>
+				<?php else : ?>
+					</div>
+				<?php endif; ?>
 			<?php endforeach; ?>
 		</div>
 	</div>
