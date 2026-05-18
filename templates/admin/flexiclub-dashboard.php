@@ -240,19 +240,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 				<?php endforeach; ?>
 			</div>
+		</section>
 
-			<div class="tpw-flexiclub-dashboard__system-status">
-				<h3><?php esc_html_e( 'System Status', 'tpw-core' ); ?></h3>
-				<div class="tpw-flexiclub-dashboard__system-grid">
-					<?php foreach ( $dashboard['system_items'] as $item ) : ?>
-						<div class="tpw-flexiclub-dashboard__system-item">
-							<span class="tpw-flexiclub-dashboard__system-label"><?php echo esc_html( $item['label'] ); ?></span>
-							<strong class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $item['tone'] ); ?>">
-								<?php echo esc_html( $item['value'] ); ?>
-							</strong>
-						</div>
-					<?php endforeach; ?>
+		<section class="tpw-flexiclub-dashboard__section tpw-card">
+			<div class="tpw-flexiclub-dashboard__section-head">
+				<div>
+					<h2><?php esc_html_e( 'System Status', 'tpw-core' ); ?></h2>
 				</div>
+			</div>
+
+			<div class="tpw-flexiclub-dashboard__system-grid">
+				<?php foreach ( $dashboard['system_items'] as $item ) : ?>
+					<div class="tpw-flexiclub-dashboard__system-item">
+						<span class="tpw-flexiclub-dashboard__system-label"><?php echo esc_html( $item['label'] ); ?></span>
+						<strong class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $item['tone'] ); ?>">
+							<?php echo esc_html( $item['value'] ); ?>
+						</strong>
+					</div>
+				<?php endforeach; ?>
 			</div>
 		</section>
 	</aside>
