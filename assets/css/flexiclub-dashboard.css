@@ -176,9 +176,9 @@
 }
 
 .tpw-flexiclub-dashboard__summary-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   flex: 1 1 700px;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tpw-flexiclub-dashboard__summary-card {
@@ -186,33 +186,30 @@
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(203, 213, 225, 0.75);
   border-radius: 14px;
-  padding: 18px;
-}
-
-.tpw-flexiclub-dashboard__summary-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(91, 61, 245, 0.12), rgba(91, 61, 245, 0.04));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 44px;
-}
-
-.tpw-flexiclub-dashboard__summary-icon .dashicons {
-  color: var(--tpw-flexi-accent);
+  padding: 14px 16px;
 }
 
 .tpw-flexiclub-dashboard__summary-copy {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tpw-flexiclub-dashboard__summary-label {
+  display: inline-block;
+  color: var(--tpw-flexi-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .tpw-flexiclub-dashboard__metric {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  line-height: 1;
-  margin-bottom: 6px;
+  line-height: 1.1;
+  margin-bottom: 0;
   color: #111827;
 }
 
@@ -236,10 +233,11 @@
 }
 
 .tpw-flexiclub-dashboard__summary-copy p {
-  margin: 0 0 8px;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
-.tpw-flexiclub-dashboard__summary-copy a,
 .tpw-flexiclub-dashboard__checklist-item a {
   font-size: 0.9rem;
   font-weight: 600;
@@ -778,7 +776,6 @@
 
   .tpw-flexiclub-dashboard__brand-row,
   .tpw-flexiclub-dashboard__hero-content,
-  .tpw-flexiclub-dashboard__summary-card,
   .tpw-flexiclub-dashboard__overview-card,
   .tpw-flexiclub-dashboard__checklist-item,
   .tpw-flexiclub-dashboard__action-link,
@@ -793,6 +790,10 @@
   .tpw-flexiclub-dashboard__extend-grid,
   .tpw-flexiclub-dashboard__system-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tpw-flexiclub-dashboard__summary-card {
+    padding: 14px;
   }
 
   .tpw-flexiclub-dashboard__extend-card {

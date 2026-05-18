@@ -1021,14 +1021,6 @@ class TPW_FlexiClub_Admin_Menu {
 					'action_url'    => $events_summary['action_url'],
 					'icon'          => 'dashicons-calendar-alt',
 				],
-				[
-					'title'         => __( 'System Pages', 'tpw-core' ),
-					'value'         => $system_summary['metric_value'],
-					'description'   => $system_summary['metric_text'],
-					'action_label'  => __( 'Review pages', 'tpw-core' ),
-					'action_url'    => admin_url( self::SYSTEM_PAGES_ROUTE ),
-					'icon'          => 'dashicons-admin-page',
-				],
 			],
 			'overview_cards'  => [
 				[
