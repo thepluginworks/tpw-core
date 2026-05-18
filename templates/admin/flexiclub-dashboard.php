@@ -60,6 +60,72 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <div class="tpw-flexiclub-dashboard__layout">
 	<div class="tpw-flexiclub-dashboard__main">
+		<?php if ( ! empty( $dashboard['show_checklist'] ) ) : ?>
+			<section id="tpw-flexiclub-checklist" class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--checklist tpw-flexiclub-dashboard__section--checklist-full">
+				<div class="tpw-flexiclub-dashboard__section-head">
+					<div>
+						<h2><?php esc_html_e( 'Getting Started', 'tpw-core' ); ?></h2>
+						<p><?php esc_html_e( 'A simple checklist for launching your club workspace.', 'tpw-core' ); ?></p>
+					</div>
+				</div>
+
+				<div class="tpw-flexiclub-dashboard__checklist">
+					<div class="tpw-flexiclub-dashboard__progress" style="--tpw-progress: <?php echo esc_attr( $dashboard['checklist_progress'] ); ?>%;">
+						<div class="tpw-flexiclub-dashboard__progress-ring">
+							<strong><?php echo esc_html( $dashboard['checklist_done'] ); ?>/<?php echo esc_html( $dashboard['checklist_total'] ); ?></strong>
+						</div>
+						<div class="tpw-flexiclub-dashboard__progress-copy">
+							<h3><?php esc_html_e( 'Setup Progress', 'tpw-core' ); ?></h3>
+							<p>
+								<?php
+								echo ! empty( $dashboard['checklist_complete'] )
+									? esc_html__( 'Everything is in place.', 'tpw-core' )
+									: esc_html__( 'Almost there.', 'tpw-core' );
+								?>
+							</p>
+						</div>
+					</div>
+
+					<div class="tpw-flexiclub-dashboard__checklist-panel">
+						<div class="tpw-flexiclub-dashboard__checklist-items">
+							<?php foreach ( $dashboard['checklist_items'] as $item ) : ?>
+								<div class="tpw-flexiclub-dashboard__checklist-item">
+									<span class="tpw-flexiclub-dashboard__checkmark tpw-flexiclub-dashboard__checkmark--<?php echo ! empty( $item['done'] ) ? 'done' : 'pending'; ?>" aria-hidden="true">
+										<?php echo ! empty( $item['done'] ) ? '✓' : '○'; ?>
+									</span>
+									<div>
+										<div class="tpw-flexiclub-dashboard__checklist-title">
+											<?php echo esc_html( $item['label'] ); ?>
+											<?php if ( ! empty( $item['optional'] ) ) : ?>
+												<span class="tpw-flexiclub-dashboard__optional"><?php esc_html_e( 'Optional', 'tpw-core' ); ?></span>
+											<?php endif; ?>
+										</div>
+										<p><?php echo esc_html( $item['description'] ); ?></p>
+									</div>
+									<a href="<?php echo esc_url( $item['url'] ); ?>"><?php esc_html_e( 'Open', 'tpw-core' ); ?></a>
+								</div>
+							<?php endforeach; ?>
+						</div>
+
+						<div class="tpw-flexiclub-dashboard__checklist-actions">
+							<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $dashboard['checklist_primary_action']['url'] ); ?>"><?php echo esc_html( $dashboard['checklist_primary_action']['label'] ); ?></a>
+						</div>
+					</div>
+				</div>
+			</section>
+		<?php elseif ( ! empty( $dashboard['show_setup_banner'] ) ) : ?>
+			<section class="tpw-flexiclub-dashboard__setup-banner tpw-card" aria-label="<?php esc_attr_e( 'Setup complete', 'tpw-core' ); ?>">
+				<div class="tpw-flexiclub-dashboard__setup-banner-copy">
+					<h2><?php esc_html_e( 'Setup complete', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'Your current onboarding checklist is complete.', 'tpw-core' ); ?></p>
+				</div>
+				<div class="tpw-flexiclub-dashboard__setup-banner-actions">
+					<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $dashboard['checklist_url'] ); ?>"><?php esc_html_e( 'View checklist', 'tpw-core' ); ?></a>
+					<a class="tpw-flexiclub-dashboard__muted-link" href="<?php echo esc_url( $dashboard['dismiss_setup_url'] ); ?>"><?php esc_html_e( 'Dismiss', 'tpw-core' ); ?></a>
+				</div>
+			</section>
+		<?php endif; ?>
+
 		<section class="tpw-flexiclub-dashboard__section tpw-card">
 			<div class="tpw-flexiclub-dashboard__section-head">
 				<div>
@@ -96,116 +162,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 		</section>
 
-		<div class="tpw-flexiclub-dashboard__bottom-grid">
-			<section class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--checklist">
-				<div class="tpw-flexiclub-dashboard__section-head">
-					<div>
-						<h2><?php esc_html_e( 'Getting Started', 'tpw-core' ); ?></h2>
-						<p><?php esc_html_e( 'A simple checklist for launching your club workspace.', 'tpw-core' ); ?></p>
-					</div>
-				</div>
-
-				<div class="tpw-flexiclub-dashboard__checklist">
-					<?php
-					$progress = 0;
-					if ( ! empty( $dashboard['checklist_total'] ) ) {
-						$progress = ( (int) $dashboard['checklist_done'] / (int) $dashboard['checklist_total'] ) * 100;
-					}
-					?>
-					<div class="tpw-flexiclub-dashboard__progress" style="--tpw-progress: <?php echo esc_attr( $progress ); ?>%;">
-						<div class="tpw-flexiclub-dashboard__progress-ring">
-							<strong><?php echo esc_html( $dashboard['checklist_done'] ); ?>/<?php echo esc_html( $dashboard['checklist_total'] ); ?></strong>
-						</div>
-						<div class="tpw-flexiclub-dashboard__progress-copy">
-							<h3><?php esc_html_e( 'Setup Progress', 'tpw-core' ); ?></h3>
-							<p><?php esc_html_e( 'Almost there.', 'tpw-core' ); ?></p>
-						</div>
-					</div>
-
-					<div class="tpw-flexiclub-dashboard__checklist-items">
-						<?php foreach ( $dashboard['checklist_items'] as $item ) : ?>
-							<div class="tpw-flexiclub-dashboard__checklist-item">
-								<span class="tpw-flexiclub-dashboard__checkmark tpw-flexiclub-dashboard__checkmark--<?php echo ! empty( $item['done'] ) ? 'done' : 'pending'; ?>" aria-hidden="true">
-									<?php echo ! empty( $item['done'] ) ? '✓' : '○'; ?>
-								</span>
-								<div>
-									<div class="tpw-flexiclub-dashboard__checklist-title">
-										<?php echo esc_html( $item['label'] ); ?>
-										<?php if ( ! empty( $item['optional'] ) ) : ?>
-											<span class="tpw-flexiclub-dashboard__optional"><?php esc_html_e( 'Optional', 'tpw-core' ); ?></span>
-										<?php endif; ?>
-									</div>
-									<p><?php echo esc_html( $item['description'] ); ?></p>
-								</div>
-								<a href="<?php echo esc_url( $item['url'] ); ?>"><?php esc_html_e( 'Open', 'tpw-core' ); ?></a>
-							</div>
-						<?php endforeach; ?>
-					</div>
-				</div>
-			</section>
-
-			<section class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--activity">
-				<div class="tpw-flexiclub-dashboard__section-head">
-					<div>
-						<h2><?php esc_html_e( 'Recent Activity', 'tpw-core' ); ?></h2>
-						<p><?php esc_html_e( 'Latest operational updates across members, notices, and logs.', 'tpw-core' ); ?></p>
-					</div>
-				</div>
-
-				<div class="tpw-flexiclub-dashboard__activity-list">
-					<?php foreach ( $dashboard['activity_items'] as $item ) : ?>
-						<div class="tpw-flexiclub-dashboard__activity-item">
-							<div class="tpw-flexiclub-dashboard__activity-copy">
-								<h3><?php echo esc_html( $item['title'] ); ?></h3>
-								<p><?php echo esc_html( $item['meta'] ); ?></p>
-							</div>
-							<span class="tpw-flexiclub-dashboard__activity-time"><?php echo esc_html( $item['time'] ); ?></span>
-						</div>
-					<?php endforeach; ?>
-				</div>
-
-				<div class="tpw-flexiclub-dashboard__system-status">
-					<h3><?php esc_html_e( 'System Status', 'tpw-core' ); ?></h3>
-					<div class="tpw-flexiclub-dashboard__system-grid">
-						<?php foreach ( $dashboard['system_items'] as $item ) : ?>
-							<div class="tpw-flexiclub-dashboard__system-item">
-								<span class="tpw-flexiclub-dashboard__system-label"><?php echo esc_html( $item['label'] ); ?></span>
-								<strong class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $item['tone'] ); ?>">
-									<?php echo esc_html( $item['value'] ); ?>
-								</strong>
-							</div>
-						<?php endforeach; ?>
-					</div>
-				</div>
-			</section>
-		</div>
-	</div>
-
-	<aside class="tpw-flexiclub-dashboard__aside">
-		<section class="tpw-flexiclub-dashboard__section tpw-card">
-			<div class="tpw-flexiclub-dashboard__section-head">
-				<div>
-					<h2><?php esc_html_e( 'Quick Actions', 'tpw-core' ); ?></h2>
-				</div>
-			</div>
-
-			<div class="tpw-flexiclub-dashboard__action-list">
-				<?php foreach ( $dashboard['quick_actions'] as $action ) : ?>
-					<?php if ( ! empty( $action['disabled'] ) ) : ?>
-						<div class="tpw-flexiclub-dashboard__action-link tpw-flexiclub-dashboard__action-link--disabled">
-							<span><?php echo esc_html( $action['label'] ); ?></span>
-							<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-						</div>
-					<?php else : ?>
-						<a class="tpw-flexiclub-dashboard__action-link" href="<?php echo esc_url( $action['url'] ); ?>">
-							<span><?php echo esc_html( $action['label'] ); ?></span>
-							<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-						</a>
-					<?php endif; ?>
-				<?php endforeach; ?>
-			</div>
-		</section>
-
 		<section id="tpw-flexiclub-extend" class="tpw-flexiclub-dashboard__section tpw-card">
 			<div class="tpw-flexiclub-dashboard__section-head">
 				<div>
@@ -236,6 +192,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>
+			</div>
+		</section>
+	</div>
+
+	<aside class="tpw-flexiclub-dashboard__aside">
+		<section class="tpw-flexiclub-dashboard__section tpw-card">
+			<div class="tpw-flexiclub-dashboard__section-head">
+				<div>
+					<h2><?php esc_html_e( 'Quick Actions', 'tpw-core' ); ?></h2>
+				</div>
+			</div>
+
+			<div class="tpw-flexiclub-dashboard__action-list">
+				<?php foreach ( $dashboard['quick_actions'] as $action ) : ?>
+					<?php if ( ! empty( $action['disabled'] ) ) : ?>
+						<div class="tpw-flexiclub-dashboard__action-link tpw-flexiclub-dashboard__action-link--disabled">
+							<span><?php echo esc_html( $action['label'] ); ?></span>
+							<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+						</div>
+					<?php else : ?>
+						<a class="tpw-flexiclub-dashboard__action-link" href="<?php echo esc_url( $action['url'] ); ?>">
+							<span><?php echo esc_html( $action['label'] ); ?></span>
+							<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+						</a>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</div>
+		</section>
+
+		<section class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--activity">
+			<div class="tpw-flexiclub-dashboard__section-head">
+				<div>
+					<h2><?php esc_html_e( 'Recent Activity', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'Latest operational updates across members, notices, and logs.', 'tpw-core' ); ?></p>
+				</div>
+			</div>
+
+			<div class="tpw-flexiclub-dashboard__activity-list">
+				<?php foreach ( $dashboard['activity_items'] as $item ) : ?>
+					<div class="tpw-flexiclub-dashboard__activity-item">
+						<div class="tpw-flexiclub-dashboard__activity-copy">
+							<h3><?php echo esc_html( $item['title'] ); ?></h3>
+							<p><?php echo esc_html( $item['meta'] ); ?></p>
+						</div>
+						<span class="tpw-flexiclub-dashboard__activity-time"><?php echo esc_html( $item['time'] ); ?></span>
+					</div>
+				<?php endforeach; ?>
+			</div>
+
+			<div class="tpw-flexiclub-dashboard__system-status">
+				<h3><?php esc_html_e( 'System Status', 'tpw-core' ); ?></h3>
+				<div class="tpw-flexiclub-dashboard__system-grid">
+					<?php foreach ( $dashboard['system_items'] as $item ) : ?>
+						<div class="tpw-flexiclub-dashboard__system-item">
+							<span class="tpw-flexiclub-dashboard__system-label"><?php echo esc_html( $item['label'] ); ?></span>
+							<strong class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $item['tone'] ); ?>">
+								<?php echo esc_html( $item['value'] ); ?>
+							</strong>
+						</div>
+					<?php endforeach; ?>
+				</div>
 			</div>
 		</section>
 	</aside>

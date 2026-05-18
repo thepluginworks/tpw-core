@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TPW_FlexiClub_Admin_Menu {
 	const TOP_LEVEL_SLUG      = 'tpw-flexiclub-dashboard';
+	const DASHBOARD_SETUP_META = 'tpw_flexiclub_dashboard_setup_dismissed';
 	const PAGE_MEMBERS        = 'tpw-flexiclub-manage-members';
 	const PAGE_GALLERY        = 'tpw-flexiclub-gallery-admin';
 	const PAGE_UPLOADS        = 'tpw-flexiclub-upload-pages';
@@ -25,6 +26,7 @@ class TPW_FlexiClub_Admin_Menu {
 		}
 
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ], 12 );
+		add_action( 'admin_init', [ __CLASS__, 'handle_dashboard_actions' ] );
 		add_action( 'admin_init', [ __CLASS__, 'handle_bridge_actions' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_dashboard_assets' ] );
 		add_filter( 'tpw_core_menu_map', [ __CLASS__, 'filter_menu_map' ] );
@@ -313,6 +315,31 @@ class TPW_FlexiClub_Admin_Menu {
 		$page_id = (int) TPW_Core_System_Pages::ensure_page( $system_slug );
 		$args['tpw_flexiclub_notice'] = $page_id > 0 ? 'repair_success' : 'repair_failed';
 		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	public static function handle_dashboard_actions() {
+		if ( ! isset( $_GET['page'] ) || self::TOP_LEVEL_SLUG !== sanitize_key( wp_unslash( $_GET['page'] ) ) ) {
+			return;
+		}
+
+		if ( ! isset( $_GET['tpw_flexiclub_dashboard_action'] ) ) {
+			return;
+		}
+
+		$action = sanitize_key( wp_unslash( $_GET['tpw_flexiclub_dashboard_action'] ) );
+		if ( 'dismiss_setup_banner' !== $action ) {
+			return;
+		}
+
+		if ( ! self::current_user_can_view_dashboard() ) {
+			wp_die( esc_html__( 'Access denied.', 'tpw-core' ), 403 );
+		}
+
+		check_admin_referer( 'tpw_flexiclub_dismiss_setup_banner' );
+		update_user_meta( get_current_user_id(), self::DASHBOARD_SETUP_META, '1' );
+
+		wp_safe_redirect( self::get_dashboard_base_url() );
 		exit;
 	}
 
@@ -990,6 +1017,11 @@ class TPW_FlexiClub_Admin_Menu {
 				}
 			)
 		);
+		$checklist_total   = count( $checklist_items );
+		$checklist_complete = $checklist_total > 0 && $completed_steps >= $checklist_total;
+		$show_checklist     = ! $checklist_complete || self::dashboard_checklist_requested();
+		$banner_dismissed   = self::is_dashboard_setup_banner_dismissed();
+		$primary_item       = self::get_dashboard_primary_checklist_item( $checklist_items, $checklist_complete );
 
 		return [
 			'logo_url'        => self::get_dashboard_logo_url(),
@@ -1136,7 +1168,14 @@ class TPW_FlexiClub_Admin_Menu {
 			'extend_cards'    => self::get_dashboard_extend_cards(),
 			'checklist_items' => $checklist_items,
 			'checklist_done'  => $completed_steps,
-			'checklist_total' => count( $checklist_items ),
+			'checklist_total' => $checklist_total,
+			'checklist_progress' => $checklist_total > 0 ? ( $completed_steps / $checklist_total ) * 100 : 0,
+			'checklist_complete' => $checklist_complete,
+			'show_checklist' => $show_checklist,
+			'show_setup_banner' => $checklist_complete && ! $show_checklist && ! $banner_dismissed,
+			'checklist_url'  => self::get_dashboard_checklist_url(),
+			'dismiss_setup_url' => self::get_dashboard_dismiss_setup_url(),
+			'checklist_primary_action' => $primary_item,
 			'activity_items'  => self::get_dashboard_activity_items(),
 			'system_items'    => self::get_dashboard_system_items(
 				$members_summary,
@@ -1149,6 +1188,11 @@ class TPW_FlexiClub_Admin_Menu {
 
 	protected static function get_dashboard_quick_actions( $payments_summary ) {
 		return [
+			[
+				'label'    => __( 'Setup Checklist', 'tpw-core' ),
+				'url'      => self::get_dashboard_checklist_url(),
+				'disabled' => false,
+			],
 			[
 				'label'    => __( 'Add New Member', 'tpw-core' ),
 				'url'      => self::get_members_management_url( 'add' ),
@@ -1185,6 +1229,69 @@ class TPW_FlexiClub_Admin_Menu {
 				'disabled' => false,
 			],
 		];
+	}
+
+	protected static function get_dashboard_primary_checklist_item( $items, $complete ) {
+		$items = is_array( $items ) ? $items : [];
+
+		foreach ( $items as $item ) {
+			if ( empty( $item['done'] ) ) {
+				return [
+					'label' => __( 'Continue setup', 'tpw-core' ),
+					'url'   => isset( $item['url'] ) ? $item['url'] : self::get_dashboard_checklist_url(),
+				];
+			}
+		}
+
+		return [
+			'label' => $complete ? __( 'Review checklist', 'tpw-core' ) : __( 'Open checklist', 'tpw-core' ),
+			'url'   => self::get_dashboard_checklist_url(),
+		];
+	}
+
+	protected static function get_dashboard_base_url() {
+		return add_query_arg(
+			[
+				'page' => self::TOP_LEVEL_SLUG,
+			],
+			admin_url( 'admin.php' )
+		);
+	}
+
+	protected static function get_dashboard_checklist_url() {
+		return add_query_arg(
+			[
+				'page'                        => self::TOP_LEVEL_SLUG,
+				'tpw_flexiclub_show_checklist' => '1',
+			],
+			admin_url( 'admin.php' )
+		) . '#tpw-flexiclub-checklist';
+	}
+
+	protected static function get_dashboard_dismiss_setup_url() {
+		return wp_nonce_url(
+			add_query_arg(
+				[
+					'page'                           => self::TOP_LEVEL_SLUG,
+					'tpw_flexiclub_dashboard_action' => 'dismiss_setup_banner',
+				],
+				admin_url( 'admin.php' )
+			),
+			'tpw_flexiclub_dismiss_setup_banner'
+		);
+	}
+
+	protected static function dashboard_checklist_requested() {
+		return isset( $_GET['tpw_flexiclub_show_checklist'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['tpw_flexiclub_show_checklist'] ) );
+	}
+
+	protected static function is_dashboard_setup_banner_dismissed() {
+		$user_id = get_current_user_id();
+		if ( $user_id < 1 ) {
+			return false;
+		}
+
+		return '1' === (string) get_user_meta( $user_id, self::DASHBOARD_SETUP_META, true );
 	}
 
 	protected static function get_dashboard_extend_cards() {

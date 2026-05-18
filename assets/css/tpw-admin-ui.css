@@ -339,7 +339,7 @@
     padding: 14px;
   }
   .tpw-admin-ui :where(.tpw-card + .tpw-card),
-  .tpw-frontend-ui :where(.tpw-card + .tpw-card) { margin-top: 12px; }
+  .tpw-frontend-ui :where(.tpw-card + .tpw-card) { margin-top: 0; }
 
   /* Payments Hub (front-end) -------------------------------------------------
      Standard two-pane layout used by templates/members/profile/payments/*

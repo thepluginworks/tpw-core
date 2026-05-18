@@ -275,28 +275,14 @@
   color: var(--tpw-flexi-muted);
 }
 
-.tpw-flexiclub-dashboard__layout,
-.tpw-flexiclub-dashboard__bottom-grid {
-  display: grid;
-  gap: 20px;
+.tpw-flexiclub-dashboard__layout {
   margin-top: 18px;
 }
 
-.tpw-flexiclub-dashboard__bottom-grid {
-  align-items: stretch;
-}
-
 .tpw-flexiclub-dashboard__layout {
+  display: grid;
+  gap: 20px;
   grid-template-columns: minmax(0, 3.2fr) minmax(320px, 1fr);
-}
-
-.tpw-flexiclub-dashboard__bottom-grid {
-  grid-template-columns: minmax(0, 2fr) minmax(360px, 1fr);
-  gap: 24px;
-}
-
-.tpw-flexiclub-dashboard__bottom-grid > .tpw-card {
-  margin-top: 0;
 }
 
 .tpw-flexiclub-dashboard__main,
@@ -310,11 +296,42 @@
 .tpw-flexiclub-dashboard__section--activity {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .tpw-flexiclub-dashboard__section--activity {
   min-width: 0;
+}
+
+.tpw-flexiclub-dashboard__section--checklist-full {
+  margin-bottom: 2px;
+}
+
+.tpw-flexiclub-dashboard__setup-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(21, 128, 61, 0.18);
+  background: linear-gradient(180deg, rgba(240, 253, 244, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.tpw-flexiclub-dashboard__setup-banner h2 {
+  margin: 0 0 4px;
+  font-size: 1.08rem;
+}
+
+.tpw-flexiclub-dashboard__setup-banner p {
+  margin: 0;
+  color: var(--tpw-flexi-muted);
+}
+
+.tpw-flexiclub-dashboard__setup-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 }
 
 .tpw-flexiclub-dashboard__aside {
@@ -504,16 +521,18 @@
 .tpw-flexiclub-dashboard__action-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tpw-flexiclub-dashboard__action-link {
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 12px;
-  padding: 14px 15px;
+  padding: 12px 14px;
   color: #1f2937;
   background: #fff;
   text-decoration: none;
+  font-size: 0.94rem;
+  line-height: 1.35;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
@@ -530,7 +549,7 @@
 }
 
 .tpw-flexiclub-dashboard__extend-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
 }
 
@@ -539,13 +558,14 @@
   border-radius: 14px;
   padding: 18px;
   display: grid;
-  grid-template-columns: minmax(0, 106px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "media title"
-    "media body"
-    "media action";
-  gap: 10px 16px;
-  align-items: center;
+    "media"
+    "title"
+    "body"
+    "action";
+  gap: 12px;
+  align-items: start;
   overflow: hidden;
 }
 
@@ -556,6 +576,7 @@
   display: block;
   max-width: 100%;
   object-fit: contain;
+  justify-self: start;
 }
 
 .tpw-flexiclub-dashboard__extend-card .dashicons {
@@ -567,6 +588,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  justify-self: start;
 }
 
 .tpw-flexiclub-dashboard__extend-card h3,
@@ -580,8 +602,9 @@
   grid-area: title;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  gap: 8px;
+  align-items: flex-start;
+  align-content: flex-start;
 }
 
 .tpw-flexiclub-dashboard__extend-card h3 {
@@ -599,12 +622,13 @@
 .tpw-flexiclub-dashboard__extend-action {
   grid-area: action;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   min-height: 40px;
 }
 
 .tpw-flexiclub-dashboard__extend-card .tpw-btn {
-  justify-self: start;
+  width: 100%;
+  justify-self: stretch;
 }
 
 .tpw-flexiclub-dashboard__extend-note {
@@ -618,6 +642,12 @@
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.tpw-flexiclub-dashboard__checklist-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .tpw-flexiclub-dashboard__progress {
@@ -651,21 +681,20 @@
 }
 
 .tpw-flexiclub-dashboard__checklist-items {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
 .tpw-flexiclub-dashboard__checklist-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px;
   align-items: flex-start;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
-  padding-bottom: 14px;
-}
-
-.tpw-flexiclub-dashboard__checklist-item:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .tpw-flexiclub-dashboard__checklist-item > div {
@@ -720,18 +749,23 @@
 .tpw-flexiclub-dashboard__activity-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 18px;
   flex: 1 1 auto;
+}
+
+.tpw-flexiclub-dashboard__checklist-actions {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .tpw-flexiclub-dashboard__activity-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 22px;
-  row-gap: 8px;
+  row-gap: 6px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.75);
-  padding-bottom: 16px;
+  padding-bottom: 14px;
   align-items: start;
 }
 
@@ -739,7 +773,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .tpw-flexiclub-dashboard__activity-item:last-child {
@@ -762,12 +796,12 @@
 
 .tpw-flexiclub-dashboard__system-status h3 {
   margin: 0 0 14px;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .tpw-flexiclub-dashboard__system-grid {
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tpw-flexiclub-dashboard__system-item {
@@ -776,10 +810,10 @@
   align-items: start;
   gap: 14px;
   min-width: 0;
-  min-height: 72px;
+  min-height: 68px;
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 13px 14px;
   background: #fff;
 }
 
@@ -819,11 +853,6 @@
   .tpw-flexiclub-dashboard__layout {
     grid-template-columns: minmax(0, 2.45fr) minmax(300px, 1fr);
   }
-
-  .tpw-flexiclub-dashboard__bottom-grid {
-    grid-template-columns: minmax(0, 1.8fr) minmax(340px, 1fr);
-  }
-
   .tpw-flexiclub-dashboard__aside {
     max-width: 400px;
   }
@@ -834,17 +863,25 @@
   }
 
   .tpw-flexiclub-dashboard__extend-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 1080px) {
   .tpw-flexiclub-dashboard__layout,
-  .tpw-flexiclub-dashboard__bottom-grid,
   .tpw-flexiclub-dashboard__checklist,
   .tpw-flexiclub-dashboard__hero-content {
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .tpw-flexiclub-dashboard__checklist {
+    gap: 20px;
+  }
+
+  .tpw-flexiclub-dashboard__checklist-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .tpw-flexiclub-dashboard__summary-grid,
@@ -861,14 +898,43 @@
     justify-self: stretch;
   }
 
+  .tpw-flexiclub-dashboard__setup-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tpw-flexiclub-dashboard__extend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tpw-flexiclub-dashboard__extend-card {
-    grid-template-columns: minmax(0, 96px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .tpw-flexiclub-dashboard__extend-card img,
   .tpw-flexiclub-dashboard__extend-card .dashicons {
     width: 96px;
     height: 96px;
+  }
+
+  .tpw-flexiclub-dashboard__progress {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 920px) {
+  .tpw-flexiclub-dashboard__checklist-items {
+    grid-template-columns: 1fr;
+  }
+
+  .tpw-flexiclub-dashboard__checklist-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .tpw-flexiclub-dashboard__checklist-item a {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 
@@ -920,6 +986,10 @@
     width: min(106px, 100%);
     height: auto;
     justify-self: start;
+  }
+
+  .tpw-flexiclub-dashboard__checklist-item {
+    grid-template-columns: 1fr;
   }
 
   .tpw-flexiclub-dashboard__extend-card .dashicons {
