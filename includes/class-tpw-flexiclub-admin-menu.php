@@ -1188,48 +1188,270 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	protected static function get_dashboard_extend_cards() {
-		return [
+		$definitions = [
 			[
-				'name'        => __( 'FlexiEvent', 'tpw-core' ),
-				'description' => __( 'Events, scheduling, and club activities.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexievent-icon.svg' ),
+				'name'             => __( 'FlexiEvent', 'tpw-core' ),
+				'description'      => __( 'Events, scheduling, and club activities.', 'tpw-core' ),
+				'icon_url'         => self::get_plugin_icon_url( 'flexievent-icon.svg' ),
+				'plugin_names'     => [ 'FlexiEvent', 'TPW FlexiEvent' ],
+				'text_domains'     => [ 'flexievent', 'tpw-flexievent' ],
+				'basenames'        => [ 'flexievent/flexievent.php', 'tpw-flexievent/flexievent.php', 'tpw-flexievent/tpw-flexievent.php' ],
+				'active_classes'   => [ 'TPW_FlexiEvent' ],
+				'active_constants' => [ 'TPW_FLEXIEVENT_VERSION' ],
+				'active_post_types'=> [ 'tpw_event' ],
+				'product_url'      => 'https://thepluginworks.com/FlexiEvent',
+				'active_url'       => admin_url( 'edit.php?post_type=tpw_event' ),
+				'active_label'     => __( 'Manage events', 'tpw-core' ),
 			],
 			[
-				'name'        => __( 'FlexiSubscriptions', 'tpw-core' ),
-				'description' => __( 'Membership subscriptions and renewals.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexisubscriptions-icon.svg' ),
+				'name'         => __( 'FlexiSubscriptions', 'tpw-core' ),
+				'description'  => __( 'Membership subscriptions and renewals.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexisubscriptions-icon.svg' ),
+				'plugin_names' => [ 'FlexiSubscriptions', 'TPW FlexiSubscriptions' ],
+				'text_domains' => [ 'flexisubscriptions', 'tpw-flexisubscriptions' ],
+				'basenames'    => [ 'flexisubscriptions/flexisubscriptions.php', 'tpw-flexisubscriptions/flexisubscriptions.php', 'tpw-flexisubscriptions/tpw-flexisubscriptions.php' ],
+				'product_url'  => 'https://thepluginworks.com/FlexiSubscriptions',
+				'active_url'   => admin_url( 'admin.php?page=csp_dashboard_home' ),
+				'active_label' => __( 'Manage subscriptions', 'tpw-core' ),
 			],
 			[
-				'name'        => __( 'FlexiTicket', 'tpw-core' ),
-				'description' => __( 'Ticketing and event sales for members.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexiticket-icon.svg' ),
+				'name'         => __( 'FlexiTicket', 'tpw-core' ),
+				'description'  => __( 'Ticketing and event sales for members.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexiticket-icon.svg' ),
+				'plugin_names' => [ 'FlexiTicket', 'TPW FlexiTicket' ],
+				'text_domains' => [ 'flexiticket', 'tpw-flexiticket' ],
+				'basenames'    => [ 'flexiticket/flexiticket.php', 'tpw-flexiticket/flexiticket.php', 'tpw-flexiticket/tpw-flexiticket.php' ],
+				'product_url'  => 'https://thepluginworks.com/FlexiTicket',
+				'active_url'   => admin_url( 'edit.php?post_type=tpw_event' ),
+				'active_label' => __( 'Manage events', 'tpw-core' ),
 			],
 			[
-				'name'        => __( 'FlexiLedger', 'tpw-core' ),
-				'description' => __( 'Financial tracking and reconciliation tools.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexiledger-icon.svg' ),
+				'name'         => __( 'FlexiLedger', 'tpw-core' ),
+				'description'  => __( 'Financial tracking and reconciliation tools.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexiledger-icon.svg' ),
+				'plugin_names' => [ 'FlexiLedger', 'TPW FlexiLedger' ],
+				'text_domains' => [ 'flexiledger', 'tpw-flexiledger' ],
+				'basenames'    => [ 'flexiledger/flexiledger.php', 'tpw-flexiledger/flexiledger.php', 'tpw-flexiledger/tpw-flexiledger.php' ],
+				'product_url'  => 'https://thepluginworks.com/FlexiLedger',
 			],
 			[
-				'name'        => __( 'FlexiGolf', 'tpw-core' ),
-				'description' => __( 'Fixtures, results, and match administration.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexigolf-icon.svg' ),
+				'name'             => __( 'FlexiGolf', 'tpw-core' ),
+				'description'      => __( 'Fixtures, results, and match administration.', 'tpw-core' ),
+				'icon_url'         => self::get_plugin_icon_url( 'flexigolf-icon.svg' ),
+				'plugin_names'     => [ 'FlexiGolf', 'TPW FlexiGolf' ],
+				'text_domains'     => [ 'flexigolf', 'tpw-flexigolf' ],
+				'basenames'        => [ 'flexigolf/flexigolf.php', 'flexigolf/flexigolf-main.php', 'tpw-flexigolf/tpw-flexigolf.php', 'tpw-flexigolf/tpw-flexigolf-main.php' ],
+				'active_classes'   => [ 'FlexiGolf' ],
+				'active_constants' => [ 'FLEXIGOLF_VERSION' ],
+				'product_url'      => 'https://thepluginworks.com/FlexiGolf',
 			],
 			[
-				'name'        => __( 'FlexiPolicy', 'tpw-core' ),
-				'description' => __( 'Club documents, policy delivery, and acknowledgements.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexipolicy-icon.svg' ),
+				'name'         => __( 'FlexiPolicy', 'tpw-core' ),
+				'description'  => __( 'Club documents, policy delivery, and acknowledgements.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexipolicy-icon.svg' ),
+				'plugin_names' => [ 'FlexiPolicy', 'TPW FlexiPolicy' ],
+				'text_domains' => [ 'flexipolicy', 'tpw-flexipolicy' ],
+				'basenames'    => [ 'flexipolicy/flexipolicy.php', 'tpw-flexipolicy/flexipolicy.php', 'tpw-flexipolicy/tpw-flexipolicy.php' ],
+				'product_url'  => 'https://thepluginworks.com/FlexiPolicy',
 			],
 			[
-				'name'        => __( 'FlexiRota', 'tpw-core' ),
-				'description' => __( 'Volunteer and duty rota planning.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexirota-icon.svg' ),
+				'name'         => __( 'FlexiRota', 'tpw-core' ),
+				'description'  => __( 'Volunteer and duty rota planning.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexirota-icon.svg' ),
+				'plugin_names' => [ 'FlexiRota', 'TPW FlexiRota' ],
+				'text_domains' => [ 'flexirota', 'tpw-flexirota' ],
+				'basenames'    => [ 'flexirota/flexirota.php', 'tpw-flexirota/flexirota.php', 'tpw-flexirota/tpw-flexirota.php' ],
+				'product_url'  => 'https://thepluginworks.com/FlexiRota',
 			],
 			[
-				'name'        => __( 'Lodge RSVP', 'tpw-core' ),
-				'description' => __( 'Responses, attendance, and payment-ready RSVPs.', 'tpw-core' ),
-				'icon_url'    => self::get_plugin_icon_url( 'flexilodgersvp-icon.svg' ),
+				'name'         => __( 'Lodge RSVP', 'tpw-core' ),
+				'description'  => __( 'Responses, attendance, and payment-ready RSVPs.', 'tpw-core' ),
+				'icon_url'     => self::get_plugin_icon_url( 'flexilodgersvp-icon.svg' ),
+				'plugin_names' => [ 'Lodge RSVP', 'TPW RSVP Lodge Meetings', 'RSVP Lodge Meetings' ],
+				'text_domains' => [ 'lodge-rsvp', 'tpw-lodge-rsvp', 'tpw-rsvp-lodge-meetings' ],
+				'basenames'    => [ 'lodge-rsvp/lodge-rsvp.php', 'tpw-lodge-rsvp/tpw-lodge-rsvp.php', 'tpw-rsvp-lodge-meetings/tpw-rsvp-lodge-meetings.php' ],
+				'product_url'  => 'https://thepluginworks.com/lodge-rsvp-plugin-for-wordpress/',
+				'active_url'   => admin_url( 'edit.php?post_type=tpw_event' ),
+				'active_label' => __( 'Manage events', 'tpw-core' ),
 			],
 		];
+
+		$cards = [];
+		foreach ( $definitions as $definition ) {
+			$cards[] = self::build_dashboard_extend_card( $definition );
+		}
+
+		return $cards;
+	}
+
+	protected static function build_dashboard_extend_card( $definition, $plugin_state = null ) {
+		$definition   = is_array( $definition ) ? $definition : [];
+		$plugin_state = is_array( $plugin_state ) ? $plugin_state : self::resolve_dashboard_plugin_state( $definition );
+
+		$card = [
+			'name'         => isset( $definition['name'] ) ? $definition['name'] : '',
+			'description'  => isset( $definition['description'] ) ? $definition['description'] : '',
+			'icon_url'     => isset( $definition['icon_url'] ) ? $definition['icon_url'] : '',
+			'status_label' => __( 'Available', 'tpw-core' ),
+			'status_tone'  => 'neutral',
+			'action_label' => '',
+			'action_url'   => '',
+		];
+
+		if ( ! empty( $plugin_state['active'] ) ) {
+			$card['status_label'] = __( 'Active', 'tpw-core' );
+			$card['status_tone']  = 'success';
+
+			if ( ! empty( $definition['active_url'] ) ) {
+				$card['action_label'] = ! empty( $definition['active_label'] ) ? $definition['active_label'] : __( 'Open plugin', 'tpw-core' );
+				$card['action_url']   = $definition['active_url'];
+			}
+
+			return $card;
+		}
+
+		if ( ! empty( $plugin_state['installed'] ) ) {
+			$card['status_label'] = __( 'Installed', 'tpw-core' );
+			$card['status_tone']  = 'info';
+
+			if ( ! empty( $plugin_state['activation_url'] ) ) {
+				$card['action_label'] = ! empty( $plugin_state['can_activate'] ) ? __( 'Activate plugin', 'tpw-core' ) : __( 'View plugins', 'tpw-core' );
+				$card['action_url']   = $plugin_state['activation_url'];
+			} else {
+				$card['action_label'] = __( 'View plugins', 'tpw-core' );
+				$card['action_url']   = admin_url( 'plugins.php' );
+			}
+
+			return $card;
+		}
+
+		if ( ! empty( $definition['product_url'] ) ) {
+			$card['action_label'] = __( 'Learn more', 'tpw-core' );
+			$card['action_url']   = $definition['product_url'];
+		}
+
+		return $card;
+	}
+
+	protected static function resolve_dashboard_plugin_state( $definition ) {
+		self::ensure_plugin_api_loaded();
+
+		$plugin_file = self::find_dashboard_plugin_basename( $definition );
+		$is_active   = self::dashboard_plugin_matches_active_marker( $definition );
+
+		if ( ! $is_active && '' !== $plugin_file && function_exists( 'is_plugin_active' ) ) {
+			$is_active = is_plugin_active( $plugin_file );
+		}
+
+		$installed      = $is_active || '' !== $plugin_file;
+		$can_activate   = $installed && ! $is_active && '' !== $plugin_file && current_user_can( 'activate_plugins' );
+		$activation_url = '';
+
+		if ( $installed && ! $is_active ) {
+			if ( $can_activate ) {
+				$activation_url = wp_nonce_url(
+					add_query_arg(
+						[
+							'action' => 'activate',
+							'plugin' => $plugin_file,
+						],
+						admin_url( 'plugins.php' )
+					),
+					'activate-plugin_' . $plugin_file
+				);
+			} else {
+				$activation_url = admin_url( 'plugins.php' );
+			}
+		}
+
+		return [
+			'active'         => $is_active,
+			'installed'      => $installed,
+			'plugin_file'    => $plugin_file,
+			'can_activate'   => $can_activate,
+			'activation_url' => $activation_url,
+		];
+	}
+
+	protected static function ensure_plugin_api_loaded() {
+		if ( function_exists( 'get_plugins' ) && function_exists( 'is_plugin_active' ) ) {
+			return;
+		}
+
+		$plugin_api = trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php';
+		if ( file_exists( $plugin_api ) ) {
+			require_once $plugin_api;
+		}
+	}
+
+	protected static function find_dashboard_plugin_basename( $definition ) {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			return '';
+		}
+
+		$plugins = get_plugins();
+		if ( empty( $plugins ) || ! is_array( $plugins ) ) {
+			return '';
+		}
+
+		$candidate_basenames = isset( $definition['basenames'] ) && is_array( $definition['basenames'] ) ? $definition['basenames'] : [];
+		foreach ( $candidate_basenames as $basename ) {
+			if ( isset( $plugins[ $basename ] ) ) {
+				return (string) $basename;
+			}
+		}
+
+		$expected_names = isset( $definition['plugin_names'] ) && is_array( $definition['plugin_names'] ) ? $definition['plugin_names'] : [];
+		$text_domains   = isset( $definition['text_domains'] ) && is_array( $definition['text_domains'] ) ? $definition['text_domains'] : [];
+
+		$expected_names = array_map( [ __CLASS__, 'normalize_dashboard_plugin_match_value' ], $expected_names );
+		$text_domains   = array_map( [ __CLASS__, 'normalize_dashboard_plugin_match_value' ], $text_domains );
+
+		foreach ( $plugins as $basename => $headers ) {
+			$name        = self::normalize_dashboard_plugin_match_value( isset( $headers['Name'] ) ? $headers['Name'] : '' );
+			$text_domain = self::normalize_dashboard_plugin_match_value( isset( $headers['TextDomain'] ) ? $headers['TextDomain'] : '' );
+
+			if ( '' !== $name && in_array( $name, $expected_names, true ) ) {
+				return (string) $basename;
+			}
+
+			if ( '' !== $text_domain && in_array( $text_domain, $text_domains, true ) ) {
+				return (string) $basename;
+			}
+		}
+
+		return '';
+	}
+
+	protected static function dashboard_plugin_matches_active_marker( $definition ) {
+		$post_types = isset( $definition['active_post_types'] ) && is_array( $definition['active_post_types'] ) ? $definition['active_post_types'] : [];
+		foreach ( $post_types as $post_type ) {
+			if ( post_type_exists( $post_type ) ) {
+				return true;
+			}
+		}
+
+		$classes = isset( $definition['active_classes'] ) && is_array( $definition['active_classes'] ) ? $definition['active_classes'] : [];
+		foreach ( $classes as $class_name ) {
+			if ( class_exists( $class_name, false ) ) {
+				return true;
+			}
+		}
+
+		$constants = isset( $definition['active_constants'] ) && is_array( $definition['active_constants'] ) ? $definition['active_constants'] : [];
+		foreach ( $constants as $constant_name ) {
+			if ( defined( $constant_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected static function normalize_dashboard_plugin_match_value( $value ) {
+		$value = strtolower( trim( (string) $value ) );
+
+		return preg_replace( '/[^a-z0-9]+/', '', $value );
 	}
 
 	protected static function get_dashboard_checklist_items( $members_summary, $notices_summary, $system_summary, $menu_summary, $settings_summary, $payments_summary ) {

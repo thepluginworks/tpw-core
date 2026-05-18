@@ -560,13 +560,22 @@
 
 .tpw-flexiclub-dashboard__extend-card h3,
 .tpw-flexiclub-dashboard__extend-card p,
-.tpw-flexiclub-dashboard__extend-card .tpw-btn {
+.tpw-flexiclub-dashboard__extend-card .tpw-btn,
+.tpw-flexiclub-dashboard__extend-action {
   min-width: 0;
 }
 
-.tpw-flexiclub-dashboard__extend-card h3 {
+.tpw-flexiclub-dashboard__extend-head {
   grid-area: title;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.tpw-flexiclub-dashboard__extend-card h3 {
   overflow-wrap: anywhere;
+  margin: 0;
 }
 
 .tpw-flexiclub-dashboard__extend-card p {
@@ -576,9 +585,21 @@
   overflow-wrap: anywhere;
 }
 
-.tpw-flexiclub-dashboard__extend-card .tpw-btn {
+.tpw-flexiclub-dashboard__extend-action {
   grid-area: action;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.tpw-flexiclub-dashboard__extend-card .tpw-btn {
   justify-self: start;
+}
+
+.tpw-flexiclub-dashboard__extend-note {
+  color: var(--tpw-flexi-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .tpw-flexiclub-dashboard__checklist {

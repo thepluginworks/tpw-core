@@ -222,9 +222,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php else : ?>
 							<span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span>
 						<?php endif; ?>
-						<h3><?php echo esc_html( $card['name'] ); ?></h3>
+						<div class="tpw-flexiclub-dashboard__extend-head">
+							<h3><?php echo esc_html( $card['name'] ); ?></h3>
+							<span class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $card['status_tone'] ); ?>">
+								<?php echo esc_html( $card['status_label'] ); ?>
+							</span>
+						</div>
 						<p><?php echo esc_html( $card['description'] ); ?></p>
-						<button class="tpw-btn tpw-btn-outline" type="button" disabled><?php esc_html_e( 'Learn more', 'tpw-core' ); ?></button>
+						<?php if ( ! empty( $card['action_url'] ) ) : ?>
+							<div class="tpw-flexiclub-dashboard__extend-action">
+								<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $card['action_url'] ); ?>"><?php echo esc_html( $card['action_label'] ); ?></a>
+							</div>
+						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>
 			</div>
