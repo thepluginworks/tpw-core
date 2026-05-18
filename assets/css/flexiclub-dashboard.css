@@ -398,6 +398,11 @@
   --tpw-overview-soft: rgba(37, 99, 235, 0.12);
 }
 
+.tpw-flexiclub-dashboard__overview-card--system-pages {
+  --tpw-overview-accent: #4f46e5;
+  --tpw-overview-soft: rgba(79, 70, 229, 0.12);
+}
+
 .tpw-flexiclub-dashboard__overview-card--uploads {
   --tpw-overview-accent: var(--tpw-flexi-orange);
   --tpw-overview-soft: rgba(194, 65, 12, 0.12);
@@ -488,6 +493,12 @@
   color: var(--tpw-flexi-info);
   background: rgba(100, 116, 139, 0.12);
   border-color: rgba(100, 116, 139, 0.16);
+}
+
+.tpw-flexiclub-dashboard__status--error {
+  color: var(--tpw-flexi-red);
+  background: rgba(225, 29, 72, 0.1);
+  border-color: rgba(225, 29, 72, 0.18);
 }
 
 .tpw-flexiclub-dashboard__action-list {

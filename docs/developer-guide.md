@@ -57,6 +57,14 @@ Protected Manage Members permission fields are currently `is_admin`, `is_manage_
 	- Since: 1.0.0
 	- Description: Add new tabs or change labels/order.
 
+### FlexiClub wp-admin dashboard
+
+The top-level FlexiClub wp-admin dashboard is a Core-owned operational summary screen. Current behaviour is intentionally conservative:
+
+- Club Overview status pills use shared semantic meanings across cards: `Active` and `Healthy` use the green success tone, `Ready` and `Configured` use the neutral grey tone, `Needs review` uses the warning tone, and missing or unavailable required data uses the error tone.
+- Overview card background tints and icon colours express module identity only. They must not override the shared semantic pill colours.
+- The `Extend FlexiClub` add-on cards only show real actions. Active plugins may show a safe management/admin URL when one is known, installed inactive plugins may show an activation action, and available plugins may show `Learn more` only when a real product URL exists. Do not add placeholder links, dead buttons, or fake management destinations.
+
 ### System Pages
 - tpw/system_pages/defaults (filter) — Default registry rows.
 	- File: `includes/class-tpw-core-system-pages.php`

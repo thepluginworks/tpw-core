@@ -1572,8 +1572,8 @@ class TPW_FlexiClub_Admin_Menu {
 
 		return [
 			'count'       => $count,
-			'status_label'=> null === $count ? __( 'Unavailable', 'tpw-core' ) : __( 'Ready', 'tpw-core' ),
-			'status_tone' => null === $count ? 'neutral' : 'success',
+			'status_label'=> null === $count ? __( 'Missing', 'tpw-core' ) : ( $count > 0 ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ),
+			'status_tone' => null === $count ? 'error' : ( $count > 0 ? 'success' : 'neutral' ),
 			'metric_text' => null === $count
 				? __( 'Members are not set up on this site yet.', 'tpw-core' )
 				: sprintf(
@@ -1596,8 +1596,8 @@ class TPW_FlexiClub_Admin_Menu {
 
 		return [
 			'count'       => $count,
-			'status_label'=> null === $count ? __( 'Unavailable', 'tpw-core' ) : ( $count > 0 ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ),
-			'status_tone' => null === $count ? 'neutral' : ( $count > 0 ? 'success' : 'info' ),
+			'status_label'=> null === $count ? __( 'Missing', 'tpw-core' ) : ( $count > 0 ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ),
+			'status_tone' => null === $count ? 'error' : ( $count > 0 ? 'success' : 'neutral' ),
 			'metric_text' => null === $count
 				? __( 'Noticeboard data is currently unavailable.', 'tpw-core' )
 				: sprintf(
@@ -1674,8 +1674,8 @@ class TPW_FlexiClub_Admin_Menu {
 			return [
 				'configured_count' => null,
 				'required_complete'=> false,
-				'status_label'     => __( 'Review', 'tpw-core' ),
-				'status_tone'      => 'neutral',
+				'status_label'     => __( 'Needs review', 'tpw-core' ),
+				'status_tone'      => 'warning',
 				'metric_text'      => __( 'Review the current system page assignments for FlexiClub and add-on features.', 'tpw-core' ),
 				'metric_value'     => __( 'Review', 'tpw-core' ),
 				'card_text'        => __( 'The full registered system-page set could not be resolved safely on this request.', 'tpw-core' ),
@@ -1704,8 +1704,8 @@ class TPW_FlexiClub_Admin_Menu {
 			return [
 				'configured_count' => null,
 				'required_complete'=> false,
-				'status_label'     => __( 'Review', 'tpw-core' ),
-				'status_tone'      => 'neutral',
+				'status_label'     => __( 'Needs review', 'tpw-core' ),
+				'status_tone'      => 'warning',
 				'metric_text'      => __( 'Review the current system page assignments for FlexiClub and add-on features.', 'tpw-core' ),
 				'metric_value'     => __( 'Review', 'tpw-core' ),
 				'card_text'        => __( 'No registered system pages were found in the resolved ecosystem registry.', 'tpw-core' ),
@@ -1713,8 +1713,8 @@ class TPW_FlexiClub_Admin_Menu {
 		}
 
 		$complete     = $registered_total === $configured_count;
-		$status_label = $complete ? __( 'Configured', 'tpw-core' ) : ( $configured_count > 0 ? __( 'Needs attention', 'tpw-core' ) : __( 'Review', 'tpw-core' ) );
-		$status_tone  = $complete ? 'success' : ( $configured_count > 0 ? 'warning' : 'neutral' );
+		$status_label = $complete ? __( 'Configured', 'tpw-core' ) : __( 'Needs review', 'tpw-core' );
+		$status_tone  = $complete ? 'neutral' : 'warning';
 		$metric_value = sprintf(
 			/* translators: 1: configured pages, 2: registered pages */
 			__( '%1$s / %2$s', 'tpw-core' ),
@@ -1756,9 +1756,11 @@ class TPW_FlexiClub_Admin_Menu {
 
 		$ready = '' !== $status['open_url'];
 
+		$has_content = $galleries > 0 || $image_count > 0;
+
 		return [
-			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs attention', 'tpw-core' ),
-			'status_tone'  => $ready ? 'success' : 'warning',
+			'status_label' => $ready ? ( $has_content ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ) : __( 'Needs review', 'tpw-core' ),
+			'status_tone'  => $ready ? ( $has_content ? 'success' : 'neutral' ) : 'warning',
 			'metric_value' => self::format_metric_value( $image_count ),
 			'card_text'    => $ready
 				? __( 'Manage gallery collections and image libraries for club content.', 'tpw-core' )
@@ -1778,8 +1780,8 @@ class TPW_FlexiClub_Admin_Menu {
 		$ready       = $registered && ! empty( $page_status['page_exists'] ) && ! empty( $page_status['shortcode_present'] );
 
 		return [
-			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs attention', 'tpw-core' ),
-			'status_tone'  => $ready ? 'success' : 'warning',
+			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs review', 'tpw-core' ),
+			'status_tone'  => $ready ? 'neutral' : 'warning',
 			'metric_value' => self::format_metric_value( $page_count ),
 			'card_text'    => $page_count > 0
 				? __( 'Archive tools are ready for organising member-facing files and pages.', 'tpw-core' )
@@ -1802,7 +1804,7 @@ class TPW_FlexiClub_Admin_Menu {
 		return [
 			'configured'   => $configured,
 			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Needs review', 'tpw-core' ),
-			'status_tone'  => $configured ? 'success' : 'warning',
+			'status_tone'  => $configured ? 'neutral' : 'warning',
 			'metric_value' => self::format_metric_value( $menus_count ),
 			'card_text'    => $configured
 				? __( 'Control which audiences can see and access club navigation items.', 'tpw-core' )
@@ -1827,7 +1829,7 @@ class TPW_FlexiClub_Admin_Menu {
 			return [
 				'configured'   => false,
 				'optional'     => true,
-				'status_label' => __( 'Optional', 'tpw-core' ),
+				'status_label' => __( 'Ready', 'tpw-core' ),
 				'status_tone'  => 'neutral',
 				'metric_value' => __( 'Optional', 'tpw-core' ),
 				'card_text'    => __( 'Payment methods are available when a FlexiClub add-on declares they are required.', 'tpw-core' ),
@@ -1835,7 +1837,7 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
-		$status_label = $active_count > 0 ? __( 'Ready', 'tpw-core' ) : __( 'Needs setup', 'tpw-core' );
+		$status_label = $active_count > 0 ? __( 'Active', 'tpw-core' ) : __( 'Needs review', 'tpw-core' );
 		$status_tone  = $active_count > 0 ? 'success' : 'warning';
 
 		return [
@@ -1860,7 +1862,7 @@ class TPW_FlexiClub_Admin_Menu {
 		return [
 			'configured'   => $configured,
 			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Ready', 'tpw-core' ),
-			'status_tone'  => $configured ? 'success' : 'info',
+			'status_tone'  => 'neutral',
 			'metric_value' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Review', 'tpw-core' ),
 			'card_text'    => $configured
 				? __( 'Core branding, login, or platform settings have already been configured.', 'tpw-core' )
