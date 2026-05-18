@@ -155,13 +155,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<div class="tpw-flexiclub-dashboard__overview-metric"><?php echo esc_html( $card['metric'] ); ?></div>
 							<p><?php echo esc_html( $card['description'] ); ?></p>
 						</div>
-						<div class="tpw-flexiclub-dashboard__overview-action">
-							<?php if ( ! empty( $card['disabled'] ) ) : ?>
-								<button class="tpw-btn tpw-btn-outline" type="button" disabled><?php echo esc_html( $card['action_label'] ); ?></button>
-							<?php else : ?>
-								<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $card['action_url'] ); ?>"><?php echo esc_html( $card['action_label'] ); ?></a>
-							<?php endif; ?>
-						</div>
+						<?php if ( ! array_key_exists( 'show_action', $card ) || ! empty( $card['show_action'] ) ) : ?>
+							<div class="tpw-flexiclub-dashboard__overview-action">
+								<?php if ( ! empty( $card['disabled'] ) ) : ?>
+									<button class="tpw-btn tpw-btn-outline" type="button" disabled><?php echo esc_html( $card['action_label'] ); ?></button>
+								<?php else : ?>
+									<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $card['action_url'] ); ?>"><?php echo esc_html( $card['action_label'] ); ?></a>
+								<?php endif; ?>
+							</div>
+						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>
 			</div>

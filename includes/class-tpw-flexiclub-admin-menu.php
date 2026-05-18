@@ -1139,6 +1139,7 @@ class TPW_FlexiClub_Admin_Menu {
 					'action_url'    => $payments_summary['action_url'],
 					'icon'          => 'dashicons-money-alt',
 					'disabled'      => empty( $payments_summary['action_url'] ),
+					'show_action'   => ! empty( $payments_summary['action_url'] ),
 				],
 				[
 					'title'         => __( 'Settings', 'tpw-core' ),
@@ -1190,7 +1191,7 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	protected static function get_dashboard_quick_actions( $payments_summary ) {
-		return [
+		$actions = [
 			[
 				'label'    => __( 'Setup Checklist', 'tpw-core' ),
 				'url'      => self::get_dashboard_checklist_url(),
@@ -1221,17 +1222,23 @@ class TPW_FlexiClub_Admin_Menu {
 				'url'      => self::get_tpw_control_launch_url( 'menu-manager', self::PAGE_MENU_MANAGER ),
 				'disabled' => false,
 			],
-			[
+		];
+
+		if ( ! empty( $payments_summary['payments_required'] ) && ! empty( $payments_summary['action_url'] ) ) {
+			$actions[] = [
 				'label'    => __( 'Configure Payments', 'tpw-core' ),
 				'url'      => $payments_summary['action_url'],
-				'disabled' => empty( $payments_summary['action_url'] ),
-			],
-			[
-				'label'    => __( 'View Logs', 'tpw-core' ),
-				'url'      => self::get_menu_item_url( self::PAGE_LOGS ),
 				'disabled' => false,
-			],
+			];
+		}
+
+		$actions[] = [
+			'label'    => __( 'View Logs', 'tpw-core' ),
+			'url'      => self::get_menu_item_url( self::PAGE_LOGS ),
+			'disabled' => false,
 		];
+
+		return $actions;
 	}
 
 	protected static function get_dashboard_primary_checklist_item( $items, $complete ) {
@@ -1647,7 +1654,7 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	protected static function get_dashboard_system_items( $members_summary, $system_summary, $payments_summary, $logs_summary ) {
-		return [
+		$items = [
 			[
 				'label' => __( 'Members module', 'tpw-core' ),
 				'value' => $members_summary['status_label'],
@@ -1659,16 +1666,28 @@ class TPW_FlexiClub_Admin_Menu {
 				'tone'  => $system_summary['status_tone'],
 			],
 			[
-				'label' => __( 'Payment methods', 'tpw-core' ),
-				'value' => $payments_summary['status_label'],
-				'tone'  => $payments_summary['status_tone'],
-			],
-			[
 				'label' => __( 'Recent logs', 'tpw-core' ),
 				'value' => $logs_summary['status_label'],
 				'tone'  => $logs_summary['status_tone'],
 			],
 		];
+
+		if ( ! empty( $payments_summary['payments_required'] ) ) {
+			array_splice(
+				$items,
+				2,
+				0,
+				[
+					[
+						'label' => __( 'Payment methods', 'tpw-core' ),
+						'value' => $payments_summary['status_label'],
+						'tone'  => $payments_summary['status_tone'],
+					],
+				]
+			);
+		}
+
+		return $items;
 	}
 
 	protected static function get_members_summary() {
@@ -1939,10 +1958,11 @@ class TPW_FlexiClub_Admin_Menu {
 			return [
 				'configured'   => false,
 				'optional'     => true,
-				'status_label' => __( 'Ready', 'tpw-core' ),
-				'status_tone'  => 'neutral',
+				'payments_required' => false,
+				'status_label' => __( 'Inactive', 'tpw-core' ),
+				'status_tone'  => 'warning',
 				'metric_value' => __( 'Optional', 'tpw-core' ),
-				'card_text'    => __( 'Payment methods are available when a FlexiClub add-on declares they are required.', 'tpw-core' ),
+				'card_text'    => __( 'No payment-enabled modules are currently active.', 'tpw-core' ),
 				'action_url'   => '',
 			];
 		}
@@ -1953,6 +1973,7 @@ class TPW_FlexiClub_Admin_Menu {
 		return [
 			'configured'   => $active_count > 0,
 			'optional'     => false,
+			'payments_required' => true,
 			'status_label' => $status_label,
 			'status_tone'  => $status_tone,
 			'metric_value' => self::format_metric_value( $active_count ),
