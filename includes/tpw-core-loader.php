@@ -22,11 +22,13 @@ require_once TPW_CORE_PATH . 'includes/class-tpw-core-updater.php';
 require_once TPW_CORE_PATH . 'includes/scheduler/class-tpw-core-scheduler.php';
 require_once TPW_CORE_PATH . 'includes/tpw-core-functions.php';
 require_once TPW_CORE_PATH . 'includes/class-tpw-core-create-menu.php';
+require_once TPW_CORE_PATH . 'includes/class-tpw-flexiclub-admin-menu.php';
 require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs-save.php';
 require_once TPW_CORE_PATH . 'modules/costs/class-tpw-costs.php';
 require_once TPW_CORE_PATH . 'includes/admin-functions.php';
 
 TPW_Core_Updater::init();
+TPW_FlexiClub_Admin_Menu::init();
 
 // Load WP-CLI command if in CLI context (safe to include; will noop outside WP_CLI)
 if ( file_exists( TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages-cli.php' ) ) {

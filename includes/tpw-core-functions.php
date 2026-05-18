@@ -52,6 +52,21 @@ if ( is_admin() && ! class_exists( 'TPW_Core_Admin_Menu_Helper' ) ) {
         protected static function matches_entry( array $entry ) : bool {
             $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
+            if ( ! empty( $entry['query'] ) && is_array( $entry['query'] ) ) {
+                $query_matches = true;
+                foreach ( $entry['query'] as $query_key => $expected ) {
+                    $current = isset( $_GET[ $query_key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $query_key ] ) ) : '';
+                    if ( (string) $current !== (string) $expected ) {
+                        $query_matches = false;
+                        break;
+                    }
+                }
+
+                if ( $query_matches ) {
+                    return true;
+                }
+            }
+
             if ( ! empty( $entry['pages'] ) && is_array( $entry['pages'] ) ) {
                 foreach ( $entry['pages'] as $p ) {
                     if ( $page === $p ) {

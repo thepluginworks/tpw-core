@@ -39,6 +39,7 @@ FlexiClub includes its own update and packaging flow so production sites receive
 
 ## Key admin areas
 
+- FlexiClub top-level wp-admin menu for core navigation, with bridge pages for front-end-only management tools
 - Settings -> FlexiClub for shared configuration such as branding, payments, and platform options
 - Member-related FlexiClub screens used by dependent plugins
 - FlexiClub Control for front-end admin tools where enabled

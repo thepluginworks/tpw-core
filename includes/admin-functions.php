@@ -179,6 +179,12 @@ function tpw_core_get_admin_pages() {
 		'tpw-core-settings',
 		'tpw-core-dashboard',
 		'tpw-core-tools',
+        'tpw-flexiclub-dashboard',
+        'tpw-flexiclub-manage-members',
+        'tpw-flexiclub-gallery-admin',
+        'tpw-flexiclub-upload-pages',
+        'tpw-flexiclub-menu-manager',
+        'tpw-flexiclub-logs',
 	);
 	return apply_filters( 'tpw_core_get_admin_pages', $pages );
 }

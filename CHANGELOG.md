@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Admin: added a new top-level FlexiClub wp-admin menu that groups existing Core admin screens and front-end bridge launchers without changing legacy routes such as Settings -> FlexiClub, Noticeboard CPT URLs, TPW Control URLs, or Payment Logs under Tools.
+
 ## [2.2.1] - 2026-05-14
 
 ### Fixed
