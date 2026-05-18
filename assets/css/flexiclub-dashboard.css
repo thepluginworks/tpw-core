@@ -557,30 +557,25 @@
   border: 1px solid rgba(203, 213, 225, 0.72);
   border-radius: 14px;
   padding: 18px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "media"
-    "title"
-    "body"
-    "action";
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
+  height: 100%;
   overflow: hidden;
 }
 
 .tpw-flexiclub-dashboard__extend-card img {
-  grid-area: media;
   width: 106px;
   height: 106px;
   display: block;
   max-width: 100%;
   object-fit: contain;
-  justify-self: start;
+  align-self: flex-start;
+  flex: 0 0 auto;
 }
 
 .tpw-flexiclub-dashboard__extend-card .dashicons {
-  grid-area: media;
   font-size: 72px;
   width: 106px;
   height: 106px;
@@ -588,7 +583,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  justify-self: start;
+  align-self: flex-start;
+  flex: 0 0 auto;
 }
 
 .tpw-flexiclub-dashboard__extend-card h3,
@@ -599,36 +595,36 @@
 }
 
 .tpw-flexiclub-dashboard__extend-head {
-  grid-area: title;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
   align-items: flex-start;
-  align-content: flex-start;
+  min-width: 0;
 }
 
 .tpw-flexiclub-dashboard__extend-card h3 {
   overflow-wrap: anywhere;
   margin: 0;
+  width: 100%;
 }
 
 .tpw-flexiclub-dashboard__extend-card p {
-  grid-area: body;
   margin: 0;
   min-height: 0;
   overflow-wrap: anywhere;
+  flex: 1 1 auto;
 }
 
 .tpw-flexiclub-dashboard__extend-action {
-  grid-area: action;
   display: flex;
   align-items: stretch;
   min-height: 40px;
+  margin-top: auto;
+  padding-top: 4px;
 }
 
 .tpw-flexiclub-dashboard__extend-card .tpw-btn {
   width: 100%;
-  justify-self: stretch;
 }
 
 .tpw-flexiclub-dashboard__extend-note {
@@ -839,10 +835,10 @@
 .tpw-flexiclub-dashboard__system-item .tpw-flexiclub-dashboard__status {
   flex: 0 0 auto;
   margin-left: auto;
-  max-width: none;
   text-align: center;
   white-space: nowrap;
   word-break: normal;
+  max-width: none;
 }
 
 @media (max-width: 1280px) {
@@ -911,7 +907,7 @@
   }
 
   .tpw-flexiclub-dashboard__extend-card {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
   }
 
   .tpw-flexiclub-dashboard__extend-card img,
@@ -976,19 +972,14 @@
   }
 
   .tpw-flexiclub-dashboard__extend-card {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "media"
-      "title"
-      "body"
-      "action";
+    gap: 11px;
   }
 
   .tpw-flexiclub-dashboard__extend-card img,
   .tpw-flexiclub-dashboard__extend-card .dashicons {
     width: min(106px, 100%);
     height: auto;
-    justify-self: start;
+    align-self: flex-start;
   }
 
   .tpw-flexiclub-dashboard__checklist-item {
