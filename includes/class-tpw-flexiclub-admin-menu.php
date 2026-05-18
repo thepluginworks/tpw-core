@@ -1417,11 +1417,17 @@ class TPW_FlexiClub_Admin_Menu {
 		}
 
 		if ( $is_active && $table_exists ) {
-			$today = gmdate( 'Y-m-d' );
+			$today = current_time( 'Y-m-d' );
 			$query = $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE event_begin_date >= %s AND event_status = %s",
+				"SELECT COUNT(*)
+				 FROM {$table_name} e
+				 INNER JOIN {$wpdb->posts} p ON p.ID = e.post_id
+				 WHERE e.event_begin_date >= %s
+				 AND p.post_type = %s
+				 AND p.post_status = %s",
 				$today,
-				'published'
+				'tpw_event',
+				'publish'
 			);
 			$raw_count = $wpdb->get_var( $query );
 
