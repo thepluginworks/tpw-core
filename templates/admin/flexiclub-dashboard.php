@@ -98,7 +98,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</section>
 
 		<div class="tpw-flexiclub-dashboard__bottom-grid">
-			<section class="tpw-flexiclub-dashboard__section tpw-card">
+			<section class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--checklist">
 				<div class="tpw-flexiclub-dashboard__section-head">
 					<div>
 						<h2><?php esc_html_e( 'Getting Started', 'tpw-core' ); ?></h2>
@@ -145,7 +145,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 			</section>
 
-			<section class="tpw-flexiclub-dashboard__section tpw-card">
+			<section class="tpw-flexiclub-dashboard__section tpw-card tpw-flexiclub-dashboard__section--activity">
 				<div class="tpw-flexiclub-dashboard__section-head">
 					<div>
 						<h2><?php esc_html_e( 'Recent Activity', 'tpw-core' ); ?></h2>
@@ -156,11 +156,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<div class="tpw-flexiclub-dashboard__activity-list">
 					<?php foreach ( $dashboard['activity_items'] as $item ) : ?>
 						<div class="tpw-flexiclub-dashboard__activity-item">
-							<div>
+							<div class="tpw-flexiclub-dashboard__activity-copy">
 								<h3><?php echo esc_html( $item['title'] ); ?></h3>
 								<p><?php echo esc_html( $item['meta'] ); ?></p>
 							</div>
-							<span><?php echo esc_html( $item['time'] ); ?></span>
+							<span class="tpw-flexiclub-dashboard__activity-time"><?php echo esc_html( $item['time'] ); ?></span>
 						</div>
 					<?php endforeach; ?>
 				</div>
@@ -170,7 +170,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="tpw-flexiclub-dashboard__system-grid">
 						<?php foreach ( $dashboard['system_items'] as $item ) : ?>
 							<div class="tpw-flexiclub-dashboard__system-item">
-								<span><?php echo esc_html( $item['label'] ); ?></span>
+								<span class="tpw-flexiclub-dashboard__system-label"><?php echo esc_html( $item['label'] ); ?></span>
 								<strong class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--<?php echo esc_attr( $item['tone'] ); ?>">
 									<?php echo esc_html( $item['value'] ); ?>
 								</strong>
