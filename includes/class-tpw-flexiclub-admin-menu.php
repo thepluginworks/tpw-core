@@ -25,12 +25,15 @@ class TPW_FlexiClub_Admin_Menu {
 
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ], 12 );
 		add_action( 'admin_init', [ __CLASS__, 'handle_bridge_actions' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_dashboard_assets' ] );
 		add_filter( 'tpw_core_menu_map', [ __CLASS__, 'filter_menu_map' ] );
 	}
 
 	public static function register_menu() {
-		$visible_items = self::get_visible_items();
-		if ( empty( $visible_items ) ) {
+		$visible_items      = self::get_visible_items();
+		$dashboard_visible  = self::current_user_can_view_dashboard();
+
+		if ( empty( $visible_items ) && ! $dashboard_visible ) {
 			return;
 		}
 
@@ -44,14 +47,16 @@ class TPW_FlexiClub_Admin_Menu {
 			58.2
 		);
 
-		add_submenu_page(
-			self::TOP_LEVEL_SLUG,
-			__( 'Dashboard', 'tpw-core' ),
-			__( 'Dashboard', 'tpw-core' ),
-			'read',
-			self::TOP_LEVEL_SLUG,
-			[ __CLASS__, 'render_dashboard' ]
-		);
+		if ( $dashboard_visible ) {
+			add_submenu_page(
+				self::TOP_LEVEL_SLUG,
+				__( 'Dashboard', 'tpw-core' ),
+				__( 'Dashboard', 'tpw-core' ),
+				'manage_options',
+				self::TOP_LEVEL_SLUG,
+				[ __CLASS__, 'render_dashboard' ]
+			);
+		}
 
 		if ( in_array( self::PAGE_MEMBERS, $visible_items, true ) ) {
 			add_submenu_page(
@@ -150,39 +155,25 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	public static function render_dashboard() {
-		$items = self::get_dashboard_items();
-
-		self::render_page_start(
-			__( 'FlexiClub Dashboard', 'tpw-core' ),
-			__( 'Open the current FlexiClub admin screens and front-end management tools from one place.', 'tpw-core' )
-		);
-
-		echo '<div class="tpw-card">';
-		echo '<p>' . esc_html__( 'This dashboard is a navigation hub. Existing routes and implementations remain in place; front-end-only tools open via bridge pages.', 'tpw-core' ) . '</p>';
-		echo '</div>';
-
-		echo '<div class="tpw-card">';
-		echo '<table class="widefat striped">';
-		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Area', 'tpw-core' ) . '</th>';
-		echo '<th>' . esc_html__( 'Type', 'tpw-core' ) . '</th>';
-		echo '<th>' . esc_html__( 'Open', 'tpw-core' ) . '</th>';
-		echo '</tr></thead>';
-		echo '<tbody>';
-
-		foreach ( $items as $item ) {
-			echo '<tr>';
-			echo '<td><strong>' . esc_html( $item['label'] ) . '</strong><br />' . esc_html( $item['description'] ) . '</td>';
-			echo '<td>' . esc_html( $item['type'] ) . '</td>';
-			echo '<td><a class="button button-secondary" href="' . esc_url( $item['url'] ) . '">' . esc_html__( 'Open', 'tpw-core' ) . '</a></td>';
-			echo '</tr>';
+		if ( ! self::current_user_can_view_dashboard() ) {
+			self::redirect_dashboard_request();
+			return;
 		}
 
-		echo '</tbody>';
-		echo '</table>';
-		echo '</div>';
+		$dashboard = self::get_dashboard_view_model();
+		$template  = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/admin/flexiclub-dashboard.php' : '';
 
-		self::render_page_end();
+		echo '<div class="tpw-admin-ui tpw-flexiclub-dashboard" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
+		echo '<div class="wrap">';
+
+		if ( $template && file_exists( $template ) ) {
+			include $template;
+		} else {
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'FlexiClub Dashboard template is missing.', 'tpw-core' ) . '</p></div>';
+		}
+
+		echo '</div>';
+		echo '</div>';
 	}
 
 	public static function render_bridge_page() {
@@ -833,6 +824,1012 @@ class TPW_FlexiClub_Admin_Menu {
 		if ( $path && file_exists( $path ) ) {
 			require_once $path;
 		}
+	}
+
+	protected static function current_user_can_view_dashboard() {
+		return current_user_can( 'manage_options' );
+	}
+
+	public static function enqueue_dashboard_assets( $hook_suffix = '' ) {
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( self::TOP_LEVEL_SLUG !== $page ) {
+			return;
+		}
+
+		if ( function_exists( 'tpw_core_enqueue_shared_ui_assets' ) ) {
+			tpw_core_enqueue_shared_ui_assets(
+				[
+					'ui'       => true,
+					'admin_ui' => true,
+					'buttons'  => true,
+				]
+			);
+		}
+
+		if ( ! defined( 'TPW_CORE_PATH' ) || ! defined( 'TPW_CORE_URL' ) ) {
+			return;
+		}
+
+		$css_file = TPW_CORE_PATH . 'assets/css/flexiclub-dashboard.css';
+		$css_url  = TPW_CORE_URL . 'assets/css/flexiclub-dashboard.css';
+
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style(
+				'tpw-flexiclub-dashboard',
+				$css_url,
+				[ 'tpw-admin-ui', 'tpw-buttons' ],
+				filemtime( $css_file )
+			);
+		}
+	}
+
+	protected static function redirect_dashboard_request() {
+		$target = self::get_dashboard_redirect_url();
+
+		if ( '' !== $target ) {
+			wp_safe_redirect( $target );
+			exit;
+		}
+
+		wp_die( esc_html__( 'You do not have permission to access this page.', 'tpw-core' ) );
+	}
+
+	protected static function get_dashboard_redirect_url() {
+		foreach ( self::get_visible_items() as $item ) {
+			$url = self::get_menu_item_url( $item );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+
+		return '';
+	}
+
+	protected static function get_menu_item_url( $item_slug ) {
+		switch ( $item_slug ) {
+			case self::PAGE_MEMBERS:
+			case self::PAGE_GALLERY:
+			case self::PAGE_UPLOADS:
+			case self::PAGE_MENU_MANAGER:
+			case self::PAGE_LOGS:
+				return admin_url( 'admin.php?page=' . $item_slug );
+			case self::NOTICEBOARD_ROUTE:
+			case self::SYSTEM_PAGES_ROUTE:
+			case self::PAYMENTS_ROUTE:
+			case self::SETTINGS_ROUTE:
+			case self::EMAIL_LOGS_ROUTE:
+			case self::PAYMENT_LOGS_ROUTE:
+				return admin_url( $item_slug );
+			default:
+				return '';
+		}
+	}
+
+	protected static function get_dashboard_view_model() {
+		$current_user      = wp_get_current_user();
+		$members_summary   = self::get_members_summary();
+		$notices_summary   = self::get_notices_summary();
+		$events_summary    = self::get_events_summary();
+		$system_summary    = self::get_system_pages_summary();
+		$gallery_summary   = self::get_gallery_summary();
+		$uploads_summary   = self::get_upload_pages_summary();
+		$menu_summary      = self::get_menu_permissions_summary();
+		$payments_summary  = self::get_payments_summary();
+		$settings_summary  = self::get_settings_summary();
+		$logs_summary      = self::get_logs_summary();
+		$checklist_items   = self::get_dashboard_checklist_items(
+			$members_summary,
+			$notices_summary,
+			$system_summary,
+			$menu_summary,
+			$settings_summary,
+			$payments_summary
+		);
+		$completed_steps   = count(
+			array_filter(
+				$checklist_items,
+				static function( $item ) {
+					return ! empty( $item['done'] );
+				}
+			)
+		);
+
+		return [
+			'logo_url'        => self::get_dashboard_logo_url(),
+			'icon_url'        => self::get_dashboard_icon_url(),
+			'version'         => defined( 'TPW_CORE_VERSION' ) ? (string) TPW_CORE_VERSION : '',
+			'welcome_name'    => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
+			'summary_cards'   => [
+				[
+					'title'         => __( 'Total Members', 'tpw-core' ),
+					'value'         => self::format_metric_value( $members_summary['count'] ),
+					'description'   => $members_summary['metric_text'],
+					'action_label'  => __( 'View members', 'tpw-core' ),
+					'action_url'    => self::get_members_management_url(),
+					'icon'          => 'dashicons-groups',
+				],
+				[
+					'title'         => __( 'Active Notices', 'tpw-core' ),
+					'value'         => self::format_metric_value( $notices_summary['count'] ),
+					'description'   => $notices_summary['metric_text'],
+					'action_label'  => __( 'View notices', 'tpw-core' ),
+					'action_url'    => admin_url( self::NOTICEBOARD_ROUTE ),
+					'icon'          => 'dashicons-megaphone',
+				],
+				[
+					'title'         => __( 'Upcoming Events', 'tpw-core' ),
+					'value'         => self::format_metric_value( $events_summary['count'], false ),
+					'description'   => $events_summary['metric_text'],
+					'action_label'  => $events_summary['action_label'],
+					'action_url'    => $events_summary['action_url'],
+					'icon'          => 'dashicons-calendar-alt',
+				],
+				[
+					'title'         => __( 'System Pages', 'tpw-core' ),
+					'value'         => self::format_metric_value( $system_summary['configured_count'] ),
+					'description'   => $system_summary['metric_text'],
+					'action_label'  => __( 'Review pages', 'tpw-core' ),
+					'action_url'    => admin_url( self::SYSTEM_PAGES_ROUTE ),
+					'icon'          => 'dashicons-admin-page',
+				],
+			],
+			'overview_cards'  => [
+				[
+					'title'         => __( 'Members', 'tpw-core' ),
+					'metric'        => self::format_metric_value( $members_summary['count'] ),
+					'status_label'  => $members_summary['status_label'],
+					'status_tone'   => $members_summary['status_tone'],
+					'description'   => $members_summary['card_text'],
+					'action_label'  => __( 'Manage members', 'tpw-core' ),
+					'action_url'    => self::get_members_management_url(),
+					'icon'          => 'dashicons-groups',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Noticeboard', 'tpw-core' ),
+					'metric'        => self::format_metric_value( $notices_summary['count'] ),
+					'status_label'  => $notices_summary['status_label'],
+					'status_tone'   => $notices_summary['status_tone'],
+					'description'   => $notices_summary['card_text'],
+					'action_label'  => __( 'Open noticeboard', 'tpw-core' ),
+					'action_url'    => admin_url( self::NOTICEBOARD_ROUTE ),
+					'icon'          => 'dashicons-megaphone',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Gallery Admin', 'tpw-core' ),
+					'metric'        => $gallery_summary['metric_value'],
+					'status_label'  => $gallery_summary['status_label'],
+					'status_tone'   => $gallery_summary['status_tone'],
+					'description'   => $gallery_summary['card_text'],
+					'action_label'  => __( 'Open gallery admin', 'tpw-core' ),
+					'action_url'    => self::get_menu_item_url( self::PAGE_GALLERY ),
+					'icon'          => 'dashicons-format-gallery',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Upload Pages / Archive', 'tpw-core' ),
+					'metric'        => $uploads_summary['metric_value'],
+					'status_label'  => $uploads_summary['status_label'],
+					'status_tone'   => $uploads_summary['status_tone'],
+					'description'   => $uploads_summary['card_text'],
+					'action_label'  => __( 'Open archive tools', 'tpw-core' ),
+					'action_url'    => self::get_menu_item_url( self::PAGE_UPLOADS ),
+					'icon'          => 'dashicons-cloud-upload',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Menu Permissions', 'tpw-core' ),
+					'metric'        => $menu_summary['metric_value'],
+					'status_label'  => $menu_summary['status_label'],
+					'status_tone'   => $menu_summary['status_tone'],
+					'description'   => $menu_summary['card_text'],
+					'action_label'  => __( 'Review permissions', 'tpw-core' ),
+					'action_url'    => self::get_menu_item_url( self::PAGE_MENU_MANAGER ),
+					'icon'          => 'dashicons-lock',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'System Pages', 'tpw-core' ),
+					'metric'        => $system_summary['metric_value'],
+					'status_label'  => $system_summary['status_label'],
+					'status_tone'   => $system_summary['status_tone'],
+					'description'   => $system_summary['card_text'],
+					'action_label'  => __( 'Open system pages', 'tpw-core' ),
+					'action_url'    => admin_url( self::SYSTEM_PAGES_ROUTE ),
+					'icon'          => 'dashicons-admin-page',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Payments', 'tpw-core' ),
+					'metric'        => $payments_summary['metric_value'],
+					'status_label'  => $payments_summary['status_label'],
+					'status_tone'   => $payments_summary['status_tone'],
+					'description'   => $payments_summary['card_text'],
+					'action_label'  => __( 'Configure payments', 'tpw-core' ),
+					'action_url'    => $payments_summary['action_url'],
+					'icon'          => 'dashicons-money-alt',
+					'disabled'      => empty( $payments_summary['action_url'] ),
+				],
+				[
+					'title'         => __( 'Settings', 'tpw-core' ),
+					'metric'        => $settings_summary['metric_value'],
+					'status_label'  => $settings_summary['status_label'],
+					'status_tone'   => $settings_summary['status_tone'],
+					'description'   => $settings_summary['card_text'],
+					'action_label'  => __( 'Open settings', 'tpw-core' ),
+					'action_url'    => admin_url( self::SETTINGS_ROUTE ),
+					'icon'          => 'dashicons-admin-generic',
+					'disabled'      => false,
+				],
+				[
+					'title'         => __( 'Logs', 'tpw-core' ),
+					'metric'        => $logs_summary['metric_value'],
+					'status_label'  => $logs_summary['status_label'],
+					'status_tone'   => $logs_summary['status_tone'],
+					'description'   => $logs_summary['card_text'],
+					'action_label'  => __( 'View logs', 'tpw-core' ),
+					'action_url'    => self::get_menu_item_url( self::PAGE_LOGS ),
+					'icon'          => 'dashicons-chart-line',
+					'disabled'      => false,
+				],
+			],
+			'quick_actions'   => self::get_dashboard_quick_actions( $payments_summary ),
+			'extend_cards'    => self::get_dashboard_extend_cards(),
+			'checklist_items' => $checklist_items,
+			'checklist_done'  => $completed_steps,
+			'checklist_total' => count( $checklist_items ),
+			'activity_items'  => self::get_dashboard_activity_items(),
+			'system_items'    => self::get_dashboard_system_items(
+				$members_summary,
+				$system_summary,
+				$payments_summary,
+				$logs_summary
+			),
+		];
+	}
+
+	protected static function get_dashboard_quick_actions( $payments_summary ) {
+		return [
+			[
+				'label'    => __( 'Add New Member', 'tpw-core' ),
+				'url'      => self::get_members_management_url( 'add' ),
+				'disabled' => false,
+			],
+			[
+				'label'    => __( 'Add New Notice', 'tpw-core' ),
+				'url'      => admin_url( 'post-new.php?post_type=tpw_notice' ),
+				'disabled' => false,
+			],
+			[
+				'label'    => __( 'Add Gallery Images', 'tpw-core' ),
+				'url'      => self::get_gallery_launch_url(),
+				'disabled' => false,
+			],
+			[
+				'label'    => __( 'Create or Check System Pages', 'tpw-core' ),
+				'url'      => admin_url( self::SYSTEM_PAGES_ROUTE ),
+				'disabled' => false,
+			],
+			[
+				'label'    => __( 'Review Menu Permissions', 'tpw-core' ),
+				'url'      => self::get_tpw_control_launch_url( 'menu-manager', self::PAGE_MENU_MANAGER ),
+				'disabled' => false,
+			],
+			[
+				'label'    => __( 'Configure Payments', 'tpw-core' ),
+				'url'      => $payments_summary['action_url'],
+				'disabled' => empty( $payments_summary['action_url'] ),
+			],
+			[
+				'label'    => __( 'View Logs', 'tpw-core' ),
+				'url'      => self::get_menu_item_url( self::PAGE_LOGS ),
+				'disabled' => false,
+			],
+		];
+	}
+
+	protected static function get_dashboard_extend_cards() {
+		return [
+			[
+				'name'        => __( 'FlexiEvent', 'tpw-core' ),
+				'description' => __( 'Events, scheduling, and club activities.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexievent-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiSubscriptions', 'tpw-core' ),
+				'description' => __( 'Membership subscriptions and renewals.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexisubscriptions-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiTicket', 'tpw-core' ),
+				'description' => __( 'Ticketing and event sales for members.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexiticket-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiLedger', 'tpw-core' ),
+				'description' => __( 'Financial tracking and reconciliation tools.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexiledger-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiGolf', 'tpw-core' ),
+				'description' => __( 'Fixtures, results, and match administration.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexigolf-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiPolicy', 'tpw-core' ),
+				'description' => __( 'Club documents, policy delivery, and acknowledgements.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexipolicy-icon.svg' ),
+			],
+			[
+				'name'        => __( 'FlexiRota', 'tpw-core' ),
+				'description' => __( 'Volunteer and duty rota planning.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexirota-icon.svg' ),
+			],
+			[
+				'name'        => __( 'Lodge RSVP', 'tpw-core' ),
+				'description' => __( 'Responses, attendance, and payment-ready RSVPs.', 'tpw-core' ),
+				'icon_url'    => self::get_plugin_icon_url( 'flexilodgersvp-icon.svg' ),
+			],
+		];
+	}
+
+	protected static function get_dashboard_checklist_items( $members_summary, $notices_summary, $system_summary, $menu_summary, $settings_summary, $payments_summary ) {
+		return [
+			[
+				'label'       => __( 'Create or confirm your system pages', 'tpw-core' ),
+				'description' => __( 'Make sure the required member and control pages are linked and published.', 'tpw-core' ),
+				'done'        => ! empty( $system_summary['required_complete'] ),
+				'url'         => admin_url( self::SYSTEM_PAGES_ROUTE ),
+			],
+			[
+				'label'       => __( 'Add your first members', 'tpw-core' ),
+				'description' => __( 'Start building the club member register and linked accounts.', 'tpw-core' ),
+				'done'        => ! empty( $members_summary['count'] ),
+				'url'         => self::get_members_management_url( 'add' ),
+			],
+			[
+				'label'       => __( 'Configure menu permissions', 'tpw-core' ),
+				'description' => __( 'Control which audiences can see and access club navigation items.', 'tpw-core' ),
+				'done'        => ! empty( $menu_summary['configured'] ),
+				'url'         => self::get_tpw_control_launch_url( 'menu-manager', self::PAGE_MENU_MANAGER ),
+			],
+			[
+				'label'       => __( 'Configure settings', 'tpw-core' ),
+				'description' => __( 'Review branding, login, and shared FlexiClub platform settings.', 'tpw-core' ),
+				'done'        => ! empty( $settings_summary['configured'] ),
+				'url'         => admin_url( self::SETTINGS_ROUTE ),
+			],
+			[
+				'label'       => __( 'Configure payments', 'tpw-core' ),
+				'description' => __( 'Enable and set up the payment methods your club wants to offer.', 'tpw-core' ),
+				'done'        => ! empty( $payments_summary['configured'] ) || ! empty( $payments_summary['optional'] ),
+				'url'         => ! empty( $payments_summary['action_url'] ) ? $payments_summary['action_url'] : admin_url( self::SETTINGS_ROUTE ),
+				'optional'    => ! empty( $payments_summary['optional'] ),
+			],
+			[
+				'label'       => __( 'Publish your first notice', 'tpw-core' ),
+				'description' => __( 'Share updates, reminders, and announcements from the Noticeboard.', 'tpw-core' ),
+				'done'        => ! empty( $notices_summary['count'] ),
+				'url'         => admin_url( 'post-new.php?post_type=tpw_notice' ),
+			],
+		];
+	}
+
+	protected static function get_dashboard_activity_items() {
+		$items = [];
+
+		foreach ( self::get_recent_member_activity() as $entry ) {
+			$items[] = $entry;
+		}
+
+		foreach ( self::get_recent_notice_activity() as $entry ) {
+			$items[] = $entry;
+		}
+
+		foreach ( self::get_recent_email_log_activity() as $entry ) {
+			$items[] = $entry;
+		}
+
+		foreach ( self::get_recent_payment_log_activity() as $entry ) {
+			$items[] = $entry;
+		}
+
+		usort(
+			$items,
+			static function( $left, $right ) {
+				return (int) $right['timestamp'] <=> (int) $left['timestamp'];
+			}
+		);
+
+		$items = array_slice( $items, 0, 6 );
+
+		if ( empty( $items ) ) {
+			$items[] = [
+				'title'     => __( 'Activity will appear here as your club starts using FlexiClub.', 'tpw-core' ),
+				'meta'      => __( 'System activity', 'tpw-core' ),
+				'time'      => __( 'Just now', 'tpw-core' ),
+				'timestamp' => time(),
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_dashboard_system_items( $members_summary, $system_summary, $payments_summary, $logs_summary ) {
+		return [
+			[
+				'label' => __( 'Members module', 'tpw-core' ),
+				'value' => $members_summary['status_label'],
+				'tone'  => $members_summary['status_tone'],
+			],
+			[
+				'label' => __( 'Required pages', 'tpw-core' ),
+				'value' => $system_summary['status_label'],
+				'tone'  => $system_summary['status_tone'],
+			],
+			[
+				'label' => __( 'Payment methods', 'tpw-core' ),
+				'value' => $payments_summary['status_label'],
+				'tone'  => $payments_summary['status_tone'],
+			],
+			[
+				'label' => __( 'Recent logs', 'tpw-core' ),
+				'value' => $logs_summary['status_label'],
+				'tone'  => $logs_summary['status_tone'],
+			],
+		];
+	}
+
+	protected static function get_members_summary() {
+		global $wpdb;
+
+		$count = null;
+		if ( function_exists( 'tpw_core_members_table_exists' ) && tpw_core_members_table_exists() ) {
+			$table = $wpdb->prefix . 'tpw_members';
+			$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		}
+
+		return [
+			'count'       => $count,
+			'status_label'=> null === $count ? __( 'Unavailable', 'tpw-core' ) : __( 'Ready', 'tpw-core' ),
+			'status_tone' => null === $count ? 'neutral' : 'success',
+			'metric_text' => null === $count
+				? __( 'Members are not set up on this site yet.', 'tpw-core' )
+				: sprintf(
+					/* translators: %s: total members */
+					_n( '%s member recorded', '%s members recorded', $count, 'tpw-core' ),
+					number_format_i18n( $count )
+				),
+			'card_text'   => null === $count
+				? __( 'The member register is not available yet.', 'tpw-core' )
+				: sprintf(
+					/* translators: %s: total members */
+					__( '%s members are available to manage.', 'tpw-core' ),
+					number_format_i18n( $count )
+				),
+		];
+	}
+
+	protected static function get_notices_summary() {
+		$count = null;
+		if ( post_type_exists( 'tpw_notice' ) ) {
+			$counts = wp_count_posts( 'tpw_notice' );
+			$count  = $counts ? (int) $counts->publish : 0;
+		}
+
+		return [
+			'count'       => $count,
+			'status_label'=> null === $count ? __( 'Unavailable', 'tpw-core' ) : ( $count > 0 ? __( 'Active', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ),
+			'status_tone' => null === $count ? 'neutral' : ( $count > 0 ? 'success' : 'info' ),
+			'metric_text' => null === $count
+				? __( 'Noticeboard data is currently unavailable.', 'tpw-core' )
+				: sprintf(
+					/* translators: %s: published notices */
+					_n( '%s published notice', '%s published notices', $count, 'tpw-core' ),
+					number_format_i18n( $count )
+				),
+			'card_text'   => null === $count
+				? __( 'Open the Noticeboard when the content type is available.', 'tpw-core' )
+				: ( $count > 0
+					? sprintf(
+						/* translators: %s: active notices */
+						__( '%s notices are currently live.', 'tpw-core' ),
+						number_format_i18n( $count )
+					)
+					: __( 'No notices are currently published.', 'tpw-core' ) ),
+		];
+	}
+
+	protected static function get_events_summary() {
+		return [
+			'count'       => null,
+			'metric_text' => __( 'Available when FlexiEvent is active.', 'tpw-core' ),
+			'action_label'=> __( 'Explore add-ons', 'tpw-core' ),
+			'action_url'  => '#tpw-flexiclub-extend',
+		];
+	}
+
+	protected static function get_system_pages_summary() {
+		$rows               = class_exists( 'TPW_Core_System_Pages' ) ? TPW_Core_System_Pages::get_all() : [];
+		$configured_count   = 0;
+		$required_total     = 0;
+		$required_configured = 0;
+
+		foreach ( (array) $rows as $row ) {
+			$is_required = isset( $row->required ) && (int) $row->required === 1;
+			$page_id    = isset( $row->wp_page_id ) ? (int) $row->wp_page_id : 0;
+			$published  = $page_id > 0 && 'publish' === get_post_status( $page_id );
+
+			if ( $published ) {
+				$configured_count++;
+			}
+
+			if ( $is_required ) {
+				$required_total++;
+				if ( $published ) {
+					$required_configured++;
+				}
+			}
+		}
+
+		$required_complete = $required_total > 0 && $required_total === $required_configured;
+		$status_label      = $configured_count > 0 ? __( 'Configured', 'tpw-core' ) : __( 'Needs attention', 'tpw-core' );
+		$status_tone       = $required_complete ? 'success' : ( $configured_count > 0 ? 'warning' : 'neutral' );
+		$metric_value      = sprintf(
+			/* translators: 1: configured required pages, 2: total required pages */
+			__( '%1$s / %2$s', 'tpw-core' ),
+			number_format_i18n( $required_configured ),
+			number_format_i18n( $required_total )
+		);
+
+		return [
+			'configured_count' => $configured_count,
+			'required_complete'=> $required_complete,
+			'status_label'     => $status_label,
+			'status_tone'      => $status_tone,
+			'metric_text'      => $required_total > 0
+				? sprintf(
+					/* translators: 1: configured required pages, 2: total required pages */
+					__( '%1$s of %2$s required pages are linked.', 'tpw-core' ),
+					number_format_i18n( $required_configured ),
+					number_format_i18n( $required_total )
+				)
+				: __( 'No registered system pages were found.', 'tpw-core' ),
+			'metric_value'     => $metric_value,
+			'card_text'        => $required_total > 0
+				? sprintf(
+					/* translators: 1: configured required pages, 2: total required pages */
+					__( '%1$s of %2$s required pages are currently ready.', 'tpw-core' ),
+					number_format_i18n( $required_configured ),
+					number_format_i18n( $required_total )
+				)
+				: __( 'Review the current system page assignments for members and tools.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_gallery_summary() {
+		global $wpdb;
+
+		$status      = self::get_safe_system_page_status( 'gallery-admin', 'tpw_gallery_admin' );
+		$galleries   = 0;
+		$image_count = 0;
+
+		$galleries_table = $wpdb->prefix . 'tpw_galleries';
+		$images_table    = $wpdb->prefix . 'tpw_gallery_images';
+		if ( self::table_exists( $galleries_table ) ) {
+			$galleries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$galleries_table}" );
+		}
+		if ( self::table_exists( $images_table ) ) {
+			$image_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$images_table}" );
+		}
+
+		$ready = '' !== $status['open_url'];
+
+		return [
+			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs attention', 'tpw-core' ),
+			'status_tone'  => $ready ? 'success' : 'warning',
+			'metric_value' => self::format_metric_value( $image_count ),
+			'card_text'    => $ready
+				? sprintf(
+					/* translators: 1: gallery count, 2: image count */
+					__( '%1$s galleries and %2$s images are available.', 'tpw-core' ),
+					number_format_i18n( $galleries ),
+					number_format_i18n( $image_count )
+				)
+				: __( 'The Gallery Admin page needs to be checked before launch.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_upload_pages_summary() {
+		global $wpdb;
+
+		$pages_table = $wpdb->prefix . 'tpw_upload_pages';
+		$files_table = $wpdb->prefix . 'tpw_upload_pages_files';
+		$page_count  = self::table_exists( $pages_table ) ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$pages_table}" ) : 0;
+		$file_count  = self::table_exists( $files_table ) ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$files_table}" ) : 0;
+		$registered  = self::tpw_control_section_is_registered( 'upload-pages' );
+		$page_status = self::locate_shortcode_page( 'tpw-control', 'tpw-control' );
+		$ready       = $registered && ! empty( $page_status['page_exists'] ) && ! empty( $page_status['shortcode_present'] );
+
+		return [
+			'status_label' => $ready ? __( 'Ready', 'tpw-core' ) : __( 'Needs attention', 'tpw-core' ),
+			'status_tone'  => $ready ? 'success' : 'warning',
+			'metric_value' => self::format_metric_value( $page_count ),
+			'card_text'    => $page_count > 0
+				? sprintf(
+					/* translators: 1: upload pages, 2: files */
+					__( '%1$s upload pages and %2$s files are currently stored.', 'tpw-core' ),
+					number_format_i18n( $page_count ),
+					number_format_i18n( $file_count )
+				)
+				: __( 'Use the existing archive tools to add and organise club files.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_menu_permissions_summary() {
+		global $wpdb;
+
+		$menus_count       = function_exists( 'wp_get_nav_menus' ) ? count( wp_get_nav_menus() ) : 0;
+		$configured_count  = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->postmeta} WHERE meta_key = %s",
+				'_tpw_visibility_json'
+			)
+		);
+		$configured        = $configured_count > 0;
+
+		return [
+			'configured'   => $configured,
+			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Needs review', 'tpw-core' ),
+			'status_tone'  => $configured ? 'success' : 'warning',
+			'metric_value' => self::format_metric_value( $menus_count ),
+			'card_text'    => $configured
+				? sprintf(
+					/* translators: 1: menu count, 2: permission-aware items */
+					__( '%1$s menus include %2$s permission-aware items.', 'tpw-core' ),
+					number_format_i18n( $menus_count ),
+					number_format_i18n( $configured_count )
+				)
+				: __( 'Review which front-end menus and items members are allowed to see.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_payments_summary() {
+		global $wpdb;
+
+		$payments_required = function_exists( 'tpw_core_payments_required' ) && tpw_core_payments_required();
+		$table             = $wpdb->prefix . 'tpw_payment_methods';
+		$active_count      = 0;
+		$configured_count  = 0;
+
+		if ( self::table_exists( $table ) ) {
+			$active_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE active = 1" );
+			$configured_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		}
+
+		if ( ! $payments_required ) {
+			return [
+				'configured'   => false,
+				'optional'     => true,
+				'status_label' => __( 'Optional', 'tpw-core' ),
+				'status_tone'  => 'neutral',
+				'metric_value' => __( 'Optional', 'tpw-core' ),
+				'card_text'    => __( 'Payment methods are available when a FlexiClub add-on declares they are required.', 'tpw-core' ),
+				'action_url'   => '',
+			];
+		}
+
+		$status_label = $active_count > 0 ? __( 'Ready', 'tpw-core' ) : __( 'Needs setup', 'tpw-core' );
+		$status_tone  = $active_count > 0 ? 'success' : 'warning';
+
+		return [
+			'configured'   => $active_count > 0,
+			'optional'     => false,
+			'status_label' => $status_label,
+			'status_tone'  => $status_tone,
+			'metric_value' => self::format_metric_value( $active_count ),
+			'card_text'    => $configured_count > 0
+				? sprintf(
+					/* translators: 1: active methods, 2: configured methods */
+					__( '%1$s of %2$s payment methods are currently enabled.', 'tpw-core' ),
+					number_format_i18n( $active_count ),
+					number_format_i18n( $configured_count )
+				)
+				: __( 'No payment methods have been configured yet.', 'tpw-core' ),
+			'action_url'   => admin_url( self::PAYMENTS_ROUTE ),
+		];
+	}
+
+	protected static function get_settings_summary() {
+		$theme_settings    = get_option( 'tpw_ui_theme_settings', [] );
+		$default_login     = (int) get_option( 'tpw_core_default_login_page', 0 );
+		$redirect_page     = (int) get_option( 'tpw_login_redirect_page_id', 0 );
+		$configured        = ( is_array( $theme_settings ) && ! empty( array_filter( $theme_settings ) ) ) || $default_login > 0 || $redirect_page > 0;
+
+		return [
+			'configured'   => $configured,
+			'status_label' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Ready', 'tpw-core' ),
+			'status_tone'  => $configured ? 'success' : 'info',
+			'metric_value' => $configured ? __( 'Configured', 'tpw-core' ) : __( 'Review', 'tpw-core' ),
+			'card_text'    => $configured
+				? __( 'Core branding, login, or platform settings have already been configured.', 'tpw-core' )
+				: __( 'Review the main FlexiClub settings to tailor the platform for your club.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_logs_summary() {
+		global $wpdb;
+
+		$email_table   = class_exists( 'TPW_Email_Logs' ) ? TPW_Email_Logs::table_name() : $wpdb->prefix . 'tpw_email_logs';
+		$payment_table = $wpdb->prefix . 'tpw_payment_logs';
+		$email_total   = self::table_exists( $email_table ) ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$email_table}" ) : 0;
+		$payment_total = self::table_exists( $payment_table ) ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$payment_table}" ) : 0;
+		$email_failed  = self::table_exists( $email_table ) ? (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$email_table} WHERE status = %s", 'failed' ) ) : 0;
+		$payment_failed = self::table_exists( $payment_table ) ? (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$payment_table} WHERE status = %s", 'failed' ) ) : 0;
+		$issue_count    = $email_failed + $payment_failed;
+
+		return [
+			'status_label' => $issue_count > 0 ? __( 'Needs review', 'tpw-core' ) : __( 'Healthy', 'tpw-core' ),
+			'status_tone'  => $issue_count > 0 ? 'warning' : 'success',
+			'metric_value' => self::format_metric_value( $email_total + $payment_total ),
+			'card_text'    => $issue_count > 0
+				? sprintf(
+					/* translators: %s: failed log entries */
+					_n( '%s recent log entry needs attention.', '%s recent log entries need attention.', $issue_count, 'tpw-core' ),
+					number_format_i18n( $issue_count )
+				)
+				: __( 'Email and payment logs are available for operational review.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_members_management_url( $action = 'list' ) {
+		$status = self::locate_shortcode_page( 'tpw_manage_members', 'manage-members' );
+		if ( ! empty( $status['page_url'] ) ) {
+			return add_query_arg( 'action', sanitize_key( $action ), $status['page_url'] );
+		}
+
+		return admin_url( 'admin.php?page=' . self::PAGE_MEMBERS );
+	}
+
+	protected static function get_gallery_launch_url() {
+		$status = self::get_safe_system_page_status( 'gallery-admin', 'tpw_gallery_admin' );
+		if ( ! empty( $status['open_url'] ) ) {
+			return $status['open_url'];
+		}
+
+		return admin_url( 'admin.php?page=' . self::PAGE_GALLERY );
+	}
+
+	protected static function get_safe_system_page_status( $system_slug, $shortcode_tag ) {
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
+			return [
+				'open_url' => '',
+			];
+		}
+
+		$page_id = 0;
+		foreach ( (array) TPW_Core_System_Pages::get_all() as $row ) {
+			if ( isset( $row->slug ) && sanitize_key( $row->slug ) === sanitize_key( $system_slug ) ) {
+				$page_id = isset( $row->wp_page_id ) ? (int) $row->wp_page_id : 0;
+				break;
+			}
+		}
+
+		$page = $page_id > 0 ? get_post( $page_id ) : null;
+		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type || 'publish' !== $page->post_status ) {
+			return [
+				'open_url' => '',
+			];
+		}
+
+		$has_shortcode = self::page_has_shortcode_tag( (string) $page->post_content, $shortcode_tag );
+
+		return [
+			'open_url' => $has_shortcode ? (string) get_permalink( $page ) : '',
+		];
+	}
+
+	protected static function get_tpw_control_launch_url( $section, $fallback_page_slug ) {
+		$status = self::build_tpw_control_status(
+			[
+				'section'    => $section,
+				'shortcode'  => '[tpw-control]',
+				'route_label'=> '',
+			],
+			true
+		);
+
+		if ( ! empty( $status['open_url'] ) ) {
+			return $status['open_url'];
+		}
+
+		return admin_url( 'admin.php?page=' . $fallback_page_slug );
+	}
+
+	protected static function get_recent_member_activity() {
+		global $wpdb;
+
+		$items = [];
+		if ( ! function_exists( 'tpw_core_members_table_exists' ) || ! tpw_core_members_table_exists() ) {
+			return $items;
+		}
+
+		$table = $wpdb->prefix . 'tpw_members';
+		$rows  = $wpdb->get_results( "SELECT first_name, surname, updated_at FROM {$table} WHERE updated_at IS NOT NULL ORDER BY updated_at DESC LIMIT 2" );
+
+		foreach ( (array) $rows as $row ) {
+			$timestamp = strtotime( (string) $row->updated_at );
+			if ( ! $timestamp ) {
+				continue;
+			}
+
+			$name = trim( (string) $row->first_name . ' ' . (string) $row->surname );
+			$items[] = [
+				'title'     => sprintf(
+					/* translators: %s: member name */
+					__( '%s profile updated', 'tpw-core' ),
+					$name !== '' ? $name : __( 'Member', 'tpw-core' )
+				),
+				'meta'      => __( 'Members', 'tpw-core' ),
+				'time'      => self::format_relative_time( $timestamp ),
+				'timestamp' => $timestamp,
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_recent_notice_activity() {
+		$items = [];
+		if ( ! post_type_exists( 'tpw_notice' ) ) {
+			return $items;
+		}
+
+		$notices = get_posts(
+			[
+				'post_type'      => 'tpw_notice',
+				'post_status'    => 'publish',
+				'posts_per_page' => 2,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			]
+		);
+
+		foreach ( $notices as $notice ) {
+			$timestamp = get_post_time( 'U', true, $notice );
+			if ( ! $timestamp ) {
+				continue;
+			}
+
+			$items[] = [
+				'title'     => sprintf(
+					/* translators: %s: notice title */
+					__( 'Notice published: %s', 'tpw-core' ),
+					$notice->post_title
+				),
+				'meta'      => __( 'Noticeboard', 'tpw-core' ),
+				'time'      => self::format_relative_time( $timestamp ),
+				'timestamp' => $timestamp,
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_recent_email_log_activity() {
+		global $wpdb;
+
+		$items = [];
+		$table = class_exists( 'TPW_Email_Logs' ) ? TPW_Email_Logs::table_name() : $wpdb->prefix . 'tpw_email_logs';
+		if ( ! self::table_exists( $table ) ) {
+			return $items;
+		}
+
+		$rows = $wpdb->get_results( "SELECT recipient, status, timestamp FROM {$table} ORDER BY timestamp DESC, id DESC LIMIT 2" );
+		foreach ( (array) $rows as $row ) {
+			$timestamp = strtotime( (string) $row->timestamp );
+			if ( ! $timestamp ) {
+				continue;
+			}
+
+			$items[] = [
+				'title'     => 'failed' === (string) $row->status
+					? __( 'Email delivery failed', 'tpw-core' )
+					: __( 'Email sent successfully', 'tpw-core' ),
+				'meta'      => (string) $row->recipient !== '' ? sprintf( __( 'Email to %s', 'tpw-core' ), (string) $row->recipient ) : __( 'Email logs', 'tpw-core' ),
+				'time'      => self::format_relative_time( $timestamp ),
+				'timestamp' => $timestamp,
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_recent_payment_log_activity() {
+		global $wpdb;
+
+		$items = [];
+		$table = $wpdb->prefix . 'tpw_payment_logs';
+		if ( ! self::table_exists( $table ) ) {
+			return $items;
+		}
+
+		$rows = $wpdb->get_results( "SELECT reference, status, created_at FROM {$table} ORDER BY created_at DESC LIMIT 2" );
+		foreach ( (array) $rows as $row ) {
+			$timestamp = strtotime( (string) $row->created_at );
+			if ( ! $timestamp ) {
+				continue;
+			}
+
+			$items[] = [
+				'title'     => 'failed' === (string) $row->status
+					? __( 'Payment log requires review', 'tpw-core' )
+					: __( 'Payment activity recorded', 'tpw-core' ),
+				'meta'      => (string) $row->reference !== '' ? sprintf( __( 'Reference %s', 'tpw-core' ), (string) $row->reference ) : __( 'Payment logs', 'tpw-core' ),
+				'time'      => self::format_relative_time( $timestamp ),
+				'timestamp' => $timestamp,
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_dashboard_logo_url() {
+		return self::get_plugin_icon_url( 'flexiclub-logo-horizontal.svg' );
+	}
+
+	protected static function get_dashboard_icon_url() {
+		$icon = self::get_plugin_icon_url( 'flexiclub-logo-icon.svg' );
+		if ( '' !== $icon ) {
+			return $icon;
+		}
+
+		return self::get_plugin_icon_url( 'flexiclub-icon.svg' );
+	}
+
+	protected static function get_plugin_icon_url( $filename ) {
+		if ( ! defined( 'TPW_CORE_PATH' ) || ! defined( 'TPW_CORE_URL' ) ) {
+			return '';
+		}
+
+		$path = TPW_CORE_PATH . 'assets/images/' . ltrim( (string) $filename, '/' );
+		if ( ! file_exists( $path ) ) {
+			return '';
+		}
+
+		return TPW_CORE_URL . 'assets/images/' . ltrim( (string) $filename, '/' );
+	}
+
+	protected static function table_exists( $table_name ) {
+		global $wpdb;
+
+		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
+	}
+
+	protected static function format_metric_value( $value, $allow_placeholder = true ) {
+		if ( null === $value ) {
+			return $allow_placeholder ? '—' : __( 'Not available', 'tpw-core' );
+		}
+
+		if ( is_numeric( $value ) ) {
+			return number_format_i18n( (int) $value );
+		}
+
+		return (string) $value;
+	}
+
+	protected static function format_relative_time( $timestamp ) {
+		$timestamp = (int) $timestamp;
+		if ( $timestamp <= 0 ) {
+			return __( 'Recently', 'tpw-core' );
+		}
+
+		return sprintf(
+			/* translators: %s: relative time string */
+			__( '%s ago', 'tpw-core' ),
+			human_time_diff( $timestamp, current_time( 'timestamp' ) )
+		);
 	}
 
 	protected static function render_page_start( $title, $subtitle = '' ) {

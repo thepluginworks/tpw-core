@@ -193,7 +193,7 @@ function tpw_core_get_admin_pages() {
 add_action('current_screen', function($screen){
     $page = isset($_GET['page']) ? sanitize_key( wp_unslash($_GET['page']) ) : '';
     if ( $page && in_array( $page, tpw_core_get_admin_pages(), true ) ) {
-        $icon = plugin_dir_url( __DIR__ ) . 'assets/images/tpw-core-icon-300.png'; // <- add this file
+        $icon = plugin_dir_url( __DIR__ ) . 'assets/images/flexiclub-icon-300.png';
         add_filter('tpw_core/header_icon_url', function($url) use ($icon){ return $icon; }, 10);
     }
 });
