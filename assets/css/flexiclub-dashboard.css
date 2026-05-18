@@ -1,6 +1,12 @@
 .tpw-flexiclub-dashboard {
   --tpw-flexi-accent: #5b3df5;
   --tpw-flexi-accent-soft: rgba(91, 61, 245, 0.12);
+  --tpw-flexi-purple: #5b3df5;
+  --tpw-flexi-green: #15803d;
+  --tpw-flexi-blue: #2563eb;
+  --tpw-flexi-orange: #c2410c;
+  --tpw-flexi-teal: #0f766e;
+  --tpw-flexi-red: #e11d48;
   --tpw-flexi-success: #15803d;
   --tpw-flexi-warning: #b45309;
   --tpw-flexi-info: #475569;
@@ -183,10 +189,11 @@
 
 .tpw-flexiclub-dashboard__summary-card {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 249, 255, 0.96) 100%);
   border: 1px solid rgba(203, 213, 225, 0.75);
   border-radius: 14px;
   padding: 14px 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .tpw-flexiclub-dashboard__summary-copy {
@@ -319,63 +326,115 @@
 
 .tpw-flexiclub-dashboard__overview-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .tpw-flexiclub-dashboard__overview-card {
+  --tpw-overview-accent: var(--tpw-flexi-accent);
+  --tpw-overview-soft: rgba(91, 61, 245, 0.1);
   flex-direction: column;
   align-items: stretch;
-  border: 1px solid rgba(203, 213, 225, 0.72);
-  border-radius: 16px;
-  padding: 18px;
-  min-height: 232px;
-  background: linear-gradient(180deg, #fff 0%, #fcfcff 100%);
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 252px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--tpw-overview-accent) 10%, transparent), transparent 44%),
+    linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
 }
 
 .tpw-flexiclub-dashboard__overview-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: rgba(91, 61, 245, 0.08);
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tpw-overview-accent) 14%, white), var(--tpw-overview-soft));
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .tpw-flexiclub-dashboard__overview-icon .dashicons {
-  color: var(--tpw-flexi-accent);
+  color: var(--tpw-overview-accent);
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.tpw-flexiclub-dashboard__overview-card--members {
+  --tpw-overview-accent: var(--tpw-flexi-green);
+  --tpw-overview-soft: rgba(21, 128, 61, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--noticeboard,
+.tpw-flexiclub-dashboard__overview-card--settings {
+  --tpw-overview-accent: var(--tpw-flexi-purple);
+  --tpw-overview-soft: rgba(91, 61, 245, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--gallery,
+.tpw-flexiclub-dashboard__overview-card--system-pages {
+  --tpw-overview-accent: var(--tpw-flexi-blue);
+  --tpw-overview-soft: rgba(37, 99, 235, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--uploads {
+  --tpw-overview-accent: var(--tpw-flexi-orange);
+  --tpw-overview-soft: rgba(194, 65, 12, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--permissions {
+  --tpw-overview-accent: var(--tpw-flexi-teal);
+  --tpw-overview-soft: rgba(15, 118, 110, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--payments {
+  --tpw-overview-accent: var(--tpw-flexi-green);
+  --tpw-overview-soft: rgba(21, 128, 61, 0.12);
+}
+
+.tpw-flexiclub-dashboard__overview-card--logs {
+  --tpw-overview-accent: var(--tpw-flexi-red);
+  --tpw-overview-soft: rgba(225, 29, 72, 0.12);
 }
 
 .tpw-flexiclub-dashboard__overview-body {
-  margin-top: 14px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1 1 auto;
 }
 
 .tpw-flexiclub-dashboard__overview-head {
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
 }
 
 .tpw-flexiclub-dashboard__overview-head h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.04rem;
 }
 
 .tpw-flexiclub-dashboard__overview-metric {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: #111827;
+  letter-spacing: -0.02em;
 }
 
 .tpw-flexiclub-dashboard__overview-card p {
   margin: 0;
+  max-width: 28ch;
 }
 
 .tpw-flexiclub-dashboard__overview-action {
   margin-top: auto;
+}
+
+.tpw-flexiclub-dashboard__overview-action .tpw-btn {
+  border-radius: 999px;
 }
 
 .tpw-flexiclub-dashboard__status {

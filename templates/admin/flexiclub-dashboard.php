@@ -62,8 +62,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="tpw-flexiclub-dashboard__overview-grid">
 				<?php foreach ( $dashboard['overview_cards'] as $card ) : ?>
-					<div class="tpw-flexiclub-dashboard__overview-card">
-						<div class="tpw-flexiclub-dashboard__overview-icon">
+					<div class="tpw-flexiclub-dashboard__overview-card tpw-flexiclub-dashboard__overview-card--<?php echo esc_attr( $card['tone'] ?? 'default' ); ?>">
+						<div class="tpw-flexiclub-dashboard__overview-icon tpw-flexiclub-dashboard__overview-icon--<?php echo esc_attr( $card['tone'] ?? 'default' ); ?>">
 							<span class="dashicons <?php echo esc_attr( $card['icon'] ); ?>" aria-hidden="true"></span>
 						</div>
 						<div class="tpw-flexiclub-dashboard__overview-body">

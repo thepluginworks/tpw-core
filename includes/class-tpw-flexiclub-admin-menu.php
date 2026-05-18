@@ -1026,6 +1026,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Members', 'tpw-core' ),
 					'metric'        => self::format_metric_value( $members_summary['count'] ),
+					'tone'          => 'members',
 					'status_label'  => $members_summary['status_label'],
 					'status_tone'   => $members_summary['status_tone'],
 					'description'   => $members_summary['card_text'],
@@ -1037,6 +1038,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Noticeboard', 'tpw-core' ),
 					'metric'        => self::format_metric_value( $notices_summary['count'] ),
+					'tone'          => 'noticeboard',
 					'status_label'  => $notices_summary['status_label'],
 					'status_tone'   => $notices_summary['status_tone'],
 					'description'   => $notices_summary['card_text'],
@@ -1048,6 +1050,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Gallery Admin', 'tpw-core' ),
 					'metric'        => $gallery_summary['metric_value'],
+					'tone'          => 'gallery',
 					'status_label'  => $gallery_summary['status_label'],
 					'status_tone'   => $gallery_summary['status_tone'],
 					'description'   => $gallery_summary['card_text'],
@@ -1059,6 +1062,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Upload Pages / Archive', 'tpw-core' ),
 					'metric'        => $uploads_summary['metric_value'],
+					'tone'          => 'uploads',
 					'status_label'  => $uploads_summary['status_label'],
 					'status_tone'   => $uploads_summary['status_tone'],
 					'description'   => $uploads_summary['card_text'],
@@ -1070,6 +1074,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Menu Permissions', 'tpw-core' ),
 					'metric'        => $menu_summary['metric_value'],
+					'tone'          => 'permissions',
 					'status_label'  => $menu_summary['status_label'],
 					'status_tone'   => $menu_summary['status_tone'],
 					'description'   => $menu_summary['card_text'],
@@ -1081,6 +1086,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'System Pages', 'tpw-core' ),
 					'metric'        => $system_summary['metric_value'],
+					'tone'          => 'system-pages',
 					'status_label'  => $system_summary['status_label'],
 					'status_tone'   => $system_summary['status_tone'],
 					'description'   => $system_summary['card_text'],
@@ -1092,6 +1098,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Payments', 'tpw-core' ),
 					'metric'        => $payments_summary['metric_value'],
+					'tone'          => 'payments',
 					'status_label'  => $payments_summary['status_label'],
 					'status_tone'   => $payments_summary['status_tone'],
 					'description'   => $payments_summary['card_text'],
@@ -1103,6 +1110,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Settings', 'tpw-core' ),
 					'metric'        => $settings_summary['metric_value'],
+					'tone'          => 'settings',
 					'status_label'  => $settings_summary['status_label'],
 					'status_tone'   => $settings_summary['status_tone'],
 					'description'   => $settings_summary['card_text'],
@@ -1114,6 +1122,7 @@ class TPW_FlexiClub_Admin_Menu {
 				[
 					'title'         => __( 'Logs', 'tpw-core' ),
 					'metric'        => $logs_summary['metric_value'],
+					'tone'          => 'logs',
 					'status_label'  => $logs_summary['status_label'],
 					'status_tone'   => $logs_summary['status_tone'],
 					'description'   => $logs_summary['card_text'],
@@ -1352,11 +1361,7 @@ class TPW_FlexiClub_Admin_Menu {
 				),
 			'card_text'   => null === $count
 				? __( 'The member register is not available yet.', 'tpw-core' )
-				: sprintf(
-					/* translators: %s: total members */
-					__( '%s members are available to manage.', 'tpw-core' ),
-					number_format_i18n( $count )
-				),
+				: __( 'Member records are ready to manage across the club workspace.', 'tpw-core' ),
 		];
 	}
 
@@ -1381,12 +1386,8 @@ class TPW_FlexiClub_Admin_Menu {
 			'card_text'   => null === $count
 				? __( 'Open the Noticeboard when the content type is available.', 'tpw-core' )
 				: ( $count > 0
-					? sprintf(
-						/* translators: %s: active notices */
-						__( '%s notices are currently live.', 'tpw-core' ),
-						number_format_i18n( $count )
-					)
-					: __( 'No notices are currently published.', 'tpw-core' ) ),
+					? __( 'Share updates, reminders, and club announcements from one place.', 'tpw-core' )
+					: __( 'The Noticeboard is ready for your next club update.', 'tpw-core' ) ),
 		];
 	}
 
@@ -1511,12 +1512,7 @@ class TPW_FlexiClub_Admin_Menu {
 				number_format_i18n( $registered_total )
 			),
 			'metric_value'     => $metric_value,
-			'card_text'        => sprintf(
-				/* translators: 1: configured pages, 2: registered pages */
-				__( '%1$s of %2$s registered system pages are currently ready, including add-on registrations.', 'tpw-core' ),
-				number_format_i18n( $configured_count ),
-				number_format_i18n( $registered_total )
-			),
+			'card_text'        => __( 'Required system pages are ready, including add-on registrations.', 'tpw-core' ),
 		];
 	}
 
@@ -1543,12 +1539,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'  => $ready ? 'success' : 'warning',
 			'metric_value' => self::format_metric_value( $image_count ),
 			'card_text'    => $ready
-				? sprintf(
-					/* translators: 1: gallery count, 2: image count */
-					__( '%1$s galleries and %2$s images are available.', 'tpw-core' ),
-					number_format_i18n( $galleries ),
-					number_format_i18n( $image_count )
-				)
+				? __( 'Manage gallery collections and image libraries for club content.', 'tpw-core' )
 				: __( 'The Gallery Admin page needs to be checked before launch.', 'tpw-core' ),
 		];
 	}
@@ -1569,12 +1560,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'  => $ready ? 'success' : 'warning',
 			'metric_value' => self::format_metric_value( $page_count ),
 			'card_text'    => $page_count > 0
-				? sprintf(
-					/* translators: 1: upload pages, 2: files */
-					__( '%1$s upload pages and %2$s files are currently stored.', 'tpw-core' ),
-					number_format_i18n( $page_count ),
-					number_format_i18n( $file_count )
-				)
+				? __( 'Archive tools are ready for organising member-facing files and pages.', 'tpw-core' )
 				: __( 'Use the existing archive tools to add and organise club files.', 'tpw-core' ),
 		];
 	}
@@ -1597,12 +1583,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'  => $configured ? 'success' : 'warning',
 			'metric_value' => self::format_metric_value( $menus_count ),
 			'card_text'    => $configured
-				? sprintf(
-					/* translators: 1: menu count, 2: permission-aware items */
-					__( '%1$s menus include %2$s permission-aware items.', 'tpw-core' ),
-					number_format_i18n( $menus_count ),
-					number_format_i18n( $configured_count )
-				)
+				? __( 'Control which audiences can see and access club navigation items.', 'tpw-core' )
 				: __( 'Review which front-end menus and items members are allowed to see.', 'tpw-core' ),
 		];
 	}
@@ -1642,12 +1623,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'  => $status_tone,
 			'metric_value' => self::format_metric_value( $active_count ),
 			'card_text'    => $configured_count > 0
-				? sprintf(
-					/* translators: 1: active methods, 2: configured methods */
-					__( '%1$s of %2$s payment methods are currently enabled.', 'tpw-core' ),
-					number_format_i18n( $active_count ),
-					number_format_i18n( $configured_count )
-				)
+				? __( 'Club payment methods are configured for member payments and checkout.', 'tpw-core' )
 				: __( 'No payment methods have been configured yet.', 'tpw-core' ),
 			'action_url'   => admin_url( self::PAYMENTS_ROUTE ),
 		];
@@ -1696,11 +1672,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'  => $issue_count > 0 ? 'warning' : 'success',
 			'metric_value' => self::format_metric_value( $email_total + $payment_total ),
 			'card_text'    => $issue_count > 0
-				? sprintf(
-					/* translators: %s: failed log entries */
-					_n( '%s recent log entry needs attention.', '%s recent log entries need attention.', $issue_count, 'tpw-core' ),
-					number_format_i18n( $issue_count )
-				)
+				? __( 'Recent operational logs need review for email or payment issues.', 'tpw-core' )
 				: __( 'Email and payment logs are available for operational review.', 'tpw-core' ),
 		];
 	}
