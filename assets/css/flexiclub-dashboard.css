@@ -757,6 +757,9 @@
 .tpw-flexiclub-dashboard__checklist-actions {
   display: flex;
   justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .tpw-flexiclub-dashboard__activity-item {

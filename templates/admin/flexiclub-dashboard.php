@@ -108,7 +108,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 
 						<div class="tpw-flexiclub-dashboard__checklist-actions">
-							<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $dashboard['checklist_primary_action']['url'] ); ?>"><?php echo esc_html( $dashboard['checklist_primary_action']['label'] ); ?></a>
+							<?php if ( ! empty( $dashboard['checklist_complete'] ) ) : ?>
+								<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $dashboard['collapse_checklist_url'] ); ?>"><?php esc_html_e( 'Collapse', 'tpw-core' ); ?></a>
+								<a class="tpw-flexiclub-dashboard__muted-link" href="<?php echo esc_url( $dashboard['dismiss_setup_url'] ); ?>"><?php esc_html_e( 'Dismiss', 'tpw-core' ); ?></a>
+							<?php else : ?>
+								<a class="tpw-btn tpw-btn-outline" href="<?php echo esc_url( $dashboard['checklist_primary_action']['url'] ); ?>"><?php echo esc_html( $dashboard['checklist_primary_action']['label'] ); ?></a>
+							<?php endif; ?>
 						</div>
 					</div>
 				</div>

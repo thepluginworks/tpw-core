@@ -1019,7 +1019,8 @@ class TPW_FlexiClub_Admin_Menu {
 		);
 		$checklist_total   = count( $checklist_items );
 		$checklist_complete = $checklist_total > 0 && $completed_steps >= $checklist_total;
-		$show_checklist     = ! $checklist_complete || self::dashboard_checklist_requested();
+		$checklist_requested = self::dashboard_checklist_requested();
+		$show_checklist     = ! $checklist_complete || $checklist_requested;
 		$banner_dismissed   = self::is_dashboard_setup_banner_dismissed();
 		$primary_item       = self::get_dashboard_primary_checklist_item( $checklist_items, $checklist_complete );
 
@@ -1171,9 +1172,11 @@ class TPW_FlexiClub_Admin_Menu {
 			'checklist_total' => $checklist_total,
 			'checklist_progress' => $checklist_total > 0 ? ( $completed_steps / $checklist_total ) * 100 : 0,
 			'checklist_complete' => $checklist_complete,
+			'checklist_requested' => $checklist_requested,
 			'show_checklist' => $show_checklist,
 			'show_setup_banner' => $checklist_complete && ! $show_checklist && ! $banner_dismissed,
 			'checklist_url'  => self::get_dashboard_checklist_url(),
+			'collapse_checklist_url' => self::get_dashboard_base_url(),
 			'dismiss_setup_url' => self::get_dashboard_dismiss_setup_url(),
 			'checklist_primary_action' => $primary_item,
 			'activity_items'  => self::get_dashboard_activity_items(),
