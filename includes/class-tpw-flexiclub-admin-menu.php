@@ -1202,13 +1202,15 @@ class TPW_FlexiClub_Admin_Menu {
 		$payments_summary   = self::get_payments_summary();
 		$settings_summary   = self::get_settings_summary();
 		$logs_summary       = self::get_logs_summary();
-		$checklist_items    = self::get_dashboard_checklist_items(
+		$route_map          = self::get_frontend_workspace_route_map( $payments_summary );
+		$checklist_items    = self::get_frontend_checklist_items(
 			$members_summary,
 			$notices_summary,
 			$system_summary,
 			$menu_summary,
 			$settings_summary,
-			$payments_summary
+			$payments_summary,
+			$route_map
 		);
 		$completed_steps    = count(
 			array_filter(
@@ -1241,7 +1243,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'welcome_name'           => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
 			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data ),
 			'section_nav_items'      => self::get_frontend_section_nav_items( ! $checklist_complete, ! empty( $card_data ) ),
-			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary ),
+			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ),
 			'overview_cards'         => array_values( $card_data ),
 			'quick_actions'          => self::get_frontend_quick_actions( $card_data, $checklist_complete ),
 			'extend_cards'           => self::get_dashboard_extend_cards(),
@@ -1271,7 +1273,7 @@ class TPW_FlexiClub_Admin_Menu {
 			if ( empty( $item['done'] ) ) {
 				return [
 					'label' => __( 'Continue setup', 'tpw-core' ),
-					'url'   => isset( $item['url'] ) ? $item['url'] : '#tpw-flexiclub-checklist',
+					'url'   => ! empty( $item['url'] ) ? $item['url'] : '#tpw-flexiclub-checklist',
 				];
 			}
 		}
@@ -1282,7 +1284,9 @@ class TPW_FlexiClub_Admin_Menu {
 		];
 	}
 
-	protected static function get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary ) {
+	protected static function get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ) {
+		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+
 		return [
 			[
 				'title'        => __( 'Total Members', 'tpw-core' ),
@@ -1293,8 +1297,8 @@ class TPW_FlexiClub_Admin_Menu {
 			[
 				'title'        => __( 'Active Notices', 'tpw-core' ),
 				'value'        => self::format_metric_value( $notices_summary['count'] ),
-				'action_label' => __( 'Open noticeboard', 'tpw-core' ),
-				'action_url'   => current_user_can( 'edit_posts' ) ? admin_url( self::NOTICEBOARD_ROUTE ) : '',
+				'action_label' => ! empty( $noticeboard_route['action_label'] ) ? $noticeboard_route['action_label'] : __( 'Open noticeboard', 'tpw-core' ),
+				'action_url'   => ! empty( $noticeboard_route['url'] ) ? $noticeboard_route['url'] : '',
 			],
 			[
 				'title'        => __( 'Upcoming Events', 'tpw-core' ),
@@ -1309,6 +1313,13 @@ class TPW_FlexiClub_Admin_Menu {
 		$cards         = [];
 		$members_route = self::get_frontend_members_route();
 		$gallery_route = self::get_frontend_gallery_route();
+		$route_map     = self::get_frontend_workspace_route_map( $payments_summary );
+		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+		$system_pages_route = isset( $route_map['system-pages'] ) ? (array) $route_map['system-pages'] : [];
+		$settings_route = isset( $route_map['settings'] ) ? (array) $route_map['settings'] : [];
+		$logs_route = isset( $route_map['logs'] ) ? (array) $route_map['logs'] : [];
+		$payments_route = isset( $route_map['payments'] ) ? (array) $route_map['payments'] : [];
+		$control_note = isset( $route_map['control-note'] ) ? (string) $route_map['control-note'] : '';
 
 		$cards['members'] = [
 			'title'        => __( 'Manage Members', 'tpw-core' ),
@@ -1329,13 +1340,14 @@ class TPW_FlexiClub_Admin_Menu {
 				'title'        => __( 'Noticeboard', 'tpw-core' ),
 				'metric'       => self::format_metric_value( $notices_summary['count'] ),
 				'tone'         => 'noticeboard',
-				'status_label' => $notices_summary['status_label'],
-				'status_tone'  => $notices_summary['status_tone'],
-				'description'  => $notices_summary['card_text'],
-				'action_label' => __( 'Open noticeboard', 'tpw-core' ),
-				'action_url'   => admin_url( self::NOTICEBOARD_ROUTE ),
+				'status_label' => ! empty( $noticeboard_route['configured'] ) ? $notices_summary['status_label'] : $noticeboard_route['status_label'],
+				'status_tone'  => ! empty( $noticeboard_route['configured'] ) ? $notices_summary['status_tone'] : $noticeboard_route['status_tone'],
+				'description'  => ! empty( $noticeboard_route['configured'] ) ? $notices_summary['card_text'] : $noticeboard_route['message'],
+				'action_label' => $noticeboard_route['action_label'],
+				'action_url'   => $noticeboard_route['url'],
 				'icon'         => 'dashicons-megaphone',
-				'disabled'     => false,
+				'disabled'     => '' === $noticeboard_route['url'],
+				'show_action'  => '' !== $noticeboard_route['action_label'],
 			];
 		}
 
@@ -1366,11 +1378,14 @@ class TPW_FlexiClub_Admin_Menu {
 				'tone'         => 'permissions',
 				'status_label' => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? __( 'In use', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ) : $control_route['status_label'],
 				'status_tone'  => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? 'success' : 'neutral' ) : $control_route['status_tone'],
-				'description'  => ! empty( $control_route['configured'] )
+				'description'  => self::append_frontend_route_note(
+					! empty( $control_route['configured'] )
 					? ( $control_route['section_count'] > 0
 						? __( 'Open the existing FlexiClub Control workspace for archive, menu, and club website tools.', 'tpw-core' )
 						: __( 'The shared FlexiClub Control page is ready, but no admin sections are currently available for your role.', 'tpw-core' ) )
 					: $control_route['message'],
+					$control_note
+				),
 				'action_label' => $control_route['action_label'],
 				'action_url'   => $control_route['url'],
 				'icon'         => 'dashicons-admin-tools',
@@ -1386,11 +1401,11 @@ class TPW_FlexiClub_Admin_Menu {
 				'tone'         => 'system-pages',
 				'status_label' => $system_summary['status_label'],
 				'status_tone'  => $system_summary['status_tone'],
-				'description'  => $system_summary['card_text'],
-				'action_label' => __( 'Open system pages', 'tpw-core' ),
-				'action_url'   => admin_url( self::SYSTEM_PAGES_ROUTE ),
+				'description'  => self::append_frontend_route_note( $system_summary['card_text'], $system_pages_route['message'] ),
+				'action_label' => $system_pages_route['action_label'],
+				'action_url'   => $system_pages_route['url'],
 				'icon'         => 'dashicons-admin-page',
-				'disabled'     => false,
+				'disabled'     => empty( $system_pages_route['url'] ),
 			];
 
 			if ( ! empty( $payments_summary['payments_required'] ) ) {
@@ -1400,12 +1415,12 @@ class TPW_FlexiClub_Admin_Menu {
 					'tone'         => 'payments',
 					'status_label' => $payments_summary['status_label'],
 					'status_tone'  => $payments_summary['status_tone'],
-					'description'  => $payments_summary['card_text'],
-					'action_label' => __( 'Configure payments', 'tpw-core' ),
-					'action_url'   => $payments_summary['action_url'],
+					'description'  => self::append_frontend_route_note( $payments_summary['card_text'], $payments_route['message'] ),
+					'action_label' => $payments_route['action_label'],
+					'action_url'   => $payments_route['url'],
 					'icon'         => 'dashicons-money-alt',
-					'disabled'     => empty( $payments_summary['action_url'] ),
-					'show_action'  => ! empty( $payments_summary['action_url'] ),
+					'disabled'     => empty( $payments_route['url'] ),
+					'show_action'  => ! empty( $payments_route['action_label'] ),
 				];
 			}
 
@@ -1415,11 +1430,11 @@ class TPW_FlexiClub_Admin_Menu {
 				'tone'         => 'settings',
 				'status_label' => $settings_summary['status_label'],
 				'status_tone'  => $settings_summary['status_tone'],
-				'description'  => $settings_summary['card_text'],
-				'action_label' => __( 'Open settings', 'tpw-core' ),
-				'action_url'   => self::get_settings_admin_url(),
+				'description'  => self::append_frontend_route_note( $settings_summary['card_text'], $settings_route['message'] ),
+				'action_label' => $settings_route['action_label'],
+				'action_url'   => $settings_route['url'],
 				'icon'         => 'dashicons-admin-generic',
-				'disabled'     => false,
+				'disabled'     => empty( $settings_route['url'] ),
 			];
 
 			$cards['logs'] = [
@@ -1428,11 +1443,11 @@ class TPW_FlexiClub_Admin_Menu {
 				'tone'         => 'logs',
 				'status_label' => $logs_summary['status_label'],
 				'status_tone'  => $logs_summary['status_tone'],
-				'description'  => $logs_summary['card_text'],
-				'action_label' => __( 'View logs', 'tpw-core' ),
-				'action_url'   => admin_url( 'admin.php?page=' . self::PAGE_LOGS ),
+				'description'  => self::append_frontend_route_note( $logs_summary['card_text'], $logs_route['message'] ),
+				'action_label' => $logs_route['action_label'],
+				'action_url'   => $logs_route['url'],
 				'icon'         => 'dashicons-chart-line',
-				'disabled'     => false,
+				'disabled'     => empty( $logs_route['url'] ),
 			];
 		}
 
@@ -1547,6 +1562,163 @@ class TPW_FlexiClub_Admin_Menu {
 		}
 
 		return array_slice( $actions, 0, 7 );
+	}
+
+	protected static function get_frontend_workspace_route_map( $payments_summary ) {
+		$payments_summary = is_array( $payments_summary ) ? $payments_summary : [];
+
+		// TODO Front-end workspace rollout map:
+		// - build dedicated System Pages FE workspace
+		// - build dedicated Settings FE workspace
+		// - build dedicated Logs FE workspace
+		// - split FlexiClub Control into Menu Management and Archival System FE screens
+		return [
+			'noticeboard'  => self::get_frontend_noticeboard_route(),
+			'system-pages' => self::build_frontend_pending_route_state(
+				__( 'Front-end System Pages management is not built yet. Use the current admin tab temporarily.', 'tpw-core' ),
+				__( 'Open admin system pages (temporary)', 'tpw-core' ),
+				admin_url( self::SYSTEM_PAGES_ROUTE )
+			),
+			'settings'     => self::build_frontend_pending_route_state(
+				__( 'Front-end Settings is not built yet. Use the current admin settings screen temporarily.', 'tpw-core' ),
+				__( 'Open admin settings (temporary)', 'tpw-core' ),
+				self::get_settings_admin_url()
+			),
+			'logs'         => self::build_frontend_pending_route_state(
+				__( 'Front-end Logs is not built yet. Use the current admin diagnostics screens temporarily.', 'tpw-core' ),
+				__( 'Open admin logs (temporary)', 'tpw-core' ),
+				admin_url( 'admin.php?page=' . self::PAGE_LOGS )
+			),
+			'payments'     => self::build_frontend_pending_route_state(
+				__( 'Front-end payments settings are still part of the pending Settings workspace. Use the current admin payments tab temporarily.', 'tpw-core' ),
+				__( 'Open admin payments (temporary)', 'tpw-core' ),
+				! empty( $payments_summary['action_url'] ) ? (string) $payments_summary['action_url'] : admin_url( self::PAYMENTS_ROUTE )
+			),
+			'control-note' => __( 'Next front-end split: Menu Management and Archival System.', 'tpw-core' ),
+		];
+	}
+
+	protected static function get_frontend_checklist_items( $members_summary, $notices_summary, $system_summary, $menu_summary, $settings_summary, $payments_summary, $route_map ) {
+		$route_map         = is_array( $route_map ) ? $route_map : [];
+		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+		$system_pages_route = isset( $route_map['system-pages'] ) ? (array) $route_map['system-pages'] : [];
+		$settings_route    = isset( $route_map['settings'] ) ? (array) $route_map['settings'] : [];
+		$payments_route    = isset( $route_map['payments'] ) ? (array) $route_map['payments'] : [];
+
+		return [
+			[
+				'label'        => __( 'Create or confirm your system pages', 'tpw-core' ),
+				'description'  => self::append_frontend_route_note(
+					__( 'Make sure the required member and control pages are linked and published.', 'tpw-core' ),
+					isset( $system_pages_route['message'] ) ? (string) $system_pages_route['message'] : ''
+				),
+				'done'         => ! empty( $system_summary['required_complete'] ),
+				'url'          => isset( $system_pages_route['url'] ) ? (string) $system_pages_route['url'] : '',
+				'action_label' => __( 'Open admin tab', 'tpw-core' ),
+			],
+			[
+				'label'       => __( 'Add your first members', 'tpw-core' ),
+				'description' => __( 'Start building the club member register and linked accounts.', 'tpw-core' ),
+				'done'        => ! empty( $members_summary['count'] ),
+				'url'         => self::get_members_management_url( 'add' ),
+			],
+			[
+				'label'       => __( 'Configure menu permissions', 'tpw-core' ),
+				'description' => __( 'Control which audiences can see and access club navigation items.', 'tpw-core' ),
+				'done'        => ! empty( $menu_summary['configured'] ),
+				'url'         => self::get_tpw_control_launch_url( 'menu-manager', self::PAGE_MENU_MANAGER ),
+			],
+			[
+				'label'        => __( 'Configure settings', 'tpw-core' ),
+				'description'  => self::append_frontend_route_note(
+					__( 'Review branding, login, and shared FlexiClub platform settings.', 'tpw-core' ),
+					isset( $settings_route['message'] ) ? (string) $settings_route['message'] : ''
+				),
+				'done'         => ! empty( $settings_summary['configured'] ),
+				'url'          => isset( $settings_route['url'] ) ? (string) $settings_route['url'] : '',
+				'action_label' => __( 'Open admin settings', 'tpw-core' ),
+			],
+			[
+				'label'        => __( 'Configure payments', 'tpw-core' ),
+				'description'  => self::append_frontend_route_note(
+					__( 'Enable and set up the payment methods your club wants to offer.', 'tpw-core' ),
+					isset( $payments_route['message'] ) ? (string) $payments_route['message'] : ''
+				),
+				'done'         => ! empty( $payments_summary['configured'] ) || ! empty( $payments_summary['optional'] ),
+				'url'          => isset( $payments_route['url'] ) ? (string) $payments_route['url'] : '',
+				'optional'     => ! empty( $payments_summary['optional'] ),
+				'action_label' => __( 'Open admin payments', 'tpw-core' ),
+			],
+			[
+				'label'        => __( 'Publish your first notice', 'tpw-core' ),
+				'description'  => ! empty( $noticeboard_route['configured'] )
+					? __( 'Share updates, reminders, and announcements from the Noticeboard.', 'tpw-core' )
+					: self::append_frontend_route_note(
+						__( 'Share updates, reminders, and announcements from the Noticeboard.', 'tpw-core' ),
+						isset( $noticeboard_route['message'] ) ? (string) $noticeboard_route['message'] : ''
+					),
+				'done'         => ! empty( $notices_summary['count'] ),
+				'url'          => isset( $noticeboard_route['url'] ) ? (string) $noticeboard_route['url'] : '',
+				'action_label' => ! empty( $noticeboard_route['configured'] ) ? __( 'Open FE noticeboard', 'tpw-core' ) : __( 'Needs front-end screen', 'tpw-core' ),
+			],
+		];
+	}
+
+	protected static function get_frontend_noticeboard_route() {
+		$status = self::build_shortcode_page_status(
+			'noticeboard',
+			'tpw_noticeboard_list',
+			[
+				'shortcode' => '[tpw_noticeboard_list]',
+			]
+		);
+
+		$route = self::build_frontend_route_state(
+			$status,
+			'',
+			__( 'Open Noticeboard', 'tpw-core' )
+		);
+
+		if ( empty( $route['configured'] ) ) {
+			$route['action_label'] = __( 'Needs front-end screen', 'tpw-core' );
+			$route['status_label'] = __( 'Needs front-end screen', 'tpw-core' );
+			$route['status_tone']  = 'warning';
+			$route['url']          = '';
+		}
+
+		return $route;
+	}
+
+	protected static function build_frontend_pending_route_state( $message, $action_label = '', $action_url = '' ) {
+		$url = is_string( $action_url ) ? trim( $action_url ) : '';
+
+		return [
+			'configured'   => false,
+			'url'          => $url,
+			'action_label' => '' !== $url
+				? (string) $action_label
+				: __( 'Needs front-end screen', 'tpw-core' ),
+			'message'      => (string) $message,
+			'status_label' => '' !== $url
+				? __( 'Front-end pending', 'tpw-core' )
+				: __( 'Needs front-end screen', 'tpw-core' ),
+			'status_tone'  => 'warning',
+		];
+	}
+
+	protected static function append_frontend_route_note( $summary_text, $note ) {
+		$summary = trim( (string) $summary_text );
+		$route_note = trim( (string) $note );
+
+		if ( '' === $summary ) {
+			return $route_note;
+		}
+
+		if ( '' === $route_note ) {
+			return $summary;
+		}
+
+		return $summary . ' ' . $route_note;
 	}
 
 	protected static function get_frontend_members_route() {

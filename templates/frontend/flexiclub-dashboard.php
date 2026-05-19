@@ -151,7 +151,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 												</div>
 												<p><?php echo esc_html( $item['description'] ); ?></p>
 											</div>
-											<a href="<?php echo esc_url( $item['url'] ); ?>"><?php esc_html_e( 'Open', 'tpw-core' ); ?></a>
+											<?php $checklist_action_label = ! empty( $item['action_label'] ) ? (string) $item['action_label'] : __( 'Open', 'tpw-core' ); ?>
+											<?php if ( ! empty( $item['url'] ) ) : ?>
+												<a class="tpw-flexiclub-dashboard__checklist-action" href="<?php echo esc_url( $item['url'] ); ?>"><?php echo esc_html( $checklist_action_label ); ?></a>
+											<?php else : ?>
+												<span class="tpw-flexiclub-dashboard__checklist-action tpw-flexiclub-dashboard__checklist-action--disabled"><?php echo esc_html( $checklist_action_label ); ?></span>
+											<?php endif; ?>
 										</div>
 									<?php endforeach; ?>
 								</div>

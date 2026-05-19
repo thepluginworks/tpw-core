@@ -215,6 +215,37 @@
   outline-offset: 2px;
 }
 
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__summary-card--link,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__summary-card--link:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__summary-card--link:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__summary-card--link:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__portal-nav-link,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__portal-nav-link:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__portal-nav-link:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__portal-nav-link:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__action-link,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__action-link:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__action-link:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__action-link:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-action,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-action:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-action:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-action:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__overview-action .tpw-btn,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__overview-action .tpw-btn:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__overview-action .tpw-btn:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__overview-action .tpw-btn:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__extend-action .tpw-btn,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__extend-action .tpw-btn:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__extend-action .tpw-btn:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__extend-action .tpw-btn:focus-visible,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-actions .tpw-btn,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-actions .tpw-btn:visited,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-actions .tpw-btn:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-dashboard__checklist-actions .tpw-btn:focus-visible {
+  text-decoration: none !important;
+}
+
 .tpw-flexiclub-dashboard__summary-copy {
   min-width: 0;
   display: flex;
@@ -268,6 +299,30 @@
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
+}
+
+.tpw-flexiclub-dashboard__checklist-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(91, 61, 245, 0.18);
+  background: rgba(91, 61, 245, 0.08);
+  color: var(--tpw-flexi-accent);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: normal;
+  text-align: center;
+}
+
+.tpw-flexiclub-dashboard__checklist-action--disabled {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(241, 245, 249, 0.88);
+  color: var(--tpw-flexi-muted);
 }
 
 .tpw-flexiclub-dashboard__muted-link {
