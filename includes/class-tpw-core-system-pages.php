@@ -352,12 +352,37 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
                 $out[] = (object) [
                     'slug'       => (string) $slug,
                     'title'      => (string) ( $def['title'] ?? ucwords( str_replace( '-', ' ', $slug ) ) ),
+                    'shortcode'  => (string) ( $def['shortcode'] ?? '' ),
                     'wp_page_id' => (int) $pid,
                     'plugin'     => (string) ( $def['plugin'] ?? '' ),
                     'required'   => (int) ( $def['required'] ?? 0 ),
                 ];
             }
             return $out;
+        }
+
+        /**
+         * Determine whether the current user may manage System Pages actions.
+         *
+         * Preserves wp-admin administrator access while allowing the
+         * compatibility-era FlexiClub front-end admin gate for FE workspace actions.
+         *
+         * @return bool
+         */
+        public static function current_user_can_manage() {
+            if ( current_user_can( 'manage_options' ) ) {
+                return true;
+            }
+
+            if ( function_exists( 'tpw_core_user_can' ) ) {
+                return tpw_core_user_can( 'tpw_members_manage' );
+            }
+
+            if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_members_current' ) ) {
+                return TPW_Member_Access::can_manage_members_current();
+            }
+
+            return false;
         }
 
         // --- Helpers for discovery ---------------------------------------------------------
@@ -459,7 +484,7 @@ if ( ! has_action( 'wp_ajax_tpw_system_page_unlink' ) ) {
     add_action(
         'wp_ajax_tpw_system_page_unlink',
         function() {
-            if ( ! current_user_can( 'manage_options' ) ) {
+            if ( ! TPW_Core_System_Pages::current_user_can_manage() ) {
                 tpw_core_system_pages_ajax_error( __( 'Permission denied', 'tpw-core' ), 403 );
             }
 
@@ -499,7 +524,7 @@ if ( ! has_action( 'wp_ajax_tpw_system_page_recreate' ) ) {
     add_action(
         'wp_ajax_tpw_system_page_recreate',
         function() {
-            if ( ! current_user_can( 'manage_options' ) ) {
+            if ( ! TPW_Core_System_Pages::current_user_can_manage() ) {
                 tpw_core_system_pages_ajax_error( __( 'Permission denied', 'tpw-core' ), 403 );
             }
 

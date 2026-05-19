@@ -58,6 +58,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</details>
 
 	<div class="tpw-flexiclub-dashboard__portal-stage">
+		<?php if ( isset( $dashboard['workspace'] ) && 'system-pages' === $dashboard['workspace'] ) : ?>
+			<?php $workspace_template = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-workspace-system-pages.php' : ''; ?>
+			<?php if ( $workspace_template && file_exists( $workspace_template ) ) : ?>
+				<?php include $workspace_template; ?>
+			<?php else : ?>
+				<div class="tpw-card tpw-flexiclub-dashboard__permission-state">
+					<h2><?php esc_html_e( 'System Pages workspace unavailable', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'The front-end System Pages workspace template could not be found.', 'tpw-core' ); ?></p>
+				</div>
+			<?php endif; ?>
+		<?php else : ?>
 		<div id="flexiclub-home" class="tpw-flexiclub-dashboard__hero tpw-card">
 			<div class="tpw-flexiclub-dashboard__brand-row">
 				<div class="tpw-flexiclub-dashboard__brand">
@@ -307,5 +318,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</section>
 			</aside>
 		</div>
+		<?php endif; ?>
 	</div>
 </div>

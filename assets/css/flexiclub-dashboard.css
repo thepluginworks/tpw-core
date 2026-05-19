@@ -1348,3 +1348,318 @@ body.tpw-flexiclub-portal-page .secondary-sidebar {
     grid-template-columns: 1fr;
   }
 }
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero {
+  gap: 18px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-head {
+  align-items: flex-start;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-copy {
+  max-width: 62ch;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-copy h2 {
+  margin: 0 0 8px;
+  color: var(--tpw-flexi-accent);
+  font-size: 1.4rem;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-copy p {
+  margin: 0;
+  color: #334155;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__summary-card {
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__summary-card strong {
+  font-size: 1.35rem;
+  color: #0f172a;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__section {
+  min-width: 0;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__section--full {
+  width: 100%;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__section-head {
+  align-items: flex-start;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-shell {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-toggle {
+  list-style: none;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-panel {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.94);
+  max-width: 620px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-panel h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice p,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback {
+  margin: 0;
+  color: #334155;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice--success,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback--success {
+  border-color: rgba(21, 128, 61, 0.18);
+  background: rgba(240, 253, 244, 0.92);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice--warning,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback--warning,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback--info {
+  border-color: rgba(180, 83, 9, 0.18);
+  background: rgba(255, 247, 237, 0.94);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__notice--error,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback--error {
+  border-color: rgba(225, 29, 72, 0.18);
+  background: rgba(255, 241, 242, 0.94);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback {
+  display: none;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__feedback.is-visible {
+  display: block;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__empty {
+  margin: 0;
+  color: var(--tpw-flexi-muted);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.1fr) minmax(128px, 0.72fr) minmax(110px, 0.62fr) minmax(160px, 0.92fr) minmax(190px, 1.02fr) minmax(210px, 1.12fr) minmax(230px, 1.16fr);
+  gap: 14px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  align-items: start;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row--head {
+  background: rgba(248, 250, 252, 0.96);
+  border-style: dashed;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tpw-flexi-muted);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-title,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__linked-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.96rem;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.08);
+  color: #4338ca;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-chip--plugin {
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-chip--required {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-chip--optional {
+  background: rgba(148, 163, 184, 0.18);
+  color: #475569;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__page-slug,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__linked-meta,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__action-copy {
+  margin: 0;
+  color: var(--tpw-flexi-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__shortcode {
+  display: inline-block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  color: #0f172a;
+  font-size: 0.84rem;
+  word-break: break-word;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__inline-link {
+  color: var(--tpw-flexi-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__actions .tpw-btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__guide-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 12px;
+  color: #334155;
+}
+
+@media (max-width: 1280px) {
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__section-head {
+    flex-direction: column;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-shell {
+    margin-left: 0;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 782px) {
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-head {
+    flex-direction: column;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__help-panel {
+    max-width: none;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__summary-grid,
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row {
+    grid-template-columns: 1fr;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row {
+    padding: 14px;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__row--head {
+    display: none;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__cell::before {
+    content: attr(data-label);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tpw-flexi-muted);
+  }
+}

@@ -1192,6 +1192,7 @@ class TPW_FlexiClub_Admin_Menu {
 
 	protected static function get_frontend_dashboard_view_model() {
 		$current_user       = wp_get_current_user();
+		$workspace          = self::get_current_frontend_workspace();
 		$members_summary    = self::get_members_summary();
 		$notices_summary    = self::get_notices_summary();
 		$events_summary     = self::get_events_summary();
@@ -1235,14 +1236,16 @@ class TPW_FlexiClub_Admin_Menu {
 			$logs_summary,
 			$control_route
 		);
+		$system_pages_workspace = self::get_frontend_system_pages_workspace_view_model();
 
 		return [
+			'workspace'              => $workspace,
 			'logo_url'               => self::get_dashboard_logo_url(),
 			'icon_url'               => self::get_dashboard_icon_url(),
 			'version'                => defined( 'TPW_CORE_VERSION' ) ? (string) TPW_CORE_VERSION : '',
 			'welcome_name'           => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
-			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data ),
-			'section_nav_items'      => self::get_frontend_section_nav_items( ! $checklist_complete, ! empty( $card_data ) ),
+			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data, $workspace ),
+			'section_nav_items'      => self::get_frontend_section_nav_items( $workspace, ! $checklist_complete, ! empty( $card_data ), $system_pages_workspace ),
 			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ),
 			'overview_cards'         => array_values( $card_data ),
 			'quick_actions'          => self::get_frontend_quick_actions( $card_data, $checklist_complete ),
@@ -1256,6 +1259,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'checklist_url'          => '#tpw-flexiclub-checklist',
 			'checklist_primary_action' => self::get_frontend_primary_checklist_item( $checklist_items, $checklist_complete ),
 			'activity_items'         => self::get_dashboard_activity_items(),
+			'system_pages_workspace' => $system_pages_workspace,
 			'system_items'           => self::get_dashboard_system_items(
 				$members_summary,
 				$system_summary,
@@ -1320,6 +1324,9 @@ class TPW_FlexiClub_Admin_Menu {
 		$logs_route = isset( $route_map['logs'] ) ? (array) $route_map['logs'] : [];
 		$payments_route = isset( $route_map['payments'] ) ? (array) $route_map['payments'] : [];
 		$control_note = isset( $route_map['control-note'] ) ? (string) $route_map['control-note'] : '';
+		$can_manage_system_pages = class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'current_user_can_manage' )
+			? TPW_Core_System_Pages::current_user_can_manage()
+			: self::current_user_can_frontend_dashboard();
 
 		$cards['members'] = [
 			'title'        => __( 'Manage Members', 'tpw-core' ),
@@ -1394,7 +1401,7 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
-		if ( current_user_can( 'manage_options' ) ) {
+		if ( $can_manage_system_pages ) {
 			$cards['system-pages'] = [
 				'title'        => __( 'System Pages', 'tpw-core' ),
 				'metric'       => $system_summary['metric_value'],
@@ -1407,7 +1414,9 @@ class TPW_FlexiClub_Admin_Menu {
 				'icon'         => 'dashicons-admin-page',
 				'disabled'     => empty( $system_pages_route['url'] ),
 			];
+		}
 
+		if ( current_user_can( 'manage_options' ) ) {
 			if ( ! empty( $payments_summary['payments_required'] ) ) {
 				$cards['payments'] = [
 					'title'        => __( 'Payments', 'tpw-core' ),
@@ -1454,23 +1463,23 @@ class TPW_FlexiClub_Admin_Menu {
 		return $cards;
 	}
 
-	protected static function get_frontend_portal_nav_items( $cards ) {
-		$dashboard_url = self::get_frontend_dashboard_page_url();
+	protected static function get_frontend_portal_nav_items( $cards, $active_workspace ) {
+		$dashboard_url = self::get_frontend_workspace_url( 'dashboard' );
 
 		$items = [
 			[
 				'label'    => __( 'Dashboard Home', 'tpw-core' ),
 				'url'      => '' !== $dashboard_url ? $dashboard_url : '#flexiclub-home',
-				'current'  => true,
+				'current'  => 'dashboard' === $active_workspace,
 				'internal' => true,
 			],
 		];
 
-		foreach ( (array) $cards as $card ) {
+		foreach ( (array) $cards as $card_key => $card ) {
 			$items[] = [
 				'label'    => isset( $card['title'] ) ? (string) $card['title'] : '',
 				'url'      => ! empty( $card['action_url'] ) ? (string) $card['action_url'] : '',
-				'current'  => false,
+				'current'  => (string) $card_key === (string) $active_workspace,
 				'internal' => false,
 				'disabled' => empty( $card['action_url'] ),
 			];
@@ -1503,7 +1512,71 @@ class TPW_FlexiClub_Admin_Menu {
 		return is_string( $permalink ) ? $permalink : '';
 	}
 
-	protected static function get_frontend_section_nav_items( $show_checklist, $has_cards ) {
+	protected static function get_current_frontend_workspace() {
+		$workspace = 'dashboard';
+
+		if ( isset( $_GET['workspace'] ) ) {
+			$candidate = sanitize_key( wp_unslash( $_GET['workspace'] ) );
+			if ( in_array( $candidate, [ 'system-pages' ], true ) ) {
+				$workspace = $candidate;
+			}
+		}
+
+		return $workspace;
+	}
+
+	protected static function get_frontend_workspace_base_url() {
+		$dashboard_url = self::get_frontend_dashboard_page_url();
+		if ( '' !== $dashboard_url ) {
+			return remove_query_arg( 'workspace', $dashboard_url );
+		}
+
+		if ( ! self::is_current_frontend_dashboard_page() ) {
+			return '';
+		}
+
+		$page = get_queried_object();
+		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type ) {
+			return '';
+		}
+
+		$permalink = get_permalink( $page );
+
+		return is_string( $permalink ) ? remove_query_arg( 'workspace', $permalink ) : '';
+	}
+
+	protected static function get_frontend_workspace_url( $workspace = 'dashboard' ) {
+		$base_url = self::get_frontend_workspace_base_url();
+		if ( '' === $base_url ) {
+			return '';
+		}
+
+		$workspace = sanitize_key( (string) $workspace );
+		if ( '' === $workspace || 'dashboard' === $workspace ) {
+			return $base_url;
+		}
+
+		return add_query_arg( 'workspace', $workspace, $base_url );
+	}
+
+	protected static function get_frontend_section_nav_items( $workspace, $show_checklist, $has_cards, $workspace_data = [] ) {
+		if ( 'system-pages' === $workspace ) {
+			return [
+				[
+					'label' => __( 'Workspace Overview', 'tpw-core' ),
+					'url'   => '#flexiclub-system-pages-overview',
+				],
+				[
+					'label' => __( 'Registered Pages', 'tpw-core' ),
+					'url'   => '#flexiclub-system-pages-list',
+				],
+				[
+					'label' => __( 'Action Guide', 'tpw-core' ),
+					'url'   => '#flexiclub-system-pages-help',
+				],
+			];
+		}
+
 		$items = [
 			[
 				'label' => __( 'KPI Snapshot', 'tpw-core' ),
@@ -1568,17 +1641,12 @@ class TPW_FlexiClub_Admin_Menu {
 		$payments_summary = is_array( $payments_summary ) ? $payments_summary : [];
 
 		// TODO Front-end workspace rollout map:
-		// - build dedicated System Pages FE workspace
 		// - build dedicated Settings FE workspace
 		// - build dedicated Logs FE workspace
 		// - split FlexiClub Control into Menu Management and Archival System FE screens
 		return [
 			'noticeboard'  => self::get_frontend_noticeboard_route(),
-			'system-pages' => self::build_frontend_pending_route_state(
-				__( 'Front-end System Pages management is not built yet. Use the current admin tab temporarily.', 'tpw-core' ),
-				__( 'Open admin system pages (temporary)', 'tpw-core' ),
-				admin_url( self::SYSTEM_PAGES_ROUTE )
-			),
+			'system-pages' => self::get_frontend_system_pages_route(),
 			'settings'     => self::build_frontend_pending_route_state(
 				__( 'Front-end Settings is not built yet. Use the current admin settings screen temporarily.', 'tpw-core' ),
 				__( 'Open admin settings (temporary)', 'tpw-core' ),
@@ -1614,7 +1682,7 @@ class TPW_FlexiClub_Admin_Menu {
 				),
 				'done'         => ! empty( $system_summary['required_complete'] ),
 				'url'          => isset( $system_pages_route['url'] ) ? (string) $system_pages_route['url'] : '',
-				'action_label' => __( 'Open admin tab', 'tpw-core' ),
+				'action_label' => ! empty( $system_pages_route['configured'] ) ? __( 'Open FE workspace', 'tpw-core' ) : __( 'Open admin tab', 'tpw-core' ),
 			],
 			[
 				'label'       => __( 'Add your first members', 'tpw-core' ),
@@ -1689,6 +1757,25 @@ class TPW_FlexiClub_Admin_Menu {
 		return $route;
 	}
 
+	protected static function get_frontend_system_pages_route() {
+		$workspace_url = self::get_frontend_workspace_url( 'system-pages' );
+
+		if ( '' === $workspace_url ) {
+			return self::build_frontend_pending_route_state(
+				__( 'The FlexiClub portal page must be available before the front-end System Pages workspace can be opened.', 'tpw-core' )
+			);
+		}
+
+		return [
+			'configured'   => true,
+			'url'          => $workspace_url,
+			'action_label' => __( 'Open System Pages workspace', 'tpw-core' ),
+			'message'      => __( 'Validate, repair, and recreate registered system pages from the FlexiClub portal.', 'tpw-core' ),
+			'status_label' => __( 'Ready', 'tpw-core' ),
+			'status_tone'  => 'neutral',
+		];
+	}
+
 	protected static function build_frontend_pending_route_state( $message, $action_label = '', $action_url = '' ) {
 		$url = is_string( $action_url ) ? trim( $action_url ) : '';
 
@@ -1703,6 +1790,234 @@ class TPW_FlexiClub_Admin_Menu {
 				? __( 'Front-end pending', 'tpw-core' )
 				: __( 'Needs front-end screen', 'tpw-core' ),
 			'status_tone'  => 'warning',
+		];
+	}
+
+	protected static function get_frontend_system_pages_workspace_view_model() {
+		$workspace_url = self::get_frontend_workspace_url( 'system-pages' );
+		$dashboard_url = self::get_frontend_workspace_url( 'dashboard' );
+		$rows          = [];
+		$summary       = [
+			'registered'      => 0,
+			'complete'        => 0,
+			'ready'           => 0,
+			'missing'         => 0,
+			'needs_attention' => 0,
+		];
+		$notice_tone   = 'info';
+		$notice_text   = __( 'Review each registered system page and use the available actions only when they are needed.', 'tpw-core' );
+
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) || ! method_exists( 'TPW_Core_System_Pages', 'get_all' ) ) {
+			$notice_tone = 'error';
+			$notice_text = __( 'The System Pages manager is not available on this request.', 'tpw-core' );
+		} else {
+			foreach ( (array) TPW_Core_System_Pages::get_all() as $row ) {
+				if ( ! is_object( $row ) || empty( $row->slug ) ) {
+					continue;
+				}
+
+				$workspace_row = self::build_frontend_system_pages_workspace_row( $row );
+				$rows[]        = $workspace_row;
+				$summary['registered']++;
+
+				switch ( $workspace_row['status_key'] ) {
+					case 'complete':
+						$summary['complete']++;
+						break;
+					case 'ready':
+						$summary['ready']++;
+						break;
+					case 'missing':
+						$summary['missing']++;
+						break;
+					default:
+						$summary['needs_attention']++;
+						break;
+				}
+			}
+
+			if ( 0 === $summary['registered'] ) {
+				$notice_tone = 'warning';
+				$notice_text = __( 'No registered system pages were found in the current FlexiClub ecosystem registry.', 'tpw-core' );
+			} elseif ( 0 === $summary['missing'] && 0 === $summary['needs_attention'] ) {
+				$notice_tone = 'success';
+				$notice_text = __( 'All registered system pages are linked, published, and ready to use.', 'tpw-core' );
+			} else {
+				$notice_tone = 'warning';
+				$notice_text = sprintf(
+					/* translators: 1: missing page count, 2: needs attention count */
+					__( '%1$s page(s) are missing and %2$s page(s) need attention.', 'tpw-core' ),
+					number_format_i18n( $summary['missing'] ),
+					number_format_i18n( $summary['needs_attention'] )
+				);
+			}
+		}
+
+		return [
+			'workspace_url' => $workspace_url,
+			'dashboard_url' => $dashboard_url,
+			'rows'          => $rows,
+			'summary'       => $summary,
+			'notice_tone'   => $notice_tone,
+			'notice_text'   => $notice_text,
+			'ajax_url'      => admin_url( 'admin-ajax.php' ),
+			'ajax_nonce'    => wp_create_nonce( 'tpw_system_pages_ajax' ),
+			'summary_cards' => [
+				[
+					'label' => __( 'Registered', 'tpw-core' ),
+					'value' => number_format_i18n( $summary['registered'] ),
+					'tone'  => 'neutral',
+				],
+				[
+					'label' => __( 'Complete', 'tpw-core' ),
+					'value' => number_format_i18n( $summary['complete'] ),
+					'tone'  => 'success',
+				],
+				[
+					'label' => __( 'Ready', 'tpw-core' ),
+					'value' => number_format_i18n( $summary['ready'] ),
+					'tone'  => 'neutral',
+				],
+				[
+					'label' => __( 'Needs Attention', 'tpw-core' ),
+					'value' => number_format_i18n( $summary['needs_attention'] ),
+					'tone'  => 'warning',
+				],
+				[
+					'label' => __( 'Missing', 'tpw-core' ),
+					'value' => number_format_i18n( $summary['missing'] ),
+					'tone'  => 'error',
+				],
+			],
+		];
+	}
+
+	protected static function build_frontend_system_pages_workspace_row( $row ) {
+		$slug              = isset( $row->slug ) ? sanitize_key( (string) $row->slug ) : '';
+		$registered_title  = isset( $row->title ) ? (string) $row->title : $slug;
+		$registered_plugin = isset( $row->plugin ) ? (string) $row->plugin : '';
+		$shortcode         = isset( $row->shortcode ) ? trim( (string) $row->shortcode ) : '';
+		$required          = ! empty( $row->required );
+		$required_label    = $required ? __( 'Required', 'tpw-core' ) : __( 'Optional', 'tpw-core' );
+		$required_tone     = $required ? 'info' : 'neutral';
+		$shortcode_tag     = '';
+
+		if ( '' !== $shortcode && class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'parse_shortcode_tag' ) ) {
+			$shortcode_tag = (string) TPW_Core_System_Pages::parse_shortcode_tag( $shortcode );
+		}
+
+		$page_id   = isset( $row->wp_page_id ) ? (int) $row->wp_page_id : 0;
+		$page      = $page_id > 0 ? get_post( $page_id ) : null;
+		$slug_page = '' !== $slug ? get_page_by_path( $slug, OBJECT, 'page' ) : null;
+
+		if ( ! ( $page instanceof WP_Post ) && $slug_page instanceof WP_Post ) {
+			$page = $slug_page;
+		}
+
+		$page_exists    = ( $page instanceof WP_Post ) && 'page' === $page->post_type;
+		$page_status    = $page_exists ? (string) $page->post_status : '';
+		$page_title     = $page_exists ? (string) $page->post_title : '';
+		$edit_url_raw   = $page_exists ? get_edit_post_link( $page->ID, '' ) : '';
+		$edit_url       = is_string( $edit_url_raw ) ? $edit_url_raw : '';
+		$view_url       = '';
+		$has_shortcode  = '' === $shortcode_tag;
+		$can_unlink     = false;
+		$status_key     = 'missing';
+		$status_label   = __( 'Missing', 'tpw-core' );
+		$status_tone    = 'error';
+		$action_label   = __( 'Recreate available', 'tpw-core' );
+		$action_message = __( 'No published page is currently linked for this registered slug.', 'tpw-core' );
+		$action_tone    = 'info';
+		$can_recreate   = true;
+		$recreate_label = __( 'Recreate page', 'tpw-core' );
+
+		if ( $page_exists ) {
+			$can_unlink = true;
+
+			if ( 'publish' === $page_status ) {
+				$permalink = get_permalink( $page );
+				$view_url  = is_string( $permalink ) ? $permalink : '';
+				if ( '' !== $shortcode_tag ) {
+					$has_shortcode = self::page_has_shortcode_tag( (string) $page->post_content, $shortcode_tag );
+				}
+
+				if ( $has_shortcode ) {
+					$status_key     = $required ? 'complete' : 'ready';
+					$status_label   = $required ? __( 'Complete', 'tpw-core' ) : __( 'Ready', 'tpw-core' );
+					$status_tone    = $required ? 'success' : 'neutral';
+					$action_label   = __( 'No action needed', 'tpw-core' );
+					$action_message = $required
+						? __( 'The linked page is published and contains the expected shortcode. View or edit it as needed.', 'tpw-core' )
+						: __( 'This optional page is published and usable. You can still view, edit, or unlink it if needed.', 'tpw-core' );
+					$action_tone    = 'neutral';
+					$can_recreate   = false;
+				} else {
+					$status_key     = 'needs-attention';
+					$status_label   = __( 'Needs Attention', 'tpw-core' );
+					$status_tone    = 'warning';
+					$action_label   = __( 'Repair available', 'tpw-core' );
+					$action_message = __( 'The page exists, but the expected shortcode is missing. Edit the page to repair it. Recreate is not offered here because current logic does not overwrite published content automatically.', 'tpw-core' );
+					$action_tone    = 'warning';
+					$can_recreate   = false;
+				}
+			} elseif ( 'trash' === $page_status ) {
+				$status_key     = 'needs-attention';
+				$status_label   = __( 'Needs Attention', 'tpw-core' );
+				$status_tone    = 'warning';
+				$action_label   = __( 'Repair available', 'tpw-core' );
+				$action_message = __( 'A page with this slug is currently in Trash. Restore it or clear the current link before recreating the system page.', 'tpw-core' );
+				$action_tone    = 'warning';
+				$can_recreate   = false;
+			} else {
+				$status_key     = 'needs-attention';
+				$status_label   = __( 'Needs Attention', 'tpw-core' );
+				$status_tone    = 'warning';
+				$action_label   = __( 'Repair available', 'tpw-core' );
+				$action_message = __( 'A page for this slug exists but is not published. Recreate will publish the current page using the existing System Pages logic.', 'tpw-core' );
+				$action_tone    = 'warning';
+				$can_recreate   = true;
+				$recreate_label = __( 'Repair / publish page', 'tpw-core' );
+			}
+		}
+
+		$linked_page_text = $page_exists
+			? sprintf(
+				/* translators: 1: page title, 2: page ID */
+				__( '%1$s (#%2$d)', 'tpw-core' ),
+				$page_title,
+				(int) $page->ID
+			)
+			: __( 'Not linked', 'tpw-core' );
+
+		$linked_page_meta = $page_exists
+			? sprintf(
+				/* translators: %s: WordPress post status */
+				__( 'WordPress status: %s', 'tpw-core' ),
+				ucfirst( $page_status )
+			)
+			: __( 'Recreate will generate the linked page from the registered system-page definition.', 'tpw-core' );
+
+		return [
+			'slug'             => $slug,
+			'title'            => $registered_title,
+			'plugin'           => '' !== $registered_plugin ? $registered_plugin : __( 'tpw-core', 'tpw-core' ),
+			'shortcode'        => '' !== $shortcode ? $shortcode : __( 'No shortcode registered', 'tpw-core' ),
+			'required'         => $required,
+			'required_label'   => $required_label,
+			'required_tone'    => $required_tone,
+			'status_key'       => $status_key,
+			'status_label'     => $status_label,
+			'status_tone'      => $status_tone,
+			'linked_page_text' => $linked_page_text,
+			'linked_page_meta' => $linked_page_meta,
+			'linked_page_url'  => $view_url,
+			'edit_url'         => $edit_url,
+			'can_unlink'       => $can_unlink,
+			'action_label'     => $action_label,
+			'action_message'   => $action_message,
+			'action_tone'      => $action_tone,
+			'can_recreate'     => $can_recreate,
+			'recreate_label'   => $recreate_label,
 		];
 	}
 
