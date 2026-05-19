@@ -29,6 +29,71 @@ require_once TPW_CORE_PATH . 'includes/admin-functions.php';
 
 TPW_Core_Updater::init();
 TPW_FlexiClub_Admin_Menu::init();
+TPW_FlexiClub_Admin_Menu::init_frontend();
+
+if ( ! function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
+	/**
+	 * Safely create a registered system page only when no existing slug or shortcode page already exists.
+	 *
+	 * This avoids creating duplicates over draft or user-prepared pages while still allowing
+	 * Core-owned system pages to self-heal on existing installs.
+	 *
+	 * @param string $slug System page slug.
+	 * @param string $shortcode Expected shortcode markup.
+	 * @return int Created or resolved published page ID, or 0 when no creation was needed.
+	 */
+	function tpw_core_maybe_ensure_system_page( $slug, $shortcode ) {
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
+			return 0;
+		}
+
+		$system_slug        = sanitize_key( (string) $slug );
+		$shortcode_markup   = is_string( $shortcode ) ? trim( $shortcode ) : '';
+		$published_page_id  = 0;
+		$existing_slug_page = null;
+
+		if ( '' === $system_slug ) {
+			return 0;
+		}
+
+		$published_page_id = (int) TPW_Core_System_Pages::get_page_id( $system_slug );
+		if ( 0 < $published_page_id ) {
+			return $published_page_id;
+		}
+
+		$existing_slug_page = get_page_by_path( $system_slug, OBJECT, 'page' );
+		if ( $existing_slug_page instanceof WP_Post ) {
+			return 0;
+		}
+
+		$shortcode_tag = TPW_Core_System_Pages::parse_shortcode_tag( $shortcode_markup );
+		if ( '' !== $shortcode_tag && class_exists( 'WP_Query' ) ) {
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'page',
+					'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+					'posts_per_page' => 10,
+					'fields'         => 'ids',
+					's'              => '[' . $shortcode_tag,
+				)
+			);
+
+			if ( $query->have_posts() ) {
+				foreach ( $query->posts as $page_id ) {
+					$content = (string) get_post_field( 'post_content', (int) $page_id );
+					if ( TPW_Core_System_Pages::content_has_shortcode_tag( $content, $shortcode_tag ) ) {
+						wp_reset_postdata();
+						return 0;
+					}
+				}
+			}
+
+			wp_reset_postdata();
+		}
+
+		return (int) TPW_Core_System_Pages::ensure_page( $system_slug );
+	}
+}
 
 // Load WP-CLI command if in CLI context (safe to include; will noop outside WP_CLI)
 if ( file_exists( TPW_CORE_PATH . 'modules/system-pages/class-tpw-core-system-pages-cli.php' ) ) {
@@ -52,6 +117,14 @@ add_action( 'init', function() {
             'plugin'    => 'tpw-core',
             'required'  => 1,
         ] );
+        TPW_Core_System_Pages::register_page( 'flexiclub', [
+            'title'     => 'FlexiClub',
+            'shortcode' => '[flexiclub]',
+            'plugin'    => 'tpw-core',
+            'required'  => 1,
+        ] );
+
+        tpw_core_maybe_ensure_system_page( 'flexiclub', '[flexiclub]' );
     }
 } );
 

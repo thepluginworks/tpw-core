@@ -326,8 +326,19 @@ class TPW_Core_Activator {
                     'plugin'    => 'tpw-core',
                     'required'  => 1,
                 ] );
+                TPW_Core_System_Pages::register_page( 'flexiclub', [
+                    'title'     => 'FlexiClub',
+                    'shortcode' => '[flexiclub]',
+                    'plugin'    => 'tpw-core',
+                    'required'  => 1,
+                ] );
                 TPW_Core_System_Pages::ensure_page( 'member-login' );
                 TPW_Core_System_Pages::ensure_page( 'my-profile' );
+                if ( function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
+                    tpw_core_maybe_ensure_system_page( 'flexiclub', '[flexiclub]' );
+                } else {
+                    TPW_Core_System_Pages::ensure_page( 'flexiclub' );
+                }
             } catch ( \Throwable $e ) {
                 if ( function_exists( 'error_log' ) ) {
                     error_log( 'TPW Core activation: ensuring system pages failed - ' . $e->getMessage() );

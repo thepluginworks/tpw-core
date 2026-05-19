@@ -32,6 +32,31 @@ class TPW_FlexiClub_Admin_Menu {
 		add_filter( 'tpw_core_menu_map', [ __CLASS__, 'filter_menu_map' ] );
 	}
 
+	public static function init_frontend() {
+		add_shortcode( 'flexiclub', [ __CLASS__, 'render_frontend_shortcode' ] );
+		add_action( 'template_redirect', [ __CLASS__, 'prepare_frontend_portal_page' ], 0 );
+		add_filter( 'body_class', [ __CLASS__, 'filter_frontend_portal_body_classes' ] );
+	}
+
+	public static function prepare_frontend_portal_page() {
+		if ( ! self::is_current_frontend_dashboard_page() ) {
+			return;
+		}
+
+		self::maybe_assign_frontend_dashboard_page_template();
+	}
+
+	public static function filter_frontend_portal_body_classes( $classes ) {
+		if ( ! self::is_current_frontend_dashboard_page() ) {
+			return $classes;
+		}
+
+		$classes[] = 'tpw-flexiclub-portal-page';
+		$classes[] = 'tpw-flexiclub-portal-page--full-width';
+
+		return array_values( array_unique( array_filter( (array) $classes ) ) );
+	}
+
 	public static function register_menu() {
 		$visible_items      = self::get_visible_items();
 		$dashboard_visible  = self::current_user_can_view_dashboard();
@@ -178,6 +203,51 @@ class TPW_FlexiClub_Admin_Menu {
 
 		echo '</div>';
 		echo '</div>';
+	}
+
+	public static function render_frontend_shortcode() {
+		self::enqueue_frontend_dashboard_assets();
+
+		if ( ! is_user_logged_in() ) {
+			return self::render_frontend_permission_state(
+				esc_html__( 'Please sign in with a club administrator account to access the FlexiClub workspace.', 'tpw-core' )
+			);
+		}
+
+		if ( ! self::current_user_can_frontend_dashboard() ) {
+			return self::render_frontend_permission_state(
+				esc_html__( 'You do not have permission to access the FlexiClub workspace.', 'tpw-core' )
+			);
+		}
+
+		$dashboard = self::get_frontend_dashboard_view_model();
+		$template  = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-dashboard.php' : '';
+
+		ob_start();
+		echo '<div class="tpw-frontend-ui flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
+
+		if ( $template && file_exists( $template ) ) {
+			include $template;
+		} else {
+			echo '<div class="tpw-card tpw-flexiclub-dashboard__permission-state"><h2>' . esc_html__( 'FlexiClub workspace unavailable', 'tpw-core' ) . '</h2><p>' . esc_html__( 'The front-end FlexiClub dashboard template could not be found.', 'tpw-core' ) . '</p></div>';
+		}
+
+		echo '</div>';
+
+		return ob_get_clean();
+	}
+
+	protected static function render_frontend_permission_state( $message ) {
+		ob_start();
+		echo '<div class="tpw-frontend-ui flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
+		echo '<div class="tpw-card tpw-flexiclub-dashboard__permission-state">';
+		echo '<span class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--warning">' . esc_html__( 'Access restricted', 'tpw-core' ) . '</span>';
+		echo '<h2>' . esc_html__( 'FlexiClub workspace', 'tpw-core' ) . '</h2>';
+		echo '<p>' . esc_html( $message ) . '</p>';
+		echo '</div>';
+		echo '</div>';
+
+		return ob_get_clean();
 	}
 
 	public static function render_bridge_page() {
@@ -831,6 +901,101 @@ class TPW_FlexiClub_Admin_Menu {
 		return false !== strpos( $content, '[' . $tag );
 	}
 
+	protected static function is_current_frontend_dashboard_page() {
+		if ( is_admin() || ! function_exists( 'is_singular' ) || ! is_singular( 'page' ) ) {
+			return false;
+		}
+
+		$page = get_queried_object();
+		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type ) {
+			return false;
+		}
+
+		if ( self::page_has_shortcode_tag( (string) $page->post_content, 'flexiclub' ) ) {
+			return true;
+		}
+
+		return self::get_frontend_dashboard_page_id() === (int) $page->ID;
+	}
+
+	protected static function get_frontend_dashboard_page_id() {
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
+			return 0;
+		}
+
+		return (int) TPW_Core_System_Pages::get_page_id( 'flexiclub' );
+	}
+
+	protected static function maybe_assign_frontend_dashboard_page_template() {
+		$page = get_queried_object();
+		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type ) {
+			return;
+		}
+
+		$system_page_id = self::get_frontend_dashboard_page_id();
+		$is_portal_landing_page = ( $system_page_id > 0 && (int) $page->ID === $system_page_id ) || 'flexiclub' === $page->post_name;
+		if ( ! $is_portal_landing_page ) {
+			return;
+		}
+
+		$current_template = (string) get_page_template_slug( $page->ID );
+		if ( '' !== $current_template && 'default' !== $current_template ) {
+			return;
+		}
+
+		$preferred_template = self::get_frontend_dashboard_page_template();
+		if ( '' === $preferred_template || $preferred_template === $current_template ) {
+			return;
+		}
+
+		update_post_meta( $page->ID, '_wp_page_template', $preferred_template );
+		clean_post_cache( $page->ID );
+	}
+
+	protected static function get_frontend_dashboard_page_template() {
+		if ( ! function_exists( 'wp_get_theme' ) ) {
+			return '';
+		}
+
+		$theme = wp_get_theme();
+		if ( ! ( $theme instanceof WP_Theme ) ) {
+			return '';
+		}
+
+		$templates = (array) $theme->get_page_templates( null, 'page' );
+		if ( empty( $templates ) ) {
+			return '';
+		}
+
+		$preferred_basenames = [
+			'full-width.php',
+			'page-full-width.php',
+			'fullwidth.php',
+			'page-fullwidth.php',
+			'no-sidebar.php',
+			'page-no-sidebar.php',
+			'nosidebar.php',
+			'canvas.php',
+			'page-canvas.php',
+		];
+
+		foreach ( $templates as $label => $file ) {
+			$normalized_file = strtolower( basename( wp_normalize_path( (string) $file ) ) );
+			if ( in_array( $normalized_file, $preferred_basenames, true ) ) {
+				return (string) $file;
+			}
+		}
+
+		foreach ( $templates as $label => $file ) {
+			$haystack = strtolower( (string) $label . ' ' . wp_normalize_path( (string) $file ) );
+			if ( preg_match( '/full[\\s_-]*width|no[\\s_-]*sidebar|canvas/', $haystack ) ) {
+				return (string) $file;
+			}
+		}
+
+		return '';
+	}
+
 	public static function current_user_can_manage_members() {
 		if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_members_current' ) ) {
 			return TPW_Member_Access::can_manage_members_current();
@@ -909,12 +1074,48 @@ class TPW_FlexiClub_Admin_Menu {
 		return current_user_can( 'manage_options' );
 	}
 
+	protected static function current_user_can_frontend_dashboard() {
+		if ( function_exists( 'tpw_core_user_can' ) ) {
+			return tpw_core_user_can( 'tpw_members_manage' );
+		}
+
+		return self::current_user_can_manage_members();
+	}
+
 	public static function enqueue_dashboard_assets( $hook_suffix = '' ) {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		if ( self::TOP_LEVEL_SLUG !== $page ) {
 			return;
 		}
 
+		if ( function_exists( 'tpw_core_enqueue_shared_ui_assets' ) ) {
+			tpw_core_enqueue_shared_ui_assets(
+				[
+					'ui'       => true,
+					'admin_ui' => true,
+					'buttons'  => true,
+				]
+			);
+		}
+
+		if ( ! defined( 'TPW_CORE_PATH' ) || ! defined( 'TPW_CORE_URL' ) ) {
+			return;
+		}
+
+		$css_file = TPW_CORE_PATH . 'assets/css/flexiclub-dashboard.css';
+		$css_url  = TPW_CORE_URL . 'assets/css/flexiclub-dashboard.css';
+
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style(
+				'tpw-flexiclub-dashboard',
+				$css_url,
+				[ 'tpw-admin-ui', 'tpw-buttons' ],
+				filemtime( $css_file )
+			);
+		}
+	}
+
+	protected static function enqueue_frontend_dashboard_assets() {
 		if ( function_exists( 'tpw_core_enqueue_shared_ui_assets' ) ) {
 			tpw_core_enqueue_shared_ui_assets(
 				[
@@ -987,6 +1188,451 @@ class TPW_FlexiClub_Admin_Menu {
 			default:
 				return '';
 		}
+	}
+
+	protected static function get_frontend_dashboard_view_model() {
+		$current_user       = wp_get_current_user();
+		$members_summary    = self::get_members_summary();
+		$notices_summary    = self::get_notices_summary();
+		$events_summary     = self::get_events_summary();
+		$system_summary     = self::get_system_pages_summary();
+		$gallery_summary    = self::get_gallery_summary();
+		$uploads_summary    = self::get_upload_pages_summary();
+		$menu_summary       = self::get_menu_permissions_summary();
+		$payments_summary   = self::get_payments_summary();
+		$settings_summary   = self::get_settings_summary();
+		$logs_summary       = self::get_logs_summary();
+		$checklist_items    = self::get_dashboard_checklist_items(
+			$members_summary,
+			$notices_summary,
+			$system_summary,
+			$menu_summary,
+			$settings_summary,
+			$payments_summary
+		);
+		$completed_steps    = count(
+			array_filter(
+				$checklist_items,
+				static function( $item ) {
+					return ! empty( $item['done'] );
+				}
+			)
+		);
+		$checklist_total    = count( $checklist_items );
+		$checklist_complete = $checklist_total > 0 && $completed_steps >= $checklist_total;
+		$control_route      = self::get_frontend_control_route();
+		$card_data          = self::get_frontend_card_data(
+			$members_summary,
+			$notices_summary,
+			$gallery_summary,
+			$uploads_summary,
+			$menu_summary,
+			$system_summary,
+			$payments_summary,
+			$settings_summary,
+			$logs_summary,
+			$control_route
+		);
+
+		return [
+			'logo_url'               => self::get_dashboard_logo_url(),
+			'icon_url'               => self::get_dashboard_icon_url(),
+			'version'                => defined( 'TPW_CORE_VERSION' ) ? (string) TPW_CORE_VERSION : '',
+			'welcome_name'           => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
+			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data ),
+			'section_nav_items'      => self::get_frontend_section_nav_items( ! $checklist_complete, ! empty( $card_data ) ),
+			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary ),
+			'overview_cards'         => array_values( $card_data ),
+			'quick_actions'          => self::get_frontend_quick_actions( $card_data, $checklist_complete ),
+			'extend_cards'           => self::get_dashboard_extend_cards(),
+			'checklist_items'        => $checklist_items,
+			'checklist_done'         => $completed_steps,
+			'checklist_total'        => $checklist_total,
+			'checklist_progress'     => $checklist_total > 0 ? ( $completed_steps / $checklist_total ) * 100 : 0,
+			'checklist_complete'     => $checklist_complete,
+			'show_checklist'         => ! $checklist_complete,
+			'checklist_url'          => '#tpw-flexiclub-checklist',
+			'checklist_primary_action' => self::get_frontend_primary_checklist_item( $checklist_items, $checklist_complete ),
+			'activity_items'         => self::get_dashboard_activity_items(),
+			'system_items'           => self::get_dashboard_system_items(
+				$members_summary,
+				$system_summary,
+				$payments_summary,
+				$logs_summary
+			),
+			'control_sections'       => isset( $control_route['section_count'] ) ? (int) $control_route['section_count'] : 0,
+		];
+	}
+
+	protected static function get_frontend_primary_checklist_item( $items, $complete ) {
+		$items = is_array( $items ) ? $items : [];
+
+		foreach ( $items as $item ) {
+			if ( empty( $item['done'] ) ) {
+				return [
+					'label' => __( 'Continue setup', 'tpw-core' ),
+					'url'   => isset( $item['url'] ) ? $item['url'] : '#tpw-flexiclub-checklist',
+				];
+			}
+		}
+
+		return [
+			'label' => $complete ? __( 'Review checklist', 'tpw-core' ) : __( 'Open checklist', 'tpw-core' ),
+			'url'   => '#tpw-flexiclub-checklist',
+		];
+	}
+
+	protected static function get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary ) {
+		return [
+			[
+				'title'        => __( 'Total Members', 'tpw-core' ),
+				'value'        => self::format_metric_value( $members_summary['count'] ),
+				'action_label' => __( 'Manage members', 'tpw-core' ),
+				'action_url'   => self::get_members_management_url(),
+			],
+			[
+				'title'        => __( 'Active Notices', 'tpw-core' ),
+				'value'        => self::format_metric_value( $notices_summary['count'] ),
+				'action_label' => __( 'Open noticeboard', 'tpw-core' ),
+				'action_url'   => current_user_can( 'edit_posts' ) ? admin_url( self::NOTICEBOARD_ROUTE ) : '',
+			],
+			[
+				'title'        => __( 'Upcoming Events', 'tpw-core' ),
+				'value'        => self::format_metric_value( $events_summary['count'], false ),
+				'action_label' => $events_summary['action_label'],
+				'action_url'   => current_user_can( 'manage_options' ) ? $events_summary['action_url'] : '',
+			],
+		];
+	}
+
+	protected static function get_frontend_card_data( $members_summary, $notices_summary, $gallery_summary, $uploads_summary, $menu_summary, $system_summary, $payments_summary, $settings_summary, $logs_summary, $control_route ) {
+		$cards         = [];
+		$members_route = self::get_frontend_members_route();
+		$gallery_route = self::get_frontend_gallery_route();
+
+		$cards['members'] = [
+			'title'        => __( 'Manage Members', 'tpw-core' ),
+			'metric'       => self::format_metric_value( $members_summary['count'] ),
+			'tone'         => 'members',
+			'status_label' => ! empty( $members_route['configured'] ) ? $members_summary['status_label'] : $members_route['status_label'],
+			'status_tone'  => ! empty( $members_route['configured'] ) ? $members_summary['status_tone'] : $members_route['status_tone'],
+			'description'  => ! empty( $members_route['configured'] ) ? $members_summary['card_text'] : $members_route['message'],
+			'action_label' => $members_route['action_label'],
+			'action_url'   => $members_route['url'],
+			'icon'         => 'dashicons-groups',
+			'disabled'     => '' === $members_route['url'],
+			'show_action'  => '' !== $members_route['action_label'],
+		];
+
+		if ( current_user_can( 'edit_posts' ) ) {
+			$cards['noticeboard'] = [
+				'title'        => __( 'Noticeboard', 'tpw-core' ),
+				'metric'       => self::format_metric_value( $notices_summary['count'] ),
+				'tone'         => 'noticeboard',
+				'status_label' => $notices_summary['status_label'],
+				'status_tone'  => $notices_summary['status_tone'],
+				'description'  => $notices_summary['card_text'],
+				'action_label' => __( 'Open noticeboard', 'tpw-core' ),
+				'action_url'   => admin_url( self::NOTICEBOARD_ROUTE ),
+				'icon'         => 'dashicons-megaphone',
+				'disabled'     => false,
+			];
+		}
+
+		if ( self::current_user_can_gallery_manage() ) {
+			$cards['gallery'] = [
+				'title'        => __( 'Gallery Admin', 'tpw-core' ),
+				'metric'       => $gallery_summary['metric_value'],
+				'tone'         => 'gallery',
+				'status_label' => ! empty( $gallery_route['configured'] ) ? $gallery_summary['status_label'] : $gallery_route['status_label'],
+				'status_tone'  => ! empty( $gallery_route['configured'] ) ? $gallery_summary['status_tone'] : $gallery_route['status_tone'],
+				'description'  => ! empty( $gallery_route['configured'] ) ? $gallery_summary['card_text'] : $gallery_route['message'],
+				'action_label' => $gallery_route['action_label'],
+				'action_url'   => $gallery_route['url'],
+				'icon'         => 'dashicons-format-gallery',
+				'disabled'     => '' === $gallery_route['url'],
+				'show_action'  => '' !== $gallery_route['action_label'],
+			];
+		}
+
+		if ( self::current_user_can_tpw_control_hub() ) {
+			$cards['control'] = [
+				'title'        => __( 'FlexiClub Control', 'tpw-core' ),
+				'metric'       => sprintf(
+					/* translators: %s: accessible control section count */
+					_n( '%s tool', '%s tools', (int) $control_route['section_count'], 'tpw-core' ),
+					number_format_i18n( (int) $control_route['section_count'] )
+				),
+				'tone'         => 'permissions',
+				'status_label' => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? __( 'In use', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ) : $control_route['status_label'],
+				'status_tone'  => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? 'success' : 'neutral' ) : $control_route['status_tone'],
+				'description'  => ! empty( $control_route['configured'] )
+					? ( $control_route['section_count'] > 0
+						? __( 'Open the existing FlexiClub Control workspace for archive, menu, and club website tools.', 'tpw-core' )
+						: __( 'The shared FlexiClub Control page is ready, but no admin sections are currently available for your role.', 'tpw-core' ) )
+					: $control_route['message'],
+				'action_label' => $control_route['action_label'],
+				'action_url'   => $control_route['url'],
+				'icon'         => 'dashicons-admin-tools',
+				'disabled'     => '' === $control_route['url'],
+				'show_action'  => '' !== $control_route['action_label'],
+			];
+		}
+
+		if ( current_user_can( 'manage_options' ) ) {
+			$cards['system-pages'] = [
+				'title'        => __( 'System Pages', 'tpw-core' ),
+				'metric'       => $system_summary['metric_value'],
+				'tone'         => 'system-pages',
+				'status_label' => $system_summary['status_label'],
+				'status_tone'  => $system_summary['status_tone'],
+				'description'  => $system_summary['card_text'],
+				'action_label' => __( 'Open system pages', 'tpw-core' ),
+				'action_url'   => admin_url( self::SYSTEM_PAGES_ROUTE ),
+				'icon'         => 'dashicons-admin-page',
+				'disabled'     => false,
+			];
+
+			if ( ! empty( $payments_summary['payments_required'] ) ) {
+				$cards['payments'] = [
+					'title'        => __( 'Payments', 'tpw-core' ),
+					'metric'       => $payments_summary['metric_value'],
+					'tone'         => 'payments',
+					'status_label' => $payments_summary['status_label'],
+					'status_tone'  => $payments_summary['status_tone'],
+					'description'  => $payments_summary['card_text'],
+					'action_label' => __( 'Configure payments', 'tpw-core' ),
+					'action_url'   => $payments_summary['action_url'],
+					'icon'         => 'dashicons-money-alt',
+					'disabled'     => empty( $payments_summary['action_url'] ),
+					'show_action'  => ! empty( $payments_summary['action_url'] ),
+				];
+			}
+
+			$cards['settings'] = [
+				'title'        => __( 'Settings', 'tpw-core' ),
+				'metric'       => $settings_summary['metric_value'],
+				'tone'         => 'settings',
+				'status_label' => $settings_summary['status_label'],
+				'status_tone'  => $settings_summary['status_tone'],
+				'description'  => $settings_summary['card_text'],
+				'action_label' => __( 'Open settings', 'tpw-core' ),
+				'action_url'   => self::get_settings_admin_url(),
+				'icon'         => 'dashicons-admin-generic',
+				'disabled'     => false,
+			];
+
+			$cards['logs'] = [
+				'title'        => __( 'Logs', 'tpw-core' ),
+				'metric'       => $logs_summary['metric_value'],
+				'tone'         => 'logs',
+				'status_label' => $logs_summary['status_label'],
+				'status_tone'  => $logs_summary['status_tone'],
+				'description'  => $logs_summary['card_text'],
+				'action_label' => __( 'View logs', 'tpw-core' ),
+				'action_url'   => admin_url( 'admin.php?page=' . self::PAGE_LOGS ),
+				'icon'         => 'dashicons-chart-line',
+				'disabled'     => false,
+			];
+		}
+
+		return $cards;
+	}
+
+	protected static function get_frontend_portal_nav_items( $cards ) {
+		$dashboard_url = self::get_frontend_dashboard_page_url();
+
+		$items = [
+			[
+				'label'    => __( 'Dashboard Home', 'tpw-core' ),
+				'url'      => '' !== $dashboard_url ? $dashboard_url : '#flexiclub-home',
+				'current'  => true,
+				'internal' => true,
+			],
+		];
+
+		foreach ( (array) $cards as $card ) {
+			$items[] = [
+				'label'    => isset( $card['title'] ) ? (string) $card['title'] : '',
+				'url'      => ! empty( $card['action_url'] ) ? (string) $card['action_url'] : '',
+				'current'  => false,
+				'internal' => false,
+				'disabled' => empty( $card['action_url'] ),
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_frontend_dashboard_page_url() {
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
+			return '';
+		}
+
+		$page_id = (int) TPW_Core_System_Pages::get_page_id( 'flexiclub' );
+		if ( $page_id < 1 ) {
+			return '';
+		}
+
+		$page = get_post( $page_id );
+		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type || 'publish' !== $page->post_status ) {
+			return '';
+		}
+
+		if ( ! self::page_has_shortcode_tag( (string) $page->post_content, 'flexiclub' ) ) {
+			return '';
+		}
+
+		$permalink = get_permalink( $page );
+
+		return is_string( $permalink ) ? $permalink : '';
+	}
+
+	protected static function get_frontend_section_nav_items( $show_checklist, $has_cards ) {
+		$items = [
+			[
+				'label' => __( 'KPI Snapshot', 'tpw-core' ),
+				'url'   => '#flexiclub-home',
+			],
+		];
+
+		if ( $show_checklist ) {
+			$items[] = [
+				'label' => __( 'Getting Started', 'tpw-core' ),
+				'url'   => '#tpw-flexiclub-checklist',
+			];
+		}
+
+		if ( $has_cards ) {
+			$items[] = [
+				'label' => __( 'Club Overview', 'tpw-core' ),
+				'url'   => '#flexiclub-tools',
+			];
+		}
+
+		$items[] = [
+			'label' => __( 'Extend FlexiClub', 'tpw-core' ),
+			'url'   => '#tpw-flexiclub-extend',
+		];
+
+		$items[] = [
+			'label' => __( 'Support', 'tpw-core' ),
+			'url'   => '#flexiclub-support',
+		];
+
+		return $items;
+	}
+
+	protected static function get_frontend_quick_actions( $cards, $checklist_complete ) {
+		$actions = [];
+
+		if ( ! $checklist_complete ) {
+			$actions[] = [
+				'label'    => __( 'Setup Checklist', 'tpw-core' ),
+				'url'      => '#tpw-flexiclub-checklist',
+				'disabled' => false,
+			];
+		}
+
+		foreach ( (array) $cards as $card ) {
+			if ( empty( $card['action_label'] ) ) {
+				continue;
+			}
+
+			$actions[] = [
+				'label'    => (string) $card['action_label'],
+				'url'      => ! empty( $card['action_url'] ) ? (string) $card['action_url'] : '',
+				'disabled' => empty( $card['action_url'] ),
+			];
+		}
+
+		return array_slice( $actions, 0, 7 );
+	}
+
+	protected static function get_frontend_members_route() {
+		$configs = self::get_bridge_configs();
+		$status  = self::build_bridge_status( $configs[ self::PAGE_MEMBERS ] );
+
+		return self::build_frontend_route_state(
+			$status,
+			self::get_bridge_diagnostics_url( self::PAGE_MEMBERS ),
+			__( 'Open Manage Members', 'tpw-core' )
+		);
+	}
+
+	protected static function get_frontend_gallery_route() {
+		$configs = self::get_bridge_configs();
+		$status  = self::build_bridge_status( $configs[ self::PAGE_GALLERY ] );
+
+		return self::build_frontend_route_state(
+			$status,
+			self::get_bridge_diagnostics_url( self::PAGE_GALLERY ),
+			__( 'Open Gallery Admin', 'tpw-core' )
+		);
+	}
+
+	protected static function get_frontend_control_route() {
+		$status       = self::locate_shortcode_page( 'tpw-control', 'tpw-control' );
+		$configured   = ! empty( $status['page_exists'] ) && ! empty( $status['shortcode_present'] ) && '' !== $status['page_url'];
+		$section_keys = [];
+
+		if ( self::current_user_can_tpw_control_section( 'upload-pages' ) ) {
+			$section_keys[] = 'upload-pages';
+		}
+
+		if ( self::current_user_can_tpw_control_section( 'menu-manager' ) ) {
+			$section_keys[] = 'menu-manager';
+		}
+
+		$diagnostics_url = '';
+		if ( in_array( 'upload-pages', $section_keys, true ) ) {
+			$diagnostics_url = self::get_bridge_diagnostics_url( self::PAGE_UPLOADS );
+		} elseif ( in_array( 'menu-manager', $section_keys, true ) ) {
+			$diagnostics_url = self::get_bridge_diagnostics_url( self::PAGE_MENU_MANAGER );
+		}
+
+		$message = '';
+		if ( empty( $section_keys ) ) {
+			$message = __( 'No FlexiClub Control admin sections are currently available for your role.', 'tpw-core' );
+		} elseif ( ! empty( $status['page_exists'] ) && empty( $status['shortcode_present'] ) ) {
+			$message = __( 'A compatible FlexiClub Control page exists, but the expected shortcode is missing from its content.', 'tpw-core' );
+		} elseif ( empty( $status['page_exists'] ) ) {
+			$message = __( 'No compatible FlexiClub Control page is currently configured.', 'tpw-core' );
+		}
+
+		return [
+			'configured'    => $configured,
+			'url'           => $configured ? (string) $status['page_url'] : $diagnostics_url,
+			'action_label'  => $configured ? __( 'Open FlexiClub Control', 'tpw-core' ) : ( '' !== $diagnostics_url ? __( 'Open diagnostics', 'tpw-core' ) : '' ),
+			'message'       => $message,
+			'status_label'  => '' !== $diagnostics_url ? __( 'Needs review', 'tpw-core' ) : __( 'Missing', 'tpw-core' ),
+			'status_tone'   => '' !== $diagnostics_url ? 'warning' : 'error',
+			'section_count' => count( $section_keys ),
+		];
+	}
+
+	protected static function build_frontend_route_state( $status, $diagnostics_url, $open_label ) {
+		$configured = ! empty( $status['open_url'] );
+		$message    = isset( $status['message'] ) ? (string) $status['message'] : '';
+
+		return [
+			'configured'   => $configured,
+			'url'          => $configured ? (string) $status['open_url'] : (string) $diagnostics_url,
+			'action_label' => $configured ? $open_label : ( '' !== $diagnostics_url ? __( 'Open diagnostics', 'tpw-core' ) : '' ),
+			'message'      => $message,
+			'status_label' => '' !== $diagnostics_url ? __( 'Needs review', 'tpw-core' ) : __( 'Missing', 'tpw-core' ),
+			'status_tone'  => '' !== $diagnostics_url ? 'warning' : 'error',
+		];
+	}
+
+	protected static function get_bridge_diagnostics_url( $page_slug ) {
+		return add_query_arg(
+			[
+				'page'                      => $page_slug,
+				'tpw_flexiclub_diagnostics' => '1',
+			],
+			admin_url( 'admin.php' )
+		);
 	}
 
 	protected static function get_dashboard_view_model() {

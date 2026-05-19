@@ -46,6 +46,7 @@ FlexiClub includes its own update and packaging flow so production sites receive
 
 ## Common public shortcodes
 
+- `[flexiclub]`
 - `[tpw_member_login]`
 - `[tpw_member_profile]`
 - `[tpw_join_form]`
