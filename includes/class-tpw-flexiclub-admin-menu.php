@@ -224,7 +224,7 @@ class TPW_FlexiClub_Admin_Menu {
 		$template  = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-dashboard.php' : '';
 
 		ob_start();
-		echo '<div class="tpw-frontend-ui flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
+		echo '<div class="tpw-frontend-ui tpw-flexiclub-dashboard flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
 
 		if ( $template && file_exists( $template ) ) {
 			include $template;
@@ -239,7 +239,7 @@ class TPW_FlexiClub_Admin_Menu {
 
 	protected static function render_frontend_permission_state( $message ) {
 		ob_start();
-		echo '<div class="tpw-frontend-ui flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
+		echo '<div class="tpw-frontend-ui tpw-flexiclub-dashboard flexiclub-dashboard flexiclub-dashboard--frontend flexiclub-portal-page" style="' . esc_attr( function_exists( 'tpw_core_build_ui_theme_style_attr' ) ? tpw_core_build_ui_theme_style_attr() : '' ) . '">';
 		echo '<div class="tpw-card tpw-flexiclub-dashboard__permission-state">';
 		echo '<span class="tpw-flexiclub-dashboard__status tpw-flexiclub-dashboard__status--warning">' . esc_html__( 'Access restricted', 'tpw-core' ) . '</span>';
 		echo '<h2>' . esc_html__( 'FlexiClub workspace', 'tpw-core' ) . '</h2>';
