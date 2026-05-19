@@ -139,6 +139,14 @@ $notice_text    = isset( $workspace['notice_text'] ) ? (string) $workspace['noti
 	var feedback = document.getElementById('tpw-flexiclub-system-pages-feedback');
 	var ajaxUrl = <?php echo wp_json_encode( $ajax_url ); ?>;
 
+	function reloadWithNotice(type, message) {
+		var url = new URL(window.location.href);
+
+		url.searchParams.set('tpw_system_pages_notice', type);
+		url.searchParams.set('tpw_system_pages_message', message);
+		window.location.assign(url.toString());
+	}
+
 	function setFeedback(type, message) {
 		if (!feedback) {
 			return;
@@ -201,8 +209,7 @@ $notice_text    = isset( $workspace['notice_text'] ) ? (string) $workspace['noti
 			nonce: button.getAttribute('data-nonce') || ''
 		}).then(function (result) {
 			if (result && result.success) {
-				setFeedback('success', (result.data && result.data.message) ? result.data.message : 'System page updated.');
-				window.location.reload();
+				reloadWithNotice('success', (result.data && result.data.message) ? result.data.message : 'System page updated.');
 				return;
 			}
 

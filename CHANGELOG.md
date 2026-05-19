@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-05-19
+
+### Fixed
+- System Pages: fixed Unlink in both the wp-admin and FlexiClub front-end workspaces so clearing a page assignment now persists as an explicit unlinked state instead of being immediately rediscovered by slug or shortcode lookup; unlink leaves the WordPress page intact, refreshes into the correct missing or needs-attention state, and now shows clearer success or failure notices.
+
 ### Changed
 - Admin: added a new top-level FlexiClub wp-admin menu that groups existing Core admin screens and front-end bridge launchers without changing legacy routes such as Settings -> FlexiClub, Noticeboard CPT URLs, TPW Control URLs, or Payment Logs under Tools.
 - Admin: replaced the temporary FlexiClub dashboard launcher table with a polished wp-admin operations dashboard that keeps the existing menu slugs, bridge pages, compatibility routes, and current management screens intact while surfacing safe status summaries, quick actions, onboarding guidance, and ecosystem add-ons.

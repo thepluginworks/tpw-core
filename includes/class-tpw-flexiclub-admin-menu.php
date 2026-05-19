@@ -1806,6 +1806,9 @@ class TPW_FlexiClub_Admin_Menu {
 		];
 		$notice_tone   = 'info';
 		$notice_text   = __( 'Review each registered system page and use the available actions only when they are needed.', 'tpw-core' );
+		$request_notice = class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'get_request_notice' )
+			? (array) TPW_Core_System_Pages::get_request_notice()
+			: array();
 
 		if ( ! class_exists( 'TPW_Core_System_Pages' ) || ! method_exists( 'TPW_Core_System_Pages', 'get_all' ) ) {
 			$notice_tone = 'error';
@@ -1851,6 +1854,11 @@ class TPW_FlexiClub_Admin_Menu {
 					number_format_i18n( $summary['needs_attention'] )
 				);
 			}
+		}
+
+		if ( ! empty( $request_notice['message'] ) ) {
+			$notice_tone = ! empty( $request_notice['tone'] ) ? (string) $request_notice['tone'] : 'info';
+			$notice_text = (string) $request_notice['message'];
 		}
 
 		return [
@@ -1909,8 +1917,9 @@ class TPW_FlexiClub_Admin_Menu {
 		$page_id   = isset( $row->wp_page_id ) ? (int) $row->wp_page_id : 0;
 		$page      = $page_id > 0 ? get_post( $page_id ) : null;
 		$slug_page = '' !== $slug ? get_page_by_path( $slug, OBJECT, 'page' ) : null;
+		$is_unlinked = ! empty( $row->is_unlinked );
 
-		if ( ! ( $page instanceof WP_Post ) && $slug_page instanceof WP_Post ) {
+		if ( ! $is_unlinked && ! ( $page instanceof WP_Post ) && $slug_page instanceof WP_Post ) {
 			$page = $slug_page;
 		}
 
@@ -1931,7 +1940,18 @@ class TPW_FlexiClub_Admin_Menu {
 		$can_recreate   = true;
 		$recreate_label = __( 'Recreate page', 'tpw-core' );
 
-		if ( $page_exists ) {
+		if ( $is_unlinked ) {
+			$status_key     = $required ? 'needs-attention' : 'missing';
+			$status_label   = $required ? __( 'Needs Attention', 'tpw-core' ) : __( 'Missing', 'tpw-core' );
+			$status_tone    = $required ? 'warning' : 'error';
+			$action_label   = __( 'Recreate available', 'tpw-core' );
+			$action_message = $required
+				? __( 'The stored assignment was cleared for this required system page. The WordPress page was not deleted, but you need to repair or recreate the mapping before this page is ready again.', 'tpw-core' )
+				: __( 'The stored assignment was cleared for this optional system page. The WordPress page was not deleted, and you can recreate the mapping whenever you need this page again.', 'tpw-core' );
+			$action_tone    = 'info';
+			$can_recreate   = true;
+			$can_unlink     = false;
+		} elseif ( $page_exists ) {
 			$can_unlink = true;
 
 			if ( 'publish' === $page_status ) {

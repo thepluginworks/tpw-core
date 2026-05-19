@@ -10,6 +10,15 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
 // Pull any persisted notices
 settings_errors();
 
+$request_notice = array(
+    'tone'    => '',
+    'message' => '',
+);
+
+if ( class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'get_request_notice' ) ) {
+    $request_notice = (array) TPW_Core_System_Pages::get_request_notice();
+}
+
 $rows = TPW_Core_System_Pages::get_all();
 
 // Enqueue TPW button styles if available
@@ -23,6 +32,12 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
 ?>
 <div class="tpw-system-pages">
     <p><?php echo esc_html__( 'Registered TPW system pages across plugins. This list does not auto-create WordPress pages. Use Recreate to restore a missing page for an existing slug.', 'tpw-core' ); ?></p>
+
+    <?php if ( ! empty( $request_notice['message'] ) ) : ?>
+        <div class="notice notice-<?php echo esc_attr( 'success' === $request_notice['tone'] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $request_notice['message'] ); ?></p></div>
+    <?php endif; ?>
+
+    <div id="tpw-system-pages-feedback" aria-live="polite"></div>
 
     <?php if ( empty( $rows ) ) : ?>
         <p><em><?php echo esc_html__( 'No system pages registered yet.', 'tpw-core' ); ?></em></p>
@@ -112,6 +127,26 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
 (function(){
     function on(action, handler){ document.addEventListener(action, handler); }
     function closest(el, sel){ while (el && el.nodeType===1) { if (el.matches(sel)) return el; el = el.parentElement; } return null; }
+    function reloadWithNotice(type, message){
+        var url = new URL(window.location.href);
+        url.searchParams.set('tpw_system_pages_notice', type);
+        url.searchParams.set('tpw_system_pages_message', message);
+        window.location.assign(url.toString());
+    }
+    function setFeedback(type, message){
+        var feedback = document.getElementById('tpw-system-pages-feedback');
+        var className = 'notice ' + (type === 'success' ? 'notice-success' : 'notice-error');
+
+        if (!feedback) {
+            return;
+        }
+
+        feedback.className = className;
+        feedback.innerHTML = '';
+        var paragraph = document.createElement('p');
+        paragraph.textContent = message;
+        feedback.appendChild(paragraph);
+    }
     function ajax(url, data){
         return fetch(url, {
             method: 'POST',
@@ -136,20 +171,8 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
         ajax(url, { action: op==='unlink' ? 'tpw_system_page_unlink' : 'tpw_system_page_recreate', slug: slug, nonce: nonce })
             .then(function(res){
                 if (res && res.success) {
-                    if (res.data && res.data.rowHtml) {
-                        var wrapper = document.createElement('tbody');
-                        wrapper.innerHTML = res.data.rowHtml.trim();
-                        var newRow = wrapper.querySelector('tr');
-                        if (row && newRow) {
-                            row.parentNode.replaceChild(newRow, row);
-                            return;
-                        }
-                    }
-                    if (res.data && res.data.reload) {
-                        window.location.reload();
-                        return;
-                    }
-                    window.location.reload();
+                    reloadWithNotice('success', (res.data && res.data.message) ? res.data.message : 'System page updated.');
+                    return;
                 } else {
                     var message = 'Operation failed';
                     if (res && typeof res.data === 'string' && res.data) {
@@ -157,10 +180,10 @@ $base_url   = admin_url( 'options-general.php?page=tpw-core-settings&tab=system-
                     } else if (res && res.data && res.data.message) {
                         message = res.data.message;
                     }
-                    alert(message);
+                    setFeedback('error', message);
                 }
             })
-            .catch(function(){ alert('Request failed'); })
+            .catch(function(){ setFeedback('error', 'Request failed'); })
             .finally(function(){ btn.disabled = false; });
     });
 })();

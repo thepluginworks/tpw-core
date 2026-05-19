@@ -2,12 +2,6 @@
 /**
  * TPW Core – System Pages registry and resolver.
  *
- * Responsibilities:
- * - Define default keys and slugs for system pages
- * - Allow modules to register additional pages
- * - Resolve URLs and page IDs with optional overrides from wp_options
- * - Provide safe fallbacks to home_url() when unresolved
- *
  * @since 1.0.0
  */
 
@@ -27,8 +21,9 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
 
         /**
          * Cached overrides read from the tpw_core_system_pages option.
-         * Shape: [ slug => [ 'wp_page_id' => int ] ]
-         * @var array<string,array>
+         * Shape: [ slug => [ 'wp_page_id' => int, 'is_unlinked' => int ] ]
+         *
+         * @var array<string,array<string,mixed>>|null
          */
         protected static $overrides = null;
 
@@ -125,7 +120,11 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
             self::load_overrides();
 
             // 1) Prefer explicit override mapping
-            $ov = isset( self::$overrides[ $slug ] ) && is_array( self::$overrides[ $slug ] ) ? self::$overrides[ $slug ] : [];
+            $ov = self::get_override_entry( $slug );
+            if ( ! empty( $ov['is_unlinked'] ) && empty( $ov['wp_page_id'] ) ) {
+                return 0;
+            }
+
             $mapped = isset( $ov['wp_page_id'] ) ? (int) $ov['wp_page_id'] : 0;
             if ( $mapped > 0 ) {
                 $p = get_post( $mapped );
@@ -157,27 +156,63 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
         /**
          * Persist or remove a stored page ID override for a slug.
          *
-         * @param string $slug System page slug.
-         * @param int    $page_id Linked page ID, or 0 to clear the mapping.
+         * @param string $slug        System page slug.
+         * @param int    $page_id     Linked page ID, or 0 to clear the mapping.
+         * @param bool   $is_unlinked Whether the mapping was intentionally cleared.
          * @return bool True when the option write completed.
          */
-        protected static function persist_override( $slug, $page_id ) {
+        protected static function persist_override( $slug, $page_id, $is_unlinked = false ) {
             $s = sanitize_key( (string) $slug );
             if ( '' === $s ) {
                 return false;
             }
 
             self::load_overrides();
-            $page_id = absint( $page_id );
+            $page_id     = absint( $page_id );
+            $is_unlinked = (bool) $is_unlinked;
 
             if ( 0 < $page_id ) {
                 self::$overrides[ $s ] = array( 'wp_page_id' => $page_id );
+            } elseif ( $is_unlinked ) {
+                self::$overrides[ $s ] = array(
+                    'wp_page_id'  => 0,
+                    'is_unlinked' => 1,
+                );
             } else {
                 unset( self::$overrides[ $s ] );
             }
 
             update_option( 'tpw_core_system_pages', self::$overrides );
             return true;
+        }
+
+        /**
+         * Read a single stored override entry.
+         *
+         * @param string $slug System page slug.
+         * @return array<string,mixed>
+         */
+        protected static function get_override_entry( $slug ) {
+            $s = sanitize_key( (string) $slug );
+            if ( '' === $s ) {
+                return array();
+            }
+
+            self::load_overrides();
+
+            return isset( self::$overrides[ $s ] ) && is_array( self::$overrides[ $s ] ) ? self::$overrides[ $s ] : array();
+        }
+
+        /**
+         * Determine whether a slug has been explicitly unlinked.
+         *
+         * @param string $slug System page slug.
+         * @return bool
+         */
+        public static function is_explicitly_unlinked( $slug ) {
+            $override = self::get_override_entry( $slug );
+
+            return ! empty( $override['is_unlinked'] ) && empty( $override['wp_page_id'] );
         }
 
         /**
@@ -295,6 +330,10 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
      * @since 1.0.0
      */
     public static function ensure_page( $slug ) {
+        if ( self::is_explicitly_unlinked( $slug ) ) {
+            return 0;
+        }
+
             $result = self::ensure_page_result( $slug );
             if ( is_wp_error( $result ) ) {
                 return 0;
@@ -315,7 +354,7 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
                 return false;
             }
 
-            return self::persist_override( $s, 0 );
+            return self::persist_override( $s, 0, true );
         }
 
         /**
@@ -354,6 +393,7 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
                     'title'      => (string) ( $def['title'] ?? ucwords( str_replace( '-', ' ', $slug ) ) ),
                     'shortcode'  => (string) ( $def['shortcode'] ?? '' ),
                     'wp_page_id' => (int) $pid,
+                    'is_unlinked'=> self::is_explicitly_unlinked( $slug ),
                     'plugin'     => (string) ( $def['plugin'] ?? '' ),
                     'required'   => (int) ( $def['required'] ?? 0 ),
                 ];
@@ -383,6 +423,36 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
             }
 
             return false;
+        }
+
+        /**
+         * Read a System Pages notice from the current request.
+         *
+         * @return array{tone:string,message:string}
+         */
+        public static function get_request_notice() {
+            $tone    = '';
+            $message = '';
+
+            if ( isset( $_GET['tpw_system_pages_notice'] ) ) {
+                $tone = sanitize_key( wp_unslash( $_GET['tpw_system_pages_notice'] ) );
+            }
+
+            if ( isset( $_GET['tpw_system_pages_message'] ) ) {
+                $message = sanitize_text_field( wp_unslash( $_GET['tpw_system_pages_message'] ) );
+            }
+
+            if ( '' === $message || ! in_array( $tone, array( 'success', 'error', 'warning', 'info' ), true ) ) {
+                return array(
+                    'tone'    => '',
+                    'message' => '',
+                );
+            }
+
+            return array(
+                'tone'    => $tone,
+                'message' => $message,
+            );
         }
 
         // --- Helpers for discovery ---------------------------------------------------------
@@ -512,7 +582,7 @@ if ( ! has_action( 'wp_ajax_tpw_system_page_unlink' ) ) {
 
             wp_send_json_success(
                 array(
-                    'message' => __( 'Page mapping cleared.', 'tpw-core' ),
+                    'message' => __( 'System page link cleared. The registered slug remains available to repair or recreate.', 'tpw-core' ),
                     'reload'  => true,
                 )
             );
@@ -555,7 +625,7 @@ if ( ! has_action( 'wp_ajax_tpw_system_page_recreate' ) ) {
                 array(
                     'message' => sprintf(
                         /* translators: %s: system page slug */
-                        __( 'Page "%s" recreated.', 'tpw-core' ),
+                        __( 'System page "%s" is now linked and ready.', 'tpw-core' ),
                         $slug
                     ),
                     'pageId'  => (int) $result,
