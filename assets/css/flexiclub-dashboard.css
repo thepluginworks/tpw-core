@@ -566,12 +566,12 @@
 }
 
 .tpw-flexiclub-dashboard__extend-card img {
-  width: 106px;
-  height: 106px;
+  width: 140px;
+  height: 140px;
   display: block;
   max-width: 100%;
   object-fit: contain;
-  align-self: flex-start;
+  align-self: center;
   flex: 0 0 auto;
 }
 
@@ -598,14 +598,16 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
+  text-align: center;
 }
 
 .tpw-flexiclub-dashboard__extend-card h3 {
   overflow-wrap: anywhere;
   margin: 0;
   width: 100%;
+  text-align: center;
 }
 
 .tpw-flexiclub-dashboard__extend-card p {
@@ -613,6 +615,7 @@
   min-height: 0;
   overflow-wrap: anywhere;
   flex: 1 1 auto;
+  text-align: center;
 }
 
 .tpw-flexiclub-dashboard__extend-action {
