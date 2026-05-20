@@ -220,6 +220,10 @@ class TPW_FlexiClub_Admin_Menu {
 			);
 		}
 
+		if ( 'settings' === self::get_current_frontend_workspace() && function_exists( 'wp_enqueue_media' ) ) {
+			wp_enqueue_media();
+		}
+
 		$dashboard = self::get_frontend_dashboard_view_model();
 		$template  = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-dashboard.php' : '';
 
@@ -1203,6 +1207,7 @@ class TPW_FlexiClub_Admin_Menu {
 		$payments_summary   = self::get_payments_summary();
 		$settings_summary   = self::get_settings_summary();
 		$logs_summary       = self::get_logs_summary();
+		$settings_workspace = self::get_frontend_settings_workspace_view_model();
 		$route_map          = self::get_frontend_workspace_route_map( $payments_summary );
 		$checklist_items    = self::get_frontend_checklist_items(
 			$members_summary,
@@ -1237,6 +1242,11 @@ class TPW_FlexiClub_Admin_Menu {
 			$control_route
 		);
 		$system_pages_workspace = self::get_frontend_system_pages_workspace_view_model();
+		$active_portal_item     = $workspace;
+
+		if ( 'settings' === $workspace && ! empty( $settings_workspace['active_portal_key'] ) ) {
+			$active_portal_item = (string) $settings_workspace['active_portal_key'];
+		}
 
 		return [
 			'workspace'              => $workspace,
@@ -1244,8 +1254,8 @@ class TPW_FlexiClub_Admin_Menu {
 			'icon_url'               => self::get_dashboard_icon_url(),
 			'version'                => defined( 'TPW_CORE_VERSION' ) ? (string) TPW_CORE_VERSION : '',
 			'welcome_name'           => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
-			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data, $workspace ),
-			'section_nav_items'      => self::get_frontend_section_nav_items( $workspace, ! $checklist_complete, ! empty( $card_data ), $system_pages_workspace ),
+			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data, $active_portal_item ),
+			'section_nav_items'      => self::get_frontend_section_nav_items( $workspace, ! $checklist_complete, ! empty( $card_data ), 'settings' === $workspace ? $settings_workspace : $system_pages_workspace ),
 			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ),
 			'overview_cards'         => array_values( $card_data ),
 			'quick_actions'          => self::get_frontend_quick_actions( $card_data, $checklist_complete ),
@@ -1259,6 +1269,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'checklist_url'          => '#tpw-flexiclub-checklist',
 			'checklist_primary_action' => self::get_frontend_primary_checklist_item( $checklist_items, $checklist_complete ),
 			'activity_items'         => self::get_dashboard_activity_items(),
+			'settings_workspace'     => $settings_workspace,
 			'system_pages_workspace' => $system_pages_workspace,
 			'system_items'           => self::get_dashboard_system_items(
 				$members_summary,
@@ -1416,7 +1427,9 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
-		if ( current_user_can( 'manage_options' ) ) {
+		$can_access_settings_workspace = self::current_user_can_frontend_dashboard();
+
+		if ( $can_access_settings_workspace ) {
 			if ( ! empty( $payments_summary['payments_required'] ) ) {
 				$cards['payments'] = [
 					'title'        => __( 'Payments', 'tpw-core' ),
@@ -1445,7 +1458,9 @@ class TPW_FlexiClub_Admin_Menu {
 				'icon'         => 'dashicons-admin-generic',
 				'disabled'     => empty( $settings_route['url'] ),
 			];
+		}
 
+		if ( current_user_can( 'manage_options' ) ) {
 			$cards['logs'] = [
 				'title'        => __( 'Logs', 'tpw-core' ),
 				'metric'       => $logs_summary['metric_value'],
@@ -1517,7 +1532,7 @@ class TPW_FlexiClub_Admin_Menu {
 
 		if ( isset( $_GET['workspace'] ) ) {
 			$candidate = sanitize_key( wp_unslash( $_GET['workspace'] ) );
-			if ( in_array( $candidate, [ 'system-pages' ], true ) ) {
+			if ( in_array( $candidate, [ 'settings', 'system-pages' ], true ) ) {
 				$workspace = $candidate;
 			}
 		}
@@ -1560,6 +1575,25 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	protected static function get_frontend_section_nav_items( $workspace, $show_checklist, $has_cards, $workspace_data = [] ) {
+		if ( 'settings' === $workspace ) {
+			$active_label = isset( $workspace_data['active_label'] ) ? (string) $workspace_data['active_label'] : __( 'Active Settings Area', 'tpw-core' );
+
+			return [
+				[
+					'label' => __( 'Workspace Overview', 'tpw-core' ),
+					'url'   => '#flexiclub-settings-overview',
+				],
+				[
+					'label' => __( 'Settings Areas', 'tpw-core' ),
+					'url'   => '#flexiclub-settings-tabs',
+				],
+				[
+					'label' => $active_label,
+					'url'   => '#flexiclub-settings-panel',
+				],
+			];
+		}
+
 		if ( 'system-pages' === $workspace ) {
 			return [
 				[
@@ -1641,27 +1675,18 @@ class TPW_FlexiClub_Admin_Menu {
 		$payments_summary = is_array( $payments_summary ) ? $payments_summary : [];
 
 		// TODO Front-end workspace rollout map:
-		// - build dedicated Settings FE workspace
 		// - build dedicated Logs FE workspace
 		// - split FlexiClub Control into Menu Management and Archival System FE screens
 		return [
 			'noticeboard'  => self::get_frontend_noticeboard_route(),
 			'system-pages' => self::get_frontend_system_pages_route(),
-			'settings'     => self::build_frontend_pending_route_state(
-				__( 'Front-end Settings is not built yet. Use the current admin settings screen temporarily.', 'tpw-core' ),
-				__( 'Open admin settings (temporary)', 'tpw-core' ),
-				self::get_settings_admin_url()
-			),
+			'settings'     => self::get_frontend_settings_route(),
 			'logs'         => self::build_frontend_pending_route_state(
 				__( 'Front-end Logs is not built yet. Use the current admin diagnostics screens temporarily.', 'tpw-core' ),
 				__( 'Open admin logs (temporary)', 'tpw-core' ),
 				admin_url( 'admin.php?page=' . self::PAGE_LOGS )
 			),
-			'payments'     => self::build_frontend_pending_route_state(
-				__( 'Front-end payments settings are still part of the pending Settings workspace. Use the current admin payments tab temporarily.', 'tpw-core' ),
-				__( 'Open admin payments (temporary)', 'tpw-core' ),
-				! empty( $payments_summary['action_url'] ) ? (string) $payments_summary['action_url'] : admin_url( self::PAYMENTS_ROUTE )
-			),
+			'payments'     => self::get_frontend_settings_route( 'payment-methods' ),
 			'control-note' => __( 'Next front-end split: Menu Management and Archival System.', 'tpw-core' ),
 		];
 	}
@@ -1704,7 +1729,7 @@ class TPW_FlexiClub_Admin_Menu {
 				),
 				'done'         => ! empty( $settings_summary['configured'] ),
 				'url'          => isset( $settings_route['url'] ) ? (string) $settings_route['url'] : '',
-				'action_label' => __( 'Open admin settings', 'tpw-core' ),
+				'action_label' => ! empty( $settings_route['configured'] ) ? __( 'Open FE settings', 'tpw-core' ) : __( 'Open admin settings', 'tpw-core' ),
 			],
 			[
 				'label'        => __( 'Configure payments', 'tpw-core' ),
@@ -1715,7 +1740,7 @@ class TPW_FlexiClub_Admin_Menu {
 				'done'         => ! empty( $payments_summary['configured'] ) || ! empty( $payments_summary['optional'] ),
 				'url'          => isset( $payments_route['url'] ) ? (string) $payments_route['url'] : '',
 				'optional'     => ! empty( $payments_summary['optional'] ),
-				'action_label' => __( 'Open admin payments', 'tpw-core' ),
+				'action_label' => ! empty( $payments_route['configured'] ) ? __( 'Open FE payments', 'tpw-core' ) : __( 'Open admin payments', 'tpw-core' ),
 			],
 			[
 				'label'        => __( 'Publish your first notice', 'tpw-core' ),
@@ -1776,6 +1801,32 @@ class TPW_FlexiClub_Admin_Menu {
 		];
 	}
 
+	protected static function get_frontend_settings_route( $tab = '' ) {
+		$workspace_url = self::get_frontend_workspace_url( 'settings' );
+
+		if ( '' === $workspace_url ) {
+			return self::build_frontend_pending_route_state(
+				__( 'The FlexiClub portal page must be available before the front-end Settings workspace can be opened.', 'tpw-core' ),
+				__( 'Open admin settings (temporary)', 'tpw-core' ),
+				self::get_settings_admin_url( 'payment-methods' === $tab ? 'payment-methods' : '' )
+			);
+		}
+
+		$tab = sanitize_key( (string) $tab );
+		$url = '' !== $tab ? add_query_arg( 'settings-tab', $tab, $workspace_url ) : $workspace_url;
+
+		return [
+			'configured'   => true,
+			'url'          => $url,
+			'action_label' => 'payment-methods' === $tab ? __( 'Open Payments tab', 'tpw-core' ) : __( 'Open Settings workspace', 'tpw-core' ),
+			'message'      => 'payment-methods' === $tab
+				? __( 'Manage payment methods from the front-end Settings workspace.', 'tpw-core' )
+				: __( 'Review branding, login, email, and shared FlexiClub platform settings from the portal.', 'tpw-core' ),
+			'status_label' => __( 'Ready', 'tpw-core' ),
+			'status_tone'  => 'neutral',
+		];
+	}
+
 	protected static function build_frontend_pending_route_state( $message, $action_label = '', $action_url = '' ) {
 		$url = is_string( $action_url ) ? trim( $action_url ) : '';
 
@@ -1790,6 +1841,82 @@ class TPW_FlexiClub_Admin_Menu {
 				? __( 'Front-end pending', 'tpw-core' )
 				: __( 'Needs front-end screen', 'tpw-core' ),
 			'status_tone'  => 'warning',
+		];
+	}
+
+	protected static function get_frontend_settings_workspace_view_model() {
+		$workspace_url    = self::get_frontend_workspace_url( 'settings' );
+		$dashboard_url    = self::get_frontend_workspace_url( 'dashboard' );
+		$system_pages_url = self::get_frontend_workspace_url( 'system-pages' );
+		$active_tab       = function_exists( 'tpw_core_get_settings_default_tab' ) ? tpw_core_get_settings_default_tab() : 'member-menu';
+		$active_label     = __( 'Active Settings Area', 'tpw-core' );
+		$current_url      = $workspace_url;
+		$tabs             = [];
+		$notices          = [];
+
+		if ( function_exists( 'tpw_core_set_settings_view_context' ) ) {
+			tpw_core_set_settings_view_context(
+				[
+					'mode'          => 'frontend',
+					'base_url'      => $workspace_url,
+					'tab_query_arg' => 'settings-tab',
+				]
+			);
+		}
+
+		if ( function_exists( 'tpw_core_resolve_settings_tab' ) ) {
+			$active_tab = tpw_core_resolve_settings_tab();
+		}
+
+		if ( function_exists( 'tpw_core_get_settings_tabs' ) ) {
+			foreach ( (array) tpw_core_get_settings_tabs() as $slug => $label ) {
+				$slug     = sanitize_key( (string) $slug );
+				$external = 'system-pages' === $slug && '' !== $system_pages_url;
+				$url      = $external
+					? $system_pages_url
+					: ( function_exists( 'tpw_core_build_settings_tab_url' ) ? tpw_core_build_settings_tab_url( $slug ) : add_query_arg( 'settings-tab', $slug, $workspace_url ) );
+
+				$tabs[] = [
+					'slug'     => $slug,
+					'label'    => (string) $label,
+					'url'      => $url,
+					'current'  => ! $external && $slug === $active_tab,
+					'external' => $external,
+					'disabled' => '' === (string) $url,
+				];
+				if ( $slug === $active_tab ) {
+					$active_label = (string) $label;
+				}
+			}
+		}
+
+		if ( function_exists( 'tpw_core_build_settings_tab_url' ) ) {
+			$extra_args = [];
+			if ( 'email-templates' === $active_tab && isset( $_GET['edit_template'] ) ) {
+				$extra_args['edit_template'] = strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) wp_unslash( $_GET['edit_template'] ) ) );
+			}
+
+			$current_url = tpw_core_build_settings_tab_url( $active_tab, $extra_args );
+		}
+
+		if ( function_exists( 'tpw_core_get_settings_request_notices' ) ) {
+			$notices = tpw_core_get_settings_request_notices( $active_tab );
+		}
+
+		if ( function_exists( 'tpw_core_reset_settings_view_context' ) ) {
+			tpw_core_reset_settings_view_context();
+		}
+
+		return [
+			'workspace_url'     => $workspace_url,
+			'dashboard_url'     => $dashboard_url,
+			'system_pages_url'  => $system_pages_url,
+			'active_tab'        => $active_tab,
+			'active_label'      => $active_label,
+			'current_url'       => $current_url,
+			'tabs'              => $tabs,
+			'notices'           => $notices,
+			'active_portal_key' => 'payment-methods' === $active_tab ? 'payments' : 'settings',
 		];
 	}
 

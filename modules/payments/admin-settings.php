@@ -156,7 +156,11 @@ add_action('flexievent_settings_tab_content_payments', function($settings) {
 
 // --- TPW Core Settings integration: Payment Methods tab content ---
 add_action( 'tpw_core_settings_tab_content_payment-methods', function( $active_tab ) {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    $can_manage = function_exists( 'tpw_core_current_user_can_manage_settings' )
+        ? tpw_core_current_user_can_manage_settings()
+        : current_user_can( 'manage_options' );
+
+    if ( ! $can_manage ) {
         echo '<p>' . esc_html__( 'You do not have permission to view this page.', 'tpw-core' ) . '</p>';
         return;
     }

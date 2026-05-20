@@ -155,20 +155,44 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     }
 } );
 
-// 3) Render the settings page (tabbed)
-if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
-    /**
-     * Render the TPW Core settings page wrapper and tabs.
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    function tpw_core_render_settings_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
+if ( ! function_exists( 'tpw_core_get_settings_default_tab' ) ) {
+    function tpw_core_get_settings_default_tab() {
+        return 'member-menu';
+    }
+}
 
-        // Build tabs (extensible)
+if ( ! function_exists( 'tpw_core_set_settings_view_context' ) ) {
+    function tpw_core_set_settings_view_context( array $context ) {
+        $GLOBALS['tpw_core_settings_view_context'] = $context;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_reset_settings_view_context' ) ) {
+    function tpw_core_reset_settings_view_context() {
+        unset( $GLOBALS['tpw_core_settings_view_context'] );
+    }
+}
+
+if ( ! function_exists( 'tpw_core_get_settings_view_context' ) ) {
+    function tpw_core_get_settings_view_context() {
+        $workspace = isset( $_GET['workspace'] ) ? sanitize_key( wp_unslash( $_GET['workspace'] ) ) : '';
+        $defaults  = [
+            'mode'          => ( ! is_admin() && 'settings' === $workspace ) ? 'frontend' : 'admin',
+            'base_url'      => admin_url( 'options-general.php?page=tpw-core-settings' ),
+            'tab_query_arg' => 'tab',
+            'return_url'    => '',
+        ];
+
+        $context = isset( $GLOBALS['tpw_core_settings_view_context'] ) && is_array( $GLOBALS['tpw_core_settings_view_context'] )
+            ? $GLOBALS['tpw_core_settings_view_context']
+            : [];
+
+        return wp_parse_args( $context, $defaults );
+    }
+}
+
+if ( ! function_exists( 'tpw_core_get_settings_tabs' ) ) {
+    function tpw_core_get_settings_tabs() {
         $tabs = [
             'branding'        => __( 'Branding', 'tpw-core' ),
             'member-menu'     => __( 'Member Menu', 'tpw-core' ),
@@ -184,21 +208,264 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
         }
 
         $tabs['system-pages'] = __( 'System Pages', 'tpw-core' );
-        $tabs                 = apply_filters( 'tpw_core_settings_tabs', $tabs );
 
-        $current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'member-menu'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if ( $current_tab === '' ) {
-            $current_tab = 'member-menu';
+        return apply_filters( 'tpw_core_settings_tabs', $tabs );
+    }
+}
+
+if ( ! function_exists( 'tpw_core_resolve_settings_tab' ) ) {
+    function tpw_core_resolve_settings_tab( $candidate = null ) {
+        $context     = tpw_core_get_settings_view_context();
+        $tabs        = tpw_core_get_settings_tabs();
+        $default_tab = tpw_core_get_settings_default_tab();
+        $tab_arg     = isset( $context['tab_query_arg'] ) ? sanitize_key( (string) $context['tab_query_arg'] ) : 'tab';
+
+        if ( null === $candidate ) {
+            $candidate = isset( $_GET[ $tab_arg ] ) ? sanitize_key( wp_unslash( $_GET[ $tab_arg ] ) ) : $default_tab;
+        } else {
+            $candidate = sanitize_key( (string) $candidate );
         }
 
-        if ( ! isset( $tabs[ $current_tab ] ) ) {
-            $tab_keys    = array_keys( $tabs );
-            $current_tab = in_array( 'member-menu', $tab_keys, true )
-                ? 'member-menu'
-                : ( isset( $tab_keys[0] ) ? (string) $tab_keys[0] : 'member-menu' );
+        if ( '' === $candidate ) {
+            $candidate = $default_tab;
         }
 
-        $base_url = admin_url( 'options-general.php?page=tpw-core-settings' );
+        if ( ! isset( $tabs[ $candidate ] ) ) {
+            $tab_keys  = array_keys( $tabs );
+            $candidate = in_array( $default_tab, $tab_keys, true )
+                ? $default_tab
+                : ( isset( $tab_keys[0] ) ? (string) $tab_keys[0] : $default_tab );
+        }
+
+        return $candidate;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_current_user_can_manage_settings' ) ) {
+    function tpw_core_current_user_can_manage_settings() {
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        $mode = isset( $_REQUEST['tpw_settings_context'] )
+            ? sanitize_key( wp_unslash( $_REQUEST['tpw_settings_context'] ) )
+            : '';
+
+        if ( '' === $mode ) {
+            $context = tpw_core_get_settings_view_context();
+            $mode    = isset( $context['mode'] ) ? sanitize_key( (string) $context['mode'] ) : 'admin';
+        }
+
+        if ( 'frontend' !== $mode ) {
+            return false;
+        }
+
+        if ( function_exists( 'tpw_core_user_can' ) ) {
+            return tpw_core_user_can( 'tpw_members_manage' );
+        }
+
+        if ( class_exists( 'TPW_Member_Access', false ) && method_exists( 'TPW_Member_Access', 'can_manage_members_current' ) ) {
+            return TPW_Member_Access::can_manage_members_current();
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_build_settings_tab_url' ) ) {
+    function tpw_core_build_settings_tab_url( $tab = '', array $extra_args = [] ) {
+        $context = tpw_core_get_settings_view_context();
+        $base_url = isset( $context['base_url'] ) ? (string) $context['base_url'] : '';
+        $tab_arg  = isset( $context['tab_query_arg'] ) ? sanitize_key( (string) $context['tab_query_arg'] ) : 'tab';
+
+        if ( '' === $base_url ) {
+            return '';
+        }
+
+        $args = $extra_args;
+        if ( '' !== $tab ) {
+            $args[ $tab_arg ] = sanitize_key( (string) $tab );
+        }
+
+        return add_query_arg( $args, $base_url );
+    }
+}
+
+if ( ! function_exists( 'tpw_core_render_settings_context_fields' ) ) {
+    function tpw_core_render_settings_context_fields( $tab = '' ) {
+        $context    = tpw_core_get_settings_view_context();
+        $return_url = isset( $context['return_url'] ) ? (string) $context['return_url'] : '';
+
+        if ( '' === $return_url ) {
+            $extra_args = [];
+            if ( 'email-templates' === $tab && isset( $_GET['edit_template'] ) ) {
+                $extra_args['edit_template'] = strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) wp_unslash( $_GET['edit_template'] ) ) );
+            }
+            $return_url = tpw_core_build_settings_tab_url( $tab, $extra_args );
+        }
+
+        echo '<input type="hidden" name="tpw_settings_context" value="' . esc_attr( isset( $context['mode'] ) ? (string) $context['mode'] : 'admin' ) . '" />';
+        echo '<input type="hidden" name="tpw_settings_return_url" value="' . esc_url( $return_url ) . '" />';
+    }
+}
+
+if ( ! function_exists( 'tpw_core_get_settings_redirect_url' ) ) {
+    function tpw_core_get_settings_redirect_url( $tab = '', array $args = [] ) {
+        $fallback_url = tpw_core_build_settings_tab_url( $tab );
+        $return_url   = isset( $_REQUEST['tpw_settings_return_url'] )
+            ? esc_url_raw( wp_unslash( $_REQUEST['tpw_settings_return_url'] ) )
+            : '';
+
+        if ( '' !== $return_url ) {
+            $validated = wp_validate_redirect( $return_url, '' );
+            if ( is_string( $validated ) && '' !== $validated ) {
+                $return_url = remove_query_arg( [ 'settings-updated', 'tpw_core_notice' ], $validated );
+            } else {
+                $return_url = '';
+            }
+        }
+
+        if ( '' === $return_url ) {
+            $return_url = $fallback_url;
+        }
+
+        return add_query_arg( $args, $return_url );
+    }
+}
+
+if ( ! function_exists( 'tpw_core_get_settings_request_notices' ) ) {
+    function tpw_core_get_settings_request_notices( $current_tab = '' ) {
+        $current_tab       = '' !== $current_tab ? sanitize_key( (string) $current_tab ) : tpw_core_resolve_settings_tab();
+        $settings_updated  = isset( $_GET['settings-updated'] ) ? absint( wp_unslash( $_GET['settings-updated'] ) ) : 0;
+        $redirect_notice   = isset( $_GET['tpw_core_notice'] ) ? sanitize_key( wp_unslash( $_GET['tpw_core_notice'] ) ) : '';
+        $notices           = [];
+
+        if ( 1 === $settings_updated ) {
+            $notices[] = [
+                'type'    => 'success',
+                'message' => ( 'email' === $current_tab )
+                    ? __( 'Email settings saved.', 'tpw-core' )
+                    : __( 'Settings saved.', 'tpw-core' ),
+            ];
+        }
+
+        if ( 'email_logo_b64_skipped' === $redirect_notice ) {
+            $notices[] = [
+                'type'    => 'warning',
+                'message' => __( 'Base64 copy not created – image too large or incompatible format.', 'tpw-core' ),
+            ];
+        } elseif ( 'email_settings_class_missing' === $redirect_notice ) {
+            $notices[] = [
+                'type'    => 'error',
+                'message' => __( 'Could not save. Email settings class missing.', 'tpw-core' ),
+            ];
+        } elseif ( 'email_template_db_missing' === $redirect_notice ) {
+            $notices[] = [
+                'type'    => 'error',
+                'message' => __( 'Could not save. Email Templates DB class missing.', 'tpw-core' ),
+            ];
+        } elseif ( 'email_logs_cleared' === $redirect_notice ) {
+            $notices[] = [
+                'type'    => 'success',
+                'message' => __( 'Email logs cleared.', 'tpw-core' ),
+            ];
+        } elseif ( 'email_logs_class_missing' === $redirect_notice ) {
+            $notices[] = [
+                'type'    => 'error',
+                'message' => __( 'Email logs are unavailable. Please ensure FlexiClub is fully updated.', 'tpw-core' ),
+            ];
+        }
+
+        return $notices;
+    }
+}
+
+if ( ! function_exists( 'tpw_core_render_settings_request_notices' ) ) {
+    function tpw_core_render_settings_request_notices( $current_tab = '' ) {
+        foreach ( tpw_core_get_settings_request_notices( $current_tab ) as $notice ) {
+            $type    = isset( $notice['type'] ) ? sanitize_html_class( (string) $notice['type'] ) : 'info';
+            $message = isset( $notice['message'] ) ? (string) $notice['message'] : '';
+
+            if ( '' === $message ) {
+                continue;
+            }
+
+            echo '<div class="notice notice-' . esc_attr( $type ) . ' is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
+        }
+    }
+}
+
+if ( ! function_exists( 'tpw_core_render_settings_tab_content' ) ) {
+    function tpw_core_render_settings_tab_content( $current_tab ) {
+        $current_tab                    = tpw_core_resolve_settings_tab( $current_tab );
+        $tpw_core_builtin_tab_rendered  = false;
+
+        if ( 'branding' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            tpw_core_render_branding_tab();
+        } elseif ( 'email' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            tpw_core_render_email_settings_tab();
+        } elseif ( 'email-templates' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            tpw_core_render_email_templates_tab();
+        } elseif ( 'email-logs' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            tpw_core_render_email_logs_tab();
+        } elseif ( 'features' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            if ( function_exists( 'tpw_core_render_features_tab' ) ) {
+                tpw_core_render_features_tab();
+            }
+        } elseif ( 'member-menu' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            if ( function_exists( 'tpw_core_render_member_menu_tab' ) ) {
+                tpw_core_render_member_menu_tab();
+            }
+        } elseif ( 'system-pages' === $current_tab ) {
+            $tpw_core_builtin_tab_rendered = true;
+            if ( function_exists( 'tpw_core_render_system_pages_tab' ) ) {
+                tpw_core_render_system_pages_tab();
+            }
+        }
+
+        ob_start();
+        do_action( 'tpw_core_settings_tab_content', $current_tab );
+        do_action( "tpw_core_settings_tab_content_{$current_tab}", $current_tab );
+        $tpw_core_hooked_tab_output = (string) ob_get_clean();
+
+        if ( trim( $tpw_core_hooked_tab_output ) !== '' ) {
+            echo $tpw_core_hooked_tab_output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tab content callbacks are responsible for escaping.
+        } elseif ( ! $tpw_core_builtin_tab_rendered ) {
+            echo '<p>' . esc_html__( 'No content registered for this tab.', 'tpw-core' ) . '</p>';
+        }
+    }
+}
+
+// 3) Render the settings page (tabbed)
+if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
+    /**
+     * Render the TPW Core settings page wrapper and tabs.
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    function tpw_core_render_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        tpw_core_set_settings_view_context(
+            [
+                'mode'          => 'admin',
+                'base_url'      => admin_url( 'options-general.php?page=tpw-core-settings' ),
+                'tab_query_arg' => 'tab',
+            ]
+        );
+
+        $tabs              = tpw_core_get_settings_tabs();
+        $current_tab       = tpw_core_resolve_settings_tab();
+        $payments_required = function_exists( 'tpw_core_payments_required' ) && tpw_core_payments_required();
     ?>
         <?php
         if ( function_exists( 'tpw_core_render_settings_header' ) ) {
@@ -216,159 +483,18 @@ if ( ! function_exists( 'tpw_core_render_settings_page' ) ) {
 
             <h2 class="nav-tab-wrapper">
                 <?php foreach ( $tabs as $slug => $label ):
-                    $url = esc_url( add_query_arg( 'tab', $slug, $base_url ) );
+                    $url = esc_url( tpw_core_build_settings_tab_url( $slug ) );
                     $active = $slug === $current_tab ? ' nav-tab-active' : '';
                 ?>
                     <a href="<?php echo $url; ?>" class="nav-tab<?php echo esc_attr($active); ?>"><?php echo esc_html( $label ); ?></a>
                 <?php endforeach; ?>
             </h2>
 
-            <?php $tpw_core_builtin_tab_rendered = false; ?>
-
-            <?php if ( 'branding' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php tpw_core_render_branding_tab(); ?>
-            <?php elseif ( 'email' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php tpw_core_render_email_settings_tab(); ?>
-            <?php elseif ( 'email-templates' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php tpw_core_render_email_templates_tab(); ?>
-            <?php elseif ( 'email-logs' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php tpw_core_render_email_logs_tab(); ?>
-            <?php elseif ( 'branding' === $current_tab ) : ?>
-                <?php
-                $tpw_core_builtin_tab_rendered = true;
-                // UI Theme settings form inside Branding tab
-                $ui_defaults = function_exists('tpw_core_get_ui_theme_defaults') ? tpw_core_get_ui_theme_defaults() : [];
-                $ui = function_exists('tpw_core_get_ui_theme_settings') ? tpw_core_get_ui_theme_settings(true) : $ui_defaults;
-                // Handle POST back for UI theme fields
-                if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tpw_core_branding_nonce']) && wp_verify_nonce( $_POST['tpw_core_branding_nonce'], 'tpw_core_save_branding' ) ) {
-                    $font  = isset($_POST['tpw_ui_font_family']) ? wp_unslash( (string) $_POST['tpw_ui_font_family'] ) : '';
-                    $fontw = isset($_POST['tpw_ui_font_weight']) ? preg_replace('/[^0-9a-zA-Z-]/', '', (string) $_POST['tpw_ui_font_weight'] ) : '';
-                    $ttrans= isset($_POST['tpw_ui_text_transform']) ? preg_replace('/[^a-z-]/', '', strtolower( (string) $_POST['tpw_ui_text_transform'] ) ) : '';
-                    $lsp   = isset($_POST['tpw_ui_letter_spacing']) ? wp_unslash( (string) $_POST['tpw_ui_letter_spacing'] ) : '';
-                    $tsh   = isset($_POST['tpw_ui_text_shadow']) ? wp_unslash( (string) $_POST['tpw_ui_text_shadow'] ) : '';
-                    $btnbg = isset($_POST['tpw_ui_btn_bg']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_bg'] ) : '';
-                    $btntx = isset($_POST['tpw_ui_btn_text']) ? sanitize_hex_color( (string) $_POST['tpw_ui_btn_text'] ) : '';
-                    $acc   = isset($_POST['tpw_ui_accent']) ? sanitize_hex_color( (string) $_POST['tpw_ui_accent'] ) : '';
-                    $save = [];
-                    if ( $font !== '' ) { $save['font_family'] = $font; }
-                    if ( $fontw !== '' ) { $save['font_weight'] = $fontw; }
-                    if ( in_array( $ttrans, ['none','uppercase','lowercase','capitalize'], true ) ) { $save['text_transform'] = $ttrans; }
-                    if ( $lsp !== '' ) { $save['letter_spacing'] = $lsp; }
-                    if ( $tsh !== '' ) { $save['text_shadow'] = $tsh; }
-                    if ( $btnbg ) { $save['btn_bg'] = $btnbg; }
-                    if ( $btntx ) { $save['btn_text'] = $btntx; }
-                    if ( $acc )   { $save['accent_color'] = $acc; }
-                    if ( ! empty( $save ) ) {
-                        $existing = get_option( 'tpw_ui_theme_settings', [] );
-                        if ( ! is_array( $existing ) ) { $existing = []; }
-                        $merged = array_merge( $existing, $save );
-                        update_option( 'tpw_ui_theme_settings', $merged );
-                        $ui = wp_parse_args( $merged, $ui_defaults );
-                    }
-                }
-                ?>
-                <form method="post">
-                    <?php wp_nonce_field( 'tpw_core_save_branding', 'tpw_core_branding_nonce' ); ?>
-                    <table class="form-table" role="presentation">
-                        <tbody>
-                            <tr><th colspan="2"><h2 style="margin:6px 0;">UI Theme (applies to .tpw-admin-ui)</h2></th></tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_font_family"><?php esc_html_e('Font family', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_font_family" name="tpw_ui_font_family" value="<?php echo esc_attr( (string) ($ui['font_family'] ?? '') ); ?>" placeholder="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" />
-                                    <p class="description"><?php esc_html_e('Applies within .tpw-admin-ui only.', 'tpw-core'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_font_weight"><?php esc_html_e('Font weight', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <?php $fw = (string) ($ui['font_weight'] ?? '600'); ?>
-                                    <select id="tpw_ui_font_weight" name="tpw_ui_font_weight">
-                                        <?php foreach ( ['normal','500','600','700'] as $opt ): ?>
-                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected( $fw, $opt ); ?>><?php echo esc_html($opt); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_text_transform"><?php esc_html_e('Text transform', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <?php $tt = (string) ($ui['text_transform'] ?? 'none'); ?>
-                                    <select id="tpw_ui_text_transform" name="tpw_ui_text_transform">
-                                        <?php foreach ( ['none','uppercase','lowercase','capitalize'] as $opt ): ?>
-                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected( $tt, $opt ); ?>><?php echo esc_html( ucfirst($opt) ); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_letter_spacing"><?php esc_html_e('Letter spacing', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_letter_spacing" name="tpw_ui_letter_spacing" value="<?php echo esc_attr( (string) ($ui['letter_spacing'] ?? 'normal') ); ?>" placeholder="normal | 0.03em | 1px" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_text_shadow"><?php esc_html_e('Text shadow', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_text_shadow" name="tpw_ui_text_shadow" value="<?php echo esc_attr( (string) ($ui['text_shadow'] ?? 'none') ); ?>" placeholder="none | 0 0 0 rgba(0,0,0,0.3)" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_btn_bg"><?php esc_html_e('Button background colour', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_btn_bg" name="tpw_ui_btn_bg" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" placeholder="#0b6cad" />
-                                    <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_bg'] ?? '#0b6cad') ); ?>" oninput="document.getElementById('tpw_ui_btn_bg').value=this.value" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_btn_text"><?php esc_html_e('Button text colour', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_btn_text" name="tpw_ui_btn_text" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" placeholder="#ffffff" />
-                                    <input type="color" value="<?php echo esc_attr( (string) ($ui['btn_text'] ?? '#ffffff') ); ?>" oninput="document.getElementById('tpw_ui_btn_text').value=this.value" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><label for="tpw_ui_accent"><?php esc_html_e('Accent colour', 'tpw-core'); ?></label></th>
-                                <td>
-                                    <input type="text" class="regular-text" id="tpw_ui_accent" name="tpw_ui_accent" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" placeholder="#2271b1" />
-                                    <input type="color" value="<?php echo esc_attr( (string) ($ui['accent_color'] ?? '#2271b1') ); ?>" oninput="document.getElementById('tpw_ui_accent').value=this.value" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <?php submit_button( __( 'Save UI Theme', 'tpw-core' ) ); ?>
-                </form>
-            <?php elseif ( 'features' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php if ( function_exists( 'tpw_core_render_features_tab' ) ) { tpw_core_render_features_tab(); } ?>
-            <?php elseif ( 'member-menu' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php if ( function_exists( 'tpw_core_render_member_menu_tab' ) ) { tpw_core_render_member_menu_tab(); } ?>
-            <?php elseif ( 'system-pages' === $current_tab ) : ?>
-                <?php $tpw_core_builtin_tab_rendered = true; ?>
-                <?php if ( function_exists( 'tpw_core_render_system_pages_tab' ) ) { tpw_core_render_system_pages_tab(); } ?>
-            <?php endif; ?>
-
-            <?php
-            // Extensible tab content mechanism: allow modules/add-ons to render tab content.
-            ob_start();
-            do_action( 'tpw_core_settings_tab_content', $current_tab );
-            do_action( "tpw_core_settings_tab_content_{$current_tab}", $current_tab );
-            $tpw_core_hooked_tab_output = (string) ob_get_clean();
-
-            if ( trim( $tpw_core_hooked_tab_output ) !== '' ) {
-                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tab content is responsible for escaping.
-                echo $tpw_core_hooked_tab_output;
-            } elseif ( ! $tpw_core_builtin_tab_rendered ) {
-                echo '<p>' . esc_html__( 'No content registered for this tab.', 'tpw-core' ) . '</p>';
-            }
-            ?>
+            <?php tpw_core_render_settings_tab_content( $current_tab ); ?>
         </div></div>
         <?php
+
+        tpw_core_reset_settings_view_context();
     }
 }
 
@@ -381,7 +507,7 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
      * @return void
      */
     function tpw_core_render_features_tab() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! tpw_core_current_user_can_manage_settings() ) return;
         $selected_redirect = (int) get_option( 'tpw_login_redirect_page_id', 0 );
         $selected_login    = (int) get_option( 'tpw_core_default_login_page', 0 );
         $action = esc_url( admin_url( 'admin-post.php' ) );
@@ -389,6 +515,7 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
         <form method="post" action="<?php echo $action; ?>">
             <?php wp_nonce_field( 'tpw_core_save_features', 'tpw_core_features_nonce' ); ?>
             <input type="hidden" name="action" value="tpw_core_save_features" />
+            <?php tpw_core_render_settings_context_fields( 'features' ); ?>
             <table class="form-table" role="presentation">
                 <tbody>
                     <tr>
@@ -436,7 +563,7 @@ if ( ! function_exists( 'tpw_core_render_features_tab' ) ) {
 // Member Menu tab renderer (previously used generic settings API form)
 if ( ! function_exists( 'tpw_core_render_member_menu_tab' ) ) {
     function tpw_core_render_member_menu_tab() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! tpw_core_current_user_can_manage_settings() ) return;
         $selected = get_option( 'tpw_member_menu_location', 'primary' );
         $locations = function_exists( 'get_registered_nav_menus' ) ? get_registered_nav_menus() : [];
         $action = esc_url( admin_url( 'admin-post.php' ) );
@@ -444,6 +571,7 @@ if ( ! function_exists( 'tpw_core_render_member_menu_tab' ) ) {
         <form method="post" action="<?php echo $action; ?>">
             <?php wp_nonce_field( 'tpw_core_save_member_menu', 'tpw_core_member_menu_nonce' ); ?>
             <input type="hidden" name="action" value="tpw_core_save_member_menu" />
+            <?php tpw_core_render_settings_context_fields( 'member-menu' ); ?>
             <table class="form-table" role="presentation">
                 <tbody>
                     <tr>
@@ -474,7 +602,7 @@ if ( ! function_exists( 'tpw_core_render_system_pages_tab' ) ) {
      * @return void
      */
     function tpw_core_render_system_pages_tab() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! tpw_core_current_user_can_manage_settings() ) return;
         // Load template
         $tpl = defined('TPW_CORE_PATH') ? TPW_CORE_PATH . 'modules/system-pages/templates/system-pages.php' : '';
         if ( $tpl && file_exists( $tpl ) ) {
@@ -492,6 +620,10 @@ if ( ! function_exists( 'tpw_core_render_email_logs_tab' ) ) {
      * @return void
      */
     function tpw_core_render_email_logs_tab() {
+        if ( ! tpw_core_current_user_can_manage_settings() ) {
+            return;
+        }
+
         if ( ! class_exists( 'TPW_Email_Logs' ) ) {
             return;
         }
@@ -505,6 +637,7 @@ if ( ! function_exists( 'tpw_core_render_email_logs_tab' ) ) {
             <form method="post" action="<?php echo $action; ?>" style="margin: 0 0 1rem;">
                 <?php wp_nonce_field( 'tpw_core_clear_email_logs', 'tpw_core_email_logs_nonce' ); ?>
                 <input type="hidden" name="action" value="tpw_core_clear_email_logs" />
+                <?php tpw_core_render_settings_context_fields( 'email-logs' ); ?>
                 <?php submit_button( __( 'Clear Logs', 'tpw-core' ), 'delete', 'tpw_clear_email_logs', false, [ 'onclick' => "return confirm('Are you sure you want to clear all email logs?');" ] ); ?>
             </form>
 
@@ -552,6 +685,10 @@ if ( ! function_exists( 'tpw_core_render_email_settings_tab' ) ) {
      * @return void
      */
     function tpw_core_render_email_settings_tab() {
+        if ( ! tpw_core_current_user_can_manage_settings() ) {
+            return;
+        }
+
         if ( ! class_exists( 'TPW_Core_Email_Settings' ) ) {
             return;
         }
@@ -562,6 +699,7 @@ if ( ! function_exists( 'tpw_core_render_email_settings_tab' ) ) {
         <form method="post" action="<?php echo $action; ?>">
             <?php wp_nonce_field( 'tpw_core_save_email_settings', 'tpw_core_email_nonce' ); ?>
             <input type="hidden" name="action" value="tpw_core_save_email_settings" />
+            <?php tpw_core_render_settings_context_fields( 'email' ); ?>
             <table class="form-table" role="presentation">
                 <tbody>
                     <tr>
@@ -687,13 +825,13 @@ if ( ! function_exists( 'tpw_core_render_email_settings_tab' ) ) {
 // Render Email Templates tab
 if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
     function tpw_core_render_email_templates_tab() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! tpw_core_current_user_can_manage_settings() ) return;
         if ( ! class_exists('TPW_Email_Template_Registry') ) {
             return;
         }
 
     $editing = isset($_GET['edit_template']) ? strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) $_GET['edit_template'] ) ) : '';
-        $base_url = admin_url( 'options-general.php?page=tpw-core-settings&tab=email-templates' );
+        $base_url = tpw_core_build_settings_tab_url( 'email-templates' );
 
         if ( $editing ) {
             $tpl = TPW_Email_Template_Registry::get( $editing );
@@ -726,6 +864,7 @@ if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
             wp_nonce_field( 'tpw_save_email_template', 'tpw_email_tmpl_nonce' );
             echo '<input type="hidden" name="action" value="tpw_core_save_email_template" />';
             echo '<input type="hidden" name="template_key" value="' . esc_attr( $tpl['key'] ) . '" />';
+            tpw_core_render_settings_context_fields( 'email-templates' );
 
             echo '<table class="form-table" role="presentation"><tbody>';
             echo '<tr><th scope="row">' . esc_html__( 'Template', 'tpw-core' ) . '</th><td>' . esc_html( $tpl['label'] ) . ' <code>(' . esc_html( $tpl['key'] ) . ')</code></td></tr>';
@@ -770,7 +909,7 @@ if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
 
             echo '</tbody></table>';
             submit_button( __( 'Save Template', 'tpw-core' ) );
-            echo ' <a class="button button-secondary" href="' . esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'tpw_core_reset_email_template', 'template_key' => $tpl['key'] ], admin_url( 'admin-post.php' ) ), 'tpw_reset_email_template', 'tpw_email_tmpl_nonce' ) ) . '">' . esc_html__( 'Reset to Default', 'tpw-core' ) . '</a>';
+            echo ' <a class="button button-secondary" href="' . esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'tpw_core_reset_email_template', 'template_key' => $tpl['key'], 'tpw_settings_context' => isset( tpw_core_get_settings_view_context()['mode'] ) ? tpw_core_get_settings_view_context()['mode'] : 'admin', 'tpw_settings_return_url' => tpw_core_build_settings_tab_url( 'email-templates', [ 'edit_template' => $tpl['key'] ] ) ], admin_url( 'admin-post.php' ) ), 'tpw_reset_email_template', 'tpw_email_tmpl_nonce' ) ) . '">' . esc_html__( 'Reset to Default', 'tpw-core' ) . '</a>';
             echo '</form>';
 
             return;
@@ -807,13 +946,13 @@ if ( ! function_exists( 'tpw_core_render_email_templates_tab' ) ) {
 
 // Handle Email Template save
 add_action( 'admin_post_tpw_core_save_email_template', function() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! tpw_core_current_user_can_manage_settings() ) wp_die( __( 'Permission denied', 'tpw-core' ) );
     check_admin_referer( 'tpw_save_email_template', 'tpw_email_tmpl_nonce' );
 
     $key = isset($_POST['template_key']) ? strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) $_POST['template_key'] ) ) : '';
     $tpl = class_exists('TPW_Email_Template_Registry') ? TPW_Email_Template_Registry::get( $key ) : null;
     if ( ! $key || ! $tpl ) {
-        wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'email-templates' ], admin_url('options-general.php') ) );
+        wp_safe_redirect( tpw_core_get_settings_redirect_url( 'email-templates' ) );
         exit;
     }
 
@@ -829,7 +968,7 @@ add_action( 'admin_post_tpw_core_save_email_template', function() {
     } else {
         $args['tpw_core_notice'] = 'email_template_db_missing';
     }
-    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
+    $url = tpw_core_get_settings_redirect_url( 'email-templates', $args );
     wp_safe_redirect( $url );
     exit;
 } );
@@ -1005,7 +1144,7 @@ add_action( 'wp_head', function(){
 // Render Branding tab
 if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
     function tpw_core_render_branding_tab() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! tpw_core_current_user_can_manage_settings() ) return;
 
         // Defaults mirror tpw-buttons.css
         $defaults = [
@@ -1054,6 +1193,7 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
     <form method="post" action="<?php echo $action; ?>" class="tpw-branding-form">
             <?php wp_nonce_field( 'tpw_core_save_branding', 'tpw_core_branding_nonce' ); ?>
             <input type="hidden" name="action" value="tpw_core_save_branding" />
+            <?php tpw_core_render_settings_context_fields( 'branding' ); ?>
             <table class="form-table" role="presentation">
                 <tbody>
                     <?php
@@ -1328,7 +1468,7 @@ if ( ! function_exists( 'tpw_core_render_branding_tab' ) ) {
 
 // Save Branding handler
 add_action( 'admin_post_tpw_core_save_branding', function(){
-    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! tpw_core_current_user_can_manage_settings() ) wp_die( __( 'Permission denied', 'tpw-core' ) );
     check_admin_referer( 'tpw_core_save_branding', 'tpw_core_branding_nonce' );
 
     $defaults = [
@@ -1528,14 +1668,14 @@ add_action( 'admin_post_tpw_core_save_branding', function(){
         update_option( 'tpw_heading_styles', $merged_h );
     }
 
-    $url = add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'branding', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) );
+    $url = tpw_core_get_settings_redirect_url( 'branding', [ 'settings-updated' => '1' ] );
     wp_safe_redirect( $url );
     exit;
 });
 
 // Handle Email Template reset
 add_action( 'admin_post_tpw_core_reset_email_template', function() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! tpw_core_current_user_can_manage_settings() ) wp_die( __( 'Permission denied', 'tpw-core' ) );
     check_admin_referer( 'tpw_reset_email_template', 'tpw_email_tmpl_nonce' );
 
     $key = isset($_GET['template_key']) ? strtolower( preg_replace( '/[^a-z0-9_-]/i', '', (string) $_GET['template_key'] ) ) : '';
@@ -1546,7 +1686,7 @@ add_action( 'admin_post_tpw_core_reset_email_template', function() {
     } elseif ( $key ) {
         $args['tpw_core_notice'] = 'email_template_db_missing';
     }
-    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
+    $url = tpw_core_get_settings_redirect_url( 'email-templates', $args );
     wp_safe_redirect( $url );
     exit;
 } );
@@ -1555,7 +1695,7 @@ add_action( 'admin_post_tpw_core_reset_email_template', function() {
 
 // New save handler: Features tab
 add_action( 'admin_post_tpw_core_save_features', function() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! tpw_core_current_user_can_manage_settings() ) wp_die( __( 'Permission denied', 'tpw-core' ) );
     check_admin_referer( 'tpw_core_save_features', 'tpw_core_features_nonce' );
 
     $login_page   = isset( $_POST['tpw_core_default_login_page'] ) ? (int) $_POST['tpw_core_default_login_page'] : 0;
@@ -1573,19 +1713,19 @@ add_action( 'admin_post_tpw_core_save_features', function() {
 
     update_option( 'tpw_core_default_login_page', $login_page );
     update_option( 'tpw_login_redirect_page_id', $redirect_page );
-    wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'features', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
+    wp_safe_redirect( tpw_core_get_settings_redirect_url( 'features', [ 'settings-updated' => '1' ] ) );
     exit;
 } );
 
 // New save handler: Member Menu tab
 add_action( 'admin_post_tpw_core_save_member_menu', function() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_die( __( 'Permission denied', 'tpw-core' ) );
+    if ( ! tpw_core_current_user_can_manage_settings() ) wp_die( __( 'Permission denied', 'tpw-core' ) );
     check_admin_referer( 'tpw_core_save_member_menu', 'tpw_core_member_menu_nonce' );
 
     $location = isset( $_POST['tpw_member_menu_location'] ) ? sanitize_key( $_POST['tpw_member_menu_location'] ) : 'primary';
     if ( $location === '' ) { $location = 'primary'; }
     update_option( 'tpw_member_menu_location', $location );
-    wp_safe_redirect( add_query_arg( [ 'page' => 'tpw-core-settings', 'tab' => 'member-menu', 'settings-updated' => '1' ], admin_url( 'options-general.php' ) ) );
+    wp_safe_redirect( tpw_core_get_settings_redirect_url( 'member-menu', [ 'settings-updated' => '1' ] ) );
     exit;
 } );
 
@@ -1602,7 +1742,7 @@ add_action( 'admin_init', function() {
 
 // Handle Email Settings save (POST)
 add_action( 'admin_post_tpw_core_save_email_settings', function() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! tpw_core_current_user_can_manage_settings() ) {
         wp_die( __( 'You do not have permission to manage settings.', 'tpw-core' ) );
     }
     check_admin_referer( 'tpw_core_save_email_settings', 'tpw_core_email_nonce' );
@@ -1661,13 +1801,13 @@ add_action( 'admin_post_tpw_core_save_email_settings', function() {
     if ( $redirect_notice !== '' ) {
         $args['tpw_core_notice'] = $redirect_notice;
     }
-    $url = add_query_arg( $args, admin_url( 'options-general.php' ) );
+    $url = tpw_core_get_settings_redirect_url( 'email', $args );
     wp_safe_redirect( $url );
     exit;
 } );
 
 add_action( 'admin_post_tpw_core_clear_email_logs', function() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! tpw_core_current_user_can_manage_settings() ) {
         wp_die( __( 'You do not have permission to manage settings.', 'tpw-core' ) );
     }
 
@@ -1682,7 +1822,7 @@ add_action( 'admin_post_tpw_core_clear_email_logs', function() {
         $args['tpw_core_notice'] = 'email_logs_class_missing';
     }
 
-    wp_safe_redirect( add_query_arg( $args, admin_url( 'options-general.php' ) ) );
+    wp_safe_redirect( tpw_core_get_settings_redirect_url( 'email-logs', $args ) );
     exit;
 } );
 

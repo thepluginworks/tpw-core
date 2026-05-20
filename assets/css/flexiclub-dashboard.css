@@ -1613,8 +1613,267 @@ body.tpw-flexiclub-portal-page .secondary-sidebar {
   color: #334155;
 }
 
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__section {
+  display: grid;
+  gap: 18px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-head,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-copy,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-copy p {
+  margin: 0;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link:hover,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link:focus-visible {
+  background: rgba(255, 255, 255, 1);
+  border-color: color-mix(in srgb, var(--tpw-accent-color, #0b6cad) 34%, white);
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link--current {
+  background: var(--tpw-accent-color, #0b6cad);
+  border-color: var(--tpw-accent-color, #0b6cad);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(11, 108, 173, 0.18);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link--disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link--external::after {
+  content: '↗';
+  margin-left: 8px;
+  font-size: 0.8em;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel {
+  border-radius: 24px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  padding: clamp(18px, 2vw, 28px);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel-head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.32rem, 2vw, 1.72rem);
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel-body {
+  display: grid;
+  gap: 18px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--email-templates > form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 12px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > .form-table,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > h2,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--email-templates > form > .form-table {
+  flex: 0 0 100%;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table th,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  vertical-align: top;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td .description,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td span.description {
+  display: block;
+  margin-top: 8px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td input[type="color"] {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td input[type="color"] + input.small-text,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .form-table td input.small-text + select {
+  display: block;
+  margin-top: 10px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .submit .button,
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates > p .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates .tpw-email-templates-list .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .submit .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .button,
+  .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-pay-action .button,
+  .tpw-flexiclub-settings__tab-shell--payment-methods .submit .button
+) {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 40px;
+  padding: var(--tpw-btn-padding, 4px 8px) !important;
+  border-radius: var(--tpw-btn-radius, 7px) !important;
+  font-family: var(--tpw-btn-font-family, var(--tpw-font-family, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji")) !important;
+  font-size: var(--tpw-btn-font-size, 0.9rem) !important;
+  font-weight: var(--tpw-btn-font-weight, var(--tpw-font-weight, 600)) !important;
+  text-transform: var(--tpw-text-transform, none) !important;
+  letter-spacing: var(--tpw-letter-spacing, normal) !important;
+  text-shadow: var(--tpw-text-shadow, none) !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .submit .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates > p .button:not(.button-secondary),
+  .tpw-flexiclub-settings__tab-shell--email-templates .tpw-email-templates-list .button,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .submit .button,
+  .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-pay-action .button,
+  .tpw-flexiclub-settings__tab-shell--payment-methods .submit .button
+) {
+  background: var(--tpw-btn-primary, #0b6cad) !important;
+  color: var(--tpw-btn-text-light, #ffffff) !important;
+  border: 1px solid color-mix(in oklab, var(--tpw-btn-primary, #0b6cad) 75%, black 25%) !important;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > .button.button-secondary,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .button.button-secondary
+) {
+  background: var(--tpw-btn-light, #f8f9fa) !important;
+  color: var(--tpw-btn-text-dark, #000000) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form .submit,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .submit,
+  .tpw-flexiclub-settings__tab-shell--payment-methods .submit
+) {
+  margin: 24px 0 0;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+  .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > .button.button-secondary,
+  .tpw-flexiclub-settings__tab-shell--email-templates > form > .button.button-secondary
+) {
+  margin-top: 24px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--email-templates .tpw-email-templates-list {
+  display: grid;
+  gap: 20px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--email-templates .tpw-email-templates-list .widefat th:last-child,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--email-templates .tpw-email-templates-list .widefat td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-payments-list {
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-pay-row {
+  align-items: center;
+  gap: 16px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-pay-action {
+  margin-left: auto;
+  justify-content: flex-end;
+  min-width: max-content;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-payments-list + .submit {
+  margin-top: 28px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel .notice,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel .updated {
+  margin: 0 0 16px;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel .form-table,
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel .widefat {
+  width: 100%;
+}
+
+.tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__panel .submit {
+  margin-bottom: 0;
+}
+
 @media (max-width: 1280px) {
   .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__section-head {
+    flex-direction: column;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-head,
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__section-head {
     flex-direction: column;
   }
 
@@ -1630,6 +1889,29 @@ body.tpw-flexiclub-portal-page .secondary-sidebar {
 @media (max-width: 782px) {
   .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-head {
     flex-direction: column;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-link {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page :is(
+    .tpw-flexiclub-settings__tab-shell--branding .tpw-branding-form > .button.button-secondary,
+    .tpw-flexiclub-settings__tab-shell--email-templates > form > .button.button-secondary
+  ) {
+    margin-top: 0;
+  }
+
+  .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-settings__tab-shell--payment-methods .tpw-pay-action {
+    margin-left: 0;
+    justify-content: flex-start;
+    min-width: 0;
   }
 
   .tpw-frontend-ui.flexiclub-dashboard--frontend.flexiclub-portal-page .tpw-flexiclub-system-pages__hero-actions {

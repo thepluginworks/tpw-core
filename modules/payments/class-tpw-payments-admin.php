@@ -11,7 +11,12 @@ class TPW_Payments_Admin {
      * Expects POST 'order' as an array of slugs in desired order.
      */
     public static function ajax_update_sort() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        $can_manage = current_user_can( 'manage_options' );
+        if ( ! $can_manage && function_exists( 'tpw_core_current_user_can_manage_settings' ) ) {
+            $can_manage = tpw_core_current_user_can_manage_settings();
+        }
+
+        if ( ! $can_manage ) {
             wp_send_json_error( [ 'message' => 'Unauthorized' ], 403 );
         }
         check_ajax_referer( 'tpw_update_payment_sort', 'nonce' );
@@ -105,8 +110,12 @@ class TPW_Payments_Admin {
                 'created_at' => current_time('mysql'),
             ] );
         }
-        $methods = $wpdb->get_results("SELECT * FROM $table ORDER BY sort_order ASC, name ASC");
-        $sort_nonce = wp_create_nonce('tpw_update_payment_sort');
+        $methods       = $wpdb->get_results("SELECT * FROM $table ORDER BY sort_order ASC, name ASC");
+        $sort_nonce    = wp_create_nonce('tpw_update_payment_sort');
+        $settings_mode = function_exists( 'tpw_core_get_settings_view_context' )
+            ? (string) ( tpw_core_get_settings_view_context()['mode'] ?? 'admin' )
+            : 'admin';
+        $sort_ajax_url = admin_url( 'admin-ajax.php' );
 
         foreach ($methods as $index => $method) {
             if ($method->slug === 'cheque-cash') {
@@ -141,6 +150,7 @@ class TPW_Payments_Admin {
         ?>
             <form method="post">
                 <?php wp_nonce_field('tpw_update_payment_methods'); ?>
+                <?php if ( function_exists( 'tpw_core_render_settings_context_fields' ) ) { tpw_core_render_settings_context_fields( 'payment-methods' ); } ?>
 
                 <div class="tpw-payments-list">
                     <?php foreach ($methods as $method): ?>
@@ -284,6 +294,8 @@ class TPW_Payments_Admin {
         (function($){
             $(function(){
                 var $list = $('.tpw-payments-list');
+                var ajaxEndpoint = window.ajaxurl || <?php echo wp_json_encode( $sort_ajax_url ); ?>;
+                var settingsContext = <?php echo wp_json_encode( $settings_mode ); ?>;
                 if (!$list.length || !$.fn.sortable) return;
                 $list.sortable({
                     items: '.tpw-pay-row',
@@ -292,9 +304,10 @@ class TPW_Payments_Admin {
                     update: function(){
                         var order = $list.find('.tpw-pay-row').map(function(){ return $(this).data('slug'); }).get();
                         $('#tpw-sort-feedback').stop(true,true).text('Saving order…').css({display:'block', color:'#334155'});
-                        $.post(ajaxurl, {
+                        $.post(ajaxEndpoint, {
                             action: 'tpw_update_payment_sort',
                             nonce: '<?php echo esc_js($sort_nonce); ?>',
+                            tpw_settings_context: settingsContext,
                             order: order
                         }).done(function(resp){
                             var ok = resp && resp.success;

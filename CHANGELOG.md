@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-05-20
+
+### Changed
+- Front end: added a new FlexiClub Settings workspace inside the `[flexiclub]` portal so authorised front-end managers can work with the existing Core settings tabs without leaving the portal.
+- Settings: reused the shared Branding, Features, Member Menu, Email Settings, Email Templates, Email Logs, and Payment Methods tab renderers, validation, save handlers, and redirect flows in the new front-end workspace without changing option keys or the existing wp-admin settings page behaviour.
+- Payments: adapted the main Payment Methods settings surface for front-end workspace use, including front-end-compatible permission checks, redirect context, and sortable save wiring, while keeping gateway-specific detail screens on their existing admin pages.
+
+### Fixed
+- Front end: improved the Settings workspace presentation so Branding inputs have clearer spacing and the Email Templates and Payment Methods actions keep the intended TPW admin-style button and layout treatment when rendered inside front-end themes.
+
 ## [2.3.0] - 2026-05-19
 
 ### Fixed
