@@ -42,11 +42,14 @@ FlexiClub includes its own update and packaging flow so production sites receive
 - FlexiClub top-level wp-admin menu for core navigation, with bridge pages for front-end-only management tools
 - Settings -> FlexiClub for shared configuration such as branding, payments, and platform options
 - Member-related FlexiClub screens used by dependent plugins
-- FlexiClub Control for front-end admin tools where enabled
+- FlexiClub front-end workspaces for dashboard, Menu Management, Archival System, settings, and system-page operations
+- FlexiClub Control retained as a legacy transition workspace where older links or shortcodes are still in use
 
 ## Common public shortcodes
 
 - `[flexiclub]`
+- `[flexiclub_menu_management]`
+- `[flexiclub_archival_system]`
 - `[tpw_member_login]`
 - `[tpw_member_profile]`
 - `[tpw_join_form]`

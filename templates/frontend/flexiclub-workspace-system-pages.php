@@ -85,6 +85,9 @@ $notice_text    = isset( $workspace['notice_text'] ) ? (string) $workspace['noti
 						<div class="tpw-flexiclub-system-pages__page-title"><?php echo esc_html( $row['title'] ); ?></div>
 						<div class="tpw-flexiclub-system-pages__page-meta">
 							<span class="tpw-flexiclub-system-pages__page-chip tpw-flexiclub-system-pages__page-chip--plugin"><?php echo esc_html( $row['plugin'] ); ?></span>
+							<?php if ( ! empty( $row['legacy_label'] ) ) : ?>
+								<span class="tpw-flexiclub-system-pages__page-chip tpw-flexiclub-system-pages__page-chip--legacy"><?php echo esc_html( $row['legacy_label'] ); ?></span>
+							<?php endif; ?>
 						</div>
 						<p class="tpw-flexiclub-system-pages__page-slug"><?php echo esc_html( '/' . $row['slug'] . '/' ); ?></p>
 					</div>

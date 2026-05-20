@@ -910,18 +910,24 @@ Notes
 ## TPW Control (Front-end Admin Hub)
 
 TPW Control centralizes front‑end admin tools behind a single shortcode and routed sub‑pages.
+FlexiClub now also exposes FE-first workspace shells for the same operational areas so the old Control hub can remain as a compatibility layer instead of the only entry point.
 
 - Shortcode: `[tpw-control]`
 - Route format: `/tpw-control/?action=` where `action` matches a registered section key.
 - Default page (no `action`): Dashboard.
+- FE workspace shortcodes: `[flexiclub]`, `[flexiclub_menu_management]`, and `[flexiclub_archival_system]`.
+- FE system page slugs: `flexiclub`, `menu-management`, and `archival-system`.
+- Legacy compatibility: keep the `tpw-control` page registered and available during migration; do not hard-remove existing links, pages, or shortcode usage.
 
 Conventions
 - Front‑end only for now; architected for an optional future wp‑admin UI.
 - Permissions leverage Members module flags and statuses (no `is_member` flag).
 - Sections can be added by other plugins via filter and action hooks.
 
-Autocreate Control Page (for TPW plugins)
-- TPW plugins should auto‑create a WordPress Page titled `TPW Control` with content `[tpw-control]` on activation, if one does not exist. This keeps a stable front‑end entry point for society admins.
+Autocreate Control and FE Workspace Pages
+- TPW Core should register and safely ensure the canonical FE portal pages `flexiclub`, `menu-management`, and `archival-system` using their dedicated shortcodes.
+- TPW Core should also keep the legacy `tpw-control` page registered and available on activation when it is missing, but treat it as a transition workspace rather than the primary long-term entry point.
+- Use duplicate-safe creation checks so existing slug pages or shortcode pages are preserved instead of being recreated.
 
 Sections Registry
 Use the `tpw_control/sections` filter to register or modify sections. Each section is an associative array with:
@@ -964,12 +970,19 @@ Templates
 Assets
 - CSS: `modules/tpw-control/assets/css/tpw-control.css`
 - JS: `modules/tpw-control/assets/js/tpw-control.js`
+- FE workspace wrapper CSS: `assets/css/flexiclub-dashboard.css`
+- TPW Control assets may be enqueued from FE workspace shells via `TPW_Control::enqueue_workspace_assets()` when the legacy sections are embedded inside the FlexiClub portal.
 
 Shortcode Routing
 - The shortcode renders the layout and content for the section indicated by `?action=`.
 - Example URLs after you place the shortcode on a page:
 	- `https://example.com/tpw-control/?action=upload-pages`
 	- `https://example.com/tpw-control/?action=menu-manager`
+
+FlexiClub FE Workspace Routing
+- `[flexiclub]` remains the main FE portal and can route to additive workspace views such as `?workspace=menu-management` and `?workspace=archival-system`.
+- `[flexiclub_menu_management]` and `[flexiclub_archival_system]` render the same FE shell directly on dedicated system pages.
+- When reusing TPW Control sections inside FlexiClub FE workspaces, preserve the original section callbacks and legacy routes rather than duplicating their business logic.
 
 ### Developer helpers (Phase 5)
 

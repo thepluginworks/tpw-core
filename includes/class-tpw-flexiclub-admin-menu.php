@@ -34,6 +34,8 @@ class TPW_FlexiClub_Admin_Menu {
 
 	public static function init_frontend() {
 		add_shortcode( 'flexiclub', [ __CLASS__, 'render_frontend_shortcode' ] );
+		add_shortcode( 'flexiclub_menu_management', [ __CLASS__, 'render_menu_management_shortcode' ] );
+		add_shortcode( 'flexiclub_archival_system', [ __CLASS__, 'render_archival_system_shortcode' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'prepare_frontend_portal_page' ], 0 );
 		add_filter( 'body_class', [ __CLASS__, 'filter_frontend_portal_body_classes' ] );
 	}
@@ -206,6 +208,18 @@ class TPW_FlexiClub_Admin_Menu {
 	}
 
 	public static function render_frontend_shortcode() {
+		return self::render_frontend_workspace_shortcode();
+	}
+
+	public static function render_menu_management_shortcode() {
+		return self::render_frontend_workspace_shortcode( 'menu-management' );
+	}
+
+	public static function render_archival_system_shortcode() {
+		return self::render_frontend_workspace_shortcode( 'archival-system' );
+	}
+
+	protected static function render_frontend_workspace_shortcode( $workspace = '' ) {
 		self::enqueue_frontend_dashboard_assets();
 
 		if ( ! is_user_logged_in() ) {
@@ -220,11 +234,24 @@ class TPW_FlexiClub_Admin_Menu {
 			);
 		}
 
-		if ( 'settings' === self::get_current_frontend_workspace() && function_exists( 'wp_enqueue_media' ) ) {
+		$workspace = '' !== $workspace ? self::normalize_frontend_workspace( $workspace ) : self::get_current_frontend_workspace();
+		$control_section = self::get_frontend_control_workspace_section_key( $workspace );
+
+		if ( '' !== $control_section && ! self::current_user_can_tpw_control_section( $control_section ) ) {
+			return self::render_frontend_permission_state(
+				'menu-manager' === $control_section
+					? esc_html__( 'You do not have permission to access the Menu Management workspace.', 'tpw-core' )
+					: esc_html__( 'You do not have permission to access the Archival System workspace.', 'tpw-core' )
+			);
+		}
+
+		self::maybe_enqueue_frontend_control_workspace_assets( $workspace );
+
+		if ( 'settings' === $workspace && function_exists( 'wp_enqueue_media' ) ) {
 			wp_enqueue_media();
 		}
 
-		$dashboard = self::get_frontend_dashboard_view_model();
+		$dashboard = self::get_frontend_dashboard_view_model( $workspace );
 		$template  = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-dashboard.php' : '';
 
 		ob_start();
@@ -905,6 +932,49 @@ class TPW_FlexiClub_Admin_Menu {
 		return false !== strpos( $content, '[' . $tag );
 	}
 
+	protected static function page_has_any_shortcode_tag( $content, $shortcode_tags ) {
+		foreach ( (array) $shortcode_tags as $shortcode_tag ) {
+			if ( self::page_has_shortcode_tag( $content, $shortcode_tag ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected static function get_frontend_portal_shortcode_tags() {
+		return [
+			'flexiclub',
+			'flexiclub_menu_management',
+			'flexiclub_archival_system',
+		];
+	}
+
+	protected static function get_frontend_portal_system_page_slugs() {
+		return [
+			'flexiclub',
+			'menu-management',
+			'archival-system',
+		];
+	}
+
+	protected static function get_frontend_portal_system_page_ids() {
+		$page_ids = [];
+
+		if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
+			return $page_ids;
+		}
+
+		foreach ( self::get_frontend_portal_system_page_slugs() as $system_slug ) {
+			$page_id = (int) TPW_Core_System_Pages::get_page_id( $system_slug );
+			if ( $page_id > 0 ) {
+				$page_ids[] = $page_id;
+			}
+		}
+
+		return array_values( array_unique( $page_ids ) );
+	}
+
 	protected static function is_current_frontend_dashboard_page() {
 		if ( is_admin() || ! function_exists( 'is_singular' ) || ! is_singular( 'page' ) ) {
 			return false;
@@ -915,11 +985,11 @@ class TPW_FlexiClub_Admin_Menu {
 			return false;
 		}
 
-		if ( self::page_has_shortcode_tag( (string) $page->post_content, 'flexiclub' ) ) {
+		if ( self::page_has_any_shortcode_tag( (string) $page->post_content, self::get_frontend_portal_shortcode_tags() ) ) {
 			return true;
 		}
 
-		return self::get_frontend_dashboard_page_id() === (int) $page->ID;
+		return in_array( (int) $page->ID, self::get_frontend_portal_system_page_ids(), true );
 	}
 
 	protected static function get_frontend_dashboard_page_id() {
@@ -936,9 +1006,11 @@ class TPW_FlexiClub_Admin_Menu {
 			return;
 		}
 
-		$system_page_id = self::get_frontend_dashboard_page_id();
-		$is_portal_landing_page = ( $system_page_id > 0 && (int) $page->ID === $system_page_id ) || 'flexiclub' === $page->post_name;
-		if ( ! $is_portal_landing_page ) {
+		$is_portal_page = self::page_has_any_shortcode_tag( (string) $page->post_content, self::get_frontend_portal_shortcode_tags() )
+			|| in_array( (int) $page->ID, self::get_frontend_portal_system_page_ids(), true )
+			|| in_array( (string) $page->post_name, self::get_frontend_portal_system_page_slugs(), true );
+
+		if ( ! $is_portal_page ) {
 			return;
 		}
 
@@ -1194,9 +1266,9 @@ class TPW_FlexiClub_Admin_Menu {
 		}
 	}
 
-	protected static function get_frontend_dashboard_view_model() {
+	protected static function get_frontend_dashboard_view_model( $workspace_override = '' ) {
 		$current_user       = wp_get_current_user();
-		$workspace          = self::get_current_frontend_workspace();
+		$workspace          = '' !== $workspace_override ? self::normalize_frontend_workspace( $workspace_override ) : self::get_current_frontend_workspace();
 		$members_summary    = self::get_members_summary();
 		$notices_summary    = self::get_notices_summary();
 		$events_summary     = self::get_events_summary();
@@ -1209,6 +1281,16 @@ class TPW_FlexiClub_Admin_Menu {
 		$logs_summary       = self::get_logs_summary();
 		$settings_workspace = self::get_frontend_settings_workspace_view_model();
 		$route_map          = self::get_frontend_workspace_route_map( $payments_summary );
+		$menu_management_workspace = self::get_frontend_control_workspace_view_model(
+			'menu-management',
+			$menu_summary,
+			isset( $route_map['menu-management'] ) ? (array) $route_map['menu-management'] : []
+		);
+		$archival_system_workspace = self::get_frontend_control_workspace_view_model(
+			'archival-system',
+			$uploads_summary,
+			isset( $route_map['archival-system'] ) ? (array) $route_map['archival-system'] : []
+		);
 		$checklist_items    = self::get_frontend_checklist_items(
 			$members_summary,
 			$notices_summary,
@@ -1271,6 +1353,8 @@ class TPW_FlexiClub_Admin_Menu {
 			'activity_items'         => self::get_dashboard_activity_items(),
 			'settings_workspace'     => $settings_workspace,
 			'system_pages_workspace' => $system_pages_workspace,
+			'menu_management_workspace' => $menu_management_workspace,
+			'archival_system_workspace' => $archival_system_workspace,
 			'system_items'           => self::get_dashboard_system_items(
 				$members_summary,
 				$system_summary,
@@ -1330,11 +1414,12 @@ class TPW_FlexiClub_Admin_Menu {
 		$gallery_route = self::get_frontend_gallery_route();
 		$route_map     = self::get_frontend_workspace_route_map( $payments_summary );
 		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+		$menu_management_route = isset( $route_map['menu-management'] ) ? (array) $route_map['menu-management'] : [];
+		$archival_system_route = isset( $route_map['archival-system'] ) ? (array) $route_map['archival-system'] : [];
 		$system_pages_route = isset( $route_map['system-pages'] ) ? (array) $route_map['system-pages'] : [];
 		$settings_route = isset( $route_map['settings'] ) ? (array) $route_map['settings'] : [];
 		$logs_route = isset( $route_map['logs'] ) ? (array) $route_map['logs'] : [];
 		$payments_route = isset( $route_map['payments'] ) ? (array) $route_map['payments'] : [];
-		$control_note = isset( $route_map['control-note'] ) ? (string) $route_map['control-note'] : '';
 		$can_manage_system_pages = class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'current_user_can_manage' )
 			? TPW_Core_System_Pages::current_user_can_manage()
 			: self::current_user_can_frontend_dashboard();
@@ -1385,30 +1470,41 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
-		if ( self::current_user_can_tpw_control_hub() ) {
-			$cards['control'] = [
-				'title'        => __( 'FlexiClub Control', 'tpw-core' ),
-				'metric'       => sprintf(
-					/* translators: %s: accessible control section count */
-					_n( '%s tool', '%s tools', (int) $control_route['section_count'], 'tpw-core' ),
-					number_format_i18n( (int) $control_route['section_count'] )
-				),
+		if ( self::current_user_can_tpw_control_section( 'menu-manager' ) ) {
+			$cards['menu-management'] = [
+				'title'        => __( 'Menu Management', 'tpw-core' ),
+				'metric'       => $menu_summary['metric_value'],
 				'tone'         => 'permissions',
-				'status_label' => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? __( 'In use', 'tpw-core' ) : __( 'Ready', 'tpw-core' ) ) : $control_route['status_label'],
-				'status_tone'  => ! empty( $control_route['configured'] ) ? ( $control_route['section_count'] > 0 ? 'success' : 'neutral' ) : $control_route['status_tone'],
+				'status_label' => ! empty( $menu_management_route['configured'] ) ? $menu_summary['status_label'] : $menu_management_route['status_label'],
+				'status_tone'  => ! empty( $menu_management_route['configured'] ) ? $menu_summary['status_tone'] : $menu_management_route['status_tone'],
 				'description'  => self::append_frontend_route_note(
-					! empty( $control_route['configured'] )
-					? ( $control_route['section_count'] > 0
-						? __( 'Open the existing FlexiClub Control workspace for archive, menu, and club website tools.', 'tpw-core' )
-						: __( 'The shared FlexiClub Control page is ready, but no admin sections are currently available for your role.', 'tpw-core' ) )
-					: $control_route['message'],
-					$control_note
+					$menu_summary['card_text'],
+					isset( $menu_management_route['message'] ) ? (string) $menu_management_route['message'] : ''
 				),
-				'action_label' => $control_route['action_label'],
-				'action_url'   => $control_route['url'],
-				'icon'         => 'dashicons-admin-tools',
-				'disabled'     => '' === $control_route['url'],
-				'show_action'  => '' !== $control_route['action_label'],
+				'action_label' => isset( $menu_management_route['action_label'] ) ? (string) $menu_management_route['action_label'] : '',
+				'action_url'   => isset( $menu_management_route['url'] ) ? (string) $menu_management_route['url'] : '',
+				'icon'         => 'dashicons-menu',
+				'disabled'     => empty( $menu_management_route['url'] ),
+				'show_action'  => ! empty( $menu_management_route['action_label'] ),
+			];
+		}
+
+		if ( self::current_user_can_tpw_control_section( 'upload-pages' ) ) {
+			$cards['archival-system'] = [
+				'title'        => __( 'Archival System', 'tpw-core' ),
+				'metric'       => $uploads_summary['metric_value'],
+				'tone'         => 'uploads',
+				'status_label' => ! empty( $archival_system_route['configured'] ) ? $uploads_summary['status_label'] : $archival_system_route['status_label'],
+				'status_tone'  => ! empty( $archival_system_route['configured'] ) ? $uploads_summary['status_tone'] : $archival_system_route['status_tone'],
+				'description'  => self::append_frontend_route_note(
+					$uploads_summary['card_text'],
+					isset( $archival_system_route['message'] ) ? (string) $archival_system_route['message'] : ''
+				),
+				'action_label' => isset( $archival_system_route['action_label'] ) ? (string) $archival_system_route['action_label'] : '',
+				'action_url'   => isset( $archival_system_route['url'] ) ? (string) $archival_system_route['url'] : '',
+				'icon'         => 'dashicons-media-document',
+				'disabled'     => empty( $archival_system_route['url'] ),
+				'show_action'  => ! empty( $archival_system_route['action_label'] ),
 			];
 		}
 
@@ -1527,14 +1623,27 @@ class TPW_FlexiClub_Admin_Menu {
 		return is_string( $permalink ) ? $permalink : '';
 	}
 
+	protected static function get_allowed_frontend_workspaces() {
+		return [
+			'dashboard',
+			'menu-management',
+			'archival-system',
+			'settings',
+			'system-pages',
+		];
+	}
+
+	protected static function normalize_frontend_workspace( $workspace ) {
+		$workspace = sanitize_key( (string) $workspace );
+
+		return in_array( $workspace, self::get_allowed_frontend_workspaces(), true ) ? $workspace : 'dashboard';
+	}
+
 	protected static function get_current_frontend_workspace() {
 		$workspace = 'dashboard';
 
 		if ( isset( $_GET['workspace'] ) ) {
-			$candidate = sanitize_key( wp_unslash( $_GET['workspace'] ) );
-			if ( in_array( $candidate, [ 'settings', 'system-pages' ], true ) ) {
-				$workspace = $candidate;
-			}
+			$workspace = self::normalize_frontend_workspace( wp_unslash( $_GET['workspace'] ) );
 		}
 
 		return $workspace;
@@ -1574,7 +1683,66 @@ class TPW_FlexiClub_Admin_Menu {
 		return add_query_arg( 'workspace', $workspace, $base_url );
 	}
 
+	protected static function get_frontend_control_workspace_section_key( $workspace ) {
+		switch ( self::normalize_frontend_workspace( $workspace ) ) {
+			case 'menu-management':
+				return 'menu-manager';
+			case 'archival-system':
+				return 'upload-pages';
+			default:
+				return '';
+		}
+	}
+
+	protected static function is_frontend_tpw_control_workspace( $workspace ) {
+		return '' !== self::get_frontend_control_workspace_section_key( $workspace );
+	}
+
+	protected static function maybe_enqueue_frontend_control_workspace_assets( $workspace ) {
+		if ( ! self::is_frontend_tpw_control_workspace( $workspace ) ) {
+			return;
+		}
+
+		if ( class_exists( 'TPW_Control', false ) && method_exists( 'TPW_Control', 'enqueue_workspace_assets' ) ) {
+			TPW_Control::enqueue_workspace_assets();
+		}
+	}
+
 	protected static function get_frontend_section_nav_items( $workspace, $show_checklist, $has_cards, $workspace_data = [] ) {
+		if ( 'menu-management' === $workspace ) {
+			return [
+				[
+					'label' => __( 'Workspace Overview', 'tpw-core' ),
+					'url'   => '#flexiclub-menu-management-overview',
+				],
+				[
+					'label' => __( 'Menu Tool', 'tpw-core' ),
+					'url'   => '#flexiclub-menu-management-tool',
+				],
+				[
+					'label' => __( 'Legacy Route', 'tpw-core' ),
+					'url'   => '#flexiclub-menu-management-legacy',
+				],
+			];
+		}
+
+		if ( 'archival-system' === $workspace ) {
+			return [
+				[
+					'label' => __( 'Workspace Overview', 'tpw-core' ),
+					'url'   => '#flexiclub-archival-system-overview',
+				],
+				[
+					'label' => __( 'Archive Tool', 'tpw-core' ),
+					'url'   => '#flexiclub-archival-system-tool',
+				],
+				[
+					'label' => __( 'Legacy Route', 'tpw-core' ),
+					'url'   => '#flexiclub-archival-system-legacy',
+				],
+			];
+		}
+
 		if ( 'settings' === $workspace ) {
 			$active_label = isset( $workspace_data['active_label'] ) ? (string) $workspace_data['active_label'] : __( 'Active Settings Area', 'tpw-core' );
 
@@ -1676,9 +1844,10 @@ class TPW_FlexiClub_Admin_Menu {
 
 		// TODO Front-end workspace rollout map:
 		// - build dedicated Logs FE workspace
-		// - split FlexiClub Control into Menu Management and Archival System FE screens
 		return [
 			'noticeboard'  => self::get_frontend_noticeboard_route(),
+			'menu-management' => self::get_frontend_menu_management_route(),
+			'archival-system' => self::get_frontend_archival_system_route(),
 			'system-pages' => self::get_frontend_system_pages_route(),
 			'settings'     => self::get_frontend_settings_route(),
 			'logs'         => self::build_frontend_pending_route_state(
@@ -1687,13 +1856,13 @@ class TPW_FlexiClub_Admin_Menu {
 				admin_url( 'admin.php?page=' . self::PAGE_LOGS )
 			),
 			'payments'     => self::get_frontend_settings_route( 'payment-methods' ),
-			'control-note' => __( 'Next front-end split: Menu Management and Archival System.', 'tpw-core' ),
 		];
 	}
 
 	protected static function get_frontend_checklist_items( $members_summary, $notices_summary, $system_summary, $menu_summary, $settings_summary, $payments_summary, $route_map ) {
 		$route_map         = is_array( $route_map ) ? $route_map : [];
 		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+		$menu_management_route = isset( $route_map['menu-management'] ) ? (array) $route_map['menu-management'] : [];
 		$system_pages_route = isset( $route_map['system-pages'] ) ? (array) $route_map['system-pages'] : [];
 		$settings_route    = isset( $route_map['settings'] ) ? (array) $route_map['settings'] : [];
 		$payments_route    = isset( $route_map['payments'] ) ? (array) $route_map['payments'] : [];
@@ -1702,7 +1871,7 @@ class TPW_FlexiClub_Admin_Menu {
 			[
 				'label'        => __( 'Create or confirm your system pages', 'tpw-core' ),
 				'description'  => self::append_frontend_route_note(
-					__( 'Make sure the required member and control pages are linked and published.', 'tpw-core' ),
+					__( 'Make sure the required member and operational workspace pages are linked and published.', 'tpw-core' ),
 					isset( $system_pages_route['message'] ) ? (string) $system_pages_route['message'] : ''
 				),
 				'done'         => ! empty( $system_summary['required_complete'] ),
@@ -1717,9 +1886,13 @@ class TPW_FlexiClub_Admin_Menu {
 			],
 			[
 				'label'       => __( 'Configure menu permissions', 'tpw-core' ),
-				'description' => __( 'Control which audiences can see and access club navigation items.', 'tpw-core' ),
+				'description' => self::append_frontend_route_note(
+					__( 'Control which audiences can see and access club navigation items.', 'tpw-core' ),
+					isset( $menu_management_route['message'] ) ? (string) $menu_management_route['message'] : ''
+				),
 				'done'        => ! empty( $menu_summary['configured'] ),
-				'url'         => self::get_tpw_control_launch_url( 'menu-manager', self::PAGE_MENU_MANAGER ),
+				'url'         => isset( $menu_management_route['url'] ) ? (string) $menu_management_route['url'] : '',
+				'action_label' => ! empty( $menu_management_route['action_label'] ) ? (string) $menu_management_route['action_label'] : __( 'Open Menu Management', 'tpw-core' ),
 			],
 			[
 				'label'        => __( 'Configure settings', 'tpw-core' ),
@@ -1824,6 +1997,84 @@ class TPW_FlexiClub_Admin_Menu {
 				: __( 'Review branding, login, email, and shared FlexiClub platform settings from the portal.', 'tpw-core' ),
 			'status_label' => __( 'Ready', 'tpw-core' ),
 			'status_tone'  => 'neutral',
+		];
+	}
+
+	protected static function get_frontend_menu_management_route() {
+		return self::get_frontend_tpw_control_workspace_route(
+			'menu-management',
+			'menu-manager',
+			'menu-management',
+			'flexiclub_menu_management',
+			self::PAGE_MENU_MANAGER,
+			__( 'Open Menu Management', 'tpw-core' )
+		);
+	}
+
+	protected static function get_frontend_archival_system_route() {
+		return self::get_frontend_tpw_control_workspace_route(
+			'archival-system',
+			'upload-pages',
+			'archival-system',
+			'flexiclub_archival_system',
+			self::PAGE_UPLOADS,
+			__( 'Open Archival System', 'tpw-core' )
+		);
+	}
+
+	protected static function get_frontend_tpw_control_workspace_route( $workspace_key, $section_key, $system_slug, $shortcode_tag, $diagnostics_page, $workspace_label ) {
+		$workspace_key      = self::normalize_frontend_workspace( $workspace_key );
+		$section_key        = sanitize_key( (string) $section_key );
+		$workspace_url      = self::get_frontend_workspace_url( $workspace_key );
+		$section_registered = self::tpw_control_section_is_registered( $section_key );
+		$direct_status      = self::locate_system_page( $system_slug, $shortcode_tag );
+		$direct_url         = ! empty( $direct_status['open_url'] ) ? (string) $direct_status['open_url'] : '';
+		$diagnostics_url    = self::get_bridge_diagnostics_url( $diagnostics_page );
+
+		if ( ! $section_registered ) {
+			return [
+				'configured'   => false,
+				'url'          => $diagnostics_url,
+				'action_label' => __( 'Open diagnostics', 'tpw-core' ),
+				'message'      => __( 'The legacy Control compatibility layer does not currently expose this workspace section.', 'tpw-core' ),
+				'status_label' => __( 'Needs review', 'tpw-core' ),
+				'status_tone'  => 'warning',
+				'direct_url'   => $direct_url,
+			];
+		}
+
+		if ( '' !== $workspace_url ) {
+			return [
+				'configured'   => true,
+				'url'          => $workspace_url,
+				'action_label' => $workspace_label,
+				'message'      => __( 'Preferred front-end workspace route inside the FlexiClub portal.', 'tpw-core' ),
+				'status_label' => __( 'Ready', 'tpw-core' ),
+				'status_tone'  => 'neutral',
+				'direct_url'   => $direct_url,
+			];
+		}
+
+		if ( '' !== $direct_url ) {
+			return [
+				'configured'   => false,
+				'url'          => $direct_url,
+				'action_label' => __( 'Open dedicated page', 'tpw-core' ),
+				'message'      => __( 'The FlexiClub portal page is not currently available, so the dedicated workspace page is being used instead.', 'tpw-core' ),
+				'status_label' => __( 'Needs review', 'tpw-core' ),
+				'status_tone'  => 'warning',
+				'direct_url'   => $direct_url,
+			];
+		}
+
+		return [
+			'configured'   => false,
+			'url'          => $diagnostics_url,
+			'action_label' => __( 'Open diagnostics', 'tpw-core' ),
+			'message'      => __( 'The FlexiClub portal page must be available before this front-end workspace can be opened.', 'tpw-core' ),
+			'status_label' => __( 'Needs review', 'tpw-core' ),
+			'status_tone'  => 'warning',
+			'direct_url'   => '',
 		];
 	}
 
@@ -2032,6 +2283,7 @@ class TPW_FlexiClub_Admin_Menu {
 		$registered_title  = isset( $row->title ) ? (string) $row->title : $slug;
 		$registered_plugin = isset( $row->plugin ) ? (string) $row->plugin : '';
 		$shortcode         = isset( $row->shortcode ) ? trim( (string) $row->shortcode ) : '';
+		$is_legacy_workspace = 'tpw-control' === $slug;
 		$required          = ! empty( $row->required );
 		$required_label    = $required ? __( 'Required', 'tpw-core' ) : __( 'Optional', 'tpw-core' );
 		$required_tone     = $required ? 'info' : 'neutral';
@@ -2066,6 +2318,8 @@ class TPW_FlexiClub_Admin_Menu {
 		$action_tone    = 'info';
 		$can_recreate   = true;
 		$recreate_label = __( 'Recreate page', 'tpw-core' );
+		$legacy_label   = $is_legacy_workspace ? __( 'Legacy Workspace', 'tpw-core' ) : '';
+		$legacy_message = $is_legacy_workspace ? __( 'Use Menu Management and Archival System for new launches. Keep this page only for compatibility during the transition.', 'tpw-core' ) : '';
 
 		if ( $is_unlinked ) {
 			$status_key     = $required ? 'needs-attention' : 'missing';
@@ -2127,6 +2381,10 @@ class TPW_FlexiClub_Admin_Menu {
 			}
 		}
 
+		if ( $is_legacy_workspace ) {
+			$action_message = trim( $action_message . ' ' . $legacy_message );
+		}
+
 		$linked_page_text = $page_exists
 			? sprintf(
 				/* translators: 1: page title, 2: page ID */
@@ -2148,6 +2406,8 @@ class TPW_FlexiClub_Admin_Menu {
 			'slug'             => $slug,
 			'title'            => $registered_title,
 			'plugin'           => '' !== $registered_plugin ? $registered_plugin : __( 'tpw-core', 'tpw-core' ),
+			'legacy_label'     => $legacy_label,
+			'legacy_message'   => $legacy_message,
 			'shortcode'        => '' !== $shortcode ? $shortcode : __( 'No shortcode registered', 'tpw-core' ),
 			'required'         => $required,
 			'required_label'   => $required_label,
@@ -2205,6 +2465,40 @@ class TPW_FlexiClub_Admin_Menu {
 		);
 	}
 
+	protected static function get_frontend_control_workspace_view_model( $workspace_key, $summary, $route ) {
+		$workspace_key = self::normalize_frontend_workspace( $workspace_key );
+		$summary       = is_array( $summary ) ? $summary : [];
+		$route         = is_array( $route ) ? $route : [];
+		$is_menu       = 'menu-management' === $workspace_key;
+		$legacy_status = self::locate_shortcode_page( 'tpw-control', 'tpw-control' );
+		$legacy_url    = ! empty( $legacy_status['page_exists'] ) && ! empty( $legacy_status['shortcode_present'] ) ? (string) $legacy_status['page_url'] : '';
+
+		return [
+			'workspace_key'       => $workspace_key,
+			'title'               => $is_menu ? __( 'Menu Management', 'tpw-core' ) : __( 'Archival System', 'tpw-core' ),
+			'hero_title'          => $is_menu ? __( 'Menu Management Workspace', 'tpw-core' ) : __( 'Archival System Workspace', 'tpw-core' ),
+			'hero_copy'           => $is_menu
+				? __( 'Manage the existing front-end menu visibility and navigation controls from the FlexiClub portal without changing the underlying permissions engine.', 'tpw-core' )
+				: __( 'Manage the existing archive pages and file uploads from the FlexiClub portal without changing the underlying archive logic.', 'tpw-core' ),
+			'status_label'        => isset( $summary['status_label'] ) ? (string) $summary['status_label'] : ( isset( $route['status_label'] ) ? (string) $route['status_label'] : __( 'Ready', 'tpw-core' ) ),
+			'status_tone'         => isset( $summary['status_tone'] ) ? (string) $summary['status_tone'] : ( isset( $route['status_tone'] ) ? (string) $route['status_tone'] : 'neutral' ),
+			'metric_label'        => $is_menu ? __( 'Menus', 'tpw-core' ) : __( 'Archive Pages', 'tpw-core' ),
+			'metric_value'        => isset( $summary['metric_value'] ) ? (string) $summary['metric_value'] : __( 'Unavailable', 'tpw-core' ),
+			'metric_text'         => isset( $summary['card_text'] ) ? (string) $summary['card_text'] : '',
+			'dashboard_url'       => self::get_frontend_workspace_url( 'dashboard' ),
+			'dedicated_url'       => ! empty( $route['direct_url'] ) ? (string) $route['direct_url'] : '',
+			'dedicated_label'     => $is_menu ? __( 'Open dedicated Menu Management page', 'tpw-core' ) : __( 'Open dedicated Archival System page', 'tpw-core' ),
+			'legacy_url'          => $legacy_url,
+			'legacy_notice_label' => __( 'Legacy Workspace', 'tpw-core' ),
+			'legacy_notice_text'  => __( 'FlexiClub Control has been split. Keep the legacy combined page only for compatibility during the transition; new launches should use the separate workspaces.', 'tpw-core' ),
+			'section_key'         => $is_menu ? 'menu-manager' : 'upload-pages',
+			'tool_heading'        => $is_menu ? __( 'Current Menu Management tool', 'tpw-core' ) : __( 'Current Archival System tool', 'tpw-core' ),
+			'tool_copy'           => $is_menu
+				? __( 'This workspace embeds the existing front-end menu-management section inside the FlexiClub portal shell.', 'tpw-core' )
+				: __( 'This workspace embeds the existing front-end archive section inside the FlexiClub portal shell.', 'tpw-core' ),
+		];
+	}
+
 	protected static function get_frontend_control_route() {
 		$status       = self::locate_shortcode_page( 'tpw-control', 'tpw-control' );
 		$configured   = ! empty( $status['page_exists'] ) && ! empty( $status['shortcode_present'] ) && '' !== $status['page_url'];
@@ -2243,6 +2537,49 @@ class TPW_FlexiClub_Admin_Menu {
 			'status_tone'   => '' !== $diagnostics_url ? 'warning' : 'error',
 			'section_count' => count( $section_keys ),
 		];
+	}
+
+	protected static function ensure_tpw_control_runtime() {
+		self::ensure_tpw_control_ui();
+
+		$router_path = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-router.php' : '';
+		if ( ! class_exists( 'TPW_Control_Router', false ) && $router_path && file_exists( $router_path ) ) {
+			require_once $router_path;
+		}
+
+		$upload_pages_path = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'modules/tpw-control/class-tpw-control-upload-pages.php' : '';
+		if ( ! class_exists( 'TPW_Control_Upload_Pages', false ) && $upload_pages_path && file_exists( $upload_pages_path ) ) {
+			require_once $upload_pages_path;
+		}
+	}
+
+	public static function render_frontend_tpw_control_section( $section_key ) {
+		$section_key = sanitize_key( (string) $section_key );
+		self::ensure_tpw_control_runtime();
+
+		if ( '' === $section_key || ! class_exists( 'TPW_Control', false ) || ! class_exists( 'TPW_Control_UI', false ) ) {
+			echo '<div class="tpw-flexiclub-control-workspace__empty"><p>' . esc_html__( 'The requested workspace tool is not currently available.', 'tpw-core' ) . '</p></div>';
+			return;
+		}
+
+		$sections = TPW_Control::get_sections();
+		if ( empty( $sections[ $section_key ] ) || ! is_array( $sections[ $section_key ] ) ) {
+			echo '<div class="tpw-flexiclub-control-workspace__empty"><p>' . esc_html__( 'The requested workspace tool is not currently registered on this site.', 'tpw-core' ) . '</p></div>';
+			return;
+		}
+
+		$section = $sections[ $section_key ];
+		if ( ! TPW_Control_UI::section_is_visible( $section ) ) {
+			echo '<div class="tpw-flexiclub-control-workspace__empty"><p>' . esc_html__( 'You do not have permission to access this workspace tool.', 'tpw-core' ) . '</p></div>';
+			return;
+		}
+
+		if ( is_callable( $section['callback'] ) ) {
+			call_user_func( $section['callback'] );
+			return;
+		}
+
+		do_action( 'tpw_control_render_section_' . $section_key, $section );
 	}
 
 	protected static function build_frontend_route_state( $status, $diagnostics_url, $open_label ) {

@@ -326,18 +326,45 @@ class TPW_Core_Activator {
                     'plugin'    => 'tpw-core',
                     'required'  => 1,
                 ] );
-                TPW_Core_System_Pages::register_page( 'flexiclub', [
-                    'title'     => 'FlexiClub',
-                    'shortcode' => '[flexiclub]',
-                    'plugin'    => 'tpw-core',
-                    'required'  => 1,
-                ] );
                 TPW_Core_System_Pages::ensure_page( 'member-login' );
                 TPW_Core_System_Pages::ensure_page( 'my-profile' );
-                if ( function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
-                    tpw_core_maybe_ensure_system_page( 'flexiclub', '[flexiclub]' );
-                } else {
-                    TPW_Core_System_Pages::ensure_page( 'flexiclub' );
+
+                $flexiclub_pages = [
+                    'flexiclub' => [
+                        'title'     => 'FlexiClub',
+                        'shortcode' => '[flexiclub]',
+                        'required'  => 1,
+                    ],
+                    'menu-management' => [
+                        'title'     => 'Menu Management',
+                        'shortcode' => '[flexiclub_menu_management]',
+                        'required'  => 0,
+                    ],
+                    'archival-system' => [
+                        'title'     => 'Archival System',
+                        'shortcode' => '[flexiclub_archival_system]',
+                        'required'  => 0,
+                    ],
+                    'tpw-control' => [
+                        'title'     => 'FlexiClub Control',
+                        'shortcode' => '[tpw-control]',
+                        'required'  => 0,
+                    ],
+                ];
+
+                foreach ( $flexiclub_pages as $slug => $config ) {
+                    TPW_Core_System_Pages::register_page( $slug, [
+                        'title'     => $config['title'],
+                        'shortcode' => $config['shortcode'],
+                        'plugin'    => 'tpw-core',
+                        'required'  => $config['required'],
+                    ] );
+
+                    if ( function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
+                        tpw_core_maybe_ensure_system_page( $slug, $config['shortcode'] );
+                    } else {
+                        TPW_Core_System_Pages::ensure_page( $slug );
+                    }
                 }
             } catch ( \Throwable $e ) {
                 if ( function_exists( 'error_log' ) ) {

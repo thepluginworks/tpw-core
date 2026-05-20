@@ -112,6 +112,10 @@ class TPW_Control {
         }
     }
 
+    public static function enqueue_workspace_assets() {
+        self::enqueue_assets();
+    }
+
     protected static function enqueue_assets() {
         $base = plugin_dir_url( dirname( __FILE__, 2 ) . '/..' );
         // Safer base using TPW_CORE_URL

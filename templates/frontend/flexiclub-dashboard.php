@@ -58,7 +58,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</details>
 
 	<div class="tpw-flexiclub-dashboard__portal-stage">
-		<?php if ( isset( $dashboard['workspace'] ) && 'settings' === $dashboard['workspace'] ) : ?>
+		<?php if ( isset( $dashboard['workspace'] ) && 'menu-management' === $dashboard['workspace'] ) : ?>
+			<?php $workspace_template = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-workspace-menu-management.php' : ''; ?>
+			<?php if ( $workspace_template && file_exists( $workspace_template ) ) : ?>
+				<?php include $workspace_template; ?>
+			<?php else : ?>
+				<div class="tpw-card tpw-flexiclub-dashboard__permission-state">
+					<h2><?php esc_html_e( 'Menu Management workspace unavailable', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'The front-end Menu Management workspace template could not be found.', 'tpw-core' ); ?></p>
+				</div>
+			<?php endif; ?>
+		<?php elseif ( isset( $dashboard['workspace'] ) && 'archival-system' === $dashboard['workspace'] ) : ?>
+			<?php $workspace_template = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-workspace-archival-system.php' : ''; ?>
+			<?php if ( $workspace_template && file_exists( $workspace_template ) ) : ?>
+				<?php include $workspace_template; ?>
+			<?php else : ?>
+				<div class="tpw-card tpw-flexiclub-dashboard__permission-state">
+					<h2><?php esc_html_e( 'Archival System workspace unavailable', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'The front-end Archival System workspace template could not be found.', 'tpw-core' ); ?></p>
+				</div>
+			<?php endif; ?>
+		<?php elseif ( isset( $dashboard['workspace'] ) && 'settings' === $dashboard['workspace'] ) : ?>
 			<?php $workspace_template = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-workspace-settings.php' : ''; ?>
 			<?php if ( $workspace_template && file_exists( $workspace_template ) ) : ?>
 				<?php include $workspace_template; ?>

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+- Front end: split the legacy FlexiClub Control workspace into separate Menu Management and Archival System FE workspaces inside the `[flexiclub]` portal, while keeping the existing `[tpw-control]` page available as a labelled legacy transition workspace.
+- System Pages: added additive Core registration and safe page creation for `menu-management`, `archival-system`, and legacy `tpw-control`, preserving existing shortcode and slug compatibility during rollout.
+
 ## [2.4.0] - 2026-05-20
 
 ### Changed
