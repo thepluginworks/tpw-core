@@ -28,6 +28,7 @@ class TPW_FlexiClub_Admin_Menu {
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ], 12 );
 		add_action( 'admin_init', [ __CLASS__, 'handle_dashboard_actions' ] );
 		add_action( 'admin_init', [ __CLASS__, 'handle_bridge_actions' ] );
+		add_action( 'admin_post_tpw_flexiclub_activate_plugin', [ __CLASS__, 'handle_frontend_plugin_activation' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_dashboard_assets' ] );
 		add_filter( 'tpw_core_menu_map', [ __CLASS__, 'filter_menu_map' ] );
 	}
@@ -36,8 +37,17 @@ class TPW_FlexiClub_Admin_Menu {
 		add_shortcode( 'flexiclub', [ __CLASS__, 'render_frontend_shortcode' ] );
 		add_shortcode( 'flexiclub_menu_management', [ __CLASS__, 'render_menu_management_shortcode' ] );
 		add_shortcode( 'flexiclub_archival_system', [ __CLASS__, 'render_archival_system_shortcode' ] );
+		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_frontend_page_assets' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'prepare_frontend_portal_page' ], 0 );
 		add_filter( 'body_class', [ __CLASS__, 'filter_frontend_portal_body_classes' ] );
+	}
+
+	public static function enqueue_frontend_page_assets() {
+		if ( ! self::is_current_frontend_dashboard_page() ) {
+			return;
+		}
+
+		self::enqueue_frontend_dashboard_assets();
 	}
 
 	public static function prepare_frontend_portal_page() {
@@ -207,8 +217,24 @@ class TPW_FlexiClub_Admin_Menu {
 		echo '</div>';
 	}
 
-	public static function render_frontend_shortcode() {
-		return self::render_frontend_workspace_shortcode();
+	public static function render_frontend_shortcode( $atts = [] ) {
+		$atts = shortcode_atts(
+			[
+				'workspace' => '',
+			],
+			is_array( $atts ) ? $atts : [],
+			'flexiclub'
+		);
+
+		$workspace = '';
+
+		if ( isset( $_GET['workspace'] ) ) {
+			$workspace = self::normalize_frontend_workspace( wp_unslash( $_GET['workspace'] ) );
+		} elseif ( isset( $atts['workspace'] ) ) {
+			$workspace = self::normalize_frontend_workspace( $atts['workspace'] );
+		}
+
+		return self::render_frontend_workspace_shortcode( $workspace );
 	}
 
 	public static function render_menu_management_shortcode() {
@@ -441,6 +467,38 @@ class TPW_FlexiClub_Admin_Menu {
 		update_user_meta( get_current_user_id(), self::DASHBOARD_SETUP_META, '1' );
 
 		wp_safe_redirect( self::get_dashboard_base_url() );
+		exit;
+	}
+
+	public static function handle_frontend_plugin_activation() {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			wp_die( esc_html__( 'Access denied.', 'tpw-core' ), 403 );
+		}
+
+		$plugin_file = isset( $_GET['plugin'] ) ? sanitize_text_field( wp_unslash( $_GET['plugin'] ) ) : '';
+		$plugin_file = is_string( $plugin_file ) ? trim( $plugin_file ) : '';
+
+		if ( '' === $plugin_file ) {
+			wp_die( esc_html__( 'Invalid plugin request.', 'tpw-core' ), 400 );
+		}
+
+		check_admin_referer( 'tpw_flexiclub_activate_plugin_' . $plugin_file );
+
+		$dashboard_url = self::get_frontend_workspace_url( 'dashboard' );
+		$return_url    = self::get_frontend_dashboard_safe_redirect_url(
+			isset( $_GET['return_to'] ) ? esc_url_raw( wp_unslash( $_GET['return_to'] ) ) : '',
+			$dashboard_url
+		);
+		$success_url   = self::get_frontend_dashboard_safe_redirect_url(
+			isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : '',
+			$return_url
+		);
+
+		self::ensure_plugin_api_loaded();
+		$result       = activate_plugin( $plugin_file, '', false, false );
+		$redirect_url = is_wp_error( $result ) ? $return_url : $success_url;
+
+		wp_safe_redirect( $redirect_url );
 		exit;
 	}
 
@@ -953,6 +1011,7 @@ class TPW_FlexiClub_Admin_Menu {
 	protected static function get_frontend_portal_system_page_slugs() {
 		return [
 			'flexiclub',
+			'logs',
 			'menu-management',
 			'archival-system',
 		];
@@ -1281,6 +1340,7 @@ class TPW_FlexiClub_Admin_Menu {
 		$logs_summary       = self::get_logs_summary();
 		$settings_workspace = self::get_frontend_settings_workspace_view_model();
 		$route_map          = self::get_frontend_workspace_route_map( $payments_summary );
+		$logs_workspace     = self::get_frontend_logs_workspace_view_model();
 		$menu_management_workspace = self::get_frontend_control_workspace_view_model(
 			'menu-management',
 			$menu_summary,
@@ -1325,9 +1385,18 @@ class TPW_FlexiClub_Admin_Menu {
 		);
 		$system_pages_workspace = self::get_frontend_system_pages_workspace_view_model();
 		$active_portal_item     = $workspace;
+		$workspace_nav_context  = [];
 
 		if ( 'settings' === $workspace && ! empty( $settings_workspace['active_portal_key'] ) ) {
 			$active_portal_item = (string) $settings_workspace['active_portal_key'];
+		}
+
+		if ( 'settings' === $workspace ) {
+			$workspace_nav_context = $settings_workspace;
+		} elseif ( 'system-pages' === $workspace ) {
+			$workspace_nav_context = $system_pages_workspace;
+		} elseif ( 'logs' === $workspace ) {
+			$workspace_nav_context = $logs_workspace;
 		}
 
 		return [
@@ -1337,11 +1406,11 @@ class TPW_FlexiClub_Admin_Menu {
 			'version'                => defined( 'TPW_CORE_VERSION' ) ? (string) TPW_CORE_VERSION : '',
 			'welcome_name'           => $current_user instanceof WP_User ? (string) $current_user->display_name : __( 'Admin', 'tpw-core' ),
 			'portal_nav_items'       => self::get_frontend_portal_nav_items( $card_data, $active_portal_item ),
-			'section_nav_items'      => self::get_frontend_section_nav_items( $workspace, ! $checklist_complete, ! empty( $card_data ), 'settings' === $workspace ? $settings_workspace : $system_pages_workspace ),
+			'section_nav_items'      => self::get_frontend_section_nav_items( $workspace, ! $checklist_complete, ! empty( $card_data ), $workspace_nav_context ),
 			'summary_cards'          => self::get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ),
 			'overview_cards'         => array_values( $card_data ),
 			'quick_actions'          => self::get_frontend_quick_actions( $card_data, $checklist_complete ),
-			'extend_cards'           => self::get_dashboard_extend_cards(),
+			'extend_cards'           => self::get_dashboard_extend_cards( true ),
 			'checklist_items'        => $checklist_items,
 			'checklist_done'         => $completed_steps,
 			'checklist_total'        => $checklist_total,
@@ -1351,6 +1420,7 @@ class TPW_FlexiClub_Admin_Menu {
 			'checklist_url'          => '#tpw-flexiclub-checklist',
 			'checklist_primary_action' => self::get_frontend_primary_checklist_item( $checklist_items, $checklist_complete ),
 			'activity_items'         => self::get_dashboard_activity_items(),
+			'logs_workspace'         => $logs_workspace,
 			'settings_workspace'     => $settings_workspace,
 			'system_pages_workspace' => $system_pages_workspace,
 			'menu_management_workspace' => $menu_management_workspace,
@@ -1383,8 +1453,205 @@ class TPW_FlexiClub_Admin_Menu {
 		];
 	}
 
+	protected static function get_frontend_events_dashboard_url( $events_summary = [] ) {
+		$url = self::get_flexievent_frontend_list_url();
+
+		if ( '' === $url ) {
+			$url = apply_filters( 'tpw_core_frontend_events_dashboard_url', '', is_array( $events_summary ) ? $events_summary : [] );
+		}
+
+		if ( '' === $url && function_exists( 'get_post_type_archive_link' ) ) {
+			$archive_url = get_post_type_archive_link( 'tpw_event' );
+
+			if ( is_string( $archive_url ) && '' !== $archive_url ) {
+				$url = $archive_url;
+			}
+		}
+
+		return is_string( $url ) ? $url : '';
+	}
+
+	protected static function get_flexievent_frontend_list_url() {
+		$base_url = '';
+
+		if ( function_exists( 'flexievent_fe_get_base_url' ) ) {
+			$base_url = (string) flexievent_fe_get_base_url();
+		} elseif ( class_exists( 'FlexiEvent_Frontend_Admin' ) && method_exists( 'FlexiEvent_Frontend_Admin', 'get_shortcode_base_url' ) ) {
+			$base_url = (string) FlexiEvent_Frontend_Admin::get_shortcode_base_url();
+		}
+
+		if ( '' === $base_url ) {
+			return '';
+		}
+
+		if ( function_exists( 'flexievent_fe_reserved_query_args' ) && function_exists( 'remove_query_arg' ) ) {
+			$base_url = (string) remove_query_arg( flexievent_fe_reserved_query_args(), $base_url );
+		}
+
+		return (string) add_query_arg(
+			[
+				'view' => 'list',
+			],
+			$base_url
+		);
+	}
+
+	protected static function get_frontend_subscriptions_dashboard_url() {
+		if ( function_exists( 'tpw_subscriptions_get_base_url' ) ) {
+			$url = (string) tpw_subscriptions_get_base_url();
+
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+
+		$url = apply_filters( 'tpw_subscriptions/base_url', '' );
+
+		if ( is_string( $url ) && '' !== $url ) {
+			return $url;
+		}
+
+		$url = apply_filters( 'tpw_core_frontend_subscriptions_dashboard_url', '', [] );
+
+		return is_string( $url ) ? $url : '';
+	}
+
+	protected static function get_frontend_shortcode_page_url( $shortcode_tag, $fallback_slug = '' ) {
+		$status = self::locate_shortcode_page( $shortcode_tag, $fallback_slug );
+
+		return ! empty( $status['shortcode_present'] ) && ! empty( $status['page_url'] )
+			? (string) $status['page_url']
+			: '';
+	}
+
+	protected static function get_frontend_flexiledger_dashboard_url() {
+		$status = self::locate_system_page( 'flexiledger', 'tpw_flexiledger' );
+
+		if ( ! empty( $status['open_url'] ) ) {
+			return (string) $status['open_url'];
+		}
+
+		return self::get_frontend_shortcode_page_url( 'tpw_flexiledger', 'flexiledger' );
+	}
+
+	protected static function get_frontend_flexiticket_dashboard_url() {
+		if ( class_exists( 'TPW_Core_System_Pages' ) && method_exists( 'TPW_Core_System_Pages', 'get_permalink' ) ) {
+			$url = (string) TPW_Core_System_Pages::get_permalink( 'ticket-sales' );
+
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+
+		$url = self::get_frontend_shortcode_page_url( 'tpw_ticket_sales', 'ticket-sales' );
+
+		if ( '' !== $url ) {
+			return $url;
+		}
+
+		return self::get_frontend_shortcode_page_url( 'tpw_ticket_checkin', 'ticket-check-in' );
+	}
+
+	protected static function get_frontend_lodge_rsvp_dashboard_url() {
+		return self::get_frontend_shortcode_page_url( 'tpw_rsvp_summary', 'rsvp-summary' );
+	}
+
+	protected static function get_frontend_dashboard_plugin_active_url( $definition, $plugin_state = [] ) {
+		$definition   = is_array( $definition ) ? $definition : [];
+		$plugin_state = is_array( $plugin_state ) ? $plugin_state : [];
+		$route_family = isset( $definition['frontend_route_family'] ) ? (string) $definition['frontend_route_family'] : '';
+		$url          = '';
+
+		switch ( $route_family ) {
+			case 'flexievent-events':
+				$url = self::get_flexievent_frontend_list_url();
+				break;
+
+			case 'flexisubscriptions':
+				$url = self::get_frontend_subscriptions_dashboard_url();
+				break;
+
+			case 'flexiledger':
+				$url = self::get_frontend_flexiledger_dashboard_url();
+				break;
+
+			case 'flexiticket-checkin':
+				$url = self::get_frontend_flexiticket_dashboard_url();
+				break;
+
+			case 'lodge-rsvp-summary':
+				$url = self::get_frontend_lodge_rsvp_dashboard_url();
+				break;
+		}
+
+		$url = apply_filters( 'tpw_core_frontend_dashboard_plugin_active_url', $url, $definition, $plugin_state );
+
+		if ( is_string( $url ) && '' !== $url ) {
+			return $url;
+		}
+
+		$active_url = isset( $definition['active_url'] ) && is_string( $definition['active_url'] ) ? $definition['active_url'] : '';
+
+		if ( '' !== $active_url && 0 !== strpos( $active_url, admin_url() ) ) {
+			return $active_url;
+		}
+
+		return '';
+	}
+
+	protected static function get_frontend_dashboard_plugin_activation_url( $definition, $plugin_state = [] ) {
+		$definition   = is_array( $definition ) ? $definition : [];
+		$plugin_state = is_array( $plugin_state ) ? $plugin_state : [];
+		$plugin_file  = isset( $plugin_state['plugin_file'] ) ? (string) $plugin_state['plugin_file'] : '';
+
+		if ( empty( $plugin_state['can_activate'] ) || '' === $plugin_file ) {
+			return '';
+		}
+
+		$return_url  = self::get_frontend_workspace_url( 'dashboard' );
+		$success_url = self::get_frontend_dashboard_plugin_active_url( $definition, $plugin_state );
+
+		if ( '' === $success_url ) {
+			$success_url = $return_url;
+		}
+
+		return wp_nonce_url(
+			add_query_arg(
+				[
+					'action'      => 'tpw_flexiclub_activate_plugin',
+					'plugin'      => $plugin_file,
+					'redirect_to' => $success_url,
+					'return_to'   => $return_url,
+				],
+				admin_url( 'admin-post.php' )
+			),
+			'tpw_flexiclub_activate_plugin_' . $plugin_file
+		);
+	}
+
+	protected static function get_frontend_dashboard_safe_redirect_url( $url, $fallback = '' ) {
+		$url      = is_string( $url ) ? $url : '';
+		$fallback = is_string( $fallback ) ? $fallback : '';
+
+		if ( '' === $fallback ) {
+			$fallback = home_url( '/' );
+		}
+
+		$validated = '' !== $url ? wp_validate_redirect( $url, '' ) : '';
+		if ( '' === $validated ) {
+			return $fallback;
+		}
+
+		if ( 0 === strpos( $validated, admin_url() ) ) {
+			return $fallback;
+		}
+
+		return $validated;
+	}
+
 	protected static function get_frontend_summary_cards( $members_summary, $notices_summary, $events_summary, $route_map ) {
 		$noticeboard_route = isset( $route_map['noticeboard'] ) ? (array) $route_map['noticeboard'] : [];
+		$events_url        = self::get_frontend_events_dashboard_url( $events_summary );
 
 		return [
 			[
@@ -1403,7 +1670,7 @@ class TPW_FlexiClub_Admin_Menu {
 				'title'        => __( 'Upcoming Events', 'tpw-core' ),
 				'value'        => self::format_metric_value( $events_summary['count'], false ),
 				'action_label' => $events_summary['action_label'],
-				'action_url'   => current_user_can( 'manage_options' ) ? $events_summary['action_url'] : '',
+				'action_url'   => $events_url,
 			],
 		];
 	}
@@ -1556,7 +1823,7 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
-		if ( current_user_can( 'manage_options' ) ) {
+		if ( self::current_user_can_frontend_dashboard() ) {
 			$cards['logs'] = [
 				'title'        => __( 'Logs', 'tpw-core' ),
 				'metric'       => $logs_summary['metric_value'],
@@ -1626,6 +1893,7 @@ class TPW_FlexiClub_Admin_Menu {
 	protected static function get_allowed_frontend_workspaces() {
 		return [
 			'dashboard',
+			'logs',
 			'menu-management',
 			'archival-system',
 			'settings',
@@ -1644,12 +1912,34 @@ class TPW_FlexiClub_Admin_Menu {
 
 		if ( isset( $_GET['workspace'] ) ) {
 			$workspace = self::normalize_frontend_workspace( wp_unslash( $_GET['workspace'] ) );
+		} elseif ( class_exists( 'TPW_Core_System_Pages' ) ) {
+			$page = get_queried_object();
+
+			if ( $page instanceof WP_Post ) {
+				$logs_page_id      = (int) TPW_Core_System_Pages::get_page_id( 'logs' );
+				$dashboard_page_id = self::get_frontend_dashboard_page_id();
+
+				if ( $logs_page_id > 0 && $logs_page_id !== $dashboard_page_id && (int) $page->ID === $logs_page_id ) {
+					$workspace = 'logs';
+				}
+			}
 		}
 
 		return $workspace;
 	}
 
 	protected static function get_frontend_workspace_base_url() {
+		if ( self::is_current_frontend_dashboard_page() ) {
+			$page = get_queried_object();
+			if ( $page instanceof WP_Post && 'page' === $page->post_type ) {
+				$permalink = get_permalink( $page );
+
+				if ( is_string( $permalink ) && '' !== $permalink ) {
+					return remove_query_arg( 'workspace', $permalink );
+				}
+			}
+		}
+
 		$dashboard_url = self::get_frontend_dashboard_page_url();
 		if ( '' !== $dashboard_url ) {
 			return remove_query_arg( 'workspace', $dashboard_url );
@@ -1659,14 +1949,7 @@ class TPW_FlexiClub_Admin_Menu {
 			return '';
 		}
 
-		$page = get_queried_object();
-		if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type ) {
-			return '';
-		}
-
-		$permalink = get_permalink( $page );
-
-		return is_string( $permalink ) ? remove_query_arg( 'workspace', $permalink ) : '';
+		return '';
 	}
 
 	protected static function get_frontend_workspace_url( $workspace = 'dashboard' ) {
@@ -1779,6 +2062,25 @@ class TPW_FlexiClub_Admin_Menu {
 			];
 		}
 
+		if ( 'logs' === $workspace ) {
+			$active_label = isset( $workspace_data['active_label'] ) ? (string) $workspace_data['active_label'] : __( 'Active Log Source', 'tpw-core' );
+
+			return [
+				[
+					'label' => __( 'Workspace Overview', 'tpw-core' ),
+					'url'   => '#flexiclub-logs-overview',
+				],
+				[
+					'label' => __( 'Log Sources', 'tpw-core' ),
+					'url'   => '#flexiclub-logs-sources',
+				],
+				[
+					'label' => $active_label,
+					'url'   => '#flexiclub-logs-table',
+				],
+			];
+		}
+
 		$items = [
 			[
 				'label' => __( 'KPI Snapshot', 'tpw-core' ),
@@ -1842,19 +2144,13 @@ class TPW_FlexiClub_Admin_Menu {
 	protected static function get_frontend_workspace_route_map( $payments_summary ) {
 		$payments_summary = is_array( $payments_summary ) ? $payments_summary : [];
 
-		// TODO Front-end workspace rollout map:
-		// - build dedicated Logs FE workspace
 		return [
 			'noticeboard'  => self::get_frontend_noticeboard_route(),
 			'menu-management' => self::get_frontend_menu_management_route(),
 			'archival-system' => self::get_frontend_archival_system_route(),
 			'system-pages' => self::get_frontend_system_pages_route(),
 			'settings'     => self::get_frontend_settings_route(),
-			'logs'         => self::build_frontend_pending_route_state(
-				__( 'Front-end Logs is not built yet. Use the current admin diagnostics screens temporarily.', 'tpw-core' ),
-				__( 'Open admin logs (temporary)', 'tpw-core' ),
-				admin_url( 'admin.php?page=' . self::PAGE_LOGS )
-			),
+			'logs'         => self::get_frontend_logs_route(),
 			'payments'     => self::get_frontend_settings_route( 'payment-methods' ),
 		];
 	}
@@ -1967,11 +2263,44 @@ class TPW_FlexiClub_Admin_Menu {
 		return [
 			'configured'   => true,
 			'url'          => $workspace_url,
-			'action_label' => __( 'Open System Pages workspace', 'tpw-core' ),
+			'action_label' => __( 'Open System Pages', 'tpw-core' ),
 			'message'      => __( 'Validate, repair, and recreate registered system pages from the FlexiClub portal.', 'tpw-core' ),
 			'status_label' => __( 'Ready', 'tpw-core' ),
 			'status_tone'  => 'neutral',
 		];
+	}
+
+	protected static function get_frontend_logs_route() {
+		$workspace_url = self::get_frontend_workspace_url( 'logs' );
+		$direct_status = self::locate_system_page( 'logs', 'flexiclub' );
+
+		if ( '' !== $workspace_url ) {
+			return [
+				'configured'   => true,
+				'url'          => $workspace_url,
+				'action_label' => __( 'Open Logs', 'tpw-core' ),
+				'message'      => __( 'Review email and payment logs from the FlexiClub portal.', 'tpw-core' ),
+				'status_label' => __( 'Ready', 'tpw-core' ),
+				'status_tone'  => 'neutral',
+			];
+		}
+
+		if ( ! empty( $direct_status['open_url'] ) ) {
+			return [
+				'configured'   => true,
+				'url'          => (string) $direct_status['open_url'],
+				'action_label' => __( 'Open Logs page', 'tpw-core' ),
+				'message'      => __( 'Dedicated front-end Logs page using the FlexiClub portal shell.', 'tpw-core' ),
+				'status_label' => __( 'Ready', 'tpw-core' ),
+				'status_tone'  => 'neutral',
+			];
+		}
+
+		return self::build_frontend_pending_route_state(
+			__( 'The FlexiClub portal page must be available before the front-end Logs workspace can be opened.', 'tpw-core' ),
+			__( 'Open admin logs (temporary)', 'tpw-core' ),
+			admin_url( 'admin.php?page=' . self::PAGE_LOGS )
+		);
 	}
 
 	protected static function get_frontend_settings_route( $tab = '' ) {
@@ -1991,7 +2320,7 @@ class TPW_FlexiClub_Admin_Menu {
 		return [
 			'configured'   => true,
 			'url'          => $url,
-			'action_label' => 'payment-methods' === $tab ? __( 'Open Payments tab', 'tpw-core' ) : __( 'Open Settings workspace', 'tpw-core' ),
+			'action_label' => 'payment-methods' === $tab ? __( 'Open Payments', 'tpw-core' ) : __( 'Open Settings', 'tpw-core' ),
 			'message'      => 'payment-methods' === $tab
 				? __( 'Manage payment methods from the front-end Settings workspace.', 'tpw-core' )
 				: __( 'Review branding, login, email, and shared FlexiClub platform settings from the portal.', 'tpw-core' ),
@@ -2171,6 +2500,187 @@ class TPW_FlexiClub_Admin_Menu {
 		];
 	}
 
+	protected static function get_frontend_logs_workspace_view_model() {
+		global $wpdb;
+
+		$workspace_url  = self::get_frontend_workspace_url( 'logs' );
+		$dashboard_url  = self::get_frontend_workspace_url( 'dashboard' );
+		$settings_url   = self::get_frontend_workspace_url( 'settings' );
+		$current_url    = self::get_frontend_logs_workspace_current_url( $workspace_url );
+		$per_page       = 20;
+		$sources        = [];
+		$source_keys    = [];
+		$email_table    = class_exists( 'TPW_Email_Logs' ) ? TPW_Email_Logs::table_name() : $wpdb->prefix . 'tpw_email_logs';
+		$payment_table  = $wpdb->prefix . 'tpw_payment_logs';
+		$email_total    = class_exists( 'TPW_Email_Logs' ) ? (int) TPW_Email_Logs::count_all() : 0;
+		$payment_total  = class_exists( 'TPW_Payment_Logs_Admin' ) ? (int) TPW_Payment_Logs_Admin::count_all() : 0;
+		$email_failed   = self::table_exists( $email_table ) ? (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$email_table} WHERE status = %s", 'failed' ) ) : 0;
+		$payment_failed = self::table_exists( $payment_table ) ? (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$payment_table} WHERE status = %s", 'failed' ) ) : 0;
+		$issue_total    = $email_failed + $payment_failed;
+		$current_source = isset( $_GET['log-source'] ) ? sanitize_key( wp_unslash( $_GET['log-source'] ) ) : 'email';
+
+		if ( class_exists( 'TPW_Email_Logs' ) ) {
+			$source_keys[] = 'email';
+		}
+
+		if ( class_exists( 'TPW_Payment_Logs_Admin' ) ) {
+			$source_keys[] = 'payment';
+		}
+
+		if ( ! in_array( $current_source, $source_keys, true ) ) {
+			$current_source = isset( $source_keys[0] ) ? (string) $source_keys[0] : '';
+		}
+
+		$current_page = isset( $_GET['log-page'] ) ? max( 1, absint( wp_unslash( $_GET['log-page'] ) ) ) : 1;
+		$total_rows   = 0;
+		$total_pages  = 1;
+		$rows         = [];
+		$active_label = __( 'Logs', 'tpw-core' );
+		$empty_text   = __( 'No log entries found.', 'tpw-core' );
+		$clear_form   = [];
+
+		if ( class_exists( 'TPW_Email_Logs' ) ) {
+			$sources['email'] = [
+				'key'          => 'email',
+				'label'        => __( 'Email Logs', 'tpw-core' ),
+				'count'        => $email_total,
+				'status_label' => $email_failed > 0 ? __( 'Needs review', 'tpw-core' ) : __( 'Healthy', 'tpw-core' ),
+				'status_tone'  => $email_failed > 0 ? 'warning' : 'success',
+				'description'  => __( 'Outbound email dispatch attempts recorded by the shared email dispatcher.', 'tpw-core' ),
+				'url'          => self::get_frontend_logs_source_url( $current_url, 'email' ),
+				'current'      => 'email' === $current_source,
+			];
+		}
+
+		if ( class_exists( 'TPW_Payment_Logs_Admin' ) ) {
+			$sources['payment'] = [
+				'key'          => 'payment',
+				'label'        => __( 'Payment Logs', 'tpw-core' ),
+				'count'        => $payment_total,
+				'status_label' => $payment_failed > 0 ? __( 'Needs review', 'tpw-core' ) : __( 'Healthy', 'tpw-core' ),
+				'status_tone'  => $payment_failed > 0 ? 'warning' : 'success',
+				'description'  => __( 'Payment method and gateway activity recorded by the shared payment logger.', 'tpw-core' ),
+				'url'          => self::get_frontend_logs_source_url( $current_url, 'payment' ),
+				'current'      => 'payment' === $current_source,
+			];
+		}
+
+		if ( 'payment' === $current_source && class_exists( 'TPW_Payment_Logs_Admin' ) ) {
+			$total_rows   = $payment_total;
+			$total_pages  = max( 1, (int) ceil( $total_rows / $per_page ) );
+			$current_page = min( $current_page, $total_pages );
+			$active_label = __( 'Payment Logs', 'tpw-core' );
+			$empty_text   = __( 'No payment log entries found.', 'tpw-core' );
+			$clear_form   = [
+				'enabled'      => TPW_Payment_Logs_Admin::current_user_can_clear_logs(),
+				'action_url'   => admin_url( 'admin-post.php' ),
+				'action'       => TPW_Payment_Logs_Admin::CLEAR_ACTION,
+				'nonce_action' => TPW_Payment_Logs_Admin::CLEAR_NONCE_ACTION,
+				'nonce_field'  => TPW_Payment_Logs_Admin::CLEAR_NONCE_FIELD,
+				'redirect_key' => 'tpw_payment_logs_redirect',
+				'redirect_url' => $current_url,
+				'button_label' => __( 'Clear Payment Logs', 'tpw-core' ),
+				'confirm_text' => __( 'Are you sure you want to clear all payment logs?', 'tpw-core' ),
+			];
+
+			foreach ( TPW_Payment_Logs_Admin::get_page( $current_page, $per_page ) as $row ) {
+				$source = isset( $row->method ) ? (string) $row->method : '';
+
+				if ( isset( $row->plugin ) && '' !== (string) $row->plugin ) {
+					$source = '' !== $source
+						? sprintf( __( '%1$s via %2$s', 'tpw-core' ), $source, (string) $row->plugin )
+						: (string) $row->plugin;
+				}
+
+				$rows[] = [
+					'date'      => isset( $row->created_at ) ? (string) $row->created_at : '',
+					'source'    => '' !== $source ? $source : __( 'Payment', 'tpw-core' ),
+					'status'    => isset( $row->status ) ? (string) $row->status : '',
+					'message'   => isset( $row->message ) ? (string) $row->message : '',
+					'reference' => isset( $row->reference ) ? (string) $row->reference : '',
+				];
+			}
+		} elseif ( 'email' === $current_source && class_exists( 'TPW_Email_Logs' ) ) {
+			$total_rows   = $email_total;
+			$total_pages  = max( 1, (int) ceil( $total_rows / $per_page ) );
+			$current_page = min( $current_page, $total_pages );
+			$active_label = __( 'Email Logs', 'tpw-core' );
+			$empty_text   = __( 'No email log entries found.', 'tpw-core' );
+			$clear_form   = [
+				'enabled'       => function_exists( 'tpw_core_current_user_can_manage_settings' ) ? tpw_core_current_user_can_manage_settings() : false,
+				'action_url'    => admin_url( 'admin-post.php' ),
+				'action'        => 'tpw_core_clear_email_logs',
+				'nonce_action'  => 'tpw_core_clear_email_logs',
+				'nonce_field'   => 'tpw_core_email_logs_nonce',
+				'redirect_key'  => 'tpw_settings_return_url',
+				'redirect_url'  => $current_url,
+				'button_label'  => __( 'Clear Email Logs', 'tpw-core' ),
+				'confirm_text'  => __( 'Are you sure you want to clear all email logs?', 'tpw-core' ),
+				'hidden_fields' => [
+					[
+						'name'  => 'tpw_settings_context',
+						'value' => 'frontend',
+					],
+				],
+			];
+
+			foreach ( TPW_Email_Logs::get_page( $current_page, $per_page ) as $row ) {
+				$message = isset( $row->subject ) ? (string) $row->subject : '';
+
+				if ( isset( $row->error_message ) && '' !== (string) $row->error_message ) {
+					$message = '' !== $message
+						? sprintf( __( '%1$s (%2$s)', 'tpw-core' ), $message, (string) $row->error_message )
+						: (string) $row->error_message;
+				}
+
+				$rows[] = [
+					'date'      => isset( $row->timestamp ) ? TPW_Email_Logs::format_display_timestamp( (string) $row->timestamp ) : '',
+					'source'    => ! empty( $row->context ) ? (string) $row->context : __( 'Email', 'tpw-core' ),
+					'status'    => isset( $row->status ) ? (string) $row->status : '',
+					'message'   => $message,
+					'reference' => isset( $row->recipient ) ? (string) $row->recipient : '',
+				];
+			}
+		}
+
+		return [
+			'workspace_url'           => $workspace_url,
+			'dashboard_url'           => $dashboard_url,
+			'settings_url'            => $settings_url,
+			'current_url'             => $current_url,
+			'active_source'           => $current_source,
+			'active_label'            => $active_label,
+			'sources'                 => array_values( $sources ),
+			'rows'                    => $rows,
+			'empty_text'              => $empty_text,
+			'clear_form'              => $clear_form,
+			'current_page'            => $current_page,
+			'per_page'                => $per_page,
+			'total_rows'              => $total_rows,
+			'total_pages'             => $total_pages,
+			'pagination'              => self::get_frontend_logs_pagination( $current_url, $current_source, $current_page, $total_pages ),
+			'notice'                  => self::get_frontend_logs_request_notice(),
+			'additional_sources_text' => __( 'No additional Core/System log screens are currently registered beyond Email Logs and Payment Logs.', 'tpw-core' ),
+			'summary_cards'           => [
+				[
+					'label' => __( 'Email Logs', 'tpw-core' ),
+					'value' => self::format_metric_value( $email_total ),
+					'tone'  => $email_failed > 0 ? 'warning' : 'success',
+				],
+				[
+					'label' => __( 'Payment Logs', 'tpw-core' ),
+					'value' => self::format_metric_value( $payment_total ),
+					'tone'  => $payment_failed > 0 ? 'warning' : 'success',
+				],
+				[
+					'label' => __( 'Issues', 'tpw-core' ),
+					'value' => self::format_metric_value( $issue_total ),
+					'tone'  => $issue_total > 0 ? 'warning' : 'neutral',
+				],
+			],
+		];
+	}
+
 	protected static function get_frontend_system_pages_workspace_view_model() {
 		$workspace_url = self::get_frontend_workspace_url( 'system-pages' );
 		$dashboard_url = self::get_frontend_workspace_url( 'dashboard' );
@@ -2275,6 +2785,87 @@ class TPW_FlexiClub_Admin_Menu {
 					'tone'  => 'error',
 				],
 			],
+		];
+	}
+
+	protected static function get_frontend_logs_workspace_current_url( $workspace_url ) {
+		$page = get_queried_object();
+
+		if ( $page instanceof WP_Post && class_exists( 'TPW_Core_System_Pages' ) ) {
+			$logs_page_id      = (int) TPW_Core_System_Pages::get_page_id( 'logs' );
+			$dashboard_page_id = self::get_frontend_dashboard_page_id();
+
+			if ( $logs_page_id > 0 && $logs_page_id !== $dashboard_page_id && (int) $page->ID === $logs_page_id ) {
+				$permalink = get_permalink( $page );
+
+				return is_string( $permalink ) ? remove_query_arg( [ 'log-source', 'log-page', 'tpw_core_notice', 'tpw_payment_logs_notice' ], $permalink ) : $workspace_url;
+			}
+		}
+
+		return '' !== $workspace_url ? remove_query_arg( [ 'log-source', 'log-page', 'tpw_core_notice', 'tpw_payment_logs_notice' ], $workspace_url ) : '';
+	}
+
+	protected static function get_frontend_logs_source_url( $current_url, $source, $page = 1 ) {
+		$args = [
+			'log-source' => sanitize_key( (string) $source ),
+		];
+
+		if ( $page > 1 ) {
+			$args['log-page'] = (int) $page;
+		}
+
+		return add_query_arg( $args, $current_url );
+	}
+
+	protected static function get_frontend_logs_pagination( $current_url, $source, $current_page, $total_pages ) {
+		$items = [];
+
+		if ( $total_pages < 2 ) {
+			return $items;
+		}
+
+		for ( $page_number = 1; $page_number <= $total_pages; $page_number++ ) {
+			$items[] = [
+				'label'   => number_format_i18n( $page_number ),
+				'url'     => self::get_frontend_logs_source_url( $current_url, $source, $page_number ),
+				'current' => $page_number === (int) $current_page,
+			];
+		}
+
+		return $items;
+	}
+
+	protected static function get_frontend_logs_request_notice() {
+		$settings_notices = function_exists( 'tpw_core_get_settings_request_notices' )
+			? (array) tpw_core_get_settings_request_notices( 'email-logs' )
+			: [];
+
+		if ( ! empty( $settings_notices[0]['message'] ) ) {
+			return [
+				'tone'    => isset( $settings_notices[0]['type'] ) ? (string) $settings_notices[0]['type'] : 'info',
+				'message' => (string) $settings_notices[0]['message'],
+			];
+		}
+
+		$payment_notice = isset( $_GET['tpw_payment_logs_notice'] ) ? sanitize_key( wp_unslash( $_GET['tpw_payment_logs_notice'] ) ) : '';
+
+		if ( 'cleared' === $payment_notice ) {
+			return [
+				'tone'    => 'success',
+				'message' => __( 'Payment logs cleared.', 'tpw-core' ),
+			];
+		}
+
+		if ( 'failed' === $payment_notice ) {
+			return [
+				'tone'    => 'error',
+				'message' => __( 'Payment logs could not be cleared.', 'tpw-core' ),
+			];
+		}
+
+		return [
+			'tone'    => '',
+			'message' => '',
 		];
 	}
 
@@ -2921,7 +3512,7 @@ class TPW_FlexiClub_Admin_Menu {
 		return '1' === (string) get_user_meta( $user_id, self::DASHBOARD_SETUP_META, true );
 	}
 
-	protected static function get_dashboard_extend_cards() {
+	protected static function get_dashboard_extend_cards( $prefer_frontend = false ) {
 		$definitions = [
 			[
 				'name'             => __( 'FlexiEvent', 'tpw-core' ),
@@ -2933,6 +3524,7 @@ class TPW_FlexiClub_Admin_Menu {
 				'active_classes'   => [ 'TPW_FlexiEvent' ],
 				'active_constants' => [ 'TPW_FLEXIEVENT_VERSION' ],
 				'active_post_types'=> [ 'tpw_event' ],
+				'frontend_route_family' => 'flexievent-events',
 				'product_url'      => 'https://thepluginworks.com/FlexiEvent',
 				'active_url'       => admin_url( 'edit.php?post_type=tpw_event' ),
 				'active_label'     => __( 'Manage events', 'tpw-core' ),
@@ -2944,6 +3536,7 @@ class TPW_FlexiClub_Admin_Menu {
 				'plugin_names' => [ 'FlexiSubscriptions', 'TPW FlexiSubscriptions' ],
 				'text_domains' => [ 'flexisubscriptions', 'tpw-flexisubscriptions' ],
 				'basenames'    => [ 'flexisubscriptions/flexisubscriptions.php', 'tpw-flexisubscriptions/flexisubscriptions.php', 'tpw-flexisubscriptions/tpw-flexisubscriptions.php' ],
+				'frontend_route_family' => 'flexisubscriptions',
 				'product_url'  => 'https://thepluginworks.com/FlexiSubscriptions',
 				'active_url'   => admin_url( 'admin.php?page=csp_dashboard_home' ),
 				'active_label' => __( 'Manage subscriptions', 'tpw-core' ),
@@ -2955,9 +3548,10 @@ class TPW_FlexiClub_Admin_Menu {
 				'plugin_names' => [ 'FlexiTicket', 'TPW FlexiTicket' ],
 				'text_domains' => [ 'flexiticket', 'tpw-flexiticket' ],
 				'basenames'    => [ 'flexiticket/flexiticket.php', 'tpw-flexiticket/flexiticket.php', 'tpw-flexiticket/tpw-flexiticket.php' ],
+				'frontend_route_family' => 'flexiticket-checkin',
 				'product_url'  => 'https://thepluginworks.com/FlexiTicket',
 				'active_url'   => admin_url( 'edit.php?post_type=tpw_event' ),
-				'active_label' => __( 'Manage events', 'tpw-core' ),
+				'active_label' => __( 'Manage ticketing', 'tpw-core' ),
 			],
 			[
 				'name'         => __( 'FlexiLedger', 'tpw-core' ),
@@ -2966,7 +3560,9 @@ class TPW_FlexiClub_Admin_Menu {
 				'plugin_names' => [ 'FlexiLedger', 'TPW FlexiLedger' ],
 				'text_domains' => [ 'flexiledger', 'tpw-flexiledger' ],
 				'basenames'    => [ 'flexiledger/flexiledger.php', 'tpw-flexiledger/flexiledger.php', 'tpw-flexiledger/tpw-flexiledger.php' ],
+				'frontend_route_family' => 'flexiledger',
 				'product_url'  => 'https://thepluginworks.com/FlexiLedger',
+				'active_label' => __( 'Manage ledger', 'tpw-core' ),
 			],
 			[
 				'name'             => __( 'FlexiGolf', 'tpw-core' ),
@@ -3004,21 +3600,22 @@ class TPW_FlexiClub_Admin_Menu {
 				'plugin_names' => [ 'Lodge RSVP', 'TPW RSVP Lodge Meetings', 'RSVP Lodge Meetings' ],
 				'text_domains' => [ 'lodge-rsvp', 'tpw-lodge-rsvp', 'tpw-rsvp-lodge-meetings' ],
 				'basenames'    => [ 'lodge-rsvp/lodge-rsvp.php', 'tpw-lodge-rsvp/tpw-lodge-rsvp.php', 'tpw-rsvp-lodge-meetings/tpw-rsvp-lodge-meetings.php' ],
+				'frontend_route_family' => 'lodge-rsvp-summary',
 				'product_url'  => 'https://thepluginworks.com/lodge-rsvp-plugin-for-wordpress/',
 				'active_url'   => admin_url( 'edit.php?post_type=tpw_event' ),
-				'active_label' => __( 'Manage events', 'tpw-core' ),
+				'active_label' => __( 'Manage RSVPs', 'tpw-core' ),
 			],
 		];
 
 		$cards = [];
 		foreach ( $definitions as $definition ) {
-			$cards[] = self::build_dashboard_extend_card( $definition );
+			$cards[] = self::build_dashboard_extend_card( $definition, null, $prefer_frontend );
 		}
 
 		return $cards;
 	}
 
-	protected static function build_dashboard_extend_card( $definition, $plugin_state = null ) {
+	protected static function build_dashboard_extend_card( $definition, $plugin_state = null, $prefer_frontend = false ) {
 		$definition   = is_array( $definition ) ? $definition : [];
 		$plugin_state = is_array( $plugin_state ) ? $plugin_state : self::resolve_dashboard_plugin_state( $definition );
 
@@ -3036,9 +3633,13 @@ class TPW_FlexiClub_Admin_Menu {
 			$card['status_label'] = __( 'Active', 'tpw-core' );
 			$card['status_tone']  = 'success';
 
-			if ( ! empty( $definition['active_url'] ) ) {
+			$action_url = ! empty( $prefer_frontend )
+				? self::get_frontend_dashboard_plugin_active_url( $definition, $plugin_state )
+				: ( isset( $definition['active_url'] ) ? $definition['active_url'] : '' );
+
+			if ( is_string( $action_url ) && '' !== $action_url ) {
 				$card['action_label'] = ! empty( $definition['active_label'] ) ? $definition['active_label'] : __( 'Open plugin', 'tpw-core' );
-				$card['action_url']   = $definition['active_url'];
+				$card['action_url']   = $action_url;
 			}
 
 			return $card;
@@ -3048,7 +3649,10 @@ class TPW_FlexiClub_Admin_Menu {
 			$card['status_label'] = __( 'Installed', 'tpw-core' );
 			$card['status_tone']  = 'info';
 
-			if ( ! empty( $plugin_state['activation_url'] ) ) {
+			if ( ! empty( $prefer_frontend ) && ! empty( $plugin_state['can_activate'] ) ) {
+				$card['action_label'] = __( 'Activate plugin', 'tpw-core' );
+				$card['action_url']   = self::get_frontend_dashboard_plugin_activation_url( $definition, $plugin_state );
+			} elseif ( ! empty( $plugin_state['activation_url'] ) ) {
 				$card['action_label'] = ! empty( $plugin_state['can_activate'] ) ? __( 'Activate plugin', 'tpw-core' ) : __( 'View plugins', 'tpw-core' );
 				$card['action_url']   = $plugin_state['activation_url'];
 			} else {

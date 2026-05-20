@@ -2,9 +2,19 @@
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-05-20
+
 ### Changed
-- Front end: split the legacy FlexiClub Control workspace into separate Menu Management and Archival System FE workspaces inside the `[flexiclub]` portal, while keeping the existing `[tpw-control]` page available as a labelled legacy transition workspace.
-- System Pages: added additive Core registration and safe page creation for `menu-management`, `archival-system`, and legacy `tpw-control`, preserving existing shortcode and slug compatibility during rollout.
+- Front end: split the legacy FlexiClub Control surface into dedicated Menu Management and Archival System workspaces inside the `[flexiclub]` portal while keeping the existing `[tpw-control]` page available as a clearly labelled legacy transition workspace.
+- Front end: added a new Logs workspace inside the FlexiClub portal, including source switching, pagination, clear actions, and front-end-safe email and payment log summaries built on the existing Core log infrastructure.
+- System Pages: added additive Core registration and safe page creation for `menu-management`, `archival-system`, and `logs`, preserving existing shortcode and slug compatibility during rollout.
+- Front end: expanded the portal route map so key dashboard actions, summary cards, settings links, and compatible add-on management routes open their front-end destinations where available instead of defaulting back to wp-admin.
+- Plugins: Extend FlexiClub cards now recognise front-end management destinations for supported ecosystem add-ons, including FlexiEvent, FlexiSubscriptions, FlexiLedger, FlexiTicket, and Lodge RSVP, and front-end activation flows now return authorised users to the relevant portal destination.
+
+### Fixed
+- Front end: fixed shortcode and system-page routing so the main `[flexiclub]` portal continues to open the dashboard by default, while the dedicated Logs page resolves only when explicitly targeted.
+- Front end: fixed workspace URL generation and explicit `workspace` query handling so portal navigation buttons continue to open the intended front-end workspace instead of being overridden by page-level shortcode defaults.
+- Front end: restored the dashboard layout on portal pages by ensuring the dedicated FlexiClub dashboard stylesheet is loaded during the normal front-end enqueue phase.
 
 ## [2.4.0] - 2026-05-20
 

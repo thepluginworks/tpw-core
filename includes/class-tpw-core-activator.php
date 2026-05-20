@@ -335,6 +335,11 @@ class TPW_Core_Activator {
                         'shortcode' => '[flexiclub]',
                         'required'  => 1,
                     ],
+                    'logs' => [
+                        'title'     => 'Logs',
+                        'shortcode' => '[flexiclub workspace="logs"]',
+                        'required'  => 0,
+                    ],
                     'menu-management' => [
                         'title'     => 'Menu Management',
                         'shortcode' => '[flexiclub_menu_management]',
@@ -359,6 +364,15 @@ class TPW_Core_Activator {
                         'plugin'    => 'tpw-core',
                         'required'  => $config['required'],
                     ] );
+
+					if ( 'logs' === $slug && method_exists( 'TPW_Core_System_Pages', 'unlink' ) ) {
+						$logs_page_id      = (int) TPW_Core_System_Pages::get_page_id( 'logs' );
+						$dashboard_page_id = (int) TPW_Core_System_Pages::get_page_id( 'flexiclub' );
+
+						if ( $logs_page_id > 0 && $logs_page_id === $dashboard_page_id ) {
+							TPW_Core_System_Pages::unlink( 'logs' );
+						}
+					}
 
                     if ( function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
                         tpw_core_maybe_ensure_system_page( $slug, $config['shortcode'] );

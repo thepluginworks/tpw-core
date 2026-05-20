@@ -120,6 +120,30 @@ class TPW_Email_Logs {
 		return $wpdb->get_results( "SELECT * FROM {$table_name} ORDER BY timestamp DESC, id DESC LIMIT {$limit}" );
 	}
 
+	public static function count_all() {
+		global $wpdb;
+
+		$table_name = self::table_name();
+
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+	}
+
+	public static function get_page( $page = 1, $per_page = 20 ) {
+		global $wpdb;
+
+		$page       = max( 1, (int) $page );
+		$per_page   = max( 1, min( 100, (int) $per_page ) );
+		$offset     = ( $page - 1 ) * $per_page;
+		$table_name = self::table_name();
+		$query      = $wpdb->prepare(
+			"SELECT * FROM {$table_name} ORDER BY timestamp DESC, id DESC LIMIT %d OFFSET %d",
+			$per_page,
+			$offset
+		);
+
+		return $wpdb->get_results( $query );
+	}
+
 	public static function clear_all() {
 		global $wpdb;
 

@@ -98,6 +98,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<p><?php esc_html_e( 'The front-end System Pages workspace template could not be found.', 'tpw-core' ); ?></p>
 				</div>
 			<?php endif; ?>
+		<?php elseif ( isset( $dashboard['workspace'] ) && 'logs' === $dashboard['workspace'] ) : ?>
+			<?php $workspace_template = defined( 'TPW_CORE_PATH' ) ? TPW_CORE_PATH . 'templates/frontend/flexiclub-workspace-logs.php' : ''; ?>
+			<?php if ( $workspace_template && file_exists( $workspace_template ) ) : ?>
+				<?php include $workspace_template; ?>
+			<?php else : ?>
+				<div class="tpw-card tpw-flexiclub-dashboard__permission-state">
+					<h2><?php esc_html_e( 'Logs workspace unavailable', 'tpw-core' ); ?></h2>
+					<p><?php esc_html_e( 'The front-end Logs workspace template could not be found.', 'tpw-core' ); ?></p>
+				</div>
+			<?php endif; ?>
 		<?php else : ?>
 		<div id="flexiclub-home" class="tpw-flexiclub-dashboard__hero tpw-card">
 			<div class="tpw-flexiclub-dashboard__brand-row">

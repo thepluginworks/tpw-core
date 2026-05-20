@@ -4,7 +4,7 @@ Tags: members, payments, rsvp, admin-tools, tpw
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,11 @@ Displays a thank-you or confirmation view for supported TPW payment and RSVP flo
 Displays the TPW Control front-end admin hub where this is enabled for your site.
 
 == Changelog ==
+
+= 2.5.0 =
+- Added dedicated front-end Menu Management, Archival System, and Logs workspaces inside the `[flexiclub]` portal while keeping the existing legacy TPW Control page available for transition.
+- Expanded the FlexiClub portal so key workspace links, activity cards, plugin management buttons, and compatible add-on activation flows stay in the front end instead of sending authorised users back to wp-admin.
+- Improved portal routing and layout reliability so the main dashboard opens correctly, the new Logs page resolves safely, and the front-end dashboard styling loads consistently.
 
 = 2.4.0 =
 - Added a new front-end Settings workspace inside the `[flexiclub]` portal so authorised managers can work with the existing FlexiClub settings tabs without leaving the front end.

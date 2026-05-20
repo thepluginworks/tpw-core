@@ -67,6 +67,7 @@ if ( ! function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
 		}
 
 		$shortcode_tag = TPW_Core_System_Pages::parse_shortcode_tag( $shortcode_markup );
+        $requires_exact_shortcode_match = '' !== $shortcode_markup && false !== strpos( trim( $shortcode_markup, '[]' ), ' ' );
 		if ( '' !== $shortcode_tag && class_exists( 'WP_Query' ) ) {
 			$query = new WP_Query(
 				array(
@@ -81,7 +82,17 @@ if ( ! function_exists( 'tpw_core_maybe_ensure_system_page' ) ) {
 			if ( $query->have_posts() ) {
 				foreach ( $query->posts as $page_id ) {
 					$content = (string) get_post_field( 'post_content', (int) $page_id );
-					if ( TPW_Core_System_Pages::content_has_shortcode_tag( $content, $shortcode_tag ) ) {
+
+                    if ( '' !== $content && false !== strpos( $content, $shortcode_markup ) ) {
+                        wp_reset_postdata();
+                        return 0;
+                    }
+
+                    if ( $requires_exact_shortcode_match ) {
+                        continue;
+                    }
+
+                    if ( TPW_Core_System_Pages::content_has_shortcode_tag( $content, $shortcode_tag ) ) {
 						wp_reset_postdata();
 						return 0;
 					}
@@ -124,6 +135,11 @@ add_action( 'init', function() {
                 'shortcode' => '[flexiclub]',
                 'required'  => 1,
             ],
+            'logs' => [
+                'title'     => 'Logs',
+                'shortcode' => '[flexiclub workspace="logs"]',
+                'required'  => 0,
+            ],
             'menu-management' => [
                 'title'     => 'Menu Management',
                 'shortcode' => '[flexiclub_menu_management]',
@@ -148,6 +164,15 @@ add_action( 'init', function() {
                 'plugin'    => 'tpw-core',
                 'required'  => $config['required'],
             ] );
+
+			if ( 'logs' === $slug && method_exists( 'TPW_Core_System_Pages', 'unlink' ) ) {
+				$logs_page_id      = (int) TPW_Core_System_Pages::get_page_id( 'logs' );
+				$dashboard_page_id = (int) TPW_Core_System_Pages::get_page_id( 'flexiclub' );
+
+				if ( $logs_page_id > 0 && $logs_page_id === $dashboard_page_id ) {
+					TPW_Core_System_Pages::unlink( 'logs' );
+				}
+			}
 
             tpw_core_maybe_ensure_system_page( $slug, $config['shortcode'] );
         }

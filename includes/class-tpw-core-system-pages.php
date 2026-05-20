@@ -468,6 +468,7 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
 
             // Extract tag for has_shortcode check if possible
             $tag = self::parse_shortcode_tag( $sc );
+			$requires_exact_match = false !== strpos( trim( $sc, '[]' ), ' ' );
             $q = new \WP_Query( [
                 'post_type'      => 'page',
                 'post_status'    => 'publish',
@@ -478,10 +479,15 @@ if ( ! class_exists( 'TPW_Core_System_Pages' ) ) {
             if ( $q->have_posts() ) {
                 foreach ( $q->posts as $pid ) {
                     $content = (string) get_post_field( 'post_content', (int) $pid );
+					if ( $content !== '' && false !== strpos( $content, $sc ) ) {
+						return (int) $pid;
+					}
+
+					if ( $requires_exact_match ) {
+						continue;
+					}
+
                     if ( $tag && self::content_has_shortcode_tag( $content, $tag ) ) {
-                        return (int) $pid;
-                    }
-                    if ( $content !== '' && false !== strpos( $content, $sc ) ) {
                         return (int) $pid;
                     }
                 }
